@@ -339,3 +339,26 @@ Do not resolve these questions by guessing. Record evidence during implementatio
 - [ ] Relevant documentation and `docs/PROGRESS.md` match actual implementation.
 - [ ] `git diff` and `git status` show only intended Phase 1 changes.
 - [ ] This plan is moved to `plans/completed/` only after implementation and validation are finished.
+
+## 16. Implementation Record - 2026-10-05
+
+Implementation began only after this plan was committed as
+`e8a0409 docs: add phase 1 data acquisition and validation plan`.
+
+Implemented the planned package, acquisition command, read-only validator, JSON report, fixture
+suite, and documentation. Two small structural additions were made to keep path resolution reusable:
+`src/rossmann_forecasting/data/paths.py` and console entry points in `pyproject.toml`.
+
+The local environment used Python 3.14.5, pandas 3.0.6, Kaggle CLI 2.2.4, pytest 9.1.1, and Ruff
+0.16.10. Twelve tests passed; Ruff lint and format checks passed. The tests include a CLI run against
+a temporary constructed fixture and verify that raw checksums do not change.
+
+Acquisition readiness found no local source files, found the Kaggle CLI, and detected a
+structurally configured user credential without printing its values. The official download then
+returned HTTP 403 Forbidden. The command left no partial `data/raw/rossmann/` directory.
+
+This is State C from the implementation instructions. Phase 1 remains blocked and this plan remains
+active. `docs/DATA_DICTIONARY.md` intentionally retains `TBD` observations because no real file was
+available. After competition access is restored, run acquisition and real validation, document the
+observed results, re-run all checks, and only then complete the remaining acceptance criteria and
+move this plan to `plans/completed/`.

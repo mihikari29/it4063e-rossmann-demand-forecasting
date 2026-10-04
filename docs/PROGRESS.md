@@ -2,44 +2,57 @@
 
 ## Current Phase
 
-Phase 1 — Data Acquisition & Validation.
+Phase 1 - Data Acquisition & Validation.
 
 ## Status
 
-Planning; implementation has not started.
+Blocked on authorized access to the official Kaggle competition files. The implementation and
+fixture verification are complete, but Phase 1 cannot be declared complete until the real files
+are acquired and validated.
 
 ## Completed
 
-- Initialized the local Git repository and configured the expected GitHub `origin`.
-- Placed the authoritative proposal at `docs/proposal.md`.
-- Normalized 11 inline proposal formulas to VS Code-compatible `$...$` delimiters without changing their meaning.
-- Established the project operating contract, roadmap, workflow, decision log, initial data dictionary, README, and ignore rules.
-- Prepared and completed the Phase 0 execution plan.
-- Published the two-commit Phase 0 foundation on `origin/main`.
+- Completed and committed the Phase 1 execution plan before implementation.
+- Added the Python 3.14 `pyproject.toml` environment with runtime, acquisition, and development
+  dependency groups.
+- Added portable repository-relative data paths and safe official Kaggle acquisition logic.
+- Added a read-only reusable validator, console/JSON CLI, and 12 focused fixture tests.
+- Documented raw-data policy, acquisition, validation, and durable environment/source decisions.
+- Kept raw data, credentials, virtual environments, and generated reports ignored.
 
 ## In Progress
 
-- Review of the Phase 1 data-acquisition and validation execution plan.
+- Restore authorized Kaggle competition download access.
+- Acquire and validate `train.csv`, `test.csv`, `store.csv`, and `sample_submission.csv`.
+- Replace Data Dictionary `TBD` values only with evidence from that validation.
 
 ## Next
 
-- Obtain user review and approval of the Phase 1 plan before implementation.
+1. Accept the Rossmann competition rules or refresh the Kaggle credential.
+2. Run `python scripts/acquire_data.py`.
+3. Run `python scripts/validate_data.py --report reports/validation/rossmann.json`.
+4. Review all real-data warnings, update `docs/DATA_VALIDATION.md` and
+   `docs/DATA_DICTIONARY.md`, and rerun all quality checks.
+5. Move the Phase 1 plan to `plans/completed/` only after those steps pass.
 
 ## Blockers
 
-None for planning. Kaggle access, the downloaded schema, the supported Python version, and structural missingness remain implementation questions recorded in the Phase 1 plan.
+- On 2026-10-05, Kaggle CLI 2.2.4 detected configured authentication but the official competition
+  download returned HTTP 403 Forbidden.
+- No official source file is present locally, so real schema, counts, checksums, coverage,
+  missingness, joins, and anomalies remain unverified.
 
 ## Validation Status
 
-- Proposal math-delimiter balance checked: 68 display blocks and 11 inline expressions; no legacy `\(...\)` delimiters remain.
-- All required governance files and all 15 roadmap phases were checked for structural completeness.
-- Repository-wide terminology and proposal consistency were reviewed.
-- Relative Markdown links were checked across all Markdown files; no broken links were found.
-- `git diff --check` passed; Git reported only expected LF-to-CRLF normalization notices on Windows.
-- No Python tests, lint configuration, or implementation checks exist in Phase 0.
-- The Phase 1 plan has been checked against the proposal and repository constraints; implementation validation has not begun.
+- `python -m pytest`: 12 passed on Python 3.14.5 with pytest 9.1.1.
+- `python -m ruff check .`: passed with Ruff 0.16.10.
+- `python -m ruff format --check .`: passed with Ruff 0.16.10.
+- The validation CLI passes a constructed portable fixture and writes valid JSON.
+- The official acquisition attempt failed cleanly with no partial raw directory.
+- Real-data validation: blocked and not run.
 
-## Notes
+## Scope Confirmation
 
-- No dataset, notebook, forecasting code, synthetic data, model artifact, API, dashboard, package, or environment has been created.
-- The Phase 1 plan recommends `pyproject.toml`; no dependency file or environment has been created.
+Phase 1 introduced no EDA, feature engineering, forecasting, train/validation splitting,
+inventory logic, API, dashboard, or synthetic supply-chain data. Store x Date remains the unit of
+analysis; `Sales` remains a monetary target; `Customers` remains unavailable for future forecasts.

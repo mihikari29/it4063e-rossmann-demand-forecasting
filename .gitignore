@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -56,6 +57,7 @@ mlruns/
 # Generated reports and local application output
 outputs/
 reports/generated/
+reports/validation/**
 .streamlit/secrets.toml
 
 # Logs and temporary files
