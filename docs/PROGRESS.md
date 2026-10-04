@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Phase 0 — Repository Foundation.
+Phase 1 — Data Acquisition & Validation.
 
 ## Status
 
-Completed, pending initial Git publication.
+Planning; implementation has not started.
 
 ## Completed
 
@@ -15,18 +15,19 @@ Completed, pending initial Git publication.
 - Normalized 11 inline proposal formulas to VS Code-compatible `$...$` delimiters without changing their meaning.
 - Established the project operating contract, roadmap, workflow, decision log, initial data dictionary, README, and ignore rules.
 - Prepared and completed the Phase 0 execution plan.
+- Published the two-commit Phase 0 foundation on `origin/main`.
 
 ## In Progress
 
-- Initial Git publication of the completed repository foundation.
+- Review of the Phase 1 data-acquisition and validation execution plan.
 
 ## Next
 
-- Begin Phase 1 planning after the initial repository state is published.
+- Obtain user review and approval of the Phase 1 plan before implementation.
 
 ## Blockers
 
-None currently known.
+None for planning. Kaggle access, the downloaded schema, the supported Python version, and structural missingness remain implementation questions recorded in the Phase 1 plan.
 
 ## Validation Status
 
@@ -36,8 +37,9 @@ None currently known.
 - Relative Markdown links were checked across all Markdown files; no broken links were found.
 - `git diff --check` passed; Git reported only expected LF-to-CRLF normalization notices on Windows.
 - No Python tests, lint configuration, or implementation checks exist in Phase 0.
+- The Phase 1 plan has been checked against the proposal and repository constraints; implementation validation has not begun.
 
 ## Notes
 
 - No dataset, notebook, forecasting code, synthetic data, model artifact, API, dashboard, package, or environment has been created.
-- Dependency and environment design is deferred to Phase 1 planning.
+- The Phase 1 plan recommends `pyproject.toml`; no dependency file or environment has been created.
