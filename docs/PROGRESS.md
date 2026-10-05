@@ -2,15 +2,17 @@
 
 ## Current Phase
 
-Phase 3 — Feature Engineering.
+Phase 4 — Seasonal Naive Baseline (PLANNING / NOT IMPLEMENTED).
 
 ## Status
 
-**IMPLEMENTED / UNDER REVIEW — PHASE NOT CLOSED.** Phase 2 preparation, warning
-investigations, and EDA are complete. The Phase 3 feature contract is approved and checkpointed;
-implementation, fixture tests, and the real-data integrity audit have been run on
-`feat/feature-engineering`. The active Phase 3 plan remains unarchived. No forecasting model,
-forecast metrics, or model-selection work is in scope.
+**PHASE 1 COMPLETE — PHASE 2 COMPLETE — PHASE 3 COMPLETE.** Phase 3 was externally reviewed;
+the canonical Store × Date key finding was resolved, and PR #3 was merged into `main` at
+`ef2c23ca79bb239b6c143572b6b4dc545d1de0b5`. Its completed execution plan is archived at
+`plans/completed/phase-3-feature-engineering.md`. The shared `phase-3-v1` contract has 29
+predictors. No final-holdout outcomes were used for feature selection or design feedback. Phase 4
+is only the next planning phase: no forecasting model, forecast, or forecast metric has been
+produced.
 
 ## Completed
 
@@ -24,17 +26,18 @@ forecast metrics, or model-selection work is in scope.
   deterministic representatives, denominators, and Parquet round trips.
 - Archived the completed Phase 2 execution plan at
   `plans/completed/phase-2-data-preparation-eda.md`.
+- Phase 3 — completed forecast-origin-safe feature engineering; externally reviewed, canonical-key
+  finding resolved, and merged through PR #3. The completed plan is under
+  `plans/completed/phase-3-feature-engineering.md`.
 
 ## In Progress
 
-Awaiting external code review of the Phase 3 implementation on branch `feat/feature-engineering`.
-Keep the active plan open until review and any requested changes are resolved.
+None. Phase 4 — Seasonal Naive Baseline is the next planning phase and has not been implemented.
 
 ## Next
 
-After review, address requested changes and obtain explicit direction before closing Phase 3 or
-starting any later modeling phase. Do not train models, compute forecast metrics, or inspect
-holdout outcomes as feature-design feedback.
+Plan Phase 4 — Seasonal Naive Baseline. This is planning only; no baseline, forecast, or forecast
+metric exists yet. Keep the final holdout untouched during future feature and model selection.
 
 ## Source and Preparation Evidence
 
@@ -56,7 +59,7 @@ holdout outcomes as feature-design feedback.
 - Ignored Parquet outputs are reproducible through PyArrow 24.0.0. EDA tables, manifests, and
   figures are local generated artifacts under `reports/eda/`.
 
-## Phase 3 Implementation Evidence (Review Pending)
+## Phase 3 Implementation and Closeout Evidence
 
 - `python scripts/build_features.py` completed with contract `phase-3-v1`: 1,017,209 training
   rows and 41,088 inference rows, preserving input Store × Date keys and the shared ordered
@@ -86,8 +89,8 @@ holdout outcomes as feature-design feedback.
   prior build. These two distinct artifacts do not share a hash. No holdout distributions were
   summarized.
 - Detailed field semantics, roles, dtypes, null behavior, and point-in-time rules are in
-  [Feature Contract](FEATURE_CONTRACT.md); the active execution plan remains in
-  `plans/active/phase-3-feature-engineering.md` pending review.
+  [Feature Contract](FEATURE_CONTRACT.md); the completed execution plan is archived at
+  `plans/completed/phase-3-feature-engineering.md`.
 - External review follow-up canonicalizes history keys before duplicate/overlap checks, grouping,
   or exact-date lookup: Store IDs are validated positive exact integers representable as int64;
   Dates are parsed as midnight calendar values and stored as datetime64[ns]. The shared key path
@@ -101,8 +104,8 @@ holdout outcomes as feature-design feedback.
   4 reviewed warnings, 12 informational findings.
 - `python scripts/build_features.py`: PASS — raw/interim provenance checks, key preservation,
   matching predictor schemas/dtypes, holdout mechanical audit, and output generation.
-- `python -m pytest -q --tb=short`: 56 passed, including the external-review key-canonicalization
-  regression cases.
+- Full suite chronology: 45 passed before the external-review key-canonicalization fix; 56 passed
+  after the fix and again at PR readiness, including the key-canonicalization regression cases.
 - `ruff check .`: passed; `ruff format --check .`: 45 files already formatted.
 - `git diff --check`: passed. Relative Markdown links in changed user-facing documentation: passed.
 - Preparation and EDA commands completed against the official data; both notebooks validated and

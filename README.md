@@ -9,11 +9,11 @@ units and supply-chain fields will be explicitly simulated.
 
 ## Current Status
 
-Phase 1 - Data Acquisition & Validation and Phase 2 - Data Preparation & EDA are complete. Phase 3
-- Feature Engineering is implemented on `feat/feature-engineering` and ready for external code
-review; it is not formally closed. No forecasting model or forecast metrics have been run. Raw Rossmann
-data remain immutable; prepared tables, feature Parquet files, and EDA exports are reproducible
-and ignored local outputs.
+Phase 1 - Data Acquisition & Validation, Phase 2 - Data Preparation & EDA, and Phase 3 - Feature
+Engineering are COMPLETE. Phase 3 was externally reviewed and merged to `main` in PR #3. Phase 4 -
+Seasonal Naive Baseline is the next planning phase and is NOT IMPLEMENTED. No forecasting model or
+forecast metrics have been produced. Raw Rossmann data remain immutable; prepared tables, feature
+Parquet files, and EDA exports are reproducible and ignored local outputs.
 
 ## Environment
 

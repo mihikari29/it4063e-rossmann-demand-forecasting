@@ -337,15 +337,15 @@ Execution sequence for the approved Phase 3 scope:
 5. Run fixture tests, lint/format checks, and real-data integrity/availability audits.
 6. Self-review schemas, null handling, exact-date behavior, and every target-history access for
    leakage; inspect `git diff` and `git status`.
-7. Update `docs/PROGRESS.md` with actual results. Keep this plan active and do not archive it until
-   the user has reviewed the implementation and explicitly accepts Phase 3 closure.
+7. Update `docs/PROGRESS.md` with actual results; keep this plan active through review and archive
+   it only after the user explicitly accepts Phase 3 closure.
 
-Phase 3 implementation is done only when the shared feature contract and train/inference schema
-are documented; every feature has source, derivation, availability, null, and leakage rules; sparse
-coverage and Open states retain the dispositions above; fixture tests cover the cases in Section 8;
-real-data outputs preserve keys and source files; all actual tests/checks are recorded; no models,
-splits, holdout tuning, or forecasting claims were introduced; and plan, code, Data Dictionary, and
-progress agree.
+Phase 3 implementation was considered done only when the shared feature contract and
+train/inference schema are documented; every feature has source, derivation, availability, null,
+and leakage rules; sparse coverage and Open states retain the dispositions above; fixture tests
+cover the cases in Section 8; real-data outputs preserve keys and source files; all actual
+tests/checks are recorded; no models, splits, holdout tuning, or forecasting claims were introduced;
+and plan, code, Data Dictionary, and progress agree.
 
 ## Approved Design Decisions
 
@@ -515,17 +515,20 @@ additional feature behavior is inferred from them.
 - **Reversible later?:** Yes. Storage layout can change without changing feature meanings, provided
   the common predictor schema, role separation, and point-in-time rules remain enforced.
 
-## Implementation Execution Record — Review Pending
+## Phase 3 Implementation and Closeout Record — Complete
 
-Implementation is checkpointed in focused commits on `feat/feature-engineering` for external code
-review. Phase 3 is not formally closed and this plan remains active. No Phase 4 or forecasting work
-was started.
+Implementation was checkpointed in focused commits on `feat/feature-engineering`, externally
+reviewed, and merged into `main` through PR #3. The PR received final review approval before merge;
+the merged main commit is `ef2c23ca79bb239b6c143572b6b4dc545d1de0b5`. Phase 3 is formally COMPLETE.
+No Phase 4 or forecasting implementation was started as part of Phase 3.
 
-- Reusable implementation: `src/rossmann_forecasting/features/{contract,calendar,promotion,competition,history,pipeline,runner}.py`.
+- Reusable implementation: `src/rossmann_forecasting/features/{contract,calendar,promotion,competition,history,keys,pipeline,runner}.py`.
 - Command: `scripts/build_features.py`, backed by `rossmann-build-features`.
 - Documentation: `docs/FEATURE_CONTRACT.md`; Section B of `docs/DATA_DICTIONARY.md`; ADR-012;
   progress results in `docs/PROGRESS.md`.
-- Tests: `tests/test_feature_engineering.py`; full repository suite passed, 45 tests.
+- Tests: `tests/test_feature_engineering.py`; the full suite passed 45 tests before the external-review
+  canonical-key fix and 56 tests after the fix and at PR readiness. The later count is the final
+  Phase 3 suite result.
 - Real-data build: 1,017,209 train rows and 41,088 inference rows; same ordered 29-predictor
   schema and matching dtypes. Raw source hashes (4 files) and Phase 2 prepared Parquet hashes
   (3 files) matched before/after. Outputs and local manifest are ignored.
@@ -546,5 +549,8 @@ was started.
   (0 errors, 4 warnings, 12 info). The feature runner verified raw-source and Phase 2 input hashes
   before and after generation; `git diff --check` and changed-document relative links passed.
 
-The execution record documents completed technical work, not final phase acceptance. Do not move
-the plan to `plans/completed/` or mark Phase 3 complete before user review.
+PR #3 received final review approval and was merged into `main`; the merge was verified at
+`ef2c23ca79bb239b6c143572b6b4dc545d1de0b5`. No final-holdout outcomes were used. Phase 3 is
+formally COMPLETE, and this plan has been moved to `plans/completed/phase-3-feature-engineering.md`.
+Phase 4 — Seasonal Naive Baseline is the next planning phase only; no baseline or other forecasting
+model, forecast, or metric is implemented.
