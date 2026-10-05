@@ -1,8 +1,10 @@
 # Phase 5 — Statistical Forecasting (Design and Execution Plan)
 
-**Status:** IMPLEMENTED / UNDER REVIEW. The user explicitly approved the Phase 5 methodology on
-2026-10-05. The accepted design is recorded in ADR-014. Implementation and the development-only
-evaluation are complete; this plan remains active for external review and explicit closeout.
+**Status:** COMPLETE. The user explicitly approved the Phase 5 methodology on 2026-10-05; the
+accepted design is recorded in ADR-014. Implementation and development-only evaluation were
+integrated by PR #7, squash-merged into `main` at
+`76707a03b7d10dbaa79d3ef26b39e31994431d70`. This plan is archived as part of the explicit
+closeout. No final-holdout forecast or evaluation was performed.
 
 The design/approval sections preserve their checkpoint history. Current environment policy is
 ADR-018 (Python 3.12–3.14 and a generated lock); the statistical specification and development
@@ -377,9 +379,8 @@ is recorded in ADR-014. Additional approved implementation clarifications are:
 - Recompute Seasonal Naive through the reviewed Phase 4 implementation and preserve its algorithm
   and existing metric outputs. Shared/column-aware metric logic must have regression coverage.
 
-No methodology question remains open. Keep this execution plan under `plans/active/` and Phase 5
-status at IMPLEMENTED / UNDER REVIEW; do not evaluate the final holdout, archive this plan, or begin
-Phase 6.
+No methodology question remained open at the approval checkpoint. This approval record does not
+alter the later closeout recorded at the end of this archived plan.
 
 ## 15. Historical Implementation and Development Result Snapshot
 
@@ -387,9 +388,10 @@ This dated checkpoint preserves reviewed evidence. Current maintained numerical 
 validation/state updates are in [PROGRESS](../../docs/PROGRESS.md); new fixes should reference
 that record rather than independently editing duplicate metric tables here.
 
-Implementation is complete on `feat/holt-winters`; Phase 5 is **IMPLEMENTED / UNDER REVIEW**.
-Source code, tests, and documentation are ready for external review. This checkpoint does not merge
-the branch, archive this plan, or select the final project model.
+At this historical implementation checkpoint, implementation was complete on `feat/holt-winters`
+and Phase 5 was **IMPLEMENTED / UNDER REVIEW**. Source code, tests, and documentation were ready
+for external review. That checkpoint did not merge the branch, archive this plan, or select the final
+project model.
 
 The runner uses statsmodels 0.15.0 and completed against Phase 2 `train.parquet`. At the Parquet
 read boundary it projects Store, Date, Sales, and Open and filters to Date <= 2015-07-03. It
@@ -434,8 +436,8 @@ and dates end on 2015-07-03.
 
 Initial implementation validation: full `pytest` suite **95 passed**; Ruff check and format check
 passed. All planned artifact destinations passed `git check-ignore`. The real-data runner completed
-with exit code 0. Phase 5 remains under external review; no holdout evaluation, merge, final model
-selection, plan archival, or Phase 6 work is included.
+with exit code 0. At this historical checkpoint, Phase 5 remained under external review; no holdout
+evaluation, merge, final model selection, plan archival, or Phase 6 work was included.
 
 ### External-review follow-up — 2026-10-05
 
@@ -450,5 +452,15 @@ metrics, paired comparison, clipping results, and passed 99% coverage guardrail 
 ignored fit-diagnostics schema now includes `forecast_horizon`, so generated artifact hashes were
 regenerated; numerical results did not change. Full-repository validation passed: 102 pytest tests,
 `ruff check .`, `ruff format --check .`, `git diff --check`, and relative Markdown-link validation
-across 19 files. Phase 5 remains IMPLEMENTED / UNDER REVIEW; the holdout, methodology, model
-specification, fallback policy, and active-plan status are unchanged.
+across 19 files. At this post-review-fix checkpoint Phase 5 remained IMPLEMENTED / UNDER REVIEW;
+the holdout, methodology, model specification, fallback policy, and active-plan status were unchanged.
+
+## 16. Formal Phase 5 Closeout — 2026-10-05
+
+PR #7 was squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`. GitHub's
+reported merge SHA matches fetched `origin/main` and the base commit of the clean
+`docs/phase-5-closeout` branch. The merged tree contains the Holt-Winters forecaster, development
+runner and evaluation modules, and regression tests. Phase 5 is **COMPLETE**. Its approved fixed
+additive specification, development windows, metrics, and historical result tables are unchanged.
+No final-holdout forecast or evaluation was performed. Phase 6 remains planned; this closeout does
+not start Phase 6 implementation.
