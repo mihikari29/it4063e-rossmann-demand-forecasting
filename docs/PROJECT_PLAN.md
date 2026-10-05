@@ -20,8 +20,8 @@ A package may share one concise execution plan, but each model/methodology appro
 boundary stays explicit. Phase 9 can proceed alongside Phase 8 using development-only history.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
-(ADR-015/016). Phase 5 is complete on `main` through PR #7; Phase 6 remains planned and requires a
-separate approved design before implementation.
+(ADR-015/016). Phase 5 is complete on `main` through PR #7; Phase 6 methodology is approved on PR #9,
+with implementation gated on integrating that design into `main`.
 
 ## Phase 0 — Repository Foundation
 
@@ -191,8 +191,9 @@ Rossmann production claim.
 
 ## Phase 6 handoff — read before design or code
 
-Phase 6 is not implemented. This Phase 5 closeout does not authorize Phase 6 design or implementation;
-future Phase 6 work requires a separate scoped authorization and approved design before implementation.
+Phase 6 is not implemented. The Phase 5 closeout did not authorize Phase 6 work; its methodology
+has since been reviewed and approved under PR #9 and ADR-019. Implementation may begin only after
+PR #9 integrates the approved design into `main`.
 Phase 5 integration and explicit closeout are complete. These repository interfaces are the starting
 point, not the uncommitted/generated output of a previous agent:
 
