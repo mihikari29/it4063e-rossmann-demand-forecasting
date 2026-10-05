@@ -144,3 +144,41 @@ future actuals from leaking through precomputed historical rows.
 [`FEATURE_CONTRACT.md`](FEATURE_CONTRACT.md). Phase 3 adds no model-specific encoding, scaling,
 same-weekday features, imputation, or forecasting model. Any later contract change must be reviewed,
 regenerated, and must not be selected using final-holdout outcomes.
+
+## ADR-013 - Phase 4 Seasonal Naive Evaluation Contract
+
+**Status:** Accepted by explicit user approval on 2026-10-05.
+
+**Decision:** Implement the weekly Seasonal Naive baseline on exactly three non-overlapping,
+chronological 14-day development windows: `validation_1` (origin 2015-05-22, targets 2015-05-23
+through 2015-06-05), `validation_2` (origin 2015-06-05, targets 2015-06-06 through 2015-06-19),
+and `validation_3` (origin 2015-06-19, targets 2015-06-20 through 2015-07-03). For each Store and
+origin, forecast the exact same-Store calendar date seven days earlier. Horizons 1–7 use actual
+Sales only through the origin; horizons 8–14 recursively use the already generated raw forecast
+from seven days earlier. Teacher forcing is prohibited. Missing exact weekly history remains
+unavailable/null, with no prior-row fallback, interpolation, imputation, or zero fill. For each
+Store with at least one observed target key in a window, construct internal forecast states for all
+14 calendar horizons, but emit/evaluate only source-observed Store × Date target keys; internal
+states have no target labels and may feed later recursive horizons.
+
+Keep pure `raw_baseline_forecast` separate from post-forecast `operational_forecast`: known source
+`Open == 0` routes operational output to zero only after raw generation; `Open == 1` retains the raw
+forecast; unknown Open remains unresolved and is not treated as closed. `Open_resolved` is not
+source truth. Attach actual Sales, source Open, and the validation label only after raw forecast
+generation. Primary metrics use observed source `Open == 1` targets with actual Sales and an
+available raw forecast. MAE is primary; RMSE, MAPE, and WAPE are secondary under the approved
+metric contract. MAPE excludes zero-actual eligible rows only from MAPE (no epsilon) and reports
+the excluded count and coverage. WAPE is unavailable/null with a reason when the actual denominator
+is zero. Report availability coverage with explicit numerators and denominators. The final holdout,
+2015-07-04 through 2015-07-31, is not forecast or evaluated during Phase 4.
+
+**Reason:** The fixed weekly rule is a transparent benchmark for the approved 14-day horizon. Exact
+calendar lookup and origin-censored recursion preserve time-series integrity and sparse source
+coverage; separating raw predictions, operational routing, and labels prevents leakage and keeps
+model quality distinct from the closed-store business rule.
+
+**Consequences:** Results are development-only and are reported by validation window, pooled over
+eligible observations, and by horizon. Missing raw forecasts remain visible in output and coverage
+summaries rather than silently changing the metric population. No validation window, missing-history
+rule, metric, or routing rule may be changed based on final-holdout outcomes. Phase 4 remains under
+review until its implementation and results are externally reviewed and explicitly closed.

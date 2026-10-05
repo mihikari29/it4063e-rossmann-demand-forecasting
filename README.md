@@ -11,9 +11,9 @@ units and supply-chain fields will be explicitly simulated.
 
 Phase 1 - Data Acquisition & Validation, Phase 2 - Data Preparation & EDA, and Phase 3 - Feature
 Engineering are COMPLETE. Phase 3 was externally reviewed and merged to `main` in PR #3. Phase 4 -
-Seasonal Naive Baseline is in PLANNING / DESIGN REVIEW and is NOT IMPLEMENTED. No baseline
-forecasts or forecast metrics have been produced. Raw Rossmann data remain immutable; prepared
-tables, feature Parquet files, and EDA exports are reproducible and ignored local outputs.
+Seasonal Naive Baseline design is approved and implementation is in progress; development results
+are not yet available. The final holdout remains untouched. Raw Rossmann data remain immutable;
+prepared tables, feature Parquet files, and EDA exports are reproducible and ignored local outputs.
 
 ## Environment
 

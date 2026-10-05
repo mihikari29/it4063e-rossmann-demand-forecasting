@@ -1,12 +1,12 @@
 # Phase 4 — Seasonal Naive Baseline (Design and Execution Plan)
 
-**Status:** PLANNING / DESIGN REVIEW — proposed methodology awaits explicit user approval. No
-forecasting code, forecasts, or metrics have been produced.
+**Status:** DESIGN APPROVED — IMPLEMENTATION IN PROGRESS. Approval was explicitly provided by the
+user on 2026-10-05. The plan remains active pending implementation, review, and Phase 4 closeout.
 
 ## 1. Objective and current state
 
-Phase 4 will establish the required weekly Seasonal Naive benchmark for 14-day, store-level
-monetary Rossmann `Sales` forecasting. This document records the proposed validation windows,
+Phase 4 establishes the required weekly Seasonal Naive benchmark for 14-day, store-level
+monetary Rossmann `Sales` forecasting. This document records the approved validation windows,
 multi-step semantics, operational routing, evaluation population, metrics, output record, test
 coverage, and implementation boundary so later work does not invent methodology.
 
@@ -14,9 +14,9 @@ Phase 3 is COMPLETE on `main`. The implementation was merged in PR #3; its forma
 closeout is also merged on `main` at `c016c4e3a2c33da278ebdbbe074b3e1d4f13fe70`. The completed
 Phase 3 plan is `plans/completed/phase-3-feature-engineering.md`. No Phase 4 implementation exists.
 
-This is a planning checkpoint only. The proposed choices below are not accepted architectural
-decisions. Implementation must wait for explicit design approval, and only approved choices may be
-implemented.
+The user has approved the methodology in this plan, including the sparse-label/internal-path
+clarification in Section 5. Durable decisions are recorded as ADR-013. Implementation is limited
+to these approved choices; any material change requires renewed review.
 
 ## 2. Scope and exclusions
 
@@ -80,15 +80,15 @@ that origin, then use only predictions made earlier in that same forecast run.
 Phase 4 must not alter Phase 2 or Phase 3 interfaces, the `phase-3-v1` contract, or the prepared
 inputs. Raw and interim data remain immutable.
 
-## 5. Proposed development validation windows
+## 5. Approved development validation windows
 
-**PROPOSED / REQUIRES USER APPROVAL.** The final holdout boundary remains fixed at 2015-07-04.
+**APPROVED.** The final holdout boundary remains fixed at 2015-07-04.
 
 | Window | Forecast origin | Target dates | Calendar days |
 |---|---|---|---:|
-| Validation 1 | 2015-05-22 | 2015-05-23 through 2015-06-05 | 14 |
-| Validation 2 | 2015-06-05 | 2015-06-06 through 2015-06-19 | 14 |
-| Validation 3 | 2015-06-19 | 2015-06-20 through 2015-07-03 | 14 |
+| `validation_1` | 2015-05-22 | 2015-05-23 through 2015-06-05 | 14 |
+| `validation_2` | 2015-06-05 | 2015-06-06 through 2015-06-19 | 14 |
+| `validation_3` | 2015-06-19 | 2015-06-20 through 2015-07-03 | 14 |
 
 The target windows are chronologically ordered and non-overlapping. Each begins the calendar day
 after its origin; the next origin is the prior window's final target date, so each later origin may
@@ -98,19 +98,24 @@ mechanically against the historical calendar using only its `Date` column: every
 and each requested range contains exactly the 14 expected consecutive dates. No Sales values,
 forecast outputs, or metrics were read or calculated for this check.
 
-For a later backtest, use only historical Store × Date target keys actually present in the prepared
-source within each window; do not create a full Store-by-calendar cross product or synthetic target
-labels. This is a proposed target-row universe consistent with source-faithful sparse coverage and
-requires approval. Missing target keys have no actual `Open`/`Sales` label and therefore cannot be
-silently scored as zero.
+### Approved distinction: internal forecast path vs. observed target rows
 
-Why these windows are proposed: they provide three non-overlapping two-week tests, move forward in
+Emit and evaluate only Store × Date target keys actually present in the source validation window.
+Do not synthesize Store × Date label rows, fake `Open`, or treat absent target rows as zero Sales.
+However, for every Store with at least one observed target row in a window, internally construct
+the complete calendar path `h = 1..14`. An intermediate date without an observed target key still
+gets an internal forecast state, with no target label; that state may feed a later recursive
+forecast. For example, if h=1 has no observed target row but h=8 does, generate internal h=1 from
+origin-safe history and use that forecast for h=8. Only the observed h=8 key is emitted/scored.
+Internal states are ephemeral forecast state, not synthetic labels or evaluation records.
+
+Why these windows were selected: they provide three non-overlapping two-week tests, move forward in
 time, allow the actual history to expand at each origin, and finish directly before the untouched
 holdout. Do not choose or revise windows based on their eventual forecast performance.
 
-## 6. Proposed 14-day Seasonal Naive semantics
+## 6. Approved 14-day Seasonal Naive semantics
 
-**PROPOSED / REQUIRES USER APPROVAL.** For store `s`, forecast origin `o`, and target calendar date
+**APPROVED.** For store `s`, forecast origin `o`, and target calendar date
 `d`, use the exact same-Store date `d - 7 calendar days`:
 
 ```text
@@ -120,26 +125,27 @@ else:
     raw_forecast(s, d) = previously generated raw_forecast(s, d - 7 days)
 ```
 
-Consequently, horizons 1–7 use the exact seven calendar dates immediately preceding or including
-the origin, while horizons 8–14 repeat the corresponding already-generated forecasts from horizons
-1–7. The second week is recursive: actual Sales revealed inside the 14-day target window never
-enters later predictions. In particular, horizon 8 must use the horizon 1 forecast, not actual
-Sales at horizon 1 (teacher forcing is rejected).
+Consequently, h=1 uses actual Sales at `o-6`, h=2 at `o-5`, through h=7 at `o`; horizons 8–14 use
+the previously generated forecasts at h=1–7 respectively. The second week is recursive: actual
+Sales revealed inside the 14-day target window never enters later predictions. In particular,
+horizon 8 must use the horizon 1 forecast, not actual Sales at horizon 1 (teacher forcing is
+rejected).
 
-Lookup is exact by Store and calendar date. If the required `d - 7` source date is absent or its
-Sales value is unavailable, the raw forecast is null. Do not search backward for a previous
-observed row, interpolate, impute, or replace the missing value with zero. Any later recursive
-forecast depending on that unavailable weekly value is also null. An observed `Sales == 0` on the
-exact weekly source date is a valid value and yields a raw forecast of zero.
+Lookup is exact by Store and calendar date. If the required `d - 7` source date is absent, the raw
+forecast is null. Do not search backward for a previous observed row, interpolate, impute, or
+replace the missing value with zero. Any later recursive forecast depending on that unavailable
+weekly value is also null. An observed `Sales == 0` on the exact weekly source date is valid and
+yields a raw forecast of zero. The public API rejects null, non-finite, or negative Sales values in
+the supplied actual-history frame; a missing exact Store × Date key is represented as unavailable.
 
 Generate the raw 14-day sequence independently for each store and origin. State transitions between
 validation windows are walk-forward: at a later origin, actual observations through that new origin
 are available. Within a single origin's 14-day run, only the origin-censored actual history and
 earlier predictions from that run are available.
 
-## 7. Proposed raw and operational forecast separation
+## 7. Approved raw and operational forecast separation
 
-**PROPOSED / REQUIRES USER APPROVAL.** Keep model quality separate from business routing:
+**APPROVED.** Keep model quality separate from business routing:
 
 - `raw_baseline_forecast` is the pure Seasonal Naive result from Section 6. It is generated without
   consulting target-date `Open` and is retained unchanged for evaluation.
@@ -159,9 +165,9 @@ also emit `operational_forecast_available`; do not overload raw forecast availab
 closed-store zero rule. Primary model metrics use raw forecasts on open rows; on those rows the
 operational forecast equals the raw forecast whenever available.
 
-## 8. Proposed evaluation eligibility and coverage
+## 8. Approved evaluation eligibility and coverage
 
-**PROPOSED / REQUIRES USER APPROVAL.** A primary-evaluation row must satisfy all of the following:
+**APPROVED.** A primary-evaluation row must satisfy all of the following:
 
 1. Its target date lies in one of the approved development windows.
 2. The observed source target-date `Open` equals 1.
@@ -182,9 +188,9 @@ window or change missing-history semantics based on performance.
 
 No final-holdout forecast, evaluation, or result is allowed in Phase 4.
 
-## 9. Proposed metric contract
+## 9. Approved metric contract
 
-**PROPOSED / REQUIRES USER APPROVAL.** Use the primary eligible population from Section 8. For
+**APPROVED.** Use the primary eligible population from Section 8. For
 each validation window, for pooled development rows across the three windows, and by forecast
 horizon `h = 1..14`, calculate:
 
@@ -205,14 +211,13 @@ window-level metrics. For horizon results, apply the same definitions to eligibl
 horizon. Record row counts and availability coverage alongside metrics. MAE remains the primary
 comparison metric; MAPE and WAPE are not replacements for it.
 
-## 10. Proposed forecast record and field roles
+## 10. Approved forecast record and field roles
 
-**PROPOSED / REQUIRES USER APPROVAL.** Use one auditable record per observed target Store × Date
-and forecast origin. The proposed composite key is `(Store, forecast_origin, Date)`; `horizon` is
-also stored and checked against the date difference. The same Store × Date may appear at distinct
-origins only if the approved windows ever overlap (the current proposal does not overlap).
+**APPROVED.** Use one auditable record per observed target Store × Date and forecast origin. The
+composite key is `(Store, forecast_origin, Date)`; `horizon` is also stored and checked against the
+date difference. The approved validation windows do not overlap.
 
-| Field | Proposed role and timing |
+| Field | Role and timing |
 |---|---|
 | `Store` | Key; unchanged source store identity. |
 | `forecast_origin` | Key/audit field; date at which the forecast information set is cut off. |
@@ -246,71 +251,70 @@ forecast errors, metric distributions, and performance must not be inspected or 
 Prefer no holdout contact in Phase 4. If a later implementation requires a check, it must be
 strictly mechanical (date boundary, key uniqueness, schema compatibility, or row integrity) and
 must not summarize targets, forecasts, or their distributions. No holdout forecast or evaluation
-command is in this phase's scope. The three proposed validation windows end on 2015-07-03.
+command is in this phase's scope. The three approved validation windows end on 2015-07-03.
 
-## 12. Required tests after design approval
+## 12. Required tests for the approved design
 
 Use compact synthetic fixtures; no real Sales values are needed for unit tests.
 
 | ID | Test requirement |
 |---|---|
-| A | Exact weekly lookup: a target uses the same Store's exact `d - 7` calendar date. |
-| B | Missing exact weekly date returns null; no previous-observed-row fallback. |
-| C | Fourteen-day recursion: horizon 8 uses the horizon 1 forecast, not actual Sales from horizon 1. |
-| D | Teacher-forcing guard: mutating actual Sales after an origin cannot change that origin's 14-day raw forecast. |
-| E | Store histories are isolated; another Store's exact date/value cannot satisfy a lookup. |
-| F | Known `Open == 0` makes operational forecast zero without changing raw forecast. |
-| G | Known `Open == 1` retains raw forecast as operational forecast. |
-| H | Missing/unknown `Open` is not treated as closed; operational forecast remains unresolved/null. |
-| I | Primary metrics use only actual source `Open == 1` rows with observed Sales and available raw forecast. |
-| J | MAPE excludes actual Sales equal to zero only from MAPE and reports the exclusion and denominator. |
-| K | WAPE returns null/unavailable with a reason when its actual-Sales denominator is zero. |
-| L | Missing raw forecasts are excluded only by the approved availability rule and coverage is reported. |
-| M | Validation ranges are exactly 14 days, chronologically ordered, non-overlapping, and end before the holdout. |
-| N | No future Customers or post-origin actual Sales enters forecast inputs; verify by input/schema checks and a post-origin Sales mutation guard. |
-| O | Forecast construction and evaluation do not mutate supplied DataFrames. |
+| A | Exact `d - 7` same-Store calendar-date lookup. |
+| B | Missing exact weekly date returns null; a previous observed date cannot substitute. |
+| C | Exact-history `Sales == 0` remains a valid raw forecast. |
+| D | Horizon 8 uses the internally generated horizon 1 forecast, not actual horizon 1 Sales. |
+| E | Horizon 14 uses the internally generated horizon 7 forecast. |
+| F | Mutating actual target-window Sales cannot change raw forecasts from the same origin. |
+| G | An actual-history row after forecast origin is rejected. |
+| H | Store histories are isolated; another Store cannot satisfy a lookup. |
+| I | Fractional or invalid Store keys are rejected through shared key validation. |
+| J | Caller-owned inputs are not mutated. |
+| K | Mutating target-window Open cannot change raw forecasts. |
+| L | `Open == 0` routes operational forecast to zero without changing raw forecast. |
+| M | `Open == 1` routes operational forecast to raw forecast. |
+| N | Unknown Open remains unresolved and does not route to zero. |
+| O | Primary metrics exclude closed rows while retaining eligible open zero-Sales rows. |
+| P | MAPE excludes zero actuals only from MAPE and reports counts/coverage. |
+| Q | WAPE zero denominator returns null with an explicit reason. |
+| R | Empty eligible metric population has explicit null/reason behavior. |
+| S | Three validation windows are exactly 14 days and finish before the holdout. |
+| T | Emitted forecast rows contain only observed target Store × Date keys. |
+| U | An observed h=8 target with no h=1 label uses its internally generated h=1 state. |
+| V | Future Customers and future actual Sales do not enter forecast inputs. |
+| W | Output composite keys are unique and horizon agrees with date minus origin. |
 
 Also test output-key uniqueness, horizon/date consistency, null propagation through recursive
 weekly dependencies, observed zero Sales as a valid raw value, metric empty-population behavior,
 and that labels/Open are attached only after the raw forecast stage. No test may calculate
 performance on the final holdout.
 
-## 13. Proposed implementation sequence after approval
+## 13. Approved implementation sequence
 
-1. Record explicit user approval and resolve any requested changes in this plan before coding.
-2. Add a small reusable forecaster that canonicalizes keys, takes actual history through one origin,
+1. Add a small reusable forecaster that canonicalizes keys, takes actual history through one origin,
    performs exact same-Store `d - 7` lookups, and feeds only earlier raw predictions into recursive
    steps.
-3. Add reusable, population-explicit metric functions and coverage summaries.
-4. Add a rolling-origin evaluator over only the approved development windows. Generate raw forecasts
+2. Add reusable, population-explicit metric functions and coverage summaries.
+3. Add a rolling-origin evaluator over only the approved development windows. Generate raw forecasts
    before attaching target Sales/Open; preserve every observed target row and output eligibility
    fields.
-5. Add a thin script only if useful, deterministic local outputs, and synthetic unit tests. Keep
+4. Add a thin script only if useful, deterministic local outputs, and synthetic unit tests. Keep
    generated results out of Git unless explicitly required by repository policy.
-6. Run tests, Ruff, schema/leakage checks, and inspect the complete diff. Record only commands
+5. Run tests, Ruff, schema/leakage checks, and inspect the complete diff. Record only commands
    actually run in `docs/PROGRESS.md`.
-7. Do not access final-holdout outcomes. Update `docs/DECISIONS.md` only for choices explicitly
-   approved as durable decisions; never record this proposal as accepted before approval.
+6. Do not access final-holdout outcomes. Update `docs/DECISIONS.md` only if an explicitly approved
+   durable decision requires a superseding record.
 
-## 14. Approval checklist and open methodology questions
+## 14. Approval record and implementation clarifications
 
-All entries in Sections 5–10 are **PROPOSED / REQUIRES USER APPROVAL**, not accepted decisions.
-Explicitly confirm or amend:
+The user explicitly approved all choices in Sections 5–10 on 2026-10-05. These decisions are
+recorded in ADR-013. The sparse target-row / internal-path clarification is part of the approval:
+emit only observed historical target keys, but internally forecast h=1..14 for each Store with at
+least one observed target row. Internal forecast states have no labels and are not emitted unless
+the corresponding target key exists.
 
-1. The three exact validation origins and target windows.
-2. The exact-date `d - 7` recursion for horizons 8–14, rejection of teacher forcing, and null
-   propagation when weekly history is missing.
-3. Separate raw and operational forecasts, including routing for known-closed and unknown-Open
-   rows.
-4. Use of only observed historical target Store × Date keys (no synthetic target grid), plus the
-   evaluation eligibility and availability-coverage denominators.
-5. MAE/RMSE/MAPE/WAPE formulas, zero handling, per-window/pooled/horizon reporting, and MAPE
-   coverage definition.
-6. The proposed forecast record, field roles, and post-forecast attachment of labels/routing data.
-
-There is one additional operational clarification for approval: the source is sparse, so the target
-row universe and the forecast-availability coverage denominator must remain explicit. This plan
-proposes observed historical Store × Date target keys and reports both all-observed-target coverage
-and open-labelled-target coverage; no absent Store × Date row is synthesized or treated as a
-failure/zero. No other contradiction with the approved project constraints was identified during
-planning. Phase 4 remains PLANNING / DESIGN REVIEW until the user explicitly approves the design.
+Implementation-time constraints: the real-data runner must filter historical inputs to dates no
+later than 2015-07-03 before any forecast/evaluation code can access target Sales; raw forecasts
+must be generated from keys plus origin-censored Sales only, and target Sales/Open labels are joined
+afterward; the final holdout must not be forecast or evaluated. No further methodology question
+is unresolved. Preserve this plan as active and keep Phase 4 IMPLEMENTED / UNDER REVIEW until
+external review and explicit closeout; do not mark it complete here.

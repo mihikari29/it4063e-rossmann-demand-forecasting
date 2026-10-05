@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Phase 4 — PLANNING / DESIGN REVIEW (Seasonal Naive Baseline NOT IMPLEMENTED).
+Phase 4 — IMPLEMENTATION IN PROGRESS (DESIGN APPROVED).
 
 ## Status
 
@@ -10,9 +10,10 @@ Phase 4 — PLANNING / DESIGN REVIEW (Seasonal Naive Baseline NOT IMPLEMENTED).
 the canonical Store × Date key finding was resolved, and PR #3 was merged into `main` at
 `ef2c23ca79bb239b6c143572b6b4dc545d1de0b5`. Its completed execution plan is archived at
 `plans/completed/phase-3-feature-engineering.md`. The shared `phase-3-v1` contract has 29
-predictors. No final-holdout outcomes were used for feature selection or design feedback. Phase 4
-is in design review; the methodology is proposed and awaits explicit approval. No forecasting
-model, baseline forecast, or forecast metric has been produced.
+predictors. No final-holdout outcomes were used for feature selection or design feedback. The user
+has explicitly approved the Phase 4 methodology recorded in ADR-013 and
+`plans/active/phase-4-seasonal-naive.md`. Implementation is in progress; no real-data baseline
+forecasts or evaluation metrics have yet been produced.
 
 ## Completed
 
@@ -32,15 +33,14 @@ model, baseline forecast, or forecast metric has been produced.
 
 ## In Progress
 
-Phase 4 — Seasonal Naive Baseline design review is in progress. Its proposed methodology is
-documented in [the active Phase 4 plan](../plans/active/phase-4-seasonal-naive.md); implementation
-has not been approved or started.
+Phase 4 — implementing the explicitly approved Seasonal Naive baseline and development-only
+evaluation. The plan remains active at
+[Phase 4 plan](../plans/active/phase-4-seasonal-naive.md). No final-holdout evaluation is allowed.
 
 ## Next
 
-Wait for explicit approval of the Phase 4 design before implementation. No baseline, forecast, or
-forecast metric exists yet. Keep the final holdout untouched during future feature and model
-selection.
+Complete and validate the approved development-only runner, record actual results, and prepare the
+implementation for external review. Keep the final holdout untouched; do not begin Phase 5.
 
 ## Source and Preparation Evidence
 
@@ -121,13 +121,13 @@ data, API, or dashboard has been added. Sales remains monetary turnover at Store
 Customers remains unavailable to production forecasts. Primary forecast evaluation on actual
 Open=1 observations and the proposal's known-closed operational rule remain later-phase constraints.
 
-## Phase 4 Design Checkpoint
+## Phase 4 Design and Implementation Checkpoint
 
 - Planning branch is based on `main` at `c016c4e3a2c33da278ebdbbe074b3e1d4f13fe70`, which includes
   the Phase 3 documentation closeout. The active execution/design plan is
   `plans/active/phase-4-seasonal-naive.md` and is awaiting explicit user approval.
-- The exact three proposed 14-day development windows were mechanically checked using only the
-  historical `Date` column. The final holdout (2015-07-04 through 2015-07-31) was not evaluated or
-  summarized.
-- No proposed Phase 4 methodology has been added as an accepted ADR. No Seasonal Naive
-  implementation, forecast output, forecast metric, or holdout evaluation has been produced.
+- The user explicitly approved the three 14-day development windows and related methodology on
+  2026-10-05; the decisions are recorded in ADR-013. The windows were mechanically checked using
+  only the historical `Date` column during planning.
+- Phase 4 implementation is now in progress. No final-holdout forecast or evaluation is permitted;
+  record development results only after the approved runner is actually executed.
