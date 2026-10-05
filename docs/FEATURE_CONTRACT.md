@@ -90,12 +90,52 @@ row's features. A missing exact date or incomplete window remains null.
 The implementation separates future-known/static derivation from dynamic target-history
 derivation, then assembles a shared ordered predictor matrix for train and inference.
 
+## Handoff to Phase 6 modeling
+
+Phase 6 starts with a reviewed design. For each approved forecast origin, fitting may select
+precomputed historical rows only where `Date <= origin` and
+`training_label_eligible` is true. Keep all observed pre-origin Sales, including closed-day zeros,
+in the separate history used for lag/window construction. Select predictors only through
+`PREDICTOR_COLUMNS`; labels, Date, Open, eligibility masks, and audit columns stay outside the
+model matrix.
+
+Do not select precomputed historical target rows as recursive validation inputs: their lags use
+actual intermediate Sales. Rebuild each step with `build_inference_features` from
+[`features/pipeline.py`](../src/rossmann_forecasting/features/pipeline.py), or combine
+`build_static_predictors` with `build_origin_history_features` from
+[`features/history.py`](../src/rossmann_forecasting/features/history.py). Pass actual history
+censored at the fixed origin and only earlier `Store`, `Date`, `PredictedSales` states. The default
+`build_features.py` inference origin is the last labeled train date, 2015-07-31, and its inference
+rows are Kaggle future covariates. That default artifact is not a development-window forecast
+input; changing `--forecast-origin` also does not create the development target covariate rows.
+
+A model adapter must treat Store identity categorically and map string categories consistently
+between fit and prediction. Fit learned category vocabularies and preprocessing on origin training
+rows only; specify unseen-category handling in the Phase 6 design. Preserve source-contract nulls
+in feature artifacts. Any model-specific null conversion belongs in the adapter and must not turn
+absent history into zero or silently change the frozen predictor contract.
+
+The initial recursive state under ADR-017 is the finite, non-negative clipped **raw** prediction.
+Generate the full raw path before applying Open routing to operational outputs; future Open is
+neither a predictor nor recursive feedback. A closure-aware feedback strategy would require a
+separately reviewed methodology change. The Phase 6 plan must specify clipping, missing future
+covariates/internal calendar states, training and tuning policies, and regression tests before
+implementation. Reuse the windows and metric contract linked from the
+[project roadmap](PROJECT_PLAN.md); Phase 7 owns final model selection.
+
 ## Final Holdout Firewall
 
 The final holdout is the latest 28 labeled calendar days, 2015-07-04 through 2015-07-31 for the
-current prepared snapshot. Feature definitions were approved before implementation. Development
-coverage/null audits stop before the holdout and do not inspect Sales labels. Holdout contact is
-limited to mechanical schema, key uniqueness, dtype compatibility, deterministic generation, and
-non-mutation checks. No holdout target or feature distribution is summarized; no forecasting
-metrics, feature selection, or learned preprocessing is performed here. This firewall applies to
-later modeling work as well: do not use holdout outcomes to revise this contract.
+current prepared snapshot. Earlier source validation and Phase 2 descriptive EDA summarized the
+full historical source, including these dates; see the exposure disclosure in
+[EDA Findings](EDA_FINDINGS.md). The labels cannot be described as never inspected.
+
+Since the locked Phase 3 contract, feature definitions are fixed before generation, and development
+coverage/null audits stop before July 4 without inspecting Sales labels. Holdout feature contact in
+Phase 3 is limited to fixed generation and mechanical schema, key uniqueness, dtype compatibility,
+determinism, and non-mutation checks. No holdout distribution or forecast metric is summarized by
+that feature workflow. During development, do not use holdout outcomes to revise features, learn
+preprocessing, define modeling cohorts, tune models, or select methodology. Release for final evaluation follows
+the explicit [roadmap and approval boundary](PROJECT_PLAN.md).
+Only an authorized frozen replay may refit model/preprocessing state on eligible already revealed
+history under its precommitted recipe (ADR-015), never by changing recipes from holdout performance.

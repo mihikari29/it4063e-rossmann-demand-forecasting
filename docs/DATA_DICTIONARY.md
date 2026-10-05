@@ -9,15 +9,21 @@ are not Rossmann operational data.
 
 ## A. Real Rossmann Variables
 
+Availability describes the backtest/application contract, not evidence of when Rossmann released
+each field historically. `store.csv` is one static snapshot; treating its metadata as available
+at earlier origins is an explicit assumption. Calendar, promotion, and opening schedules are
+future-known only when supplied or planned at the origin. The original source facts below remain
+unchanged; source `Open` determines evaluation eligibility, not proven historical schedule knowledge.
+
 | Name | Source file(s) | Meaning / unit | Observed type | Observed values or range | Missingness | Forecast-time availability and notes |
 |---|---|---|---|---|---|---|
 | `Id` | `test.csv`, `sample_submission.csv` | Competition row identifier | `int64` | 1–41,088; unique in both files | 0 | Supplied for future rows; test and submission identifier sets match |
 | `Store` | `train.csv`, `test.csv`, `store.csv` | Store identifier | `int64` | 1–1,115; 1,115 train/metadata stores and 856 test stores | 0 | Primary unit key with `Date`; supplied for future rows |
 | `DayOfWeek` | `train.csv`, `test.csv` | Source-provided weekday code | `int64` | 1–7 | 0 | Supplied for future rows; code meanings are not inferred here |
 | `Date` | `train.csv`, `test.csv` | Calendar day | parsed date from source string | Train: 2013-01-01–2015-07-31; test: 2015-08-01–2015-09-17 | 0 | Primary unit key with `Store`; future-known |
-| `Sales` | `train.csv` | Daily store sales turnover; monetary value | `int64` | 0–41,551 | 0 | Historical target only; not a physical-unit quantity |
+| `Sales` | `train.csv` | Daily store sales turnover; monetary value | `int64` | 0–41,551 | 0 | Historical target only; affected by price/mix and potentially unmet demand; not physical units or uncensored latent demand |
 | `Customers` | `train.csv` | Customers observed for a store-day | `int64` | 0–7,388 | 0 | Historical observation only; future actual values must not be production features |
-| `Open` | `train.csv`, `test.csv` | Store-open indicator | train `int64`; test `float64` because of nulls | {0, 1} when present | Train: 0; test: 11 (0.026772%) | Source field is preserved in prepared data; test unknowns have a separate auditable, uncertain historical-context candidate in `test_open_resolution.parquet` |
+| `Open` | `train.csv`, `test.csv` | Store-open indicator | train `int64`; test `float64` because of nulls | {0, 1} when present | Train: 0; test: 11 (0.026772%) | Preserve source truth; operational routing requires a supplied/planned schedule assumed known at origin. Unknown remains unknown. Separate uncertain candidates in `test_open_resolution.parquet` are audit-only, not known future status or raw-forecast inputs |
 | `Promo` | `train.csv`, `test.csv` | Store-promotion indicator | `int64` | {0, 1} | 0 | Future-known when the promotion is planned |
 | `StateHoliday` | `train.csv`, `test.csv` | State-holiday code | string | Train: {0, a, b, c}; test: {0, a} | 0 | Future-known calendar field; category meanings are not inferred from values alone |
 | `SchoolHoliday` | `train.csv`, `test.csv` | School-holiday indicator | `int64` | {0, 1} | 0 | Future-known calendar field |
@@ -53,10 +59,12 @@ participant schedules use the Monday of the ISO start week, recurring interval m
 Date. Incomplete/invalid schedules stay null and are audited. Availability/null diagnostics are
 audit-only, not predictors.
 
-The final 28 labeled calendar days remain behind the holdout firewall: feature coverage diagnostics
-use development rows only; holdout contact is limited to mechanical schema, key, dtype,
-determinism, and non-mutation checks. No forecast metrics or holdout-guided feature choices are
-made in Phase 3.
+Phase 3 feature diagnostics use development rows only. Its holdout audits are mechanical: schema,
+keys, dtypes, determinism, and non-mutation; no holdout forecast metrics or feature selection were
+performed. Earlier source validation and full-source EDA included descriptive holdout information,
+as disclosed in [EDA findings](EDA_FINDINGS.md). Later model/interval/policy selection cannot use
+holdout outcomes or reuse full-history Sales-based EDA cohorts. The final replay protocol is
+defined in the [proposal](proposal.md) and [decision log](DECISIONS.md).
 
 ## C. Phase 2 Diagnostic Derivations
 
@@ -73,18 +81,54 @@ They are not forecast features, and a candidate status is not guaranteed ground 
 
 ## D. Synthetic Operational Variables
 
-All random synthetic generation will use a documented fixed seed for reproducibility.
+These are **planned simulation fields, not implemented Rossmann observations**. All random
+generation will use documented fixed seeds. Monetary demand, stock, orders, and recommendations
+share a retail-equivalent turnover-value basis; they are not procurement-cost inventory. Costs
+below are scenario proxies. Initial demand-dependent inputs use only history available at the
+simulation origin, and compared policies share inputs, demand paths, seeds, and starting stocks.
 
 | Name | Category | Source | Meaning | Unit | Known Range | Generation / Derivation Rule | Availability at Forecast Time | Notes |
 |---|---|---|---|---|---|---|---|---|
-| `SupplierLeadTime` | Supply-chain input | Synthetic / simulated | Store-specific replenishment lead time | Days | Approximately 2–7 days in proposed scenarios | Generated from documented store-level assumptions with a fixed seed | Yes, as simulated input | Not Rossmann data |
-| `StockOnHandValue` | Inventory input | Synthetic / simulated | Current inventory monetary value | Monetary value | $\ge 0$ | Based on recent demand and inventory coverage | Yes, as simulated input | Not physical stock units and not Rossmann data |
-| `ServiceLevelTarget` | Policy input | Synthetic / simulated | Target product availability | Percent | 90%–98%; 95% base scenario | Assigned by documented scenario | Yes, as simulated input | Not Rossmann data |
-| `HoldingCostRate` | Cost input | Synthetic / simulated | Inventory holding-cost assumption | Percent of inventory value | TBD | Generated from documented business assumptions | Yes, as simulated input | Not Rossmann data |
-| `StockoutPenalty` | Cost input | Synthetic / simulated | Lost-sales or service-cost assumption | Monetary value | TBD | Generated from documented business assumptions | Yes, as simulated input | Not Rossmann data |
-| `AverageUnitValue` | Conversion input | Synthetic / simulated | Average value used to illustrate equivalent units | Monetary value per equivalent unit | TBD | Store-level simulated variable | Yes, as simulated input | Does not identify real products or SKUs |
-| `DiscountDepth` | Promotion input | Synthetic / simulated | Simulated promotion intensity | Proportion | $0 \le x < 1$ | Zero when `Promo = 0`; positive when `Promo = 1` | Yes, as simulated input | Not Rossmann data |
+| `SupplierLeadTime` | Supply-chain input | Synthetic / simulated | Store-specific replenishment lead time | Calendar days | Integer 2–7 | Fixed-seed scenario assumption | Yes, as simulated input | Receipt timing is frozen in Phase 10 design |
+| `ReviewPeriod` | Policy input | Simulated policy | Time between replenishment reviews | Calendar days | 1 for initial simulator | Daily-review policy | Yes | Not a fitted Rossmann parameter |
+| `ProtectionPeriod` | Policy derivation | Simulated policy | Lead time plus review period | Calendar days | 3–8; must be $\le14$ | `SupplierLeadTime + ReviewPeriod` | Yes | Distinct from lead time alone |
+| `StockOnHandValue` | Inventory state | Synthetic / simulated | Available simulated stock | Retail-equivalent value | $\ge 0$ | Origin-safe recent Sales times initial coverage; then evolve with receipts and fulfilled proxy demand | Yes, as current simulated state | Not procurement cost or physical units |
+| `OnOrderValue` | Inventory state | Synthetic / simulated | Outstanding scheduled receipts | Retail-equivalent value | $\ge 0$ | Sum outstanding order queue; remove orders on receipt | Yes, as current simulated state | Cannot be assumed zero throughout replay |
+| `BackordersValue` | Inventory state | Simulated policy | Unfulfilled value carried forward | Retail-equivalent value | 0 in initial lost-sales policy | Record unmet value as lost sales instead of backlog | Yes | Alternative backorder policy requires reviewed design |
+| `InventoryPositionValue` | Inventory derivation | Simulated state | Stock plus orders less backorders | Retail-equivalent value | $\ge 0$ under initial policy | `StockOnHandValue + OnOrderValue - BackordersValue` | Yes | Timing consistent with event order |
+| `ServiceLevelTarget` | Policy input | Synthetic / simulated | Target probability of no shortfall over a protection period | Probability | 0.90–0.98; 0.95 base | Scenario's one-sided cumulative-residual quantile level | Yes | Cycle-service target, not achieved service or value fill rate |
+| `HoldingCostRate` | Cost input | Synthetic / simulated | Daily inventory carrying-cost proxy | Cost per inventory-value unit per day | Non-negative; magnitude TBD in Phase 9 design | Daily scenario rate; any annual conversion documented | Yes | Apply at the frozen daily stock measurement point |
+| `StockoutPenalty` | Cost input | Synthetic / simulated | Cost proxy for unmet sales value | Cost per unmet-value unit | Non-negative; magnitude TBD in Phase 9 design | Scenario multiplier times unmet value | Yes | Not actual Rossmann loss or margin |
+| `AverageUnitValue` | Conversion input | Synthetic / simulated | Value used to illustrate equivalent units | Retail-equivalent value per equivalent unit | Positive; magnitude TBD | Store-level scenario assumption | Yes | Does not identify real products or SKUs |
+| `DiscountDepth` | Stress-scenario input | Synthetic / simulated | Simulated promotion intensity | Proportion | $0 \le x < 1$ | Zero when `Promo = 0`; positive when `Promo = 1` in the scenario | Yes, in synthetic scenarios only | Never a measured Rossmann predictor or reason to modify historical Sales |
 | `InventoryCoverageDays` | Inventory-policy input | Synthetic / simulated | Initial inventory coverage assumption | Days | TBD | Generated within a documented reasonable business range | Yes, as simulated input | Not Rossmann data |
+
+## E. Planned Inventory Decision and Evaluation Outputs
+
+These are derived outputs of the future simulator. Their definitions do not imply an implemented
+inventory model. Operational forecasts require known source/planned Open; an unresolved required
+forecast makes the recommendation unavailable rather than silently supplying zero.
+
+| Output | Definition / unit | Interpretation |
+|---|---|---|
+| `LeadTimeDemandValue` / `ProtectionDemandValue` | Sum operational forecasts through $L$ / $P$; retail-equivalent value | Forecast sales proxy, not latent physical demand |
+| `CumulativeUpperValue` | $\max(0,D_P+q_p(E_P))$, using complete out-of-sample cumulative residual paths; $p=ServiceLevelTarget$ | Calibrate dependence-preserving paths; never sum daily interval bounds |
+| `SafetyStockValue` | $\max(0,U_P-D_P)$ for the simulator; retail-equivalent value | Non-negative simulated protection buffer |
+| `ReorderPointValue` | $\max(D_L,U_L)$; retail-equivalent value | Continuous-review illustration, not the daily-review order-up-to target |
+| `OrderUpToValue` | $\max(D_P,U_P)$; retail-equivalent value | Daily-review protection target |
+| `ReplenishmentValue` | $\max(0,OrderUpToValue-InventoryPositionValue)$ | Simulated value order; arrival date enters the queue |
+| `EquivalentUnits` | $\lceil ReplenishmentValue/AverageUnitValue\rceil$ | Illustrative equivalent units, never real SKU quantity |
+| `UnmetValue` / `EstimatedLostSales` | Positive proxy demand that cannot be fulfilled from simulated available stock; retail-equivalent value | Not observed Rossmann lost sales; lost-sales default carries no backlog |
+| `StockoutRate` | Positive-demand days with unmet value / positive-demand days | Explicit denominator; unavailable when zero |
+| `CycleServiceLevel` | Completed replenishment cycles without unmet value / completed cycles | Achieved simulated service, distinct from target; define cycle boundaries before replay |
+| `ValueFillRate` | $1-\sum UnmetValue/\sum DemandValue$ | Fraction of proxy value fulfilled; unavailable with zero demand denominator |
+| `AverageInventoryValue` / `EstimatedHoldingCost` | Fixed daily stock measurement; mean stock / sum daily rate times stock | State event order and measurement convention; conditional cost proxy |
+
+Phase 9 fixes scenario ranges, seed, and generation rules; Phase 10 fixes event order, cycle
+boundaries, forecast-refresh cadence, supported review dates, terminal-state handling, policy
+comparisons, and KPI denominators. Both must be locked before the authorized
+final replay. Historical Sales is held unchanged across policies; synthetic stress paths remain
+separate, and results cannot establish actual Rossmann savings or stockout rates.
 
 ## Validation Notes
 

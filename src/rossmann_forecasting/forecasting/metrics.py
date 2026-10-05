@@ -20,8 +20,13 @@ _REQUIRED_COLUMNS = {
 }
 
 
-def _validated_metric_frame(records: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
-    missing = _REQUIRED_COLUMNS.difference(records.columns)
+def _validated_metric_frame(
+    records: pd.DataFrame,
+    *,
+    forecast_column: str = "raw_baseline_forecast",
+) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
+    required_columns = _REQUIRED_COLUMNS.difference({"raw_baseline_forecast"}) | {forecast_column}
+    missing = required_columns.difference(records.columns)
     if missing:
         raise ValueError(f"Forecast records are missing metric fields: {sorted(missing)}.")
 
@@ -35,7 +40,7 @@ def _validated_metric_frame(records: pd.DataFrame) -> tuple[pd.DataFrame, pd.Ser
     if invalid_actual.any():
         raise ValueError("actual_sales contains non-numeric values.")
 
-    raw = pd.to_numeric(data["raw_baseline_forecast"], errors="coerce")
+    raw = pd.to_numeric(data[forecast_column], errors="coerce")
     if raw.notna().any():
         available = raw.dropna().to_numpy(dtype=np.float64)
         if not np.isfinite(available).all() or (available < 0).any():
@@ -65,7 +70,7 @@ def _validated_metric_frame(records: pd.DataFrame) -> tuple[pd.DataFrame, pd.Ser
         )
 
     data["actual_sales"] = actual.astype("float64")
-    data["raw_baseline_forecast"] = raw.astype("float64")
+    data[forecast_column] = raw.astype("float64")
     data["source_open"] = source_open.astype("float64")
     return data, raw_available, open_label
 
@@ -76,10 +81,13 @@ def summarize_forecast_metrics(
     scope: str,
     validation_window: str | None = None,
     horizon: int | None = None,
+    forecast_column: str = "raw_baseline_forecast",
 ) -> dict[str, Any]:
     """Calculate approved metrics plus explicit forecast-availability denominators."""
 
-    data, raw_available, open_label = _validated_metric_frame(records)
+    data, raw_available, open_label = _validated_metric_frame(
+        records, forecast_column=forecast_column
+    )
     eligible = data["primary_evaluation_eligible"].astype(bool)
     target_rows = len(data)
     available_rows = int(raw_available.sum())
@@ -101,7 +109,7 @@ def summarize_forecast_metrics(
 
     eligible_rows = int(eligible.sum())
     actual = data.loc[eligible, "actual_sales"].to_numpy(dtype=np.float64)
-    forecast = data.loc[eligible, "raw_baseline_forecast"].to_numpy(dtype=np.float64)
+    forecast = data.loc[eligible, forecast_column].to_numpy(dtype=np.float64)
     absolute_error = np.abs(actual - forecast)
 
     if eligible_rows:

@@ -32,7 +32,7 @@ def _store_id_as_int64(value: object) -> int:
     elif isinstance(value, (str, Decimal)):
         try:
             number = value if isinstance(value, Decimal) else Decimal(value.strip())
-        except InvalidOperation, ValueError:
+        except (InvalidOperation, ValueError):
             raise ValueError from None
         if not number.is_finite() or number != number.to_integral_value():
             raise ValueError

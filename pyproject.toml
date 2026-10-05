@@ -7,11 +7,13 @@ name = "rossmann-demand-forecasting"
 version = "0.1.0"
 description = "Store-level Rossmann demand forecasting and inventory decision support"
 readme = "README.md"
-requires-python = ">=3.14,<3.15"
+requires-python = ">=3.12,<3.15"
 dependencies = [
+    "numpy>=2.2,<3",
     "pandas>=2.2,<4",
     "pyarrow>=20,<25",
     "matplotlib>=3.10,<4",
+    "statsmodels>=0.15,<0.16",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +34,7 @@ rossmann-prepare = "rossmann_forecasting.data.preparation:cli_main"
 rossmann-eda = "rossmann_forecasting.analysis.eda:cli_main"
 rossmann-build-features = "rossmann_forecasting.features.runner:cli_main"
 rossmann-seasonal-naive = "rossmann_forecasting.forecasting.runner:cli_main"
+rossmann-holt-winters = "rossmann_forecasting.forecasting.holt_winters_runner:cli_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -42,7 +45,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py314"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "UP"]

@@ -27,7 +27,7 @@ In the retail and FMCG sectors, inventory management is one of the most importan
 
 The project requires the team to act as the **demand-planning analytics function** of a retail/FMCG business and answer the following question:
 
-> How much will sell over the coming days/weeks, and how should replenishment quantities be set based on that forecast?
+> How much store-level sales turnover is expected over the next 14 days, and how do forecast-based inventory-value policies compare under explicit simulated operating assumptions?
 
 The project must cover the complete analytics lifecycle, from data analysis and forecasting to deployment, monitoring, and business recommendations.
 
@@ -43,6 +43,11 @@ $$
 
 The project will forecast demand at the **Store × Date** level and then combine the forecasts with a simulated supply-chain and inventory layer to support replenishment decisions.
 
+Here, “demand” is shorthand for an observed sales-turnover proxy. Sales can change because of
+prices, product mix, promotions, or unmet demand; the data do not identify latent physical demand,
+actual stockouts, or the inventory policy that generated the observations. Business results are
+therefore conditional simulation results, not measured Rossmann inventory savings.
+
 This approach ensures that the core forecasting component remains grounded in real data, while synthetic data are used only for operational information that is unavailable in the original dataset.
 
 ---
@@ -53,7 +58,7 @@ This approach ensures that the core forecasting component remains grounded in re
 
 To develop an end-to-end Business Analytics system capable of:
 
-> **Forecasting the daily sales of each Rossmann store for the next 14 days and transforming those forecasts into replenishment recommendations to support inventory management decisions.**
+> **Forecasting each Rossmann store's daily monetary Sales for the next 14 days and demonstrating inventory-value decisions under documented synthetic scenarios.**
 
 ## 2.2. Specific Objectives
 
@@ -62,9 +67,9 @@ To develop an end-to-end Business Analytics system capable of:
 3. Forecast `Sales` for each store over a primary **14-day forecast horizon**.
 4. Quantify forecast uncertainty through prediction intervals.
 5. Transform forecasts into inventory-related indicators such as lead-time demand, safety stock, reorder point, and replenishment recommendations.
-6. Evaluate not only forecast accuracy but also business outcomes such as stockout rate, service level, and inventory holding cost.
-7. Deploy the system as a usable API and dashboard.
-8. Develop a monitoring layer to track data drift, forecasting errors, and business performance.
+6. Compare simulated stockout, service, and holding-cost indicators under common operating scenarios.
+7. Deliver reusable application services, a thin local/demo API, and one deployed dashboard.
+8. Demonstrate monitoring of historical data, forecast errors, and simulated business indicators.
 
 These objectives are aligned with the project requirements concerning forecast horizon, stockouts, holding costs, service-level targets, deployment, and monitoring.
 
@@ -122,7 +127,9 @@ $$
 \hat y_{t+1},\hat y_{t+2},...,\hat y_{t+14}
 $$
 
-The dashboard may additionally allow users to view 7-day or 28-day forecasts. However, the **14-day horizon will be used as the standard horizon for model comparison and evaluation**.
+The dashboard may show the first seven days of a supported 14-day forecast. A 28-day forecast is
+an optional extension requiring a reviewed design and validation; a 28-day holdout does not imply
+that a model supports 28 forecast steps. The **14-day horizon is the standard for comparison**.
 
 ---
 
@@ -138,9 +145,9 @@ The dashboard may additionally allow users to view 7-day or 28-day forecasts. Ho
 
 **AQ5.** How does forecast uncertainty change across forecast horizons and store types?
 
-**AQ6.** Given current inventory, supplier lead time, and a target service level, how much inventory should each store replenish?
+**AQ6.** Under simulated inventory, lead-time, and service assumptions, what inventory-value recommendation does the chosen policy produce?
 
-**AQ7.** Can forecast-driven replenishment improve stockout rates or service levels compared with a baseline inventory policy?
+**AQ7.** Under which simulated scenarios does a forecast-driven policy improve or worsen service and cost indicators relative to a baseline policy?
 
 Therefore, the project covers all three levels of Business Analytics:
 
@@ -198,12 +205,12 @@ All synthetic variables must have clearly documented **generation logic, busines
 | Variable | Unit | Purpose | Generation Logic |
 |---|---|---|---|
 | `SupplierLeadTime` | days | Replenishment lead time | Store-specific; for example, approximately 2–7 days |
-| `StockOnHandValue` | monetary unit | Current inventory | Depends on recent demand and inventory coverage |
-| `ServiceLevelTarget` | % | Target product availability | Base scenario of 95%; scenario range of 90–98% |
-| `HoldingCostRate` | % of inventory value | Inventory-cost simulation | Defined through documented business assumptions |
-| `StockoutPenalty` | monetary unit | Lost-sales/service cost | Defined through documented business assumptions |
-| `AverageUnitValue` | monetary unit/unit | Conversion to equivalent units | Store-level synthetic variable |
-| `DiscountDepth` | % | Promotion intensity | 0 when `Promo=0`; positive when `Promo=1` |
+| `StockOnHandValue` | retail-equivalent value | Simulated inventory | Origin-safe recent Sales and coverage; common starting state across policies |
+| `ServiceLevelTarget` | probability | Target cycle service, not value fill rate | Base 0.95; scenario range 0.90–0.98 |
+| `HoldingCostRate` | cost per inventory-value unit per day | Simulated holding-cost proxy | Daily rate fixed by scenario |
+| `StockoutPenalty` | cost per unmet sales-value unit | Simulated shortfall-cost proxy | Non-negative multiplier fixed by scenario |
+| `AverageUnitValue` | retail-equivalent value/equivalent unit | Simulated conversion | Positive store-level assumption |
+| `DiscountDepth` | proportion | Synthetic stress-scenario promotion intensity | 0 when `Promo=0`; positive when `Promo=1`; not a Rossmann predictor |
 | `InventoryCoverageDays` | days | Initial inventory policy | Generated within a reasonable business range |
 
 All synthetic data-generation procedures will use a **fixed random seed** to ensure reproducibility.
@@ -231,6 +238,11 @@ RollingAverageSales \times CoverageDays
 $$
 
 Stores with higher historical demand are therefore expected to carry higher inventory values.
+
+Initial stocks and any demand-dependent parameters use only history available at the simulation
+origin. Compare policies with the same demand path, scenario inputs, seeds, and starting stocks.
+Synthetic discount assumptions do not alter the historical Rossmann Sales replay or enter its
+forecast feature schema.
 
 ---
 
@@ -268,7 +280,8 @@ $$
 LeadTime,\ StockOnHand,\ DiscountDepth
 $$
 
-This allows the project to generate realistic synthetic daily/weekly demand scenarios while keeping the main forecasting task grounded in the real Rossmann data.
+These are designed stress scenarios, not evidence that their distributions reproduce Rossmann
+operations. The real forecasting benchmark remains separate from the synthetic scenario branch.
 
 ---
 
@@ -321,7 +334,10 @@ Each synthetic variable will be documented in the Data Dictionary using:
 
 Rossmann `Sales` represents monetary turnover rather than physical units sold.
 
-Therefore, the core calculations will initially be performed in **monetary-value units**.
+Forecasts use observed sales-turnover units. The inventory simulation uses **retail-equivalent
+value on the same scale**, including stock on hand, outstanding orders, inventory position,
+reorder targets, and replenishment. This is a valuation assumption, not procurement-cost inventory;
+any acquisition-cost conversion would need a separate documented synthetic margin assumption.
 
 $$
 \hat y_{s,t}
@@ -338,13 +354,13 @@ $$
 $$
 StockOnHandValue
 =
-\text{current inventory monetary value}
+\text{simulated inventory in retail-equivalent value}
 $$
 
 $$
 ReplenishmentValue
 =
-\text{inventory value recommended for replenishment}
+\text{simulated retail-equivalent replenishment value}
 $$
 
 If a quantity-based illustration is required:
@@ -396,7 +412,9 @@ The team will distinguish among:
 - unavailable information;
 - true missing values or data errors.
 
-Missing-value indicators may be added before imputation where appropriate.
+Source missingness remains visible. Any later model-specific encoding, indicators, or imputation
+must be documented and learned from eligible training data only; the frozen Phase 3 contract
+introduces no imputation or missingness predictors.
 
 ### Closed Stores
 
@@ -413,6 +431,12 @@ $$
 $$
 
 according to the business rule.
+
+This operational zero requires an opening schedule supplied or assumed known at the forecast
+origin. Observed target Open establishes evaluation eligibility, not proof that the future schedule
+was historically available. Missing Open remains unknown; an uncertain historical-context candidate
+does not establish a closure or overwrite source truth. Raw model forecasts stay separate from
+post-forecast operational routing.
 
 ### Outliers
 
@@ -449,6 +473,12 @@ The following variables may be used:
 - competition information;
 - historical sales.
 
+The supplied store metadata is a single static snapshot, not a history of information releases.
+Using it at earlier origins is an explicit backtest assumption; competition dates and promotion
+start schedules are applied at their documented precision, without claiming proven historic
+availability. Planned promotion, holiday, and opening schedules must be supplied for operational
+use. Unknown future values are not inferred from target Sales or Customers.
+
 ### Future-Unknown Information
 
 Future actual values will not be used.
@@ -468,6 +498,10 @@ y_{\tau},\quad \tau\le t
 $$
 
 at forecast origin $t$.
+
+Later recursive steps may also use their own earlier predictions, never actual Sales after the
+origin. Full historical feature rows are suitable for historical training but must be rebuilt at
+each recursive forecast origin.
 
 ---
 
@@ -503,6 +537,12 @@ $$
 
 or in multiplicative form when appropriate.
 
+The earlier source-validation and Phase 2 EDA work inspected full historical data, including the
+dates later designated as final holdout. That descriptive exposure is retained and disclosed in
+[EDA findings](EDA_FINDINGS.md); it is not an independent forecast test. Subsequent modeling must
+use development-only, origin-safe analysis and must not reuse full-history EDA volume tiers or
+representative-store rankings as learned model-selection inputs.
+
 ---
 
 # 11. Feature Engineering
@@ -535,9 +575,12 @@ or in multiplicative form when appropriate.
 ## 11.4. Competition Features
 
 $$
-CompetitionAge=
-Date-CompetitionOpenDate
+CompetitionAgeMonths=
+\max(0,MonthIndex(Date)-MonthIndex(CompetitionOpeningYearMonth))
 $$
+
+Use supplied month/year precision, not an invented opening day; paired missing opening metadata
+remains null. The implemented semantics are specified in the Feature Contract.
 
 ## 11.5. Lag Features
 
@@ -558,7 +601,7 @@ $$
 STD_7,\ STD_{14},\ STD_{28}
 $$
 
-Same-weekday rolling statistics may also be included.
+Same-weekday rolling statistics are a deferred extension, not part of the frozen 29 predictors.
 
 Categorical features will be encoded appropriately. Numerical scaling will only be applied to models that require it and will not be considered mandatory for tree-based models.
 
@@ -576,6 +619,11 @@ $$
 \hat y_t=y_{t-7}
 $$
 
+For a 14-day forecast from a fixed origin, horizons 1–7 use exact prior-calendar-date actuals
+available at the origin; horizons 8–14 use the previously generated raw weekly prediction.
+Missing exact history remains unavailable, with no prior-row substitution or gap filling. The
+reviewed implementation and metric/routing contract are recorded in ADR-013.
+
 If an advanced model cannot consistently outperform the Seasonal Naive baseline, there is insufficient evidence that the additional model complexity provides value.
 
 ---
@@ -587,6 +635,11 @@ This classical forecasting model will be used to capture:
 - level;
 - trend;
 - weekly seasonality.
+
+The reviewed candidate is fixed univariate additive Holt-Winters with weekly seasonality and
+origin-censored contiguous daily history, including observed closed-day zeros. Its approved
+history, failure, clipping, and comparison rules are recorded in ADR-014; it does not use the
+LightGBM predictors or a fallback model.
 
 If necessary, SARIMA may be tested on several representative time series, but the project does not require training 1,115 separate SARIMA models.
 
@@ -609,7 +662,14 @@ RollingFeatures
 )
 $$
 
-A single global model will be trained using all store-day observations.
+A single global model will be trained across stores using eligible development observations.
+
+For the initial LightGBM candidate, training-label eligibility uses source `Open == 1`; all
+observed historical Sales, including closed-day zeros, remain available as origin-safe history.
+Before implementation, its Phase 6 design must fix categorical mappings, null handling, objective,
+non-negative forecast treatment, a finite tuning budget, fit/refit policy, coverage requirements,
+and artifact/test contracts. No model-specific encoding or imputation is silently added to the
+reviewed [Feature Contract](FEATURE_CONTRACT.md).
 
 This approach allows the model to exploit information across stores and avoids the need to build 1,115 separate machine-learning models.
 
@@ -625,7 +685,7 @@ At forecast origin $t$:
 
 1. calculate all features using historical data;
 2. predict $\hat y_{t+1}$;
-3. insert the prediction into the temporary history;
+3. insert the non-negative raw prediction into the temporary raw history;
 4. update lag and rolling features;
 5. predict $\hat y_{t+2}$;
 6. repeat until $\hat y_{t+14}$ is obtained.
@@ -654,13 +714,25 @@ Future-known calendar, holiday, and promotion schedules may be used directly.
 
 Actual future sales will never be used during forecasting.
 
+The initial recursive model feeds its own clipped raw predictions into subsequent lag and
+rolling features. Generate the complete raw 14-step path before applying supplied/planned Open
+to a separate operational output. Target Open never changes the raw recursion; unknown Open gives
+an unresolved operational value. This preserves the existing raw/operational boundary, while the
+training-history versus predicted-history mismatch remains a limitation to assess by horizon.
+A closure-aware feedback strategy would be a separately reviewed methodological extension, not
+an implicit change to the Seasonal Naive baseline or this initial LightGBM design.
+
 ### Optional Extension
 
-If recursive error accumulation becomes significant, the team may evaluate:
+If development-only horizon diagnostics show material recursive error accumulation, a reviewed
+extension may evaluate:
 
 - direct forecasting;
 - horizon-as-feature models;
 - hybrid direct-recursive strategies.
+
+Such alternatives require origin-safe training examples and a documented comparison budget;
+they are not part of the initial candidate and cannot be motivated by final-holdout outcomes.
 
 ---
 
@@ -696,22 +768,42 @@ The procedure is:
 4. move the forecast origin forward;
 5. repeat the process.
 
-At least **three validation windows** are planned.
+The primary ladder comparison uses the **three approved 14-day development windows** in
+[ADR-013](DECISIONS.md#adr-013---phase-4-seasonal-naive-evaluation-contract). Preserve their origins,
+populations, metrics, and existing evidence. They cover a short period and share a weekday at the
+origin, so they do not establish year-round performance or isolate horizon effects from weekdays.
+Any supplementary earlier development windows must be specified before new comparisons and
+applied consistently across candidates. Phase 7 owns final development model selection.
 
 ---
 
 ## 14.1. Final Holdout
 
-The latest **28 days** of labeled historical data will be reserved as a final untouched holdout set.
+The latest **28 labeled days**, 2015-07-04 through 2015-07-31, are reserved for the final forecast
+evaluation. Earlier source-quality summaries and full-source EDA have already exposed descriptive
+information, so the project does not claim a pristine unseen-label experiment.
 
-The final holdout will not be used to:
+During development, the final holdout will not be used to:
 
 - select features;
 - tune hyperparameters;
 - select the final model;
-- estimate preprocessing parameters.
+- estimate preprocessing parameters;
+- choose interval calibration, inventory policies/scenarios, or monitoring thresholds.
 
-After the methodology has been finalized using the validation windows, the selected model will be evaluated on the final holdout.
+Phase 7 selects on development data only. After the model, preprocessing recipe, uncertainty,
+inventory policy/scenarios, and monitoring thresholds are locked, Phase 13 performs the sole
+authorized sequential final replay. Use origin 2015-07-03 for July 4–17 and origin 2015-07-17 for
+July 18–31, each issuing a complete 14-day forecast before revealing that block's observations
+day by day. The second origin may use actual history already revealed through July 17 under a
+precommitted refit recipe; it may not adapt choices to holdout performance. Phase 14 reports those
+results rather than reopening selection.
+
+The freeze fixes model/preprocessing specifications and hyperparameters, not necessarily fitted
+state. A scheduled refit may relearn model or preprocessing parameters only if its precommitted
+recipe requires it, using eligible training rows already revealed through that origin. Unrevealed
+rows and outcome-driven recipe changes remain prohibited. Interval calibration, inventory
+policies/scenarios and monitoring thresholds stay fixed throughout the final replay.
 
 ---
 
@@ -788,6 +880,12 @@ The report will therefore distinguish between:
 
 **Calendar-level operational performance** – secondary evaluation.
 
+Primary metrics use available raw forecasts on observed source `Open == 1` labels; report
+forecast-availability counts and denominators so missing forecasts cannot silently improve scores.
+MAPE alone excludes zero-actual eligible rows, adds no epsilon, and reports its excluded count and
+coverage. WAPE is unavailable with an explicit reason when the eligible actual-value sum is zero.
+Compare candidates on identical available-label rows and report each model's standalone coverage.
+
 ---
 
 # 16. Forecast Uncertainty
@@ -827,6 +925,9 @@ $$
 95\%\ prediction\ interval
 $$
 
+For this daily two-sided interval, $\alpha=0.05$ is the total non-coverage probability;
+each tail has probability $\alpha/2=0.025$.
+
 Empirical coverage will also be evaluated:
 
 $$
@@ -836,6 +937,30 @@ N
 $$
 
 This ensures that forecast uncertainty is not merely visualized on the dashboard but also quantitatively evaluated.
+
+Phase 8 must assign calibration and coverage evaluation to distinct chronological development
+residual roles before fitting quantiles. Coverage on the quantile-calibration sample is a
+diagnostic, not independent reliability evidence. Report sample counts, interval width, and
+coverage by horizon and supported segments; pooled empirical quantiles do not guarantee coverage
+for every store. Apply $\max(0,endpoint)$ to both interval endpoints, retain their ordering, and
+evaluate coverage and width using the intervals as actually emitted.
+The selected-model/development reuse and correlated Store-day errors limit inferential claims;
+final replay assesses the frozen interval recipe without recalibration from its outcomes.
+
+Inventory protection requires a quantile of **cumulative residual paths**, not a sum of daily
+upper bounds. For a supported protection period $P$, use complete out-of-sample Store-origin paths:
+
+$$
+E_P=\sum_{h=1}^{P}(y_{t+h}-\hat y^{op}_{t+h}),\qquad
+U_P=\max(0,D_P+q_p(E_P))
+$$
+
+Here, $\hat y^{op}$ is the operational forecast under the declared known-opening schedule,
+$D_P=\sum_{h=1}^{P}\hat y^{op}_{t+h}$, and $p$ is the one-sided cycle-service target
+(for example, $p=0.95$), distinct from the daily interval's tail probability $\alpha$.
+Preserve dependence within each residual path, report calibration counts and assumptions, and
+define a reviewed low-sample policy. A daily two-sided 95% interval is not automatically a 95%
+cumulative service bound. Do not assume independent daily errors or guaranteed service.
 
 ---
 
@@ -847,21 +972,22 @@ $$
 L
 $$
 
-The expected forecast demand value during the lead time is:
+The operational forecast value during lead time is:
 
 $$
 D_L=
-\sum_{h=1}^{L}\hat y_{t+h}
+\sum_{h=1}^{L}\hat y^{op}_{t+h}
 $$
 
-Let $U_L$ denote the upper bound of cumulative demand corresponding to the selected service level.
+Let $U_L$ denote the cumulative sales-proxy bound at the chosen one-sided cycle-service target,
+calibrated from lead-time residual paths as described in Section 16.
 
 Then:
 
 $$
 \boxed{
-SafetyStock=
-U_L-D_L
+SafetyStock_L=
+\max(0,U_L-D_L)
 }
 $$
 
@@ -870,41 +996,50 @@ and:
 $$
 \boxed{
 ReorderPoint=
-D_L+SafetyStock
+D_L+SafetyStock_L
 }
 $$
 
 or equivalently:
 
 $$
-ROP=U_L
+ROP=\max(D_L,U_L)
 $$
+
+This reorder-point illustration describes a continuous-review threshold. It is distinct from the
+initial simulator's daily-review order-up-to policy. With lead time $L=2,\ldots,7$ days and review
+period $R=1$ day, use protection period $P=L+R\le14$, forecast value $D_P$, and cumulative bound
+$U_P$. Define $SafetyStock_P=\max(0,U_P-D_P)$ and order-up-to target
+$S_P=D_P+SafetyStock_P=\max(D_P,U_P)$. Receipt, demand, holding-cost, and order placement timing
+must be frozen in the Phase 10 design so these periods are applied consistently.
+
+That design must also fix forecast-refresh cadence, supported review dates, and terminal-state
+handling. A stored 14-step path does not provide a complete $P$-day forecast for every later daily
+review in its block. Restrict unsupported recommendations or approve a separate origin-safe
+refresh protocol without changing the two-origin primary forecast evaluation or inventing unknown
+future covariates.
 
 ---
 
 ## 17.1. Inventory Position
 
-In the complete inventory model:
+Within the simulated retail-equivalent-value model:
 
 $$
 InventoryPosition
 =
-StockOnHand
-+
-OnOrder
--
-Backorders
-$$
-
-In the simplified version:
-
-$$
-InventoryPosition
-\approx
 StockOnHandValue
++
+OnOrderValue
+-
+BackordersValue
 $$
 
-because `OnOrder` and `Backorders` are not available in the Rossmann dataset.
+The initial simulator uses lost sales, not backorders: `BackordersValue = 0`, unmet value is
+recorded, and outstanding orders remain in a queue until their scheduled arrival. `OnOrderValue`
+is the sum of that queue; it is not reset to zero because real Rossmann order data are unavailable.
+Approximating position by stock on hand is valid only for a clearly labeled static example with
+no outstanding orders, not for the evolving simulation.
 
 ---
 
@@ -914,7 +1049,7 @@ $$
 \boxed{
 ReplenishmentValue
 =
-\max(0,ROP-InventoryPosition)
+\max(0,S_P-InventoryPosition)
 }
 $$
 
@@ -930,7 +1065,10 @@ EquivalentUnits=
 }
 $$
 
-This is a decision-support recommendation rather than an SKU-level operational order quantity.
+This daily-review order-up-to heuristic produces a simulated value recommendation, not an actual
+SKU order or an optimized procurement quantity. If any required operational forecast in the
+protection period is unresolved, keep the recommendation unavailable rather than treating the
+unknown opening status or demand as zero.
 
 ---
 
@@ -947,7 +1085,11 @@ StockoutRate
 $$
 
 $$
-ServiceLevel
+CycleServiceLevel
+$$
+
+$$
+ValueFillRate
 $$
 
 $$
@@ -974,9 +1116,22 @@ with:
 
 Forecast + uncertainty + safety stock + reorder rule.
 
+Hold the historical Sales proxy unchanged across policies; do not modify it to manufacture an
+inventory benefit or interpret it as unconstrained latent demand. All policies use common scenario
+inputs, seeds, starting stocks, and arrival timing. Stress-scenario comparisons are reported
+separately from the historical-proxy replay.
+
+Define simulated KPIs before comparison:
+
+- **Stockout rate:** days with unmet value / days with positive proxy demand; zero denominator is unavailable.
+- **Cycle service:** fraction of completed replenishment cycles with no unmet value; distinguish this from the scenario's target.
+- **Value fill rate:** $1-\sum UnmetValue/\sum DemandValue$; report denominator and handle zero explicitly.
+- **Average inventory and holding cost:** use the fixed daily measurement point and `HoldingCostRate` per inventory-value unit per day.
+- **Estimated lost sales:** unmet retail-equivalent value, not observed Rossmann lost revenue; the penalty multiplier converts it to a simulated cost proxy.
+
 The primary business question is:
 
-> Does a better forecast actually lead to better inventory decisions?
+> Under the stated scenarios, how do forecast-based policies change simulated service and cost trade-offs?
 
 ---
 
@@ -984,7 +1139,7 @@ The primary business question is:
 
 Because the supply-chain variables are synthetic, the business conclusions must be tested under multiple scenarios.
 
-| Scenario | Service Level | Lead Time |
+| Scenario | Cycle-service target | Lead Time |
 |---|---:|---:|
 | Low protection | 90% | 2–3 days |
 | Base | 95% | 4–5 days |
@@ -993,7 +1148,7 @@ Because the supply-chain variables are synthetic, the business conclusions must 
 The expected trade-off is:
 
 $$
-ServiceLevel\uparrow
+ServiceLevelTarget\uparrow
 \Rightarrow
 SafetyStock\uparrow
 \Rightarrow
@@ -1006,7 +1161,9 @@ $$
 StockoutRisk\downarrow
 $$
 
-Therefore, the system does not simply attempt to maximize the service level. Instead, it demonstrates the trade-off between inventory cost and product availability.
+The system demonstrates conditional service/cost trade-offs. A service-level target is not a
+guarantee of achieved service, and retaining the baseline is an acceptable result if another
+policy does not improve the trade-off.
 
 ---
 
@@ -1020,10 +1177,11 @@ Therefore, the system does not simply attempt to maximize the service level. Ins
 | Visualization | matplotlib, Plotly |
 | Statistical forecasting | statsmodels |
 | Machine learning | LightGBM, scikit-learn |
-| Explainability | Feature Importance, SHAP |
-| API | FastAPI |
-| Dashboard | Streamlit |
-| Monitoring | Evidently |
+| Explainability | Feature importance; SHAP only if needed for a supported analysis |
+| Application core | Reusable Python services shared by API and dashboard |
+| API | Thin FastAPI local/demo adapter; separate deployment optional |
+| Dashboard | Streamlit calling shared services; one deployed dashboard |
+| Monitoring | pandas summaries and plots; Evidently optional with a demonstrated need |
 | Version control | Git, GitHub |
 | Deployment | Streamlit Community Cloud / Render |
 | Optional packaging | Docker |
@@ -1038,63 +1196,23 @@ PySpark may be implemented as an optional ETL experiment if the team wishes to d
 
 # 21. Proposed System Architecture
 
-$$
-\boxed{
-Rossmann\ Raw\ Data
-}
-$$
+```text
+Immutable Rossmann source -> validation -> source-faithful prepared tables
+  -> descriptive EDA + point-in-time real-data features
+  -> Seasonal Naive / Holt-Winters / Global LightGBM
+  -> development walk-forward comparison -> model selection -> uncertainty
+                                                        |
+Synthetic operational scenarios ------------------------+-> inventory-value engine
+                                                           -> shared Python services
+                                                              -> Streamlit dashboard
+                                                              -> thin FastAPI adapter
+Frozen recipes + sequential final replay -> monitoring summaries and final report
+```
 
-↓
-
-**Validation & Cleaning**
-
-↓
-
-**Store Data Integration**
-
-↓
-
-**Synthetic Data Generation**
-
-↓
-
-**Feature Engineering**
-
-↓
-
-**EDA / Descriptive Analytics**
-
-↓
-
-**Seasonal Naive + Exponential Smoothing + LightGBM**
-
-↓
-
-**Walk-Forward Validation**
-
-↓
-
-**Model Selection**
-
-↓
-
-**Forecast + Prediction Interval**
-
-↓
-
-**Inventory Decision Engine**
-
-↓
-
-**FastAPI**
-
-↓
-
-**Streamlit Dashboard**
-
-↓
-
-**Monitoring & Retraining Logic**
+The synthetic operational/scenario branch is separate from the real-data modeling path and joins
+forecasts only for simulated decisions. FastAPI and Streamlit share the same reusable services;
+the dashboard need not make HTTP requests to a separately deployed API. Historical monitoring
+reports alerts and delayed errors, not an assumed live feed or an autonomous retraining system.
 
 This architecture is also consistent with the Decision Support System structure introduced in the course, which includes data management, model management, and user-interface components.
 
@@ -1108,7 +1226,7 @@ The dashboard will be designed for a demand planner or store manager.
 
 - Store ID
 - Forecast Origin
-- Forecast Horizon
+- Supported Forecast Horizon (14 days, or its first seven days)
 - Current Inventory Value
 - Supplier Lead Time
 - Target Service Level
@@ -1214,19 +1332,28 @@ Day_2
 Day_n
 $$
 
-On each simulated production day:
+At each scheduled origin, issue the complete raw and operational forecast paths. On each day
+within its block:
 
-1. the model generates a forecast;
+1. retrieve the stored forecast for that target, issued before its actual value was available;
 2. the actual observation is subsequently revealed;
 3. the rolling forecasting error is updated;
 4. feature distributions are compared with the training reference;
 5. prediction-interval coverage is updated;
-6. inventory KPIs are updated;
-7. retraining conditions are evaluated.
+6. simulated inventory KPIs are updated;
+7. precommitted monitoring conditions generate alerts.
+
+Use the two fixed 14-day origins and daily reveal protocol from Section 14.1. Forecasts at the
+start of a block cannot use observations later revealed within that block; once a target becomes
+observable, monitoring joins its actual value to the stored forecast with matching origin/horizon.
+No adaptive tuning, interval recalibration, inventory-policy adjustment, or triggered retraining
+occurs during this frozen final replay. The second scheduled fit, if specified in advance, uses
+only history revealed through its origin. A later adaptive retraining demonstration would require
+a separate synthetic or development replay and must not be reported as the same frozen test.
 
 ---
 
-## 24.1. Retraining Triggers
+## 24.1. Monitoring Alert Rules
 
 For example:
 
@@ -1244,7 +1371,10 @@ or when:
 - interval coverage declines significantly;
 - service level falls below an acceptable range.
 
-The final thresholds will be calibrated using validation data.
+Thresholds and monitoring-window definitions must be fixed using development evidence before
+the final replay. These examples are candidate alert rules, not established requirements or proof
+that a 28-day historical replay supports robust drift detection. Evidently is optional; simple
+summaries must remain usable without it.
 
 ---
 
@@ -1253,12 +1383,12 @@ The final thresholds will be calibrated using validation data.
 The project is expected to:
 
 1. Identify important factors and patterns associated with daily store sales.
-2. Develop a forecasting model that outperforms the Seasonal Naive baseline on the majority of validation windows.
+2. Compare the required model ladder fairly, selecting an advanced model only when its development evidence justifies the complexity; retaining Seasonal Naive is a valid result.
 3. Quantify forecast uncertainty.
 4. Develop an interpretable inventory decision framework.
-5. Demonstrate that a forecast-driven inventory policy can potentially improve one or more business KPIs compared with the baseline policy.
+5. Measure simulated inventory-policy trade-offs and report improvements, deterioration, or no benefit without presupposing a favorable outcome.
 6. Deploy a functioning analytics application.
-7. Develop a monitoring workflow and retraining logic.
+7. Demonstrate a historical monitoring workflow with precommitted alert conditions.
 
 The proposal does not assume in advance that LightGBM will necessarily be the best-performing model.
 
@@ -1268,15 +1398,22 @@ The proposal does not assume in advance that LightGBM will necessarily be the be
 
 ## Analytics
 
-The final model should outperform the Seasonal Naive baseline on the **majority of walk-forward validation windows** according to the primary metric.
+A more complex candidate must justify selection through paired development MAE, coverage, and
+stability, including improvement over Seasonal Naive on the majority of the fixed windows. If
+the evidence does not support it, retain the baseline and explain the limitation. A valid,
+reproducible comparison is the success criterion; an improvement is not guaranteed.
 
 ## Forecast Uncertainty
 
-The empirical prediction-interval coverage should be reasonably close to its nominal coverage level.
+Report interval coverage and width on chronologically distinct evaluation residuals and then the
+frozen final replay. Explain deviations, small samples, and heterogeneous-store limitations rather
+than promising nominal coverage in advance.
 
 ## Business
 
-Forecast-driven replenishment should improve at least one important KPI relative to the baseline without causing an unacceptable deterioration in another major KPI.
+Compare service and cost proxies under common scenarios, with explicit denominators and
+sensitivity analysis. Report whether a policy improves any KPI without unacceptable deterioration
+elsewhere; unfavorable or inconclusive results remain valid project findings.
 
 ## Engineering
 
@@ -1301,7 +1438,7 @@ The system should demonstrate:
 - drift detection;
 - rolling performance monitoring;
 - business monitoring;
-- retraining triggers.
+- alert rules derived from development evidence.
 
 ---
 
@@ -1315,6 +1452,9 @@ SKU-level forecasting cannot be directly performed using the original dataset.
 
 The primary forecasting and inventory-planning calculations are therefore conducted in monetary-value units.
 
+Observed turnover is not uncensored demand or procurement-cost stock. Inventory comparisons use
+a simulated retail-equivalent-value basis and cannot recover actual Rossmann product availability.
+
 ### Synthetic Supply-Chain Data
 
 Lead time, inventory, unit value, and cost parameters are not real Rossmann operational data.
@@ -1326,6 +1466,13 @@ The project is not intended to serve as a forecasting system for Rossmann's curr
 ### Synthetic Business Evaluation
 
 The inventory simulation is intended to demonstrate the methodology rather than provide actual inventory-policy recommendations for Rossmann.
+
+### Evaluation Scope
+
+The three development windows cover only 42 days and confound weekday with horizon. Earlier
+full-source descriptive EDA included holdout dates; final evaluation remains protected from model
+selection, but is not described as a pristine unseen-label experiment. Empirical pooled intervals
+and simulated cost/service metrics have the assumptions and limits described above.
 
 ---
 
@@ -1349,20 +1496,24 @@ The inventory simulation is intended to demonstrate the methodology rather than 
 
 | Week | Main Work |
 |---|---|
-| **1** | Finalize scope, assumptions, Data Dictionary, and synthetic-data generator |
+| **1** | Finalize scope, assumptions, Data Dictionary, and data acquisition |
 | **2** | Data cleaning, validation, integration, and EDA |
 | **3** | Feature engineering + Seasonal Naive baseline |
 | **4** | Exponential Smoothing + initial backtesting |
-| **5** | LightGBM + tuning + walk-forward evaluation |
-| **6** | Prediction intervals + inventory simulation + sensitivity analysis |
-| **7** | FastAPI + Streamlit + monitoring |
-| **8** | Final testing, documentation, report, slides, and demo |
+| **5** | Approved LightGBM design + bounded tuning + development model selection (Phases 6–7) |
+| **6** | Separate uncertainty calibration/evaluation + synthetic scenarios + inventory simulation (Phases 8–10) |
+| **7** | Shared services + thin API + Streamlit + locked monitoring design (Phases 11–13 preparation) |
+| **8** | Authorized sequential final replay + final checks, report, slides, and demo (Phases 13–14) |
+
+This is a planning estimate, not a claim of completed work. Retain Phase 0–14 identifiers for
+historical traceability, but adjacent future phases may share one coherent execution plan and
+branch. Separate design or closeout branches are not required for every phase.
 
 ---
 
 # 30. Final Deliverables
 
-In accordance with the Project Announcement, the team will deliver:
+The scoped project deliverables are:
 
 - a GitHub repository containing source code written by the team;
 - a complete Data Dictionary;
@@ -1370,9 +1521,9 @@ In accordance with the Project Announcement, the team will deliver:
 - a synthetic data-generation module;
 - the final forecasting model;
 - an inventory decision engine;
-- a deployed FastAPI service;
-- a Streamlit demand-planning dashboard;
-- a monitoring dashboard/report;
+- reusable application services and a thin, tested local/demo FastAPI adapter;
+- one deployed Streamlit demand-planning dashboard; separate API deployment is optional;
+- a historical monitoring report with clearly labeled simulated business indicators;
 - a final report in PDF format;
 - presentation slides;
 - a live or recorded demonstration.

@@ -42,10 +42,12 @@ from different downloads.
 ## Optional Kaggle API Workflow
 
 The API workflow remains available after competition access and credentials are configured outside
-the repository:
+the repository. Use the [locked environment](../README.md#environment-and-quick-start), adding the
+acquisition extra:
 
 ```powershell
-python -m pip install -e ".[acquisition]"
+uv sync --locked --extra dev --extra acquisition --python 3.14
+.\.venv\Scripts\Activate.ps1
 python scripts/acquire_data.py
 ```
 

@@ -1,140 +1,136 @@
 # Retail Demand Forecasting for Inventory Optimization (FMCG)
 
-Store-level Business Analytics and inventory-value decision support using the Rossmann Store
-Sales dataset. This is the group project for **IT4063E - Introduction to Business Analytics**.
+IT4063E Business Analytics project: forecast Rossmann monetary `Sales` at **Store × Date** for
+14 days, then demonstrate inventory-value decisions under explicit simulated assumptions.
+It provides no SKU forecasts, physical demand, real inventory data or verified Rossmann savings.
 
-The planned system forecasts monetary `Sales` at the **Store x Date** level with a primary
-14-day horizon. It does not claim SKU-level or physical-unit forecasting. Any later equivalent
-units and supply-chain fields will be explicitly simulated.
+## Current state
 
-## Current Status
+`main` contains completed Phases 0–4 (latest closeout: [PR #6](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/6)).
+Phase 5 additive Holt-Winters remains **IMPLEMENTED / UNDER REVIEW**. PR #7 is open against
+`main` from the published `docs/architecture-governance-review` branch, stacked on
+`feat/holt-winters`. Merging PR #7 will integrate both Phase 5 and this architecture/governance
+review. Phase 5 stays under review until merge and explicit closeout.
+[PROGRESS](docs/PROGRESS.md) records the exact Git/review snapshot and canonical development results.
+Phase 6 and all uncertainty/inventory/application/monitoring modules remain planned.
 
-Phase 1 - Data Acquisition & Validation, Phase 2 - Data Preparation & EDA, Phase 3 - Feature
-Engineering, and Phase 4 - Seasonal Naive Baseline are COMPLETE. Phase 3 was merged in PR #3 and
-Phase 4 in PR #5. Phase 5 - Exponential Smoothing / Holt-Winters - is next and planning only; its
-implementation has not begun. Development results are recorded in
-[`docs/PROGRESS.md`](docs/PROGRESS.md), and the final holdout remains untouched. Raw Rossmann data
-remain immutable; prepared tables, feature Parquet files, EDA exports, and forecast outputs are
-reproducible and ignored local outputs.
+## Environment and quick start
 
-## Environment
-
-Python 3.14 is the supported development baseline. From PowerShell:
+Python **3.12–3.14** is supported; **3.14** is the reference environment. Install pinned
+[uv 0.12.23](https://docs.astral.sh/uv/getting-started/installation/) and run from the repo root:
 
 ```powershell
-py -3.14 -m venv .venv
+uv sync --locked --extra dev --python 3.14
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev,acquisition]"
+python -m pytest
 ```
 
-On macOS or Linux, activate with `source .venv/bin/activate`. The `acquisition` extra installs the
-Kaggle client. The `dev` extra includes pytest, Ruff, and the Jupyter kernel/client needed to execute
-the included notebooks. PyArrow and Matplotlib support the Phase 2 Parquet and figure outputs.
+On macOS/Linux use `source .venv/bin/activate`. Both Python 3.12 and 3.14 passed the fixture suite
+in isolated locked Windows environments. `pyproject.toml` is the hand-maintained dependency source;
+`uv.lock` pins resolved packages/hashes. Add `--extra acquisition` to sync only if using Kaggle API;
+manual acquisition needs no credentials in this repo. See [workflow](docs/WORKFLOW.md) for lock
+updates, CI, branch lifecycle and contribution authority.
 
-## Acquire and Validate Data
+## Data setup and commands
 
-Download the official competition archive manually from Kaggle, extract the four expected CSVs to
-`data/raw/rossmann/`, and run:
+Obtain official Kaggle files through the [acquisition guide](docs/DATA_ACQUISITION.md), preserve
+them under `data/raw/rossmann/`, then validate and prepare:
 
 ```powershell
 python scripts/validate_data.py --report reports/validation/rossmann.json
-```
-
-The optional Kaggle API acquisition command remains available as `python scripts/acquire_data.py`
-after credentials and competition access are configured outside the repository. It refuses to
-overwrite an existing raw directory. The validator is read-only, prints a concise result, writes an
-optional ignored JSON report, and exits nonzero on hard failures.
-
-See [data acquisition](docs/DATA_ACQUISITION.md) and
-[data validation](docs/DATA_VALIDATION.md) for the reproducible workflow and verified findings.
-
-## Prepare Data and Generate EDA
-
-After the official Phase 1 source files are present, run from the repository root:
-
-```powershell
 python scripts/prepare_data.py
-python scripts/run_eda.py
-```
-
-Preparation verifies the four documented source hashes, retains source rows and nulls, joins store
-metadata many-to-one, and writes separate train and test Parquet tables under `data/interim/`.
-EDA uses labelled historical train Sales and test covariates only, writing summaries and figures to
-`reports/eda/`. These outputs are ignored and can be regenerated. The numbered notebooks provide a
-thin presentation layer over the same reusable package functions.
-
-## Build Phase 3 Features
-
-After Phase 2 preparation, build the frozen shared train/inference schema with:
-
-```powershell
 python scripts/build_features.py
-```
-
-The command verifies raw-source and Phase 2 input hashes, writes ignored
-`data/processed/features_train.parquet`, `features_inference.parquet`, and
-`feature_manifest.json`, and records development-only coverage plus mechanical final-holdout
-checks. See the [Feature Contract](docs/FEATURE_CONTRACT.md) for field roles, dtypes, null rules,
-and the origin-censored recursive-history interface. This step trains no models and computes no
-forecast metrics.
-
-## Run the Phase 4 Development Baseline
-
-After Phase 2 preparation, run the approved Seasonal Naive development backtest with:
-
-```powershell
 python scripts/run_seasonal_naive.py
+python scripts/run_holt_winters.py
 ```
 
-The runner verifies raw and Phase 2 provenance, filters historical inputs through 2015-07-03
-before evaluation, and evaluates only the three approved 14-day windows. Forecast records and
-window, pooled, horizon, and coverage summaries are written under the ignored
-`data/processed/seasonal_naive/` directory. It does not forecast or evaluate the final holdout.
-See the [completed Phase 4 plan](plans/completed/phase-4-seasonal-naive.md) for the approved
-methodology and [`docs/PROGRESS.md`](docs/PROGRESS.md) for recorded results.
+Preparation retains source rows/nulls, asserts many-to-one metadata joins, and writes separate
+train/test Parquet. Feature artifacts use the frozen 29-predictor
+[contract](docs/FEATURE_CONTRACT.md). Historical feature rows are for fitting through an origin;
+validation-target lags must be rebuilt recursively. Default Kaggle inference uses origin July 31
+and must not be reused as development inference.
 
-## Quality Checks
+The two forecast runners filter labels through 2015-07-03 at read time, use the same three approved
+14-day windows, and save ignored artifacts under `data/processed/seasonal_naive/` and
+`data/processed/holt_winters/`. Phase 5 recomputes Seasonal Naive for identical-row comparison.
+These commands do not forecast/score final holdout or select the final project model.
+
+`python scripts/run_eda.py` and the two notebooks reproduce the historical **full-source**
+descriptive audit, not a development-model gate. That earlier audit included July 4–31 labels;
+[EDA findings](docs/EDA_FINDINGS.md) disclose the exposure. Any new source-wide inspection needs an
+explicit audit scope; model cohorts/statistics must be recomputed from origin training data.
+The current modeling firewall still excludes July 4–31 from selection, tuning and calibration.
+
+## Architecture and remaining work
+
+Implemented packages: `data/` (provenance/preparation), `analysis/` (descriptive EDA),
+`features/` (shared static/history contract), and `forecasting/` (baselines/evaluation/runners).
+Thin command scripts expose reusable logic; notebooks are exploration/presentation.
+
+The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
+
+- Phases 6–7: global recursive LightGBM candidate and development-only model selection.
+- Phases 8–10: out-of-sample uncertainty, separate synthetic scenarios and stateful inventory.
+- Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
+  final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
+  are optional.
+- Phase 14: recorded results, report, slides and demonstration.
+
+Later inventory/app modules are created when their work is approved; there is no speculative
+service framework. The [Phase 6 handoff](docs/PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code)
+maps inputs, origins, metrics, artifacts, tests and design approval. Phase 5 review/integration/
+closeout remains the immediate gate.
+
+## Quality and repository layout
 
 ```powershell
 python -m pytest
 python -m ruff check .
 python -m ruff format --check .
+python scripts/check_docs.py
+git diff --check
 ```
 
-## Documentation
+The [CI workflow](.github/workflows/quality.yml) runs locked fixture checks for Python 3.12/3.14
+on PR #7 without Rossmann data or secrets. Merge requires the latest-head Quality checks to pass;
+check the live PR for their current status.
+Local Markdown checks cover relative files/directories and common heading anchors, not external
+website availability.
 
-- [Authoritative proposal](docs/proposal.md)
-- [Project roadmap](docs/PROJECT_PLAN.md)
-- [Current progress](docs/PROGRESS.md)
-- [Development workflow](docs/WORKFLOW.md)
-- [Decision log](docs/DECISIONS.md)
-- [Data dictionary](docs/DATA_DICTIONARY.md)
-- [Phase 3 feature contract](docs/FEATURE_CONTRACT.md)
-- [Phase 2 EDA findings](docs/EDA_FINDINGS.md)
+```text
+data/README.md       local immutable/derived artifact conventions
+docs/               business intent, contracts, decisions and evidence
+plans/active/       current scoped plans awaiting their completion boundary
+plans/completed/    preserved historical execution records
+scripts/            pipeline entry points and repository checks
+src/rossmann_forecasting/{data,analysis,features,forecasting}/
+notebooks/          thin descriptive presentation
+tests/              constructed-fixture behavioral tests
+pyproject.toml      package/tool configuration
+uv.lock             generated environment lock
+.github/workflows/  fixture quality CI
+```
+
+Raw/derived datasets, reports, credentials and model binaries remain ignored. See
+[data layout](data/README.md). Final holdout release requires an explicitly authorized protocol
+after model/interval/policy choices are frozen; it is never a tuning resource.
+
+## Limitations and documentation
+
+Sales turnover reflects prices/promotions and may not reveal unconstrained demand. Inventory
+values, costs, equivalent units, stockouts and policy benefits are simulated. Three late-season
+windows do not establish year-round robustness; pooled empirical intervals do not guarantee each
+store's service level. Fair negative results or retaining the baseline are valid project outcomes.
+
+Start with the [proposal](docs/proposal.md), [roadmap](docs/PROJECT_PLAN.md),
+[decisions](docs/DECISIONS.md), [progress](docs/PROGRESS.md), [agent contract](AGENTS.md),
+[workflow](docs/WORKFLOW.md), [dictionary](docs/DATA_DICTIONARY.md),
+[feature contract](docs/FEATURE_CONTRACT.md), and [source validation](docs/DATA_VALIDATION.md).
 
 ## Team
 
-- Pham Le Minh Quang - 20235554
-- Tran Quoc Tuan - 20235569
-- Vo Ta Quang Nhat - 20225454
-- Nguyen Trung Hieu - 202416689
-- Nguyen Gia Minh - 202400111
-
-## Repository Structure
-
-```text
-.
-|-- data/README.md
-|-- docs/
-|-- plans/
-|   |-- active/
-|   `-- completed/
-|-- scripts/
-|-- src/rossmann_forecasting/{analysis,data,features,forecasting}/
-|-- notebooks/
-|-- tests/
-`-- pyproject.toml
-```
-
-Raw data, generated validation reports, credentials, virtual environments, and caches are ignored.
+- Pham Le Minh Quang — 20235554
+- Tran Quoc Tuan — 20235569
+- Vo Ta Quang Nhat — 20225454
+- Nguyen Trung Hieu — 202416689
+- Nguyen Gia Minh — 202400111
