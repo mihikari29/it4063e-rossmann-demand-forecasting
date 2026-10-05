@@ -11,9 +11,10 @@ units and supply-chain fields will be explicitly simulated.
 
 Phase 1 - Data Acquisition & Validation, Phase 2 - Data Preparation & EDA, and Phase 3 - Feature
 Engineering are COMPLETE. Phase 3 was externally reviewed and merged to `main` in PR #3. Phase 4 -
-Seasonal Naive Baseline is the next planning phase and is NOT IMPLEMENTED. No forecasting model or
-forecast metrics have been produced. Raw Rossmann data remain immutable; prepared tables, feature
-Parquet files, and EDA exports are reproducible and ignored local outputs.
+Seasonal Naive Baseline is IMPLEMENTED / UNDER REVIEW. Development-only results are recorded in
+[`docs/PROGRESS.md`](docs/PROGRESS.md); the final holdout remains untouched. Raw Rossmann data
+remain immutable; prepared tables, feature Parquet files, EDA exports, and forecast outputs are
+reproducible and ignored local outputs.
 
 ## Environment
 
@@ -77,6 +78,21 @@ checks. See the [Feature Contract](docs/FEATURE_CONTRACT.md) for field roles, dt
 and the origin-censored recursive-history interface. This step trains no models and computes no
 forecast metrics.
 
+## Run the Phase 4 Development Baseline
+
+After Phase 2 preparation, run the approved Seasonal Naive development backtest with:
+
+```powershell
+python scripts/run_seasonal_naive.py
+```
+
+The runner verifies raw and Phase 2 provenance, filters historical inputs through 2015-07-03
+before evaluation, and evaluates only the three approved 14-day windows. Forecast records and
+window, pooled, horizon, and coverage summaries are written under the ignored
+`data/processed/seasonal_naive/` directory. It does not forecast or evaluate the final holdout.
+See the [active Phase 4 plan](plans/active/phase-4-seasonal-naive.md) for the approved methodology
+and [`docs/PROGRESS.md`](docs/PROGRESS.md) for recorded results.
+
 ## Quality Checks
 
 ```powershell
@@ -114,7 +130,7 @@ python -m ruff format --check .
 |   |-- active/
 |   `-- completed/
 |-- scripts/
-|-- src/rossmann_forecasting/{analysis,data,features}/
+|-- src/rossmann_forecasting/{analysis,data,features,forecasting}/
 |-- notebooks/
 |-- tests/
 `-- pyproject.toml
