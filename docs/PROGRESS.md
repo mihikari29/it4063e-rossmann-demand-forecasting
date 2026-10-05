@@ -6,9 +6,10 @@ Phase 3 — Feature Engineering.
 
 ## Status
 
-**PLANNING / NOT YET IMPLEMENTED.** Phase 2 preparation, warning investigations, EDA,
-documentation, and quality gates are complete. The Phase 3 execution plan is awaiting user review;
-no feature code, feature dataset, or model has been implemented.
+**IMPLEMENTATION IN PROGRESS.** Phase 2 preparation, warning investigations, EDA, documentation,
+and quality gates are complete. The Phase 3 feature contract (including Store identity as a
+categorical predictor and the approved competition-status amendment) is approved and checkpointed;
+Phase 3 implementation and validation are now beginning. No forecasting model is in scope.
 
 ## Completed
 
@@ -25,13 +26,14 @@ no feature code, feature dataset, or model has been implemented.
 
 ## In Progress
 
-Phase 3 execution-plan review on branch `feat/feature-engineering`.
+Phase 3 feature implementation and validation on branch `feat/feature-engineering`, following the
+approved active execution plan.
 
 ## Next
 
-User review and approval of `plans/active/phase-3-feature-engineering.md` before implementation.
-Maintain forecast-origin-safe information rules, exclude future actual Customers, use chronological
-validation in later modeling phases, and preserve the untouched final holdout.
+Complete the approved Phase 3 feature contract, fixture tests, real-data integrity audit, and
+holdout-firewall checks. Do not train models, compute forecast metrics, or begin later modeling
+phases.
 
 ## Source and Preparation Evidence
 

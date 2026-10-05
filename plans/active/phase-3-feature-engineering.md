@@ -4,8 +4,9 @@
 
 Define a reproducible, auditable feature dataset for Store × Date Rossmann sales forecasts, with
 every predictor available at the forecast origin. This plan follows the completed Phase 2
-preparation and EDA. It is a proposal for review; no feature pipeline, feature dataset, or model is
-implemented by this planning task.
+preparation and EDA. FE-01 through FE-07 have now been approved by the user after final design
+review, including the amendments recorded below. The design-approval checkpoint precedes
+implementation; forecasting models and results remain out of scope for this phase.
 
 The project remains store-level monetary Sales forecasting at a 14-day primary horizon. It is not
 SKU forecasting, and Sales must not be described as physical units. The raw Rossmann files remain
@@ -52,6 +53,10 @@ Fixed constraints:
 
 - Unique key: `(Store, Date)`. Do not sort/change key values in source tables or expand the canonical
   history to a complete calendar.
+- `Store` is both the unchanged identity key and a candidate categorical predictor. Preserve its
+  source `int64` dtype and ID values; do not interpret magnitude, one-hot encode, or target encode it
+  in Phase 3. Its later model treatment is categorical. `Date` is a key/time field only; derive
+  calendar predictors from it and exclude raw Date from the predictor matrix.
 - Target: `Sales` turnover. Keep labels outside the predictor matrix.
 - `Customers` remains available only for historical description, never in the feature matrix,
   joins for inference, or future prediction inputs. No feature may be derived from future
@@ -99,14 +104,48 @@ They do not use future target values. Source `Open` is a routing/evaluation attr
 predictor. The separate `Open_resolved` candidate remains uncertain and cannot become source `Open`
 or a primary training/evaluation label.
 
+### Historical feature rows versus recursive inference
+
+A historical feature row for target date `d` may use actual same-store Sales strictly before `d`;
+its date-specific values are one-step historical features. That precomputed row is not automatically
+valid for a multi-step forecast from an earlier origin. For a recursive forecast issued at origin
+`o`, actual Sales are available only through `o`. For each later target date `d`, dynamic history is
+origin-censored actual history plus optional predictions generated earlier in that same recursive
+forecast, with dates `o < date < d`. Actual Sales after `o` are never available to the inference
+feature builder, even if they exist in a full historical table. This phase implements only that
+feature API; it does not implement the forecasting model that will generate optional predictions.
+
+The internal API should separate small, testable functions for (A) future-known/static predictors
+(Store, calendar, holiday, promotions, store and competition metadata) and (B) dynamic target-history
+predictors (exact Sales lags and trailing Sales statistics). The public assembly function may
+combine their results without introducing a feature framework.
+
+### Final Holdout Firewall
+
+The proposal reserves the latest 28 labelled calendar days as final holdout. Phase 3 feature
+definitions are frozen by this approval before implementation. Do not use final-holdout target
+values, feature distributions, null/coverage statistics, or other descriptive statistics to choose
+features, change semantics, select missing-value treatments, compare contract alternatives, or fit
+learned preprocessing. No forecast metrics are computed in Phase 3.
+
+For audits that may inform Phase 3 implementation decisions, use only the development period before
+the final 28-day holdout. Holdout checks are limited to mechanical integrity: keys/row coverage,
+schema, dtype compatibility, deterministic output generation, and input non-mutation. A later
+phase may mechanically generate the already-frozen contract on holdout rows for evaluation; this
+does not authorize examining holdout performance or using holdout statistics to revise the
+contract. Temporal model validation and model selection remain out of scope.
+
 ## 5. Proposed feature contract
 
-The following manifest is the proposed Phase 3 predictor schema. Names are lower snake case for
-derived fields; source-coded category values retain their source meaning. `Sales` is the label and
-history only, never a predictor column. `Store` and `Date` are identity keys, not model features.
+The following manifest is the approved Phase 3 predictor schema. Names are lower snake case for
+derived fields; source-coded category values retain their source meaning. `Store` is both key and
+predictor and appears once in the artifact; its unchanged source `int64` value is a categorical
+identity, not a numeric magnitude. Raw `Date` is key-only. `Sales` is label/history source only,
+never a predictor.
 
 | Feature(s) | Group and source | Availability and derivation | Null/edge policy and leakage boundary |
 |---|---|---|---|
+| `Store` | Store identity; source `Store` | Preserve source ID unchanged as `int64`; available for every train/inference row and treated as a categorical candidate by later models. | Serves as both `(Store, Date)` key and predictor, present once. Never transform into an ordinal/continuous magnitude, one-hot encode, or target encode in Phase 3. |
 | `day_of_week` | Calendar; `Date` | ISO weekday, Monday=1 through Sunday=7; assert equality with source `DayOfWeek`. | Derive for both roles from Date; fail on disagreement rather than silently prefer a conflicting value. Keep source DayOfWeek as audit, not duplicate predictor. |
 | `week_of_year` | Calendar; `Date` | ISO week number, 1–53. | ISO calendar convention; test year-boundary dates. |
 | `month` | Calendar; `Date` | Calendar month, 1–12. | Always known for historical and future dates. |
@@ -123,8 +162,8 @@ history only, never a predictor column. `Store` and `Date` are identity keys, no
 | `store_type` | Store; metadata `StoreType` | Preserve verified source category. | Required and nonmissing after the Phase 2 many-to-one join; category encoding is deferred to model work. |
 | `assortment` | Store; metadata `Assortment` | Preserve verified source category. | Required and nonmissing; no ordinal meaning is assumed. |
 | `competition_distance` | Store; metadata `CompetitionDistance` | Preserve source numeric value in its documented source unit. | Keep the three source nulls missing; no imputation or unsupported unit claim. |
-| `competition_open_date` | Competition; `CompetitionOpenSinceMonth`, `CompetitionOpenSinceYear` | Construct first day of the reported month as an explicit month-resolution proxy, not a claimed exact opening day. | Missing when both source fields are missing. Partial or invalid month/year pairs fail validation; do not invent a date. |
-| `competition_age` | Competition; `Date`, `competition_open_date` | Integer number of calendar months from reported opening month to target month. | Null when opening month is unknown or target month is before opening month; zero in opening month. Document month-level precision; do not imply daily age. |
+| `competition_has_opened` | Competition; `Date`, `CompetitionOpenSinceMonth`, `CompetitionOpenSinceYear` | Nullable boolean comparing target year/month with the reported opening year/month. | False and age zero before opening; True and age zero in the opening month; True after it. Null when both source fields are missing. Partial/invalid pairs fail validation and are audited. |
+| `competition_age_months` | Competition; same metadata and target `Date` | Nullable integer calendar-month offset: `12 × (target_year - open_year) + (target_month - open_month)`. | Zero before opening and in opening month; positive month offsets after opening. Null when opening pair is missing. Month-level, not day-level, precision. |
 | `sales_lag_1` | Sales history; same-store Sales | Value at exact calendar date `d - 1 day`. | Null if exact date is not present/available in origin-censored actual/prediction history. Never substitute previous observed row. |
 | `sales_lag_7` | Sales history; same-store Sales | Value at exact calendar date `d - 7 days`. | Same exact-date availability rule. |
 | `sales_lag_14` | Sales history; same-store Sales | Value at exact calendar date `d - 14 days`. | Same exact-date availability rule. |
@@ -162,6 +201,11 @@ history only, never a predictor column. `Store` and `Date` are identity keys, no
 - No target encoding, learned category mapping, scaling, global statistic, or data-derived
   transformation is part of this contract. Any later model-specific transform must be fit using
   training history available at the appropriate origin.
+- `competition_open_date_proxy`, if materialized for audit/helper calculations, is not a predictor
+  and must be excluded by the explicit predictor-column list. It is the first calendar day of the
+  reported month only as a computational proxy and must never be presented as the actual opening
+  day. Known not-yet-open is `competition_has_opened=False` and
+  `competition_age_months=0`; unknown start metadata is null for both features.
 
 ## 6. Open status, label eligibility, and inference routing
 
@@ -192,10 +236,13 @@ Open use requires a separate user-reviewed decision that accepts and documents i
 ## 7. Train/inference schema and reproducible outputs
 
 Use the same ordered predictor columns and derivation functions for historical and future rows.
-Keep `Store`/`Date` keys, row-role/audit metadata, training `Sales` labels, and training/evaluation
-eligibility outside the model predictor matrix. Test/inference contains no `Sales`, `Customers`, or
-Customers-derived field. Keep Kaggle `Id` and source-coded audit fields outside predictors. Assert
-exact predictor schema and column order equality between roles.
+The common predictor list begins with unchanged source `Store` (`int64`) as categorical identity,
+followed by the derived/source-coded predictors in the contract. `Store` is physically present once
+while serving as both key and predictor; `Date` is key-only and never a raw predictor. Keep
+row-role/audit metadata, training `Sales` labels, and training/evaluation eligibility outside the
+predictor matrix. Test/inference contains no `Sales`, `Customers`, or Customers-derived field. Keep
+`Open`, any Open candidate/resolution, Kaggle `Id`, and other source audit fields outside
+predictors. Assert exact predictor schema, column order, and dtypes equality between roles.
 
 Proposed implementation layout (subject to review):
 
@@ -209,6 +256,15 @@ Proposed implementation layout (subject to review):
 - Ignored `data/processed/` outputs such as `features_train.parquet` and
   `features_inference.parquet`, with deterministic schemas, row counts, and source/output hashes in
   a local manifest. Do not commit processed datasets or generated model artifacts.
+
+The train artifact may carry predictor columns plus key/label/audit/eligibility fields; because
+Store is also a predictor, store its value once and treat it as both key and predictor. It may
+include Date, Sales label, source Open, row role, and training/evaluation eligibility as separate
+non-predictor columns. The inference artifact may include Store, Date, source Open, optional
+separately named Open-candidate audit fields, row role, and Kaggle Id outside its predictors. No
+such field is in the predictor selection. Without a model-supplied recursive prediction, future
+dynamic features whose exact required history dates fall after the origin remain null; later model
+code can rebuild them stepwise by passing prior predictions.
 
 Reuse Phase 2 source hash and join checks where practical. Generated outputs must be reproducible
 from the command, must not mutate `data/raw/` or `data/interim/`, and must preserve row counts and
@@ -235,6 +291,20 @@ Use small in-memory synthetic fixtures, never copied real Rossmann rows. At mini
 - Recursive prediction history may fill earlier horizon steps, while actual Sales after the
   declared origin cannot enter any feature. Mutating later actual Sales must not alter the same
   origin's prediction features.
+- Reject an `actual_history_through_origin` containing any date after the declared origin; validate
+  optional prior predictions are unique, strictly after origin, and before the requested target
+  date. Keep predictions distinct from actual history.
+- Store appears unchanged and deterministic with `int64` dtype in both predictor schemas; Date is
+  key-only; the competition proxy date cannot enter the explicit predictor list.
+- Competition tests cover known future opening, opening month, one month after, cross-year offsets,
+  paired missing fields, partial pairs, invalid months, and invalid/implausible years according to
+  the Phase 1 validation contract. Before opening status/age are False/0; opening month is True/0;
+  unknown fields are null/null.
+- Promo2 tests cover valid ISO week 53 in a year that has it, invalid year/week pairs, schedule
+  starts before/in/after an interval month, and `Sept` normalization.
+- Holdout firewall tests/audits ensure coverage summaries use only development-period rows; any
+  holdout interaction is limited to mechanical schema, key, dtype, deterministic-generation, and
+  non-mutation checks. No holdout outcome or distribution informs a design choice.
 - `Customers`, every Customers-derived field, target-date `Sales`, `Open`, uncertain
   `Open_resolved`, Kaggle submission values, and row-role identifiers never appear among model
   predictors. The future test input is validated to contain no Customers source field.
@@ -243,10 +313,13 @@ Use small in-memory synthetic fixtures, never copied real Rossmann rows. At mini
 - Store × Date uniqueness, exact input key/row coverage, metadata join cardinality, stable schema,
   non-mutation of inputs, deterministic reruns, and output-manifest consistency.
 
-On the real prepared snapshot, validate row/key preservation, feature null counts and distributions,
+On the real prepared snapshot, validate row/key preservation, predictor schema and dtypes,
 calendar consistency, promotion/competition edge cases, source hash stability, and feature
-availability by store/date. Report that sparse coverage reduces usable histories rather than hiding
-it. Do not compute forecast metrics or select features by observed Sales performance.
+availability. Any diagnostic null rates, distributions, or coverage summaries that can influence
+Phase 3 decisions use development-period rows only. Holdout checks are mechanical integrity checks
+only, as defined by the Final Holdout Firewall. Report that sparse coverage reduces usable
+histories rather than hiding it. Do not compute forecast metrics or select features by observed
+Sales performance.
 
 Run relevant pytest and configured Ruff checks during implementation; record only checks actually
 run in `docs/PROGRESS.md`. Review the diff for leakage and unintended scope.
@@ -255,8 +328,7 @@ run in `docs/PROGRESS.md`. Review the diff for leakage and unintended scope.
 
 After this plan is reviewed and implementation is authorized:
 
-1. Finalize approved contract choices under “Decisions Requiring Approval” and update this plan
-   before coding.
+1. Record this user-approved design checkpoint and update the plan before coding.
 2. Add shared point-in-time feature assembly and focused unit tests using fixtures.
 3. Build train and inference feature views with a common ordered predictor schema and separated
    labels/audit columns.
@@ -275,20 +347,22 @@ real-data outputs preserve keys and source files; all actual tests/checks are re
 splits, holdout tuning, or forecasting claims were introduced; and plan, code, Data Dictionary, and
 progress agree.
 
-## Decisions Requiring Approval
+## Approved Design Decisions
 
-These seven items are the material proposed choices already present in the plan; none is recorded as
-an approved Phase 2 decision. Recommendations below define the safe Phase 3 starting point. No
-implementation begins until the user has reviewed them.
+The user approved FE-01 through FE-07 before implementation. These decisions govern Phase 3; no
+additional feature behavior is inferred from them.
 
 ### FE-01 — Initial feature schema and same-weekday extension
 
+- **Status:** APPROVED WITH AMENDMENT.
 - **Question:** Approve the manifest in Section 5 as the initial feature contract, and defer the
   proposal's optional same-weekday rolling statistics?
-- **Recommended option:** Use the listed calendar, holiday/promotion, store, competition, four exact
-  Sales lags, and six trailing Sales statistics; defer same-weekday features. Preserve source
-  category values without target encoding. Keep scaling and all learned preprocessing deferred to
-  later model work.
+- **Approved option:** Use the listed calendar, holiday/promotion, store, competition, four exact
+  Sales lags, and six trailing Sales statistics; defer same-weekday features. Include `Store`
+  unchanged as both key and categorical predictor (`int64`, present once); never interpret ID
+  magnitude, one-hot encode, or target encode it in Phase 3. `Date` is a key only. Preserve source
+  category values without model-specific encoding/scaling; defer those treatments to later model
+  work.
 - **Alternatives considered:** Add same-weekday summaries in Phase 3; or reduce the initial feature
   list before implementation. Encoding/scaling the features now is a separate model-preparation
   activity and is not recommended in this phase.
@@ -305,6 +379,7 @@ implementation begins until the user has reviewed them.
 
 ### FE-02 — Exact lag and complete rolling-window semantics
 
+- **Status:** APPROVED.
 - **Question:** Approve exact-calendar-date lags and complete trailing calendar windows that return
   missing when any required date/value is unavailable?
 - **Recommended option:** Lags use exactly `d-1`, `d-7`, `d-14`, or `d-28`. Each rolling statistic
@@ -329,21 +404,23 @@ implementation begins until the user has reviewed them.
 
 ### FE-03 — `competition_age` meaning and missing policy
 
-- **Question:** How should the month/year-only competition start metadata become a target-date age
-  feature?
-- **Recommended option:** Treat the reported month as a month-level event; construct the first day
-  of that month as a documented proxy date. Define `competition_age` as integer calendar months
-  since that month, zero during the start month and null before it or when both source fields are
-  missing. Reject partial/invalid pairs; never impute the 354 unexplained missing pairs.
-- **Alternatives considered:** Interpret the proxy as an exact day and compute elapsed days; retain
-  signed negative month offsets before opening; or emit only the raw month/year fields without an
-  age. The recommendation avoids claiming day precision and avoids treating “not yet open” as a
-  negative age.
-- **Reason:** Source precision is month/year only, so month-level age is the most defensible
-  comparable definition.
-- **Consequences:** Age is coarse; the first-of-month proxy is helper metadata, not evidence of an
-  exact opening day. Rows before the opening month and rows with unexplained missing source pairs
-  have null age.
+- **Status:** APPROVED WITH AMENDMENT.
+- **Question:** How should the month/year-only competition start metadata become target-date status
+  and age features?
+- **Approved option:** Emit `competition_has_opened` and `competition_age_months` using year/month
+  arithmetic. Before opening: False/0. In opening month: True/0. After opening: True and the
+  calendar-month offset (e.g. March 2014 to May 2014 gives 2). When both source values are missing,
+  emit null/null. Reject partial pairs or invalid/implausible month/year values under the Phase 1
+  validation contract; do not impute the 354 unexplained pairs. An optional first-of-month
+  `competition_open_date_proxy` is helper/audit metadata only, never a predictor or claimed exact
+  open day.
+- **Alternatives considered:** Treat the proxy as an exact day and compute elapsed days; preserve
+  signed negative ages; or omit status/age features. These alternatives do not express the approved
+  distinction between known not-yet-open and unknown metadata as directly.
+- **Reason:** Source precision is month/year only; calendar-month arithmetic is reproducible and
+  does not assert day precision.
+- **Consequences:** Known not-yet-open is False/0; unknown opening metadata is null/null. Age is
+  month-granular. The first-of-month proxy is not an observed event date.
 - **Leakage implications:** Uses only static source metadata and the target Date; it does not use
   Sales or future observations. The missingness policy cannot consult later outcomes.
 - **Reversible later?:** Yes, but changing units or pre-opening semantics changes feature meaning
@@ -351,6 +428,7 @@ implementation begins until the user has reviewed them.
 
 ### FE-04 — `is_promo2_active` schedule semantics
 
+- **Status:** APPROVED.
 - **Question:** How should the Promo2 start week interact with recurring active months?
 - **Recommended option:** `Promo2=0` means False despite structural schedule nulls. For `Promo2=1`,
   require all schedule fields; validate the ISO year/week; define start as Monday of that ISO week;
@@ -371,6 +449,7 @@ implementation begins until the user has reviewed them.
 
 ### FE-05 — Feature-availability indicators
 
+- **Status:** APPROVED.
 - **Question:** Should the initial predictor matrix add one or more flags indicating unavailable
   lag/rolling history?
 - **Recommended option:** No model-facing availability flags initially. Keep per-feature
@@ -392,6 +471,7 @@ implementation begins until the user has reviewed them.
 
 ### FE-06 — Use of uncertain Store 622 `Open_resolved` candidates
 
+- **Status:** APPROVED.
 - **Question:** May the 11 uncertain unanimous-history Open candidates affect model eligibility or
   operational zero-forecast post-processing?
 - **Recommended option:** No. Preserve source `Open` nulls, keep `Open_resolved` in separate audit
@@ -412,12 +492,14 @@ implementation begins until the user has reviewed them.
 
 ### FE-07 — Shared train/inference output contract and artifact layout
 
+- **Status:** APPROVED WITH FE-01 AMENDMENT.
 - **Question:** Approve one common ordered predictor schema with separate role-specific outputs and
   a versioned human-readable contract?
-- **Recommended option:** Reuse the same feature functions and exact ordered predictor columns for
-  train/inference; keep labels, keys, role/audit/eligibility fields separate from predictors; write
-  distinct ignored Parquet outputs under `data/processed/`; maintain `docs/FEATURE_CONTRACT.md` and
-  link it from the Data Dictionary.
+- **Approved option:** Reuse the same feature functions and exact ordered predictor columns for
+  train/inference, including unchanged `Store` categorical identity as the first predictor; keep
+  Date, labels, role/audit/eligibility fields separate from predictors; write distinct ignored
+  Parquet outputs under `data/processed/`; maintain `docs/FEATURE_CONTRACT.md` and link it from the
+  Data Dictionary.
 - **Alternatives considered:** Store both roles in one role-labeled table while maintaining one
   strict predictor schema; or implement separate training and inference feature logic. Separate
   logic is rejected because it invites schema drift; the unified role-labeled artifact remains
