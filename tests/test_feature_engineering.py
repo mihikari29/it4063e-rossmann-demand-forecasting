@@ -165,6 +165,102 @@ def test_exact_lags_missing_previous_calendar_date_and_zero_sales() -> None:
     assert zero_lag.loc[0, "sales_lag_1"] == 0
 
 
+def test_fractional_store_history_key_is_rejected_without_truncation() -> None:
+    history = pd.DataFrame({"Store": [1.5], "Date": pd.to_datetime(["2015-01-01"]), "Sales": [10]})
+    targets = pd.DataFrame({"Store": [1], "Date": pd.to_datetime(["2015-01-02"])})
+
+    with pytest.raises(ValueError, match="positive, exact integer identifiers"):
+        build_historical_history_features(targets, history)
+
+
+@pytest.mark.parametrize("store", [0, -1, 2**63, True, float(2**53 + 2)])
+def test_history_rejects_store_ids_outside_safe_positive_int64_range(store) -> None:
+    history = pd.DataFrame({"Store": [store], "Date": ["2015-01-01"], "Sales": [10]})
+    target = pd.DataFrame({"Store": [1], "Date": ["2015-01-02"]})
+
+    with pytest.raises(ValueError, match="positive, exact integer identifiers"):
+        build_historical_history_features(target, history)
+
+
+def test_store_representations_overlap_only_after_canonicalization() -> None:
+    actual = pd.DataFrame({"Store": ["1"], "Date": ["2015-01-04"], "Sales": [40]})
+    predictions = pd.DataFrame(
+        {"Store": [1], "Date": [pd.Timestamp("2015-01-04")], "PredictedSales": [41]}
+    )
+    targets = pd.DataFrame({"Store": [1], "Date": ["2015-01-05"]})
+
+    with pytest.raises(ValueError, match="overlapping Store × Date keys"):
+        build_origin_history_features(
+            targets,
+            actual_history_through_origin=actual,
+            forecast_origin="2015-01-03",
+            prior_recursive_predictions=predictions,
+        )
+
+
+def test_date_representations_that_normalize_to_duplicate_history_keys_are_rejected() -> None:
+    history = pd.DataFrame(
+        {
+            "Store": ["1", 1],
+            "Date": pd.Series(["2015-01-01", pd.Timestamp("2015-01-01")], dtype=object),
+            "Sales": [10, 20],
+        }
+    )
+    target = pd.DataFrame({"Store": [1], "Date": ["2015-01-02"]})
+
+    with pytest.raises(ValueError, match="duplicate Store × Date keys after canonicalization"):
+        build_historical_history_features(target, history)
+
+
+def test_static_predictors_reject_canonicalized_duplicate_store_date_keys() -> None:
+    rows = _rows(pd.DatetimeIndex(["2015-01-01", "2015-01-01"]))
+    rows["Store"] = ["1", 1]
+    rows["Date"] = pd.Series(["2015-01-01", pd.Timestamp("2015-01-01")], dtype=object)
+
+    with pytest.raises(ValueError, match="duplicate Store × Date keys after canonicalization"):
+        build_static_predictors(rows)
+
+
+def test_valid_canonical_integer_store_key_is_used_for_exact_history_lookup() -> None:
+    history = pd.DataFrame(
+        {"Store": ["1", np.int64(1)], "Date": ["2015-01-01", "2015-01-02"], "Sales": [10, 20]}
+    )
+    target = pd.DataFrame({"Store": [1.0], "Date": [pd.Timestamp("2015-01-03")]})
+
+    result = build_historical_history_features(target, history)
+
+    assert result.loc[0, "sales_lag_1"] == 20
+
+
+def test_history_key_canonicalization_does_not_mutate_caller_frames() -> None:
+    targets = pd.DataFrame({"Store": ["1"], "Date": ["2015-01-05"]})
+    actual = pd.DataFrame(
+        {
+            "Store": ["1", "1", "1"],
+            "Date": ["2015-01-01", "2015-01-02", "2015-01-03"],
+            "Sales": [10, 20, 30],
+        }
+    )
+    predictions = pd.DataFrame(
+        {"Store": [1], "Date": [pd.Timestamp("2015-01-04")], "PredictedSales": [40.0]}
+    )
+    targets_before = targets.copy(deep=True)
+    actual_before = actual.copy(deep=True)
+    predictions_before = predictions.copy(deep=True)
+
+    result = build_origin_history_features(
+        targets,
+        actual_history_through_origin=actual,
+        forecast_origin="2015-01-03",
+        prior_recursive_predictions=predictions,
+    )
+
+    assert result.loc[0, "sales_lag_1"] == 40
+    pd.testing.assert_frame_equal(targets, targets_before)
+    pd.testing.assert_frame_equal(actual, actual_before)
+    pd.testing.assert_frame_equal(predictions, predictions_before)
+
+
 def test_rolling_windows_exclude_current_target_and_use_sample_standard_deviation() -> None:
     dates = pd.date_range("2015-01-01", periods=30)
     history = pd.DataFrame({"Store": 1, "Date": dates, "Sales": np.arange(1, 31, dtype="int64")})
