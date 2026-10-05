@@ -2,9 +2,10 @@
 
 Real-field observations below were measured from the official Kaggle Rossmann Store Sales snapshot
 validated on 2026-10-05. Category codes are recorded as observed without inventing unsupported
-business meanings. Forecasting features remain planned and unimplemented; the separate Phase 2
-diagnostic derivations do not change source fields or act as model inputs. Synthetic variables
-remain simulated and are not Rossmann operational data.
+business meanings. Phase 3 engineered predictors are implemented separately from source fields and
+documented in Section B and the [Feature Contract](FEATURE_CONTRACT.md). Phase 2 diagnostic
+derivations remain audit-only and are not model inputs. Synthetic variables remain simulated and
+are not Rossmann operational data.
 
 ## A. Real Rossmann Variables
 
@@ -32,30 +33,30 @@ remain simulated and are not Rossmann operational data.
 
 ## B. Derived / Engineered Features
 
-| Name | Category | Source | Meaning | Unit | Known Range | Generation / Derivation Rule | Availability at Forecast Time | Notes |
-|---|---|---|---|---|---|---|---|---|
-| `day_of_week` | Calendar feature | Derived | Day of week for `Date` | Calendar category | TBD | Derived from `Date` | Yes | Future-known |
-| `week_of_year` | Calendar feature | Derived | Week number for `Date` | Calendar week | TBD | Derived from `Date` | Yes | Future-known |
-| `month` | Calendar feature | Derived | Month for `Date` | Calendar month | TBD | Derived from `Date` | Yes | Future-known |
-| `quarter` | Calendar feature | Derived | Calendar quarter for `Date` | Calendar quarter | TBD | Derived from `Date` | Yes | Future-known |
-| `year` | Calendar feature | Derived | Calendar year for `Date` | Calendar year | TBD | Derived from `Date` | Yes | Future-known |
-| `is_weekend` | Calendar feature | Derived | Weekend indicator | Binary indicator | TBD | Derived from `Date` | Yes | Exact weekend definition to be documented |
-| `is_month_start` | Calendar feature | Derived | Month-start indicator | Binary indicator | TBD | Derived from `Date` | Yes | Future-known |
-| `is_month_end` | Calendar feature | Derived | Month-end indicator | Binary indicator | TBD | Derived from `Date` | Yes | Future-known |
-| `CompetitionOpenDate` | Competition feature | Derived | Constructed competition opening date | Calendar date | TBD | Derived from competition opening month and year | Yes | Missing-value rules are TBD |
-| `CompetitionAge` | Competition feature | Derived | Time since the competition opened | TBD | TBD | `Date - CompetitionOpenDate` | Yes | Unit and treatment before opening are TBD |
-| `IsPromo2Active` | Promotion feature | Derived | Whether Promo2 applies on the date | Binary indicator | TBD | Derived from `Promo2`, its start, interval, and `Date` | Yes | Logic must use only known schedule information |
-| `Sales_lag_1` | Lag feature | Derived | Sales one day earlier | Monetary value | TBD | Historical `Sales` at $t-1$ | Yes, from history | Must be forecast-origin-safe |
-| `Sales_lag_7` | Lag feature | Derived | Sales seven days earlier | Monetary value | TBD | Historical `Sales` at $t-7$ | Yes, from history | Seasonal Naive uses this lag |
-| `Sales_lag_14` | Lag feature | Derived | Sales fourteen days earlier | Monetary value | TBD | Historical `Sales` at $t-14$ | Yes, from history | Must be forecast-origin-safe |
-| `Sales_lag_28` | Lag feature | Derived | Sales twenty-eight days earlier | Monetary value | TBD | Historical `Sales` at $t-28$ | Yes, from history | Must be forecast-origin-safe |
-| `MA_7` | Rolling feature | Derived | Seven-day rolling mean of historical sales | Monetary value | TBD | Historical-only rolling calculation | Yes, from history | Window alignment must prevent leakage |
-| `MA_14` | Rolling feature | Derived | Fourteen-day rolling mean of historical sales | Monetary value | TBD | Historical-only rolling calculation | Yes, from history | Window alignment must prevent leakage |
-| `MA_28` | Rolling feature | Derived | Twenty-eight-day rolling mean of historical sales | Monetary value | TBD | Historical-only rolling calculation | Yes, from history | Window alignment must prevent leakage |
-| `STD_7` | Rolling feature | Derived | Seven-day rolling standard deviation of historical sales | Monetary value | TBD | Historical-only rolling calculation | Yes, from history | Window alignment must prevent leakage |
-| `STD_14` | Rolling feature | Derived | Fourteen-day rolling standard deviation of historical sales | Monetary value | TBD | Historical-only rolling calculation | Yes, from history | Window alignment must prevent leakage |
-| `STD_28` | Rolling feature | Derived | Twenty-eight-day rolling standard deviation of historical sales | Monetary value | TBD | Historical-only rolling calculation | Yes, from history | Window alignment must prevent leakage |
-| Same-weekday statistics | Rolling feature | Derived | Historical statistics for matching weekdays | Monetary value | TBD | Historical same-weekday observations only | Yes, from history | Exact windows and names are TBD |
+Phase 3 now implements a frozen 29-predictor schema, `phase-3-v1`. It includes unchanged `Store`
+as both a key and a categorical-source predictor; calendar, holiday, promotion, store, and
+competition features; exact-date Sales lags; and complete calendar-window Sales statistics. `Date`
+is key-only. The detailed per-feature source, derivation, dtype, availability, null, leakage, and
+train/inference rules are in the [Phase 3 Feature Contract](FEATURE_CONTRACT.md).
+
+Dynamic features use exact same-Store Sales dates at d-1/d-7/d-14/d-28 and exact prior calendar
+windows d-n through d-1 for n=7/14/28. Windows require every exact date and use sample standard
+deviation (`ddof=1`); current-target Sales, absent dates, partial windows, and gap filling are
+prohibited. Historical training rows use only Sales strictly before their target. Recursive
+inference requires actual history censored at the declared origin and accepts optional earlier
+predictions. No model-specific encoding, scaling, same-weekday features, or imputation is included.
+
+Competition opening status and age use month-level arithmetic, not an asserted day: known
+pre-opening is False/0, opening month is True/0, later age is completed calendar-month offsets,
+and paired missing source metadata stays null/null. Promo2 nonparticipants are inactive; valid
+participant schedules use the Monday of the ISO start week, recurring interval months, and target
+Date. Incomplete/invalid schedules stay null and are audited. Availability/null diagnostics are
+audit-only, not predictors.
+
+The final 28 labeled calendar days remain behind the holdout firewall: feature coverage diagnostics
+use development rows only; holdout contact is limited to mechanical schema, key, dtype,
+determinism, and non-mutation checks. No forecast metrics or holdout-guided feature choices are
+made in Phase 3.
 
 ## C. Phase 2 Diagnostic Derivations
 
@@ -65,7 +66,7 @@ They are not forecast features, and a candidate status is not guaranteed ground 
 | Name | Source | Meaning | Rule | Availability / caution |
 |---|---|---|---|---|
 | `Open_resolved` | Prepared test `Open`; historical train `Open`; exact known covariates | Source Open when known; otherwise a candidate status when supported | For the same Store and exact `DayOfWeek`, `Promo`, `StateHoliday`, and `SchoolHoliday`, require at least 30 prior historical rows and unanimous observed `Open`; otherwise leave missing | Candidate is marked uncertain and kept in separate `test_open_resolution.parquet`; no future Sales or Customers are used |
-| `Open_resolution_method` | Same as above | Distinguishes source status, unanimous historical context, and unresolved status | Deterministic label emitted by the audited rule | Diagnostic provenance; Phase 3 must explicitly decide whether/how to use it |
+| `Open_resolution_method` | Same as above | Distinguishes source status, unanimous historical context, and unresolved status | Deterministic label emitted by the audited rule | Phase 3 keeps this candidate audit-only; it never overwrites source Open or establishes eligibility/evaluation truth |
 | `historical_match_rows` | Historical train `Open` and known covariates | Number of earlier matching historical records with known Open | Count exact-context prior rows | Evidence size, not a probability guarantee |
 | `historical_open_rate` | Historical train `Open` and known covariates | Historical fraction with Open=1 in the matching context | Mean of known matching Open statuses | Descriptive evidence only |
 | `resolution_uncertain` | Derived audit metadata | Flags a candidate or unresolved missing source status as uncertain | `True` for missing source statuses; `False` when the source status was present | Does not alter source `Open` |
@@ -89,5 +90,5 @@ All random synthetic generation will use a documented fixed seed for reproducibi
 
 The real-variable observations are tied to the validated 2026-10-05 source hashes recorded in
 [Data Acquisition](DATA_ACQUISITION.md) and [Data Validation](DATA_VALIDATION.md). Derived features
-listed above are definitions for later phases, not implemented Phase 1 outputs. Synthetic variables
-remain proposed simulation inputs and must never be presented as observed Rossmann data.
+in Section B are Phase 3 outputs, not source variables. Synthetic variables remain proposed
+simulation inputs and must never be presented as observed Rossmann data.

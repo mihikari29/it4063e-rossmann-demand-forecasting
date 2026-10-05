@@ -30,6 +30,7 @@ rossmann-acquire = "rossmann_forecasting.data.acquisition:cli_main"
 rossmann-validate = "rossmann_forecasting.data.validation:cli_main"
 rossmann-prepare = "rossmann_forecasting.data.preparation:cli_main"
 rossmann-eda = "rossmann_forecasting.analysis.eda:cli_main"
+rossmann-build-features = "rossmann_forecasting.features.runner:cli_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
