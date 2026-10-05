@@ -58,6 +58,7 @@ mlruns/
 outputs/
 reports/generated/
 reports/validation/**
+reports/eda/**
 .streamlit/secrets.toml
 
 # Logs and temporary files

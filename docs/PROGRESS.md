@@ -2,53 +2,69 @@
 
 ## Current Phase
 
-Phase 1 - Data Acquisition & Validation.
+Phase 2 — Data Preparation & EDA.
 
 ## Status
 
-**COMPLETE.** The official Kaggle Rossmann Store Sales files were obtained by manual web download,
-validated without modification, documented from measured evidence, and kept outside Git.
+**COMPLETE.** Phase 2 preparation, warning investigations, EDA, documentation, and quality gates are
+complete. Phase 3 has not started.
 
 ## Completed
 
-- Completed and committed the Phase 1 execution plan before implementation.
-- Added the Python 3.14 environment, portable data paths, safe acquisition workflow, read-only
-  validator, console/JSON output, and 12 focused fixture tests.
-- Recorded the manually downloaded official Kaggle snapshot, filenames, sizes, and SHA-256 hashes.
-- Validated all four source files with 0 errors, 4 reviewed warnings, and 12 informational findings.
-- Verified schemas, missingness, categorical domains, numerical ranges, date coverage, unique Store
-  × Date keys, unique store metadata, and many-to-one joins.
-- Documented date gaps, open-store zero-sales rows, missing test `Open`, test coverage, metadata
-  missingness, and high positive Sales without changing source values.
-- Replaced applicable Data Dictionary `TBD` entries with observed facts while preserving the
-  separation among real, planned/derived, and synthetic variables.
-- Kept raw data, credentials, virtual environments, and generated validation reports ignored.
+- Phase 0 — repository foundation.
+- Phase 1 — official Rossmann acquisition and validation; see the completed Phase 1 plan and
+  verified source findings.
+- Phase 2 — prepared immutable-source train/test data, recorded audit-only Store 622 Open
+  consensus candidates, investigated all four Phase 1 warnings and metadata missingness, generated
+  descriptive reports and 14 figures, and documented findings in [EDA Findings](EDA_FINDINGS.md).
+- Added fixture tests for source preservation, joins, key uniqueness, explicit Open resolution,
+  deterministic representatives, denominators, and Parquet round trips.
+- Archived the completed Phase 2 execution plan at
+  `plans/completed/phase-2-data-preparation-eda.md`.
+
+## In Progress
+
+None.
 
 ## Next
 
-Phase 2 - Data Preparation & EDA. It has not begun. Before implementation, create a focused Phase 2
-execution plan that preserves chronological integrity and explicitly addresses the documented date
-coverage and missing-`Open` findings.
+Begin Phase 3 Feature Engineering only under its own reviewed execution plan. Maintain
+forecast-origin-safe information rules, exclude future actual Customers, use chronological
+validation, and preserve the untouched final holdout.
 
-## Blockers
+## Source and Preparation Evidence
 
-None for Phase 1. The earlier Kaggle API HTTP 403 response was bypassed by the confirmed official
-manual download and is not an outstanding blocker.
+- Official raw CSVs remain unchanged and Git-ignored; their four SHA-256 hashes matched the
+  documented source snapshot before and after preparation.
+- Historical train: 1,017,209 rows, 1,115 stores, 2013-01-01 through 2015-07-31. Test: 41,088
+  future-covariate rows, 856 stores, 2015-08-01 through 2015-09-17. Both metadata joins preserve
+  row counts and unique Store × Date keys.
+- The sparse historical output retains all source rows, including closed and open/zero-Sales days.
+  No synthetic calendar rows or zero fills were added. Test remains separate and has no Sales or
+  Customers.
+- The 180-store 184-day gap, 54 open/zero-Sales rows, 11 missing test Open statuses, and 259
+  metadata stores unused by test have documented evidence and dispositions. Store 622's original
+  missing Open statuses remain null in `test.parquet`; the separate audit output contains 11
+  uncertain unanimous historical-context candidates.
+- Promo2 details retain structural nulls for all 544 nonparticipants. The 354 paired missing
+  competition-open dates remain unexplained and unfilled; three missing CompetitionDistance
+  values remain missing.
+- Ignored Parquet outputs are reproducible through PyArrow 24.0.0. EDA tables, manifests, and
+  figures are local generated artifacts under `reports/eda/`.
 
-## Validation Status
+## Quality Gates
 
-- Real-data validation: PASS with 0 errors, 4 warnings, and 12 informational findings.
-- `train.csv`: 1,017,209 rows, 1,115 stores, 2013-01-01 through 2015-07-31.
-- `test.csv`: 41,088 rows, 856 stores, 2015-08-01 through 2015-09-17.
-- `store.csv`: 1,115 unique stores; `sample_submission.csv`: 41,088 rows matching test IDs.
-- Raw SHA-256 hashes remained unchanged during validation.
-- `python -m pytest`: 12 passed on Python 3.14.5 with pytest 9.1.1.
-- `python -m ruff check .`: passed with Ruff 0.16.10.
-- `python -m ruff format --check .`: passed with Ruff 0.16.10.
+- Real-data validator: PASS — 0 errors, 4 reviewed warnings, 12 informational findings.
+- `python -m pytest`: 23 passed.
+- `python -m ruff check .`: passed.
+- `python -m ruff format --check .`: passed.
+- Preparation and EDA commands completed against the official data; both notebooks validated and
+  executed successfully with cleared committed outputs.
 
 ## Scope Confirmation
 
-Phase 1 introduced no EDA, feature engineering, forecasting, train/validation splitting,
-inventory logic, API, dashboard, or synthetic supply-chain data. Store × Date remains the unit of
-analysis; `Sales` remains a monetary target; future actual `Customers` remains unavailable to a
-production forecast.
+Phase 2 added no lag/rolling model features, forecasting model, model selection, random split,
+inventory simulation, synthetic supply-chain data, API, or dashboard. Sales remains monetary
+turnover at Store × Date; future Customers remains unavailable to production forecasts. Primary
+forecast evaluation on actual Open=1 observations and the proposal's known-closed operational rule
+remain Phase 3/later constraints.
