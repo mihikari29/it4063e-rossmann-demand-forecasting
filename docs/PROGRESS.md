@@ -2,19 +2,23 @@
 
 ## Current Phase
 
-Phase 4 — IMPLEMENTED / UNDER REVIEW.
+Phase 4 — COMPLETE.
+
+Phase 5 — Exponential Smoothing / Holt-Winters: PLANNING / NOT IMPLEMENTED.
 
 ## Status
 
-**PHASE 1 COMPLETE — PHASE 2 COMPLETE — PHASE 3 COMPLETE.** Phase 3 was externally reviewed;
-the canonical Store × Date key finding was resolved, and PR #3 was merged into `main` at
+**PHASE 1 COMPLETE — PHASE 2 COMPLETE — PHASE 3 COMPLETE — PHASE 4 COMPLETE.**
+Phase 3 was externally reviewed; the canonical Store × Date key finding was resolved, and PR #3
+was merged into `main` at
 `ef2c23ca79bb239b6c143572b6b4dc545d1de0b5`. Its completed execution plan is archived at
 `plans/completed/phase-3-feature-engineering.md`. The shared `phase-3-v1` contract has 29
-predictors. No final-holdout outcomes were used for feature selection or design feedback. The user
-has explicitly approved the Phase 4 methodology recorded in ADR-013 and
-`plans/active/phase-4-seasonal-naive.md`. The approved Seasonal Naive implementation and
-development-only evaluation are implemented and under review. Actual results are recorded below;
-the final holdout remains untouched.
+predictors. Phase 4 was externally reviewed and merged in PR #5 at
+`12f80b5fe8a8580b3d8367cd473766decd3ebf31`; its completed execution plan is archived at
+`plans/completed/phase-4-seasonal-naive.md`. The approved Seasonal Naive benchmark remains the
+comparison baseline. Its final implementation suite passed 73 tests and the development runner
+succeeded. Pooled MAE was 1,681.2703. No final-holdout result has been produced. Phase 5 is the
+next planning phase only; its implementation has not begun.
 
 ## Completed
 
@@ -31,17 +35,19 @@ the final holdout remains untouched.
 - Phase 3 — completed forecast-origin-safe feature engineering; externally reviewed, canonical-key
   finding resolved, and merged through PR #3. The completed plan is under
   `plans/completed/phase-3-feature-engineering.md`.
+- Phase 4 — Seasonal Naive baseline and approved development evaluation reviewed and merged in
+  PR #5; 73 tests passed at completion. Its completed plan is under
+  [`plans/completed/phase-4-seasonal-naive.md`](../plans/completed/phase-4-seasonal-naive.md).
 
 ## In Progress
 
-Phase 4 is IMPLEMENTED / UNDER REVIEW. The plan remains active at
-[Phase 4 plan](../plans/active/phase-4-seasonal-naive.md). Do not evaluate the final holdout or
-begin Phase 5.
+Phase 4 is COMPLETE. Phase 5 (Exponential Smoothing / Holt-Winters) is PLANNING / NOT IMPLEMENTED;
+no Phase 5 implementation has begun and no Phase 5 active execution plan is created here.
 
 ## Next
 
-Obtain external review of the Phase 4 implementation. Keep the final holdout untouched; do not
-begin Phase 5 or close out Phase 4 until explicitly approved.
+Continue Phase 5 planning in a separately scoped task. Do not begin implementation without
+authorization; the final holdout remains untouched.
 
 ## Source and Preparation Evidence
 
@@ -125,9 +131,10 @@ known-closed zero rule is applied only to the separate operational forecast afte
 
 ## Phase 4 Implementation and Development Results
 
-- The approved methodology is recorded in ADR-013. The focused branch is `feat/seasonal-naive`,
-  based on Phase 3 closeout commit `c016c4e3a2c33da278ebdbbe074b3e1d4f13fe70`. The approved
-  execution plan remains active; Phase 4 status is IMPLEMENTED / UNDER REVIEW.
+- The approved methodology is recorded in accepted ADR-013, which remains unchanged. External
+  review found no blocking issue; PR #5 received final approval and merged into `main` at
+  `12f80b5fe8a8580b3d8367cd473766decd3ebf31`. The completed execution plan is archived at
+  [`plans/completed/phase-4-seasonal-naive.md`](../plans/completed/phase-4-seasonal-naive.md).
 - `python scripts/run_seasonal_naive.py` completed successfully against the existing prepared
   Rossmann historical table. The runner read only `Store`, `Date`, `Sales`, and source `Open`, and
   applied the Parquet Date filter through 2015-07-03 before evaluation. It ran exactly the three
@@ -175,6 +182,7 @@ known-closed zero rule is applied only to the separate operational forecast afte
   and after the run. The runner wrote only Git-ignored generated files; no raw, interim, or Phase 3
   files were modified, and generated results remain ignored and untracked. `docs/proposal.md` is
   unchanged.
-- Validation: full pytest suite **73 passed**; `ruff check .`, `ruff format --check .`, and
-  `git diff --check` passed. The Seasonal Naive CLI completed successfully with unchanged input
-  provenance. The Phase 4 execution plan remains active for external review and explicit closeout.
+- Validation at Phase 4 completion: full pytest suite **73 passed**; `ruff check .`,
+  `ruff format --check .`, and `git diff --check` passed. The Seasonal Naive CLI completed
+  successfully with unchanged input provenance. Phase 4 is formally COMPLETE. Phase 5 has not
+  begun; no final-holdout result has been produced.

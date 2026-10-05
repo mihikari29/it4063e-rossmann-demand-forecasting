@@ -1,7 +1,8 @@
 # Phase 4 — Seasonal Naive Baseline (Design and Execution Plan)
 
-**Status:** IMPLEMENTED / UNDER REVIEW. Design approval was explicitly provided by the user on
-2026-10-05. This plan remains active pending external review and explicit Phase 4 closeout.
+**Status:** COMPLETE. The design was explicitly approved by the user on 2026-10-05; implementation
+was reviewed and merged in PR #5. This completed plan preserves the design, implementation, and
+development-result history.
 
 ## 1. Objective and current state
 
@@ -13,8 +14,8 @@ coverage, and implementation boundary so later work does not invent methodology.
 Phase 3 is COMPLETE on `main`. The implementation was merged in PR #3; its formal documentation
 closeout is also merged on `main` at `c016c4e3a2c33da278ebdbbe074b3e1d4f13fe70`. The completed
 Phase 3 plan is `plans/completed/phase-3-feature-engineering.md`. The approved Phase 4 baseline,
-development evaluator, tests, and real-data development results are now implemented; this plan
-remains active for external review.
+development evaluator, tests, and real-data development results were reviewed and merged in PR #5;
+this plan is archived under `plans/completed/` following formal closeout.
 
 The user has approved the methodology in this plan, including the sparse-label/internal-path
 clarification in Section 5. Durable decisions are recorded as ADR-013. Implementation is limited
@@ -318,8 +319,9 @@ Implementation-time constraints: the real-data runner filters historical inputs 
 later than 2015-07-03 before any forecast/evaluation code can access target Sales; raw forecasts
 are generated from keys plus origin-censored Sales only, and target Sales/Open labels are joined
 afterward; the final holdout is not forecast or evaluated. No further methodology question
-is unresolved. Preserve this plan as active and keep Phase 4 IMPLEMENTED / UNDER REVIEW until
-external review and explicit closeout; do not mark it complete here.
+is unresolved. At the implementation checkpoint, the plan remained active and Phase 4 remained
+IMPLEMENTED / UNDER REVIEW pending external review and explicit closeout; the closeout is recorded
+in Section 16 below.
 
 ## 15. Implementation execution record (2026-10-05)
 
@@ -339,5 +341,23 @@ external review and explicit closeout; do not mark it complete here.
   window. Window MAE was 1,101.5940, 2,269.7721, and 1,596.5170; pooled MAE was 1,681.2703.
   Full metric tables and all horizon-level results are in `docs/PROGRESS.md`.
 - The runner reported input provenance unchanged before/after execution. No final-holdout forecast,
-  score, metric, or summary was produced. Phase 4 remains IMPLEMENTED / UNDER REVIEW; this plan
-  remains ACTIVE and must not be archived until review and explicit closeout.
+  score, metric, or summary was produced. At this implementation checkpoint Phase 4 was
+  IMPLEMENTED / UNDER REVIEW and the plan remained active; both were subsequently closed as
+  recorded below.
+
+## 16. Formal Phase 4 closeout
+
+- The Phase 4 methodology was approved by the user and recorded in ADR-013.
+- External review found no blocking issue. PR #5, “feat: implement Phase 4 seasonal naive
+  baseline,” received final approval and merged into `main` at
+  `12f80b5fe8a8580b3d8367cd473766decd3ebf31`.
+- The final implementation suite had **73 tests passed**. The real-data development runner
+  succeeded on the three approved windows; all **46,830 / 46,830** observed validation targets had
+  available raw forecasts.
+- Pooled development metrics remain MAE **1,681.2703**, RMSE **2,416.9677**, MAPE **26.2671%**,
+  and WAPE **0.232748**. Per-window and horizon results remain recorded in `docs/PROGRESS.md`;
+  they are not recalculated or reinterpreted here.
+- The final holdout, 2015-07-04 through 2015-07-31, remained unevaluated: no holdout forecast,
+  score, metric, or outcome summary was produced.
+- Phase 4 is formally **COMPLETE**. This execution plan is archived under `plans/completed/`.
+  Phase 5 planning is separate and no Phase 5 implementation is included in this closeout.
