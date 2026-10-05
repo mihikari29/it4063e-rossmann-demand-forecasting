@@ -1,8 +1,9 @@
 # Phase 6 — Global LightGBM (Design and Execution Plan)
 
-**Status: PROPOSED / AWAITING APPROVAL.** This is a design-only proposal. No LightGBM package,
-model code, tuning, forecast, or generated artifact has been added or run. Implementation requires
-explicit methodology approval after review of this plan.
+**Status: APPROVED / IMPLEMENTATION NOT STARTED.** The Phase 6 methodology has been externally
+reviewed and approved. This governance update is on PR #9; implementation may begin only after this
+design PR is integrated into main. No LightGBM package, model code, tuning, forecast, or generated
+artifact has been added or run.
 
 ## 1. Objective, scope, and boundaries
 
@@ -97,11 +98,13 @@ changing its artifact name, dtype, derivation, or null semantics.
 | 28 | sales_std_14 | Recursive/history-dependent | Sample standard deviation over all exact same-Store dates d−14…d−1; requires all fourteen states. |
 | 29 | sales_std_28 | Recursive/history-dependent | Sample standard deviation over all exact same-Store dates d−28…d−1; requires all twenty-eight states. |
 
-Future-known is an explicit operational assumption, not proof that a historical source snapshot was
-actually published at every origin. Record that assumption in configuration and reporting. The
-future covariate table may contain known/planned calendar, holiday, promotion, and static metadata
-only. Open is not a predictor and cannot affect raw fitting or recursion. Even if a future Open
-value exists for subsequent reporting, it is used only after raw-path generation for the separately
+For this course replay, supplied/planned holiday, school-holiday, promotion-plan, Promo2 schedule,
+competition metadata, and static Store metadata used for future target dates are treated as
+known/planned at the forecast origin. This is an explicit evaluation/operational assumption, not
+historically verified Rossmann information availability. Record that assumption in configuration
+and reporting. The future covariate table may contain known/planned calendar, holiday, promotion,
+and static metadata only. Open is not a predictor and cannot affect raw fitting or recursion. Even
+if future Open is supplied, it is used only after raw-path generation for the separately
 routed operational series. Customers, Open_resolved, and historical candidate Open resolutions
 are never predictors or raw-state inputs.
 
@@ -372,27 +375,18 @@ Add focused synthetic tests before any expensive real-data development run:
     2015-07-03 before downstream feature/model/metric work; changing synthetic post-boundary values
     cannot affect development outputs.
 
-Only after the design is explicitly approved and fixture tests pass may implementation run the
-predeclared inner tuning and three outer development origins. The final holdout remains untouched.
+After this methodology has been approved and PR #9 is integrated into main, implementation may run
+the predeclared inner tuning and three outer development origins only after the required fixture
+tests pass. The final holdout remains untouched.
 
-## 11. Proposed ADR decision (not accepted)
+## 11. Accepted durable decision
 
-**Proposed ADR-019 — Global recursive LightGBM Phase 6 contract, for approval only.** Approve one
-CPU global L1 LightGBM candidate on the frozen Phase 3 predictor order; fit only eligible
-origin-censored labels while retaining all pre-origin observed Sales for feature history; use
-fit-only categorical vocabularies and native missing handling; recurse 14 days using finite clipped
-raw predictions; apply Open only as post-path operational routing; tune only the four listed
-configurations on the single pre-outer inner block with the 99% coverage rule; evaluate only the
-three approved development windows with recomputed identical-row baselines. Preserve the
-closed-day actual-history/raw-recursion mismatch and reserve final model selection for Phase 7.
-
-This is not an accepted ADR and creates no authority to implement. After review, the user may accept,
-amend, or reject it; any accepted durable decision should then be recorded in docs/DECISIONS.md
-through the approved implementation workflow.
+ADR-019 — Global Recursive LightGBM Phase 6 Contract is accepted and recorded in
+docs/DECISIONS.md. This plan remains the detailed implementation reference for that decision.
 
 ## 12. Approval gate and completion boundary
 
-Until explicit approval, status remains **PROPOSED / AWAITING APPROVAL**. No LightGBM dependency,
-source/model code, real-data tuning, generated output, holdout access, Phase 7 selection, or Phase 7
-implementation is authorized by this plan. Approval should resolve any reviewer comments before
-the implementation branch is started.
+The methodology is approved. Phase 6 implementation may begin only after PR #9 integrates this
+design into main. Until that integration, do not add a LightGBM dependency, source/model code,
+real-data tuning, forecasts, or generated outputs. The approval does not authorize final-holdout
+access, Phase 7 model selection, or Phase 7 implementation.

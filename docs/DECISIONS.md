@@ -377,3 +377,37 @@ file. Future artifact manifests include code revision and environment/lock hash.
 and results remain historical evidence, not regenerated merely for this documentation review.
 The workflow defines a quality check, but remote execution awaits publication. Main protection is
 recommended; GitHub reported main unprotected during this review, and no settings were changed.
+
+## ADR-019 — Global Recursive LightGBM Phase 6 Contract
+
+**Status:** Accepted after external methodology review, 2026-10-06.
+
+**Decision:** Phase 6 will evaluate one global CPU GBDT LightGBM model for untransformed Store ×
+Date monetary Sales, trained with regression_l1 and exactly the frozen Phase 3 29-predictor
+contract. Fit labels are restricted to training_label_eligible/source Open=1, while all observed
+pre-origin Sales (including closed-day zeros) remain available only for lag/rolling history.
+Forecast recursively for 14 days using finite predictions clipped at zero for raw output and
+feedback; non-finite predictions are unavailable. Keep future Open out of raw prediction/state and
+apply operational Open routing only after the raw path. Learn categorical vocabularies from
+eligible fitting data only; preserve the specified native numeric missing behavior and explicit
+unavailability reasons.
+
+Tune only the four predeclared configurations at the 2015-04-24 inner origin using recursive
+open-label MAE and the 99% coverage requirement; freeze the chosen configuration/round count before
+the three approved outer development windows. Recompute Seasonal Naive and additive Holt-Winters
+and compare on identical eligible rows. Do not fall back to a baseline for unavailable forecasts.
+Treat future holiday, school-holiday, promotion-plan, Promo2 schedule, competition, and Store
+metadata as known at the origin for this course replay only; this is an explicit
+operational/evaluation assumption, not historically verified Rossmann information availability.
+Preserve the mismatch between actual closed-day zeros in historical state and raw recursive
+feedback; do not add closure-aware feedback or direct multi-horizon modeling in Phase 6.
+
+**Reason:** This adds the intended global feature-based candidate to the approved model ladder
+while retaining origin-censored temporal evaluation, the existing forecast contract, and the
+baseline-comparison boundary.
+
+**Consequences:** The detailed specification, fixed configurations, windows, diagnostics, tests,
+failure policy, and artifacts are in the [active Phase 6 plan](../plans/active/phase-6-global-lightgbm.md).
+Acceptance authorizes Phase 6 implementation only after PR #9 integrates the design into main. It
+does not authorize Phase 7 model selection, final-holdout access, or any final-holdout forecast or
+evaluation.

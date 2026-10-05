@@ -7,8 +7,8 @@
 | Phases 0–4 | COMPLETE | On `main`; Phase 3 PR #3/#4, Phase 4 PR #5/#6 |
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
-| Phase 6 — Global LightGBM | DESIGN PROPOSED / AWAITING APPROVAL; implementation not started | Design plan: [plans/active/phase-6-global-lightgbm.md](../plans/active/phase-6-global-lightgbm.md) |
-| Phase 7 and later | PLANNED; implementation not started | Phase 6 design must be reviewed and approved before implementation; Phase 7 remains out of scope |
+| Phase 6 — Global LightGBM | APPROVED / IMPLEMENTATION NOT STARTED | ADR-019 accepted; [approved plan](../plans/active/phase-6-global-lightgbm.md); PR #9 is the integration gate |
+| Phase 7 and later | PLANNED; implementation not started | Phase 6 implementation may begin after PR #9 integration; Phase 7 remains out of scope |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -25,14 +25,16 @@ snapshots, not separate results to update. No final project model has been selec
 
 ## Immediate next boundary
 
-Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 design has
-started under a separate authorization; its plan is **PROPOSED / AWAITING APPROVAL** and Phase 6
-remains unimplemented. No Phase 6 model work is authorized until the design is explicitly approved.
-Phase 7 has not started. The proposal uses the
+Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 methodology
+review is complete and its plan is **APPROVED / IMPLEMENTATION NOT STARTED**. PR #9 remains open as
+the design integration gate; implementation may begin only after it is integrated into main. No
+LightGBM code, dependency, training, tuning, or forecast has been added or run. Phase 7 has not
+started. The approved design follows the
 [repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
-produced no final-holdout forecasts/metrics. Earlier full-source validation and descriptive EDA
+produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
+full-source validation and descriptive EDA
 did include those labels; [EDA_FINDINGS](EDA_FINDINGS.md) records that exposure. Do not claim an
 entirely never-inspected test set or reuse those full-period cohorts for modeling. ADR-015 defers
 the single authorized sequential final evaluation until model, intervals and policies are frozen.
