@@ -11,8 +11,8 @@ units and supply-chain fields will be explicitly simulated.
 
 Phase 1 - Data Acquisition & Validation, Phase 2 - Data Preparation & EDA, Phase 3 - Feature
 Engineering, and Phase 4 - Seasonal Naive Baseline are COMPLETE. Phase 3 was merged in PR #3 and
-Phase 4 in PR #5. Phase 5 - Exponential Smoothing / Holt-Winters - is approved and under
-implementation on `feat/holt-winters`; it evaluates the fixed statistical candidate against the
+Phase 4 in PR #5. Phase 5 - Exponential Smoothing / Holt-Winters - is implemented and under
+external review on `feat/holt-winters`; it evaluates the fixed statistical candidate against the
 Seasonal Naive baseline on development windows only. Development results are recorded in
 [`docs/PROGRESS.md`](docs/PROGRESS.md), and the final holdout remains untouched. Raw Rossmann data
 remain immutable; prepared tables, feature Parquet files, EDA exports, and forecast outputs are
@@ -94,6 +94,22 @@ window, pooled, horizon, and coverage summaries are written under the ignored
 `data/processed/seasonal_naive/` directory. It does not forecast or evaluate the final holdout.
 See the [completed Phase 4 plan](plans/completed/phase-4-seasonal-naive.md) for the approved
 methodology and [`docs/PROGRESS.md`](docs/PROGRESS.md) for recorded results.
+
+## Run the Phase 5 Statistical Development Evaluation
+
+After Phase 2 preparation, run the approved additive Holt-Winters evaluation with:
+
+```powershell
+python scripts/run_holt_winters.py
+```
+
+The runner verifies source provenance, filters historical inputs through 2015-07-03 before model
+or evaluation code can access labels, and evaluates the same three 14-day development windows as
+Phase 4. It recomputes Seasonal Naive for an identical-row paired comparison and writes forecasts,
+fit diagnostics, coverage, clipping, metrics, and a manifest under the ignored
+`data/processed/holt_winters/` directory. It does not evaluate or forecast the final holdout, and
+these Phase 5 results do not select the final project model. See [`docs/PROGRESS.md`](docs/PROGRESS.md)
+for the recorded development results.
 
 ## Quality Checks
 

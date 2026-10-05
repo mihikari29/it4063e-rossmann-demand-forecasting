@@ -4,11 +4,11 @@
 
 Phase 4 — COMPLETE.
 
-Phase 5 — Exponential Smoothing / Holt-Winters: APPROVED / IMPLEMENTATION IN PROGRESS.
+Phase 5 — Exponential Smoothing / Holt-Winters: IMPLEMENTED / UNDER REVIEW.
 
 ## Status
 
-**PHASE 1 COMPLETE — PHASE 2 COMPLETE — PHASE 3 COMPLETE — PHASE 4 COMPLETE.**
+**PHASES 1–4 COMPLETE — PHASE 5 IMPLEMENTED / UNDER REVIEW.**
 Phase 3 was externally reviewed; the canonical Store × Date key finding was resolved, and PR #3
 was merged into `main` at
 `ef2c23ca79bb239b6c143572b6b4dc545d1de0b5`. Its completed execution plan is archived at
@@ -43,14 +43,15 @@ model result.
 
 ## In Progress
 
-Phase 4 is COMPLETE. Phase 5 (Exponential Smoothing / Holt-Winters) is approved and implementation
-is in progress on `feat/holt-winters`. No model or forecast results are available yet. See the
-[active Phase 5 plan](../plans/active/phase-5-statistical-forecasting.md).
+Phase 4 is COMPLETE. Phase 5 (Exponential Smoothing / Holt-Winters) is implemented on
+`feat/holt-winters` and awaits external review. The fixed candidate and development results are
+recorded below. See the [active Phase 5 plan](../plans/active/phase-5-statistical-forecasting.md).
 
 ## Next
 
-Implement and validate only the approved Phase 5 design. Keep the final holdout untouched and do
-not begin Phase 6.
+Complete external review and close Phase 5 only with the user's explicit approval. Keep the final
+holdout untouched; do not merge, archive the active plan, select a final project model, or begin
+Phase 6 as part of this implementation.
 
 ## Source and Preparation Evidence
 
@@ -124,13 +125,13 @@ not begin Phase 6.
 - Preparation and EDA commands completed against the official data; both notebooks validated and
   executed successfully with cleared committed outputs.
 
-## Scope Confirmation
+## Phase 4 Scope Confirmation at Closeout
 
-Only the explicitly approved Seasonal Naive baseline is implemented; no Holt-Winters model,
-LightGBM, model selection, random split, inventory simulation, synthetic supply-chain data, API, or
-dashboard has been added. Sales remains monetary turnover at Store × Date; future Customers remain
-unavailable to forecasts. Primary evaluation uses actual source Open=1 observations, while the
-known-closed zero rule is applied only to the separate operational forecast after raw generation.
+At the Phase 4 closeout checkpoint, only the explicitly approved Seasonal Naive baseline was
+implemented; Holt-Winters and later-phase work had not begun. Sales remains monetary turnover at
+Store × Date; future Customers remain unavailable to forecasts. Primary evaluation uses actual
+source Open=1 observations, while the known-closed zero rule is applied only to the separate
+operational forecast after raw generation.
 
 ## Phase 4 Implementation and Development Results
 
@@ -211,3 +212,63 @@ known-closed zero rule is applied only to the separate operational forecast afte
   coverage loss in the approved windows. It does not establish Sales validity or model-fit success;
   numerical failure prevalence is unmeasured. The approved policy has no fallback.
 - The audit stopped at 2015-07-03. Final-holdout Sales remain untouched and unevaluated.
+
+### Phase 5 Implementation and Development Results
+
+- The approved design is implemented on `feat/holt-winters` under accepted ADR-014. The package
+  provides origin-censored, per-Store additive Holt-Winters fitting, latest-contiguous-history
+  eligibility, a single internal 14-step forecast operation, clipped raw forecasts with retained
+  unclipped values, explicit unavailable reasons, and post-forecast Open routing. There is no
+  fallback model. The dependency resolved to statsmodels 0.15.0.
+- `python scripts/run_holt_winters.py` completed successfully against the existing Phase 2
+  `train.parquet`. Its Parquet projection includes only Store, Date, Sales, and Open, and the Date
+  predicate is applied at read time through 2015-07-03. It evaluated the three approved development
+  windows and recomputed Seasonal Naive from the reviewed Phase 4 implementation. Raw Rossmann and
+  Phase 2 hashes matched before and after the run. No final-holdout forecast, score, or metric was
+  produced.
+- The run generated 46,830 observed target forecasts and 46,830 internal 14-step path records
+  across 3,345 Store-origin fits. All 3,345 fits succeeded; there were no unavailable forecasts,
+  fit/forecast failures, warnings, or optimizer non-convergence flags. All three windows achieved
+  100% raw and Open-label forecast coverage, above the precommitted 99% coverage guardrail.
+- Standalone Holt-Winters metrics (primary population: observed source Open=1 and Sales, with
+  available clipped raw forecast):
+
+  | Window | Observed targets | Eligible open labels | Open-label coverage | MAE | RMSE | MAPE | WAPE |
+  |---|---:|---:|---:|---:|---:|---:|---:|
+  | validation_1 | 15,610 | 11,678 | 11,678 / 11,678 (100%) | 1,195.5661 | 1,617.4146 | 15.2155% | 0.155442 |
+  | validation_2 | 15,610 | 13,438 | 13,438 / 13,438 (100%) | 1,136.8306 | 1,483.1660 | 16.9474% | 0.162669 |
+  | validation_3 | 15,610 | 13,437 | 13,437 / 13,437 (100%) | 1,501.5664 | 1,974.7435 | 22.5253% | 0.212929 |
+
+- Pooled over 38,553 eligible rows, Holt-Winters MAE was **1,281.7446**, RMSE **1,708.3073**,
+  MAPE **18.3669%**, and WAPE **0.177439**. MAPE included 38,553 positive-actual rows, excluded
+  zero rows: 0, and had 100% MAPE coverage. Pooled values are calculated over rows, not averaged
+  from window metrics.
+- Paired comparison uses the identical 38,553 eligible Store-origin-Date rows where both
+  recomputed Seasonal Naive and Holt-Winters forecasts were available. A negative MAE difference
+  means Holt-Winters MAE is lower; this fixed-candidate development comparison is not final model
+  selection:
+
+  | Window | Paired rows | Holt-Winters MAE | Seasonal Naive MAE | Difference (HW - SN) | Relative change | Lower paired MAE |
+  |---|---:|---:|---:|---:|---:|---|
+  | validation_1 | 11,678 | 1,195.5661 | 1,101.5940 | +93.9721 | +8.5306% | Seasonal Naive |
+  | validation_2 | 13,438 | 1,136.8306 | 2,269.7721 | -1,132.9415 | -49.9143% | Holt-Winters |
+  | validation_3 | 13,437 | 1,501.5664 | 1,596.5170 | -94.9506 | -5.9474% | Holt-Winters |
+  | pooled | 38,553 | 1,281.7446 | 1,681.2703 | -399.5257 | -23.7633% | Holt-Winters |
+
+- Additive forecasts below zero were clipped only for the raw metric forecast; unclipped values
+  remain in the audit output. In the full internal paths, 1,085 of 46,830 forecasts (2.3169%)
+  were clipped. The minimum unclipped forecast was -4,175.2857. By window, clipping was
+  354 / 15,610 (2.2678%), 408 / 15,610 (2.6137%), and 323 / 15,610 (2.0692%), respectively.
+- Ignored artifacts and a manifest are under `data/processed/holt_winters/`: observed-key
+  forecasts, internal 14-step paths, per-fit and aggregated diagnostics, window/pooled/horizon
+  metrics, coverage guardrail, identical-row paired forecasts and metrics, and clipping
+  diagnostics. All emitted dates are 2015-05-23 through 2015-07-03; all 46,830 composite keys are
+  unique. The generated forecast table does not expose the protected holdout.
+- Initial executions exposed two post-fit reporting defects (strict JSON serialization of a
+  missing pooled label, and a clipping-rate denominator reference); both were corrected and covered
+  by tests. The final real-data runner completed with exit code 0 and regenerated all artifacts.
+- Final Phase 5 checks: full pytest suite **95 passed**; `ruff check src tests scripts` and
+  `ruff format --check src tests scripts` passed. Artifact paths were verified Git-ignored;
+  provenance checks passed before and after evaluation. Phase 5 remains **IMPLEMENTED / UNDER
+  REVIEW**, not formally closed. `docs/proposal.md`, reviewed Phase 4 model code/artifacts, raw data,
+  and Phase 2 prepared data were not modified.

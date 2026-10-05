@@ -1,8 +1,8 @@
 # Phase 5 — Statistical Forecasting (Design and Execution Plan)
 
-**Status:** APPROVED / IMPLEMENTATION IN PROGRESS. The user explicitly approved the Phase 5
-methodology on 2026-10-05. The accepted design is recorded in ADR-014. This plan remains active
-through implementation and external review.
+**Status:** IMPLEMENTED / UNDER REVIEW. The user explicitly approved the Phase 5 methodology on
+2026-10-05. The accepted design is recorded in ADR-014. Implementation and the development-only
+evaluation are complete; this plan remains active for external review and explicit closeout.
 
 ## 1. Objective and current state
 
@@ -11,11 +11,11 @@ PR #5; formal closeout was merged in PR #6. The Phase 4 plan is archived at
 `plans/completed/phase-4-seasonal-naive.md`, and accepted ADR-013 remains the source of truth for
 the fixed windows, baseline, routing, eligibility, and metric contract.
 
-Phase 5 evaluates one classical additive Holt-Winters candidate against the reviewed
-Seasonal Naive implementation on the same three development windows. This phase will evaluate a
-fixed candidate, not select the final project model. No statistical model has been fitted, no
-statistical forecast has been generated, and no Phase 5 forecast metric exists at this approval
-checkpoint. The final holdout remains untouched.
+Phase 5 evaluates one classical additive Holt-Winters candidate against the reviewed Seasonal
+Naive implementation on the same three development windows. This phase evaluates a fixed candidate,
+not the final project model. At the original approval checkpoint no statistical model had been
+fitted or forecast; the implementation results are recorded in Section 15. The final holdout remains
+untouched.
 
 ## 2. Fixed project constraints — already accepted
 
@@ -257,11 +257,11 @@ after forecast generation.
 The existing package exposes `forecast_seasonal_naive`,
 `build_development_evaluation_records`, and `summarize_forecast_metrics`. The first implements the
 reviewed exact-weekly baseline; the development evaluator recomputes it and attaches labels after
-forecast generation. The metric function currently expects the Phase 4 field
-`raw_baseline_forecast`, so it is not a model-agnostic Phase 5 evaluator as-is. Later implementation
-should reuse the exact metric definitions through a clearly named column-aware helper or narrow
-adapter, with regression tests proving Phase 4 outputs and eligibility remain unchanged. Do not
-change the Seasonal Naive algorithm or rely on generated Phase 4 forecast artifacts.
+forecast generation. Phase 4 metrics originally expected `raw_baseline_forecast`; the Phase 5
+implementation reuses the exact metric definitions through a `forecast_column` parameter, with a
+regression test proving equivalent outputs when both candidate columns contain the same values.
+The Seasonal Naive algorithm remains unchanged, and the comparison does not rely on generated
+Phase 4 forecast artifacts.
 
 ### A. Standalone Holt-Winters coverage and metrics
 
@@ -371,6 +371,58 @@ is recorded in ADR-014. Additional approved implementation clarifications are:
 - Recompute Seasonal Naive through the reviewed Phase 4 implementation and preserve its algorithm
   and existing metric outputs. Shared/column-aware metric logic must have regression coverage.
 
-No methodology question remains open for this implementation. Keep this execution plan under
-`plans/active/` and Phase 5 status at IMPLEMENTED / UNDER REVIEW after the development evaluation;
-do not evaluate the final holdout, archive this plan, or begin Phase 6.
+No methodology question remains open. Keep this execution plan under `plans/active/` and Phase 5
+status at IMPLEMENTED / UNDER REVIEW; do not evaluate the final holdout, archive this plan, or begin
+Phase 6.
+
+## 15. Implementation and development results
+
+Implementation is complete on `feat/holt-winters`; Phase 5 is **IMPLEMENTED / UNDER REVIEW**.
+Source code, tests, and documentation are ready for external review. This checkpoint does not merge
+the branch, archive this plan, or select the final project model.
+
+The runner uses statsmodels 0.15.0 and completed against Phase 2 `train.parquet`. At the Parquet
+read boundary it projects Store, Date, Sales, and Open and filters to Date <= 2015-07-03. It
+recomputed the Phase 4 Seasonal Naive comparator from the reviewed implementation. The raw Rossmann
+and Phase 2 provenance checks passed before and after the run. No final-holdout forecast, score,
+target statistic, or metric was produced.
+
+Across the three windows, there were 3,345 Store-origin fits and 46,830 observed target records.
+All fits succeeded, all 14-step forecasts were finite, and there were no warnings, failures, or
+optimizer non-convergence flags. Forecast availability was 100% both overall and among Open=1
+labels in every window, so the approved 99% coverage guardrail passed. The paired comparison
+contains 38,553 identical Open=1, observed-Sales, two-model-available rows.
+
+Standalone Holt-Winters metrics on eligible open-label rows:
+
+| Window | Eligible rows | MAE | RMSE | MAPE | WAPE |
+|---|---:|---:|---:|---:|---:|
+| validation_1 | 11,678 | 1,195.5661 | 1,617.4146 | 15.2155% | 0.155442 |
+| validation_2 | 13,438 | 1,136.8306 | 1,483.1660 | 16.9474% | 0.162669 |
+| validation_3 | 13,437 | 1,501.5664 | 1,974.7435 | 22.5253% | 0.212929 |
+| Pooled | 38,553 | 1,281.7446 | 1,708.3073 | 18.3669% | 0.177439 |
+
+Identical-row paired MAE comparison (difference = Holt-Winters minus Seasonal Naive):
+
+| Population | Paired rows | Holt-Winters MAE | Seasonal Naive MAE | Difference | Relative change | Lower MAE |
+|---|---:|---:|---:|---:|---:|---|
+| validation_1 | 11,678 | 1,195.5661 | 1,101.5940 | +93.9721 | +8.5306% | Seasonal Naive |
+| validation_2 | 13,438 | 1,136.8306 | 2,269.7721 | -1,132.9415 | -49.9143% | Holt-Winters |
+| validation_3 | 13,437 | 1,501.5664 | 1,596.5170 | -94.9506 | -5.9474% | Holt-Winters |
+| Pooled | 38,553 | 1,281.7446 | 1,681.2703 | -399.5257 | -23.7633% | Holt-Winters |
+
+Holt-Winters had lower paired development MAE in two windows and pooled, while Seasonal Naive was
+lower in validation_1. This is a report of the fixed candidates on the approved development rows,
+not a declaration of the final model. Clipping affected 1,085 / 46,830 internal forecasts (2.3169%);
+the minimum unclipped forecast was -4,175.2857. The minimum is retained for audit and was not used
+to tune the model.
+
+Ignored reproducible artifacts are under `data/processed/holt_winters/`, including observed-key
+forecasts, full internal paths, per-fit diagnostics, standalone and paired metrics, coverage
+guardrail, clipping diagnostics, and a provenance/hash manifest. All 46,830 target keys are unique
+and dates end on 2015-07-03.
+
+Validation: full `pytest` suite **95 passed**; Ruff check and format check passed. All planned
+artifact destinations passed `git check-ignore`. The final real-data runner completed with exit
+code 0. Phase 5 remains under external review; no holdout evaluation, merge, final model selection,
+plan archival, or Phase 6 work is included.
