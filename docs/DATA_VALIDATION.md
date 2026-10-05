@@ -82,9 +82,32 @@ The earlier Kaggle API HTTP 403 response is not a validation finding and is no l
 
 No warning was suppressed, and no validator implementation problem was found.
 
-## Scope and Output Policy
+## Phase 1 Validation Scope and Output Policy
 
 Validation is descriptive data-quality inspection only. It creates no lags, rolling features,
 splits, shuffled rows, models, inventory logic, or synthetic operational data. The JSON report at
 `reports/validation/rossmann.json` is small but fully reproducible and remains ignored under the
 project's generated-report policy. Verified facts are maintained here and in the Data Dictionary.
+
+## Phase 2 Prepared Data and Diagnostic Outputs
+
+The Phase 2 preparation command verified the four source SHA-256 values above both before and
+after processing. It wrote ignored Parquet outputs with PyArrow 24.0.0 on Python 3.14.5 / pandas
+3.0.6:
+
+| Output | Rows | Columns | Notes |
+|---|---:|---:|---|
+| `data/interim/train.parquet` | 1,017,209 | 18 | Historical source rows joined many-to-one to store metadata; includes Sales and Customers |
+| `data/interim/test.parquet` | 41,088 | 17 | Future covariates joined many-to-one to metadata; no Sales or Customers column |
+| `data/interim/test_open_resolution.parquet` | 41,088 | 12 | Separate audited Open view; preserves source Open and records an uncertain historical-context candidate separately |
+
+The historical base retained every source row, including 172,817 closed rows and all 54 open/zero-
+Sales rows. No rows were inserted into the shared 184-day gap. Source nulls remain unchanged,
+including the 11 test `Open` values in `test.parquet`. The resolution audit uses only earlier
+historical `Open` and the exact known `DayOfWeek`, `Promo`, `StateHoliday`, and `SchoolHoliday`
+context; it never reads future Sales or Customers. Full row schemas, dependency versions, output
+hashes, and source hashes are recorded in the ignored `data/interim/preparation_manifest.json`.
+
+Descriptive EDA ran from the prepared Parquet tables and wrote its schema, summary, tables, and 14
+figures under ignored `reports/eda/`. See [Phase 2 EDA findings](EDA_FINDINGS.md) for the concise,
+version-controlled interpretation and policy dispositions.

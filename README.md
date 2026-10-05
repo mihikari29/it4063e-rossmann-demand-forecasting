@@ -9,9 +9,9 @@ units and supply-chain fields will be explicitly simulated.
 
 ## Current Status
 
-Phase 1 - Data Acquisition & Validation is complete. The official Kaggle files were obtained by
-manual web download, validated without modifying raw data, and documented from measured evidence.
-Phase 2 - Data Preparation & EDA is next but has not begun.
+Phase 1 - Data Acquisition & Validation and Phase 2 - Data Preparation & EDA are complete. Phase 3
+- Feature Engineering is next and has not begun. Raw Rossmann data remain immutable; prepared
+tables and EDA exports are reproducible and ignored local outputs.
 
 ## Environment
 
@@ -25,7 +25,8 @@ python -m pip install -e ".[dev,acquisition]"
 ```
 
 On macOS or Linux, activate with `source .venv/bin/activate`. The `acquisition` extra installs the
-Kaggle client; the `dev` extra installs pytest and Ruff.
+Kaggle client. The `dev` extra includes pytest, Ruff, and the Jupyter kernel/client needed to execute
+the included notebooks. PyArrow and Matplotlib support the Phase 2 Parquet and figure outputs.
 
 ## Acquire and Validate Data
 
@@ -44,6 +45,21 @@ optional ignored JSON report, and exits nonzero on hard failures.
 See [data acquisition](docs/DATA_ACQUISITION.md) and
 [data validation](docs/DATA_VALIDATION.md) for the reproducible workflow and verified findings.
 
+## Prepare Data and Generate EDA
+
+After the official Phase 1 source files are present, run from the repository root:
+
+```powershell
+python scripts/prepare_data.py
+python scripts/run_eda.py
+```
+
+Preparation verifies the four documented source hashes, retains source rows and nulls, joins store
+metadata many-to-one, and writes separate train and test Parquet tables under `data/interim/`.
+EDA uses labelled historical train Sales and test covariates only, writing summaries and figures to
+`reports/eda/`. These outputs are ignored and can be regenerated. The numbered notebooks provide a
+thin presentation layer over the same reusable package functions.
+
 ## Quality Checks
 
 ```powershell
@@ -60,6 +76,7 @@ python -m ruff format --check .
 - [Development workflow](docs/WORKFLOW.md)
 - [Decision log](docs/DECISIONS.md)
 - [Data dictionary](docs/DATA_DICTIONARY.md)
+- [Phase 2 EDA findings](docs/EDA_FINDINGS.md)
 
 ## Team
 
@@ -77,7 +94,8 @@ python -m ruff format --check .
 |-- docs/
 |-- plans/completed/
 |-- scripts/
-|-- src/rossmann_forecasting/data/
+|-- src/rossmann_forecasting/{analysis,data}/
+|-- notebooks/
 |-- tests/
 `-- pyproject.toml
 ```

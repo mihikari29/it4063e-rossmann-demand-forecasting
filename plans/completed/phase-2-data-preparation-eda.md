@@ -74,7 +74,7 @@ Inspect the Store, Date, Customers, Promo, StateHoliday, SchoolHoliday, and surr
 
 Phase 1 found 11 missing Open values in test.csv, all for Store 622. Inspect Store 622’s historical Open values by weekday, observed closure patterns, the 11 future dates’ known calendar and promotion covariates, and surrounding future Open values that are actually present.
 
-The approved default is to preserve source Open nulls. Investigate historical Store 622 schedule evidence and known future calendar/promotion context. Add a separate derived resolved field only if a deterministic rule supported by information available at forecast time is established; otherwise leave values missing. Do not use future Sales or Customers, and report the operational consequence for Phase 3/forecast delivery. Do not overwrite the raw or prepared source field.
+The approved default is to preserve source Open nulls. Investigate historical Store 622 schedule evidence and known future calendar/promotion context. The implemented candidate rule may resolve a missing status only when at least 30 historical observations for the same store and exact `DayOfWeek`, `Promo`, `StateHoliday`, and `SchoolHoliday` context are unanimous; label every derived status uncertain. Keep this as a separate audit output and leave source `Open` null. If a row does not meet that criterion, leave its resolution missing. Do not use future Sales or Customers, and report the operational consequence for Phase 3/forecast delivery.
 
 ### 4.4 Store metadata missingness
 
@@ -259,6 +259,7 @@ The following are proposals for implementation after this plan is reviewed; none
 ### Create locally and keep ignored
 
 - data/interim/ — only the necessary parsed/joined Parquet outputs; stop and report if PyArrow is incompatible.
+- data/interim/test_open_resolution.parquet — separate, auditable historical exact-context consensus candidates; source `test.parquet` remains unchanged.
 - reports/eda/ — generated charts, summary tables, selection manifests, and run metadata.
 - Jupyter checkpoints, caches, and temporary exports.
 
@@ -268,22 +269,22 @@ No data/processed/, model features, model binaries, or synthetic data are planne
 
 Phase 2 is complete only when all of the following are evidenced:
 
-- [ ] The four Phase 1 warnings are investigated and dispositioned, including the shared gap, all open/zero-sales rows, missing test Open, and unused test metadata stores.
-- [ ] Missingness for each of the six store metadata fields is separately profiled and treated; Promo2 non-participant missingness remains distinct from unexplained missingness.
-- [ ] Preparation decisions, alternatives, affected counts, and limitations are documented before value-changing or row-changing rules are applied.
-- [ ] Raw files remain unchanged and their hashes match the recorded source snapshot.
-- [ ] Reusable preparation functions and thin commands exist; no critical preparation logic is notebook-only.
-- [ ] Train and test retain their separate labelled/future-covariate roles.
-- [ ] Store × Date keys and many-to-one metadata join integrity are checked in the output.
-- [ ] Base historical data retain closed rows and valid unusual observations; no automatic zero fill of the 184-day gap or deletion of open/zero-sales rows occurs.
-- [ ] Outputs and schemas are deterministic and reproducible from documented commands.
-- [ ] Proposal-required descriptive questions are addressed by supported summaries and figures.
-- [ ] Representative-store selection follows a documented deterministic rule and is not cherry-picked.
-- [ ] Important EDA findings, denominators, limits, and remaining Phase 3 decisions are documented.
-- [ ] No random split, future-target use, future-Customers use, causal claim, forecasting model, model selection, or Phase 3 feature pipeline is introduced.
-- [ ] Fixture tests pass; lint, formatting, link, and relevant scope checks pass.
-- [ ] Derived datasets and large generated artifacts remain ignored or have an explicit reviewed reason to be version-controlled.
-- [ ] docs/PROGRESS.md, Phase 2 outputs, and this plan agree with the actual repository state.
+- [x] The four Phase 1 warnings are investigated and dispositioned, including the shared gap, all open/zero-sales rows, missing test Open, and unused test metadata stores.
+- [x] Missingness for each of the six store metadata fields is separately profiled and treated; Promo2 non-participant missingness remains distinct from unexplained missingness.
+- [x] Preparation decisions, alternatives, affected counts, and limitations are documented before value-changing or row-changing rules are applied.
+- [x] Raw files remain unchanged and their hashes match the recorded source snapshot.
+- [x] Reusable preparation functions and thin commands exist; no critical preparation logic is notebook-only.
+- [x] Train and test retain their separate labelled/future-covariate roles.
+- [x] Store × Date keys and many-to-one metadata join integrity are checked in the output.
+- [x] Base historical data retain closed rows and valid unusual observations; no automatic zero fill of the 184-day gap or deletion of open/zero-sales rows occurs.
+- [x] Outputs and schemas are deterministic and reproducible from documented commands.
+- [x] Proposal-required descriptive questions are addressed by supported summaries and figures.
+- [x] Representative-store selection follows a documented deterministic rule and is not cherry-picked.
+- [x] Important EDA findings, denominators, limits, and remaining Phase 3 decisions are documented.
+- [x] No random split, future-target use, future-Customers use, causal claim, forecasting model, model selection, or Phase 3 feature pipeline is introduced.
+- [x] Fixture tests pass; lint, formatting, link, and relevant scope checks pass.
+- [x] Derived datasets and large generated artifacts remain ignored or have an explicit reviewed reason to be version-controlled.
+- [x] docs/PROGRESS.md, Phase 2 outputs, and this plan agree with the actual repository state.
 
 ## 15. Approved Policy Decisions
 

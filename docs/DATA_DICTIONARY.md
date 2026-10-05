@@ -2,8 +2,9 @@
 
 Real-field observations below were measured from the official Kaggle Rossmann Store Sales snapshot
 validated on 2026-10-05. Category codes are recorded as observed without inventing unsupported
-business meanings. Derived features remain planned and unimplemented; synthetic variables remain
-simulated and are not Rossmann operational data.
+business meanings. Forecasting features remain planned and unimplemented; the separate Phase 2
+diagnostic derivations do not change source fields or act as model inputs. Synthetic variables
+remain simulated and are not Rossmann operational data.
 
 ## A. Real Rossmann Variables
 
@@ -15,7 +16,7 @@ simulated and are not Rossmann operational data.
 | `Date` | `train.csv`, `test.csv` | Calendar day | parsed date from source string | Train: 2013-01-01–2015-07-31; test: 2015-08-01–2015-09-17 | 0 | Primary unit key with `Store`; future-known |
 | `Sales` | `train.csv` | Daily store sales turnover; monetary value | `int64` | 0–41,551 | 0 | Historical target only; not a physical-unit quantity |
 | `Customers` | `train.csv` | Customers observed for a store-day | `int64` | 0–7,388 | 0 | Historical observation only; future actual values must not be production features |
-| `Open` | `train.csv`, `test.csv` | Store-open indicator | train `int64`; test `float64` because of nulls | {0, 1} when present | Train: 0; test: 11 (0.026772%) | Supplied for future rows but incomplete in test; Phase 2 must document a policy rather than silently fill it |
+| `Open` | `train.csv`, `test.csv` | Store-open indicator | train `int64`; test `float64` because of nulls | {0, 1} when present | Train: 0; test: 11 (0.026772%) | Source field is preserved in prepared data; test unknowns have a separate auditable, uncertain historical-context candidate in `test_open_resolution.parquet` |
 | `Promo` | `train.csv`, `test.csv` | Store-promotion indicator | `int64` | {0, 1} | 0 | Future-known when the promotion is planned |
 | `StateHoliday` | `train.csv`, `test.csv` | State-holiday code | string | Train: {0, a, b, c}; test: {0, a} | 0 | Future-known calendar field; category meanings are not inferred from values alone |
 | `SchoolHoliday` | `train.csv`, `test.csv` | School-holiday indicator | `int64` | {0, 1} | 0 | Future-known calendar field |
@@ -56,7 +57,20 @@ simulated and are not Rossmann operational data.
 | `STD_28` | Rolling feature | Derived | Twenty-eight-day rolling standard deviation of historical sales | Monetary value | TBD | Historical-only rolling calculation | Yes, from history | Window alignment must prevent leakage |
 | Same-weekday statistics | Rolling feature | Derived | Historical statistics for matching weekdays | Monetary value | TBD | Historical same-weekday observations only | Yes, from history | Exact windows and names are TBD |
 
-## C. Synthetic Operational Variables
+## C. Phase 2 Diagnostic Derivations
+
+These audit-only fields are stored separately from the source-faithful prepared `test.parquet`.
+They are not forecast features, and a candidate status is not guaranteed ground truth.
+
+| Name | Source | Meaning | Rule | Availability / caution |
+|---|---|---|---|---|
+| `Open_resolved` | Prepared test `Open`; historical train `Open`; exact known covariates | Source Open when known; otherwise a candidate status when supported | For the same Store and exact `DayOfWeek`, `Promo`, `StateHoliday`, and `SchoolHoliday`, require at least 30 prior historical rows and unanimous observed `Open`; otherwise leave missing | Candidate is marked uncertain and kept in separate `test_open_resolution.parquet`; no future Sales or Customers are used |
+| `Open_resolution_method` | Same as above | Distinguishes source status, unanimous historical context, and unresolved status | Deterministic label emitted by the audited rule | Diagnostic provenance; Phase 3 must explicitly decide whether/how to use it |
+| `historical_match_rows` | Historical train `Open` and known covariates | Number of earlier matching historical records with known Open | Count exact-context prior rows | Evidence size, not a probability guarantee |
+| `historical_open_rate` | Historical train `Open` and known covariates | Historical fraction with Open=1 in the matching context | Mean of known matching Open statuses | Descriptive evidence only |
+| `resolution_uncertain` | Derived audit metadata | Flags a candidate or unresolved missing source status as uncertain | `True` for missing source statuses; `False` when the source status was present | Does not alter source `Open` |
+
+## D. Synthetic Operational Variables
 
 All random synthetic generation will use a documented fixed seed for reproducibility.
 
