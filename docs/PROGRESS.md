@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Phase 4 — IMPLEMENTATION IN PROGRESS (DESIGN APPROVED).
+Phase 4 — IMPLEMENTED / UNDER REVIEW.
 
 ## Status
 
@@ -12,8 +12,9 @@ the canonical Store × Date key finding was resolved, and PR #3 was merged into 
 `plans/completed/phase-3-feature-engineering.md`. The shared `phase-3-v1` contract has 29
 predictors. No final-holdout outcomes were used for feature selection or design feedback. The user
 has explicitly approved the Phase 4 methodology recorded in ADR-013 and
-`plans/active/phase-4-seasonal-naive.md`. Implementation is in progress; no real-data baseline
-forecasts or evaluation metrics have yet been produced.
+`plans/active/phase-4-seasonal-naive.md`. The approved Seasonal Naive implementation and
+development-only evaluation are implemented and under review. Actual results are recorded below;
+the final holdout remains untouched.
 
 ## Completed
 
@@ -33,14 +34,14 @@ forecasts or evaluation metrics have yet been produced.
 
 ## In Progress
 
-Phase 4 — implementing the explicitly approved Seasonal Naive baseline and development-only
-evaluation. The plan remains active at
-[Phase 4 plan](../plans/active/phase-4-seasonal-naive.md). No final-holdout evaluation is allowed.
+Phase 4 is IMPLEMENTED / UNDER REVIEW. The plan remains active at
+[Phase 4 plan](../plans/active/phase-4-seasonal-naive.md). Do not evaluate the final holdout or
+begin Phase 5.
 
 ## Next
 
-Complete and validate the approved development-only runner, record actual results, and prepare the
-implementation for external review. Keep the final holdout untouched; do not begin Phase 5.
+Obtain external review of the Phase 4 implementation. Keep the final holdout untouched; do not
+begin Phase 5 or close out Phase 4 until explicitly approved.
 
 ## Source and Preparation Evidence
 
@@ -116,18 +117,64 @@ implementation for external review. Keep the final holdout untouched; do not beg
 
 ## Scope Confirmation
 
-No forecasting model, model selection, random split, inventory simulation, synthetic supply-chain
-data, API, or dashboard has been added. Sales remains monetary turnover at Store × Date; future
-Customers remains unavailable to production forecasts. Primary forecast evaluation on actual
-Open=1 observations and the proposal's known-closed operational rule remain later-phase constraints.
+Only the explicitly approved Seasonal Naive baseline is implemented; no Holt-Winters model,
+LightGBM, model selection, random split, inventory simulation, synthetic supply-chain data, API, or
+dashboard has been added. Sales remains monetary turnover at Store × Date; future Customers remain
+unavailable to forecasts. Primary evaluation uses actual source Open=1 observations, while the
+known-closed zero rule is applied only to the separate operational forecast after raw generation.
 
-## Phase 4 Design and Implementation Checkpoint
+## Phase 4 Implementation and Development Results
 
-- Planning branch is based on `main` at `c016c4e3a2c33da278ebdbbe074b3e1d4f13fe70`, which includes
-  the Phase 3 documentation closeout. The active execution/design plan is
-  `plans/active/phase-4-seasonal-naive.md` and is awaiting explicit user approval.
-- The user explicitly approved the three 14-day development windows and related methodology on
-  2026-10-05; the decisions are recorded in ADR-013. The windows were mechanically checked using
-  only the historical `Date` column during planning.
-- Phase 4 implementation is now in progress. No final-holdout forecast or evaluation is permitted;
-  record development results only after the approved runner is actually executed.
+- The approved methodology is recorded in ADR-013. The focused branch is `feat/seasonal-naive`,
+  based on Phase 3 closeout commit `c016c4e3a2c33da278ebdbbe074b3e1d4f13fe70`. The approved
+  execution plan remains active; Phase 4 status is IMPLEMENTED / UNDER REVIEW.
+- `python scripts/run_seasonal_naive.py` completed successfully against the existing prepared
+  Rossmann historical table. The runner read only `Store`, `Date`, `Sales`, and source `Open`, and
+  applied the Parquet Date filter through 2015-07-03 before evaluation. It ran exactly the three
+  approved development windows and emitted 46,830 observed target records. Generated outputs are
+  ignored under `data/processed/seasonal_naive/`; the manifest records the methodology, windows,
+  source hashes, and artifact hashes.
+- Coverage and primary metrics by window (coverage is available raw forecasts / denominator):
+
+  | Window | Observed targets | Eligible open labels | All-target coverage | Open-label coverage | MAE | RMSE | MAPE | MAPE rows / eligible | Zero rows excluded from MAPE | WAPE |
+  |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+  | validation_1 | 15,610 | 11,678 | 15,610 / 15,610 (100%) | 11,678 / 11,678 (100%) | 1,101.5940 | 1,444.9870 | 15.0088% | 11,678 / 11,678 (100%) | 0 | 0.143224 |
+  | validation_2 | 15,610 | 13,438 | 15,610 / 15,610 (100%) | 13,438 / 13,438 (100%) | 2,269.7721 | 3,141.3506 | 36.1046% | 13,438 / 13,438 (100%) | 0 | 0.324782 |
+  | validation_3 | 15,610 | 13,437 | 15,610 / 15,610 (100%) | 13,437 / 13,437 (100%) | 1,596.5170 | 2,253.3165 | 26.2135% | 13,437 / 13,437 (100%) | 0 | 0.226393 |
+
+- Pooled eligible development rows: 38,553. Pooled MAE **1,681.2703**, RMSE **2,416.9677**,
+  MAPE **26.2671%** (38,553 MAPE rows, 0 zero-actual rows excluded, 100% MAPE coverage), and
+  WAPE **0.232748**. These are computed over pooled eligible observations, not averaged window
+  metrics.
+- Horizon-level eligible counts and metrics (WAPE is a ratio; MAPE is a percent):
+
+  | Horizon | Eligible | MAE | RMSE | MAPE | WAPE |
+  |---:|---:|---:|---:|---:|---:|
+  | 1 | 3,344 | 672.2425 | 981.3211 | 11.9931% | 0.114442 |
+  | 2 | 97 | 861.8763 | 1,187.4567 | 14.7578% | 0.108050 |
+  | 3 | 2,262 | 4,259.5504 | 4,747.9555 | 72.8666% | 0.677632 |
+  | 4 | 3,344 | 2,307.4554 | 2,739.8971 | 39.9556% | 0.368580 |
+  | 5 | 3,344 | 2,131.9731 | 2,459.9699 | 38.2207% | 0.362656 |
+  | 6 | 3,344 | 2,405.0329 | 3,161.1523 | 42.6760% | 0.407425 |
+  | 7 | 3,344 | 1,765.8403 | 2,232.6592 | 30.0997% | 0.273202 |
+  | 8 | 3,344 | 832.9013 | 1,125.0257 | 14.0842% | 0.135236 |
+  | 9 | 96 | 752.7188 | 1,039.2468 | 10.4863% | 0.089113 |
+  | 10 | 3,344 | 1,025.8322 | 1,418.5733 | 9.7639% | 0.097370 |
+  | 11 | 3,344 | 1,141.4202 | 1,587.1030 | 11.6617% | 0.122944 |
+  | 12 | 3,343 | 1,124.9399 | 1,441.6304 | 13.9331% | 0.137552 |
+  | 13 | 2,660 | 2,460.7320 | 3,971.0272 | 33.6384% | 0.324489 |
+  | 14 | 3,343 | 1,091.0808 | 1,453.2243 | 13.6778% | 0.136541 |
+
+- All 46,830 observed target records had an available raw forecast (46,830 / 46,830); therefore
+  there were no unavailable weekly baseline forecasts, no affected Store × Date rows, and no
+  unavailable-store cases to report. Open-labelled forecast coverage was also 100% in each window.
+- No final-holdout forecast, score, metric, or target summary was produced. Phase 4 reads are
+  restricted to dates through 2015-07-03 before the evaluation layer; only development outputs
+  appear in the generated artifact directory.
+- Raw Rossmann inputs and Phase 2 `train.parquet` hashes matched their recorded provenance before
+  and after the run. The runner wrote only Git-ignored generated files; no raw, interim, or Phase 3
+  files were modified, and generated results remain ignored and untracked. `docs/proposal.md` is
+  unchanged.
+- Validation: full pytest suite **73 passed**; `ruff check .`, `ruff format --check .`, and
+  `git diff --check` passed. The Seasonal Naive CLI completed successfully with unchanged input
+  provenance. The Phase 4 execution plan remains active for external review and explicit closeout.

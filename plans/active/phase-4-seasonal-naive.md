@@ -1,7 +1,7 @@
 # Phase 4 — Seasonal Naive Baseline (Design and Execution Plan)
 
-**Status:** DESIGN APPROVED — IMPLEMENTATION IN PROGRESS. Approval was explicitly provided by the
-user on 2026-10-05. The plan remains active pending implementation, review, and Phase 4 closeout.
+**Status:** IMPLEMENTED / UNDER REVIEW. Design approval was explicitly provided by the user on
+2026-10-05. This plan remains active pending external review and explicit Phase 4 closeout.
 
 ## 1. Objective and current state
 
@@ -12,7 +12,9 @@ coverage, and implementation boundary so later work does not invent methodology.
 
 Phase 3 is COMPLETE on `main`. The implementation was merged in PR #3; its formal documentation
 closeout is also merged on `main` at `c016c4e3a2c33da278ebdbbe074b3e1d4f13fe70`. The completed
-Phase 3 plan is `plans/completed/phase-3-feature-engineering.md`. No Phase 4 implementation exists.
+Phase 3 plan is `plans/completed/phase-3-feature-engineering.md`. The approved Phase 4 baseline,
+development evaluator, tests, and real-data development results are now implemented; this plan
+remains active for external review.
 
 The user has approved the methodology in this plan, including the sparse-label/internal-path
 clarification in Section 5. Durable decisions are recorded as ADR-013. Implementation is limited
@@ -312,9 +314,30 @@ emit only observed historical target keys, but internally forecast h=1..14 for e
 least one observed target row. Internal forecast states have no labels and are not emitted unless
 the corresponding target key exists.
 
-Implementation-time constraints: the real-data runner must filter historical inputs to dates no
+Implementation-time constraints: the real-data runner filters historical inputs to dates no
 later than 2015-07-03 before any forecast/evaluation code can access target Sales; raw forecasts
-must be generated from keys plus origin-censored Sales only, and target Sales/Open labels are joined
-afterward; the final holdout must not be forecast or evaluated. No further methodology question
+are generated from keys plus origin-censored Sales only, and target Sales/Open labels are joined
+afterward; the final holdout is not forecast or evaluated. No further methodology question
 is unresolved. Preserve this plan as active and keep Phase 4 IMPLEMENTED / UNDER REVIEW until
 external review and explicit closeout; do not mark it complete here.
+
+## 15. Implementation execution record (2026-10-05)
+
+- Implemented reusable logic in `src/rossmann_forecasting/forecasting/`: exact weekly Seasonal
+  Naive forecasts with recursive h=8..14 state, post-forecast Open routing and label attachment,
+  approved development-window evaluation, pooled/window/horizon metrics, and explicit coverage.
+- Added the `rossmann-seasonal-naive` project command and `scripts/run_seasonal_naive.py`. The
+  runner validates raw and Phase 2 provenance, reads only Store/Date/Sales/Open through
+  2015-07-03, evaluates only the three approved windows, and writes deterministic Git-ignored
+  outputs under `data/processed/seasonal_naive/`.
+- Added synthetic tests for exact and missing calendar lookup, recursive values and nulls, sparse
+  observed targets, Store isolation, target-label/Open independence, routing, metric populations,
+  zero handling, coverage, and forecast-key/horizon consistency.
+- The real-data run emitted 46,830 observed development targets: 15,610 in each window. Raw
+  availability was 46,830/46,830 overall and 100% among Open=1 labelled targets in every window;
+  no raw forecasts were unavailable. Primary eligible rows were 11,678, 13,438, and 13,437 by
+  window. Window MAE was 1,101.5940, 2,269.7721, and 1,596.5170; pooled MAE was 1,681.2703.
+  Full metric tables and all horizon-level results are in `docs/PROGRESS.md`.
+- The runner reported input provenance unchanged before/after execution. No final-holdout forecast,
+  score, metric, or summary was produced. Phase 4 remains IMPLEMENTED / UNDER REVIEW; this plan
+  remains ACTIVE and must not be archived until review and explicit closeout.
