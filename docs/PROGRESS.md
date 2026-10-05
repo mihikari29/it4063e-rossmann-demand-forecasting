@@ -2,42 +2,53 @@
 
 ## Current Phase
 
-Phase 0 — Repository Foundation.
+Phase 1 - Data Acquisition & Validation.
 
 ## Status
 
-Completed, pending initial Git publication.
+**COMPLETE.** The official Kaggle Rossmann Store Sales files were obtained by manual web download,
+validated without modification, documented from measured evidence, and kept outside Git.
 
 ## Completed
 
-- Initialized the local Git repository and configured the expected GitHub `origin`.
-- Placed the authoritative proposal at `docs/proposal.md`.
-- Normalized 11 inline proposal formulas to VS Code-compatible `$...$` delimiters without changing their meaning.
-- Established the project operating contract, roadmap, workflow, decision log, initial data dictionary, README, and ignore rules.
-- Prepared and completed the Phase 0 execution plan.
-
-## In Progress
-
-- Initial Git publication of the completed repository foundation.
+- Completed and committed the Phase 1 execution plan before implementation.
+- Added the Python 3.14 environment, portable data paths, safe acquisition workflow, read-only
+  validator, console/JSON output, and 12 focused fixture tests.
+- Recorded the manually downloaded official Kaggle snapshot, filenames, sizes, and SHA-256 hashes.
+- Validated all four source files with 0 errors, 4 reviewed warnings, and 12 informational findings.
+- Verified schemas, missingness, categorical domains, numerical ranges, date coverage, unique Store
+  × Date keys, unique store metadata, and many-to-one joins.
+- Documented date gaps, open-store zero-sales rows, missing test `Open`, test coverage, metadata
+  missingness, and high positive Sales without changing source values.
+- Replaced applicable Data Dictionary `TBD` entries with observed facts while preserving the
+  separation among real, planned/derived, and synthetic variables.
+- Kept raw data, credentials, virtual environments, and generated validation reports ignored.
 
 ## Next
 
-- Begin Phase 1 planning after the initial repository state is published.
+Phase 2 - Data Preparation & EDA. It has not begun. Before implementation, create a focused Phase 2
+execution plan that preserves chronological integrity and explicitly addresses the documented date
+coverage and missing-`Open` findings.
 
 ## Blockers
 
-None currently known.
+None for Phase 1. The earlier Kaggle API HTTP 403 response was bypassed by the confirmed official
+manual download and is not an outstanding blocker.
 
 ## Validation Status
 
-- Proposal math-delimiter balance checked: 68 display blocks and 11 inline expressions; no legacy `\(...\)` delimiters remain.
-- All required governance files and all 15 roadmap phases were checked for structural completeness.
-- Repository-wide terminology and proposal consistency were reviewed.
-- Relative Markdown links were checked across all Markdown files; no broken links were found.
-- `git diff --check` passed; Git reported only expected LF-to-CRLF normalization notices on Windows.
-- No Python tests, lint configuration, or implementation checks exist in Phase 0.
+- Real-data validation: PASS with 0 errors, 4 warnings, and 12 informational findings.
+- `train.csv`: 1,017,209 rows, 1,115 stores, 2013-01-01 through 2015-07-31.
+- `test.csv`: 41,088 rows, 856 stores, 2015-08-01 through 2015-09-17.
+- `store.csv`: 1,115 unique stores; `sample_submission.csv`: 41,088 rows matching test IDs.
+- Raw SHA-256 hashes remained unchanged during validation.
+- `python -m pytest`: 12 passed on Python 3.14.5 with pytest 9.1.1.
+- `python -m ruff check .`: passed with Ruff 0.16.10.
+- `python -m ruff format --check .`: passed with Ruff 0.16.10.
 
-## Notes
+## Scope Confirmation
 
-- No dataset, notebook, forecasting code, synthetic data, model artifact, API, dashboard, package, or environment has been created.
-- Dependency and environment design is deferred to Phase 1 planning.
+Phase 1 introduced no EDA, feature engineering, forecasting, train/validation splitting,
+inventory logic, API, dashboard, or synthetic supply-chain data. Store × Date remains the unit of
+analysis; `Sales` remains a monetary target; future actual `Customers` remains unavailable to a
+production forecast.
