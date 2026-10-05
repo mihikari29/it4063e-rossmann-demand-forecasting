@@ -95,9 +95,10 @@ git diff --check
 ```
 
 The [quality workflow](../.github/workflows/quality.yml) runs locked fixture tests, package
-consistency, Ruff and Markdown links for PRs and pushes to `main` on Python 3.12 and 3.14.
-It needs no Rossmann files, Kaggle credentials, model fitting, or holdout outcomes. It becomes a
-remote check only after publication; a local pass is not evidence that GitHub Actions ran.
+consistency, Ruff and Markdown links for published PRs and pushes to `main` on Python 3.12 and
+3.14. It needs no Rossmann files, Kaggle credentials, model fitting, or holdout outcomes. A local
+pass does not establish the current PR head's remote check status; verify the live checks before
+merge.
 Real-data development runs are separate local evidence when relevant, not a mandatory docs gate.
 
 Recommended `main` settings: require PRs, one human approval and the quality matrix; block force

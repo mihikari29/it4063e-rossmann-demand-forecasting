@@ -1,12 +1,13 @@
 # Repository Architecture and Governance Review
 
-**Status:** COMPLETE as a scoped review task, 2026-10-05; changes remain local/unpublished.
-This task does not implement Phase 6 or close Phase 5.
+**Status:** Review task COMPLETE; integration pending PR #7. This task does not implement Phase 6
+or close Phase 5.
 
 ## Scope and baseline
 
-- Branch: `docs/architecture-governance-review`, based on Phase 5 review HEAD `3d4fbfd`.
-- `origin/main` is `01cdedb` (Phases 0–4); Phase 5 is unmerged on `feat/holt-winters`.
+- Branch: published `docs/architecture-governance-review`, stacked on `feat/holt-winters`.
+- PR #7 is open against `main`; `main` contains Phases 0–4. Merging PR #7 integrates Phase 5 and
+  the architecture/governance review.
 - Review all governance/data/feature docs, active/completed plans, package and test structure,
   and public GitHub branch/PR metadata. Preserve historical results and completed plans.
 - Correct business claims, holdout sequencing, uncertainty/inventory semantics, Phase 6 handoff,
@@ -35,10 +36,10 @@ This task does not implement Phase 6 or close Phase 5.
   from the repository, without interpreting precomputed validation lags as origin-safe inference.
 - Each document has one responsibility; historical evidence is retained and current status
   distinguishes main from unmerged Phase 5 and this review branch.
-- CI and reproducibility policies have concrete files and commands, with validation honestly
-  distinguishing locally executed checks from GitHub settings or checks not yet activated.
-- No holdout evaluation, Phase 6 implementation, remote branch deletion, settings change,
-  publication, or merge occurs in this task.
+- CI and reproducibility policies have concrete files and commands; remote PR checks and GitHub
+  settings are described according to their live state.
+- No holdout evaluation, Phase 6 implementation, remote branch deletion, settings change, or merge
+  occurred during the review task.
 
 ## Review evidence
 
@@ -57,12 +58,12 @@ All required local checks and both isolated locked Python suites passed. Phase/A
 proposal math delimiters, local links, branches/current state and source hash-only checks passed.
 The canonical commands/counts/limitations are recorded in
 [PROGRESS](../../docs/PROGRESS.md#repository-architecturegovernance-review--2026-10-05).
+PR #7 is open and pending integration; merge requires the latest-head Quality checks to pass.
 
-No holdout evaluation, Phase 6 implementation, raw mutation, remote deletion/settings change,
-commit/push/PR/merge, or Phase 5 closeout occurred. This ordinary task plan is archived; the Phase 5
-plan remains active. Publish/integrate this stacked review only with authorization and account for
-its unmerged Phase 5 base. Next project boundary: finish Phase 5 review/integration/closeout, then
-prepare Phase 6 design.
+No holdout evaluation, Phase 6 implementation, raw mutation, remote deletion/settings change, or
+Phase 5 closeout occurred during this task. This ordinary task plan is archived; the active Phase 5
+plan remains in place until merge and explicit closeout. Next project boundary: complete PR #7
+integration, close Phase 5, then prepare Phase 6 design.
 
 ## Continuation audit
 
@@ -71,4 +72,5 @@ Preserved existing work, reread changed files/diffs, inspected recent commits, a
 fresh-agent handoff. Corrected two remaining wording gaps: predicted-Sales feedback instead of
 target-window actual insertion, and precommitted scheduled refitting of model/preprocessing state
 from already revealed eligible history versus prohibited recipe selection/recalibration.
-Final validations are recorded in PROGRESS; no publication or phase expansion was authorized.
+Final validations are recorded in PROGRESS; the follow-up status synchronization is included in
+PR #7, with no phase expansion.

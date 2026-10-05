@@ -7,8 +7,10 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 ## Current state
 
 `main` contains completed Phases 0–4 (latest closeout: [PR #6](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/6)).
-Phase 5 additive Holt-Winters is **IMPLEMENTED / UNDER REVIEW** on unmerged `feat/holt-winters`.
-This architecture/governance review is a local stacked branch based on that implementation.
+Phase 5 additive Holt-Winters remains **IMPLEMENTED / UNDER REVIEW**. PR #7 is open against
+`main` from the published `docs/architecture-governance-review` branch, stacked on
+`feat/holt-winters`. Merging PR #7 will integrate both Phase 5 and this architecture/governance
+review. Phase 5 stays under review until merge and explicit closeout.
 [PROGRESS](docs/PROGRESS.md) records the exact Git/review snapshot and canonical development results.
 Phase 6 and all uncertainty/inventory/application/monitoring modules remain planned.
 
@@ -89,8 +91,9 @@ python scripts/check_docs.py
 git diff --check
 ```
 
-The [CI workflow](.github/workflows/quality.yml) contains locked fixture checks for Python 3.12/3.14
-without Rossmann data or secrets; remote execution awaits publication of this change.
+The [CI workflow](.github/workflows/quality.yml) runs locked fixture checks for Python 3.12/3.14
+on PR #7 without Rossmann data or secrets. Merge requires the latest-head Quality checks to pass;
+check the live PR for their current status.
 Local Markdown checks cover relative files/directories and common heading anchors, not external
 website availability.
 

@@ -5,17 +5,17 @@
 | Scope | State | Integration |
 |---|---|---|
 | Phases 0–4 | COMPLETE | On `main`; Phase 3 PR #3/#4, Phase 4 PR #5/#6 |
-| Phase 5 — additive Holt-Winters | IMPLEMENTED / UNDER REVIEW | On unmerged `feat/holt-winters`; development results below |
-| Repository architecture/governance review | COMPLETE as a review task; local/unpublished changes | `docs/architecture-governance-review`, stacked on Phase 5 HEAD `3d4fbfd` |
+| Phase 5 — additive Holt-Winters | IMPLEMENTED / UNDER REVIEW | Included on PR #7's stacked head; closeout follows merge |
+| Repository architecture/governance review | Task COMPLETE; integration pending | PR #7 open to `main` from published `docs/architecture-governance-review`, stacked on `feat/holt-winters` |
 | Phase 6 and later | PLANNED; implementation not started | Phase 5 review/integration/closeout is the next gate |
 
-Fetched Git and public GitHub PR/branch metadata agree: `origin/main` is
-`01cdedbfa2447bd68c3b8a4d2b75bbb70dd16465`; `origin/feat/holt-winters` is
-`3d4fbfd39e0931f9cf5ea273dc9888733091885e`. PR #1–#6 are merged; no Phase 5 PR exists.
-This review branch inherits Phase 5 code; its new governance/CI files are not yet published.
-No review commit, push or PR has been created; these task changes remain in the worktree.
-Integration must account for that stacked dependency rather than presenting Phase 5 as already
-on main. The public branch metadata reported main unprotected; no GitHub settings were changed.
+After fetching origin, `origin/main` is `01cdedbfa2447bd68c3b8a4d2b75bbb70dd16465` and the
+published `docs/architecture-governance-review` head is stacked on `feat/holt-winters`.
+PR #1–#6 are merged; PR #7 is open against `main`. Merging PR #7 will integrate the Phase 5
+implementation and architecture/governance review together. Phase 5 remains IMPLEMENTED / UNDER
+REVIEW until that merge and explicit closeout. GitHub Actions Quality runs on PR #7; merge requires
+its checks for the latest head to pass. Check the live PR for current check status. Main protection
+was reported disabled in the 2026-10-05 branch-metadata snapshot; no settings were changed.
 
 Completed plans under `plans/completed/` preserve their historical approval/results/checkpoint
 records. The [active Phase 5 plan](../plans/active/phase-5-statistical-forecasting.md) remains active.
@@ -24,9 +24,10 @@ snapshots, not separate results to update. No final project model has been selec
 
 ## Immediate next boundary
 
-Finish external Phase 5 review, then merge/close it only within explicit authorization. After
-verified closeout, prepare the Phase 6 design using the [repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
-This review does not implement LightGBM, archive Phase 5, or close Phase 5.
+PR #7 is open and pending integration; merge requires the latest-head Quality checks to pass.
+After merge, explicitly close Phase 5 and archive its active plan. Only then prepare the Phase 6
+design using the [repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
+This review did not implement LightGBM or close Phase 5.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics. Earlier full-source validation and descriptive EDA
@@ -331,6 +332,6 @@ Final checks actually executed:
 
 Remaining non-blocking limits: only 42 development target days and prior descriptive holdout
 exposure; pooled empirical intervals/simulated policies require their later reviewed designs.
-GitHub Actions has not run remotely, main protection is not enabled, and stale branch cleanup
-needs separate authorization/unique-change checks. Phase 5 external review/integration/closeout
-remains the immediate project gate. All new review changes are local and uncommitted.
+Main protection is not enabled, and stale branch cleanup needs separate authorization/unique-change
+checks. PR #7 integration, followed by Phase 5 explicit closeout, remains the immediate project
+gate. Phase 6 has not started.
