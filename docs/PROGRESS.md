@@ -88,6 +88,12 @@ holdout outcomes as feature-design feedback.
 - Detailed field semantics, roles, dtypes, null behavior, and point-in-time rules are in
   [Feature Contract](FEATURE_CONTRACT.md); the active execution plan remains in
   `plans/active/phase-3-feature-engineering.md` pending review.
+- External review follow-up canonicalizes history keys before duplicate/overlap checks, grouping,
+  or exact-date lookup: Store IDs are validated positive exact integers representable as int64;
+  Dates are parsed as midnight calendar values and stored as datetime64[ns]. The shared key path
+  copies inputs and is also used by static predictor assembly. Focused regression coverage now
+  includes fractional/out-of-range IDs, canonical Store/Date collisions, valid coercion, and input
+  non-mutation.
 
 ## Quality Gates
 
@@ -95,8 +101,9 @@ holdout outcomes as feature-design feedback.
   4 reviewed warnings, 12 informational findings.
 - `python scripts/build_features.py`: PASS — raw/interim provenance checks, key preservation,
   matching predictor schemas/dtypes, holdout mechanical audit, and output generation.
-- `python -m pytest -q --tb=short`: 45 passed.
-- `ruff check .`: passed; `ruff format --check .`: 44 files already formatted.
+- `python -m pytest -q --tb=short`: 56 passed, including the external-review key-canonicalization
+  regression cases.
+- `ruff check .`: passed; `ruff format --check .`: 45 files already formatted.
 - `git diff --check`: passed. Relative Markdown links in changed user-facing documentation: passed.
 - Preparation and EDA commands completed against the official data; both notebooks validated and
   executed successfully with cleared committed outputs.

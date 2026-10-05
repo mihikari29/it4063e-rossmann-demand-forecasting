@@ -533,9 +533,18 @@ was started.
   through 2015-07-31; no holdout outcome/distribution summary or forecast metric was produced.
 - Gap audit for Store 13: no dynamic history on Jan 1, 2015; exact lag/window availability resumes
   incrementally, with all ten dynamic features available Jan 29 after 28 complete prior dates.
-- Checks actually run: raw validator (0 errors, 4 warnings, 12 info); repeated deterministic builds
-  matched each corresponding artifact hash; pytest (45 passed); Ruff check; Ruff format check (44
-  files); `git diff --check`; relative Markdown links.
+- External review follow-up: a shared non-mutating key validator canonicalizes safe positive int64
+  Store IDs and midnight datetime64[ns] Dates before duplicate/overlap checks, grouping, or lookup.
+  Regression tests cover fractional and out-of-range Store IDs, equivalent Store/Date collisions,
+  valid canonicalization, and caller-input preservation. The approved same-weekday deferral is
+  clarified in `docs/PROJECT_PLAN.md`.
+- Checks run before this review follow-up: raw validator (0 errors, 4 warnings, 12 info);
+  repeated deterministic builds matched each corresponding artifact hash; pytest (45 passed); Ruff
+  check; Ruff format check (44 files); `git diff --check`; relative Markdown links.
+- Review follow-up gates actually run: full pytest (56 passed), Ruff check, Ruff format check (45
+  files), real-data feature build (1,017,209 train and 41,088 inference rows), and raw validation
+  (0 errors, 4 warnings, 12 info). The feature runner verified raw-source and Phase 2 input hashes
+  before and after generation; `git diff --check` and changed-document relative links passed.
 
 The execution record documents completed technical work, not final phase acceptance. Do not move
 the plan to `plans/completed/` or mark Phase 3 complete before user review.

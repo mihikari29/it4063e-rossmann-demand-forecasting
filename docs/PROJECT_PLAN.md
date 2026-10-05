@@ -42,13 +42,19 @@ This document is the implementation roadmap derived from the authoritative [proj
 
 **Objective:** Build reusable, forecast-origin-safe features for statistical and machine-learning models.
 
-**Main work:** Create calendar, holiday, promotion, store, competition-age, lag, rolling, and same-weekday features; define categorical handling; enforce time-safe feature construction.
+**Main work:** Implement the approved `phase-3-v1` calendar, holiday, promotion, store,
+competition, exact-Sales-lag, and complete rolling-window contract; enforce point-in-time feature
+construction. Optional same-weekday statistics are deferred under the reviewed feature contract.
 
-**Deliverables:** Reusable feature pipeline, feature specification, and leakage-focused validation.
+**Deliverables:** Reusable feature pipeline, versioned feature specification, and leakage-focused
+validation. Same-weekday statistics are not part of the Phase 3 predictor schema.
 
 **Dependencies:** Phase 2 prepared data and agreed forecast origins.
 
-**Acceptance criteria:** Every feature has a documented source and forecast-time availability, lag and rolling features use history only, and future `Customers` is excluded from production forecasting.
+**Acceptance criteria:** Every implemented feature has a documented source and forecast-time
+availability; lag and rolling features use exact, complete, point-in-time history; future
+`Customers` is excluded from production forecasting; and optional same-weekday statistics remain
+deferred unless a reviewed contract change is approved.
 
 ## Phase 4 — Seasonal Naive Baseline
 

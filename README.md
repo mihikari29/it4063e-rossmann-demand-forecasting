@@ -110,7 +110,9 @@ python -m ruff format --check .
 .
 |-- data/README.md
 |-- docs/
-|-- plans/completed/
+|-- plans/
+|   |-- active/
+|   `-- completed/
 |-- scripts/
 |-- src/rossmann_forecasting/{analysis,data,features}/
 |-- notebooks/
