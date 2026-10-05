@@ -6,13 +6,12 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` contains completed Phases 0–4 (latest closeout: [PR #6](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/6)).
-Phase 5 additive Holt-Winters remains **IMPLEMENTED / UNDER REVIEW**. PR #7 is open against
-`main` from the published `docs/architecture-governance-review` branch, stacked on
-`feat/holt-winters`. Merging PR #7 will integrate both Phase 5 and this architecture/governance
-review. Phase 5 stays under review until merge and explicit closeout.
-[PROGRESS](docs/PROGRESS.md) records the exact Git/review snapshot and canonical development results.
-Phase 6 and all uncertainty/inventory/application/monitoring modules remain planned.
+`main` contains completed Phases 0–5. Phase 5 additive Holt-Winters was integrated with the
+architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
+at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
+the development-only results and does not evaluate the final holdout. [PROGRESS](docs/PROGRESS.md)
+records the integration and canonical development results. Phase 6 and all later modules remain
+planned; Phase 6 implementation has not started.
 
 ## Environment and quick start
 
@@ -78,8 +77,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 
 Later inventory/app modules are created when their work is approved; there is no speculative
 service framework. The [Phase 6 handoff](docs/PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code)
-maps inputs, origins, metrics, artifacts, tests and design approval. Phase 5 review/integration/
-closeout remains the immediate gate.
+maps inputs, origins, metrics, artifacts, tests and design approval. Phase 5 is integrated and
+formally closed; Phase 6 implementation remains subject to a separate approved design.
 
 ## Quality and repository layout
 
@@ -92,8 +91,8 @@ git diff --check
 ```
 
 The [CI workflow](.github/workflows/quality.yml) runs locked fixture checks for Python 3.12/3.14
-on PR #7 without Rossmann data or secrets. Merge requires the latest-head Quality checks to pass;
-check the live PR for their current status.
+on pull requests and pushes to `main`, without Rossmann data or secrets. Verify the live checks for
+the current pull request before merging.
 Local Markdown checks cover relative files/directories and common heading anchors, not external
 website availability.
 

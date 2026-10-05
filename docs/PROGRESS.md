@@ -5,29 +5,29 @@
 | Scope | State | Integration |
 |---|---|---|
 | Phases 0–4 | COMPLETE | On `main`; Phase 3 PR #3/#4, Phase 4 PR #5/#6 |
-| Phase 5 — additive Holt-Winters | IMPLEMENTED / UNDER REVIEW | Included on PR #7's stacked head; closeout follows merge |
-| Repository architecture/governance review | Task COMPLETE; integration pending | PR #7 open to `main` from published `docs/architecture-governance-review`, stacked on `feat/holt-winters` |
-| Phase 6 and later | PLANNED; implementation not started | Phase 5 review/integration/closeout is the next gate |
+| Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
+| Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
+| Phase 6 and later | PLANNED; implementation not started | Phase 5 closeout is complete; Phase 6 requires a separate approved design before implementation |
 
-After fetching origin, `origin/main` is `01cdedbfa2447bd68c3b8a4d2b75bbb70dd16465` and the
-published `docs/architecture-governance-review` head is stacked on `feat/holt-winters`.
-PR #1–#6 are merged; PR #7 is open against `main`. Merging PR #7 will integrate the Phase 5
-implementation and architecture/governance review together. Phase 5 remains IMPLEMENTED / UNDER
-REVIEW until that merge and explicit closeout. GitHub Actions Quality runs on PR #7; merge requires
-its checks for the latest head to pass. Check the live PR for current check status. Main protection
-was reported disabled in the 2026-10-05 branch-metadata snapshot; no settings were changed.
+At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
+`origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
+squash-merge commit reported by GitHub. PR #7 is merged into `main`. The merged tree contains the
+reusable Holt-Winters forecaster, development runner, evaluation code, and tests. The closeout
+changes lifecycle/documentation only: no forecasting algorithm or historical metric is changed, and
+no final-holdout forecast or evaluation was performed. Main protection was reported disabled in
+the 2026-10-05 branch-metadata snapshot; no settings were changed.
 
 Completed plans under `plans/completed/` preserve their historical approval/results/checkpoint
-records. The [active Phase 5 plan](../plans/active/phase-5-statistical-forecasting.md) remains active.
+records, including the [completed Phase 5 plan](../plans/completed/phase-5-statistical-forecasting.md).
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
 snapshots, not separate results to update. No final project model has been selected.
 
 ## Immediate next boundary
 
-PR #7 is open and pending integration; merge requires the latest-head Quality checks to pass.
-After merge, explicitly close Phase 5 and archive its active plan. Only then prepare the Phase 6
-design using the [repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
-This review did not implement LightGBM or close Phase 5.
+Phase 5 is formally COMPLETE following PR #7 integration and this explicit closeout. Phase 6
+remains planned and unimplemented; this closeout does not authorize Phase 6 work. Any later Phase 6
+implementation requires its own approved design, using the
+[repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics. Earlier full-source validation and descriptive EDA
@@ -196,7 +196,7 @@ operational forecast after raw generation.
 - Status at approval checkpoint: **APPROVED / IMPLEMENTATION IN PROGRESS**. The user explicitly
   approved the fixed Holt-Winters methodology and its 99% coverage guardrail on 2026-10-05. Phase 5
   implementation and real-data results are recorded below as they are produced.
-- The design plan is [`plans/active/phase-5-statistical-forecasting.md`](../plans/active/phase-5-statistical-forecasting.md).
+- The archived design plan is [`plans/completed/phase-5-statistical-forecasting.md`](../plans/completed/phase-5-statistical-forecasting.md).
 - A mechanical history-availability audit projected only `Store` and `Date` from the existing
   training feature Parquet and filtered dates to `<= 2015-07-03`. It used no Sales, Open,
   Customers, forecast, metric, or holdout field/value. All 1,115 target Stores in each approved
@@ -272,8 +272,8 @@ operational forecast after raw generation.
 - Initial Phase 5 implementation checks: full pytest suite **95 passed**;
   `ruff check src tests scripts` and `ruff format --check src tests scripts` passed. Artifact paths
   were verified Git-ignored;
-  provenance checks passed before and after evaluation. Phase 5 remains **IMPLEMENTED / UNDER
-  REVIEW**, not formally closed. `docs/proposal.md`, reviewed Phase 4 model code/artifacts, raw data,
+  provenance checks passed before and after evaluation. At this implementation checkpoint, Phase 5
+  was **IMPLEMENTED / UNDER REVIEW**, not formally closed. `docs/proposal.md`, reviewed Phase 4 model code/artifacts, raw data,
   and Phase 2 prepared data were not modified.
 - External review found that the reusable Holt-Winters API validated horizons from 1–14 but still
   generated a fixed 14-step path. The forecaster now consistently uses the validated
@@ -286,8 +286,8 @@ operational forecast after raw generation.
   guardrail. The ignored fit-diagnostics artifact now includes `forecast_horizon`; artifact hashes
   were regenerated for the updated output schema. Full-repository validation passed: pytest **102
   passed**, `ruff check .`, `ruff format --check .`, `git diff --check`, and relative Markdown-link
-  validation across 19 files. No holdout forecast or evaluation occurred; Phase 5 remains
-  **IMPLEMENTED / UNDER REVIEW**.
+  validation across 19 files. No holdout forecast or evaluation occurred; at that review checkpoint,
+  Phase 5 was **IMPLEMENTED / UNDER REVIEW**.
 
 ## Repository Architecture/Governance Review — 2026-10-05
 
@@ -332,6 +332,16 @@ Final checks actually executed:
 
 Remaining non-blocking limits: only 42 development target days and prior descriptive holdout
 exposure; pooled empirical intervals/simulated policies require their later reviewed designs.
-Main protection is not enabled, and stale branch cleanup needs separate authorization/unique-change
-checks. PR #7 integration, followed by Phase 5 explicit closeout, remains the immediate project
-gate. Phase 6 has not started.
+At the review checkpoint recorded here, main protection was not enabled, and stale branch cleanup
+needed separate authorization/unique-change checks. PR #7 integration followed by Phase 5 explicit
+closeout remained the immediate project gate. Phase 6 had not started.
+
+## Phase 5 Formal Closeout — 2026-10-05
+
+PR #7 was squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`. The GitHub
+PR metadata's `merge_commit_sha` matches the fetched `origin/main` and the closeout branch base.
+Phase 5 is **COMPLETE**; its fixed additive Holt-Winters implementation and development-only
+evaluation are integrated. The completed execution plan is archived at
+[`plans/completed/phase-5-statistical-forecasting.md`](../plans/completed/phase-5-statistical-forecasting.md).
+No final-holdout forecasting or evaluation was performed, and Phase 6 remains planned and
+unimplemented. The historical metric tables and methodology above are unchanged.

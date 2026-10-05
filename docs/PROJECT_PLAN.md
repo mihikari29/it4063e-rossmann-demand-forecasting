@@ -20,7 +20,8 @@ A package may share one concise execution plan, but each model/methodology appro
 boundary stays explicit. Phase 9 can proceed alongside Phase 8 using development-only history.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
-(ADR-015/016). Current Phase 5 review/merge/closeout precedes Phase 6 implementation.
+(ADR-015/016). Phase 5 is complete on `main` through PR #7; Phase 6 remains planned and requires a
+separate approved design before implementation.
 
 ## Phase 0 — Repository Foundation
 
@@ -190,13 +191,14 @@ Rossmann production claim.
 
 ## Phase 6 handoff — read before design or code
 
-Phase 6 is not implemented. Prepare its design only within the assigned scope; implementation
-requires its approval and Phase 5 integration/closeout. These repository interfaces are the starting
+Phase 6 is not implemented. This Phase 5 closeout does not authorize Phase 6 design or implementation;
+future Phase 6 work requires a separate scoped authorization and approved design before implementation.
+Phase 5 integration and explicit closeout are complete. These repository interfaces are the starting
 point, not the uncommitted/generated output of a previous agent:
 
 | Need | Source / interface |
 |---|---|
-| Current readiness | [PROGRESS](PROGRESS.md), Git/merged PRs and active Phase 5 plan |
+| Current readiness | [PROGRESS](PROGRESS.md), Git/merged PRs and completed Phase 5 plan |
 | Predictor order/roles | [FEATURE_CONTRACT](FEATURE_CONTRACT.md), [contract.py](../src/rossmann_forecasting/features/contract.py) `PREDICTOR_COLUMNS` |
 | Prepared inputs | `data/interim/train.parquet`, Phase 2 manifest; [preparation.py](../src/rossmann_forecasting/data/preparation.py) |
 | Static and dynamic assembly | [pipeline.py](../src/rossmann_forecasting/features/pipeline.py) `build_inference_features`; [history.py](../src/rossmann_forecasting/features/history.py) `build_origin_history_features` |
