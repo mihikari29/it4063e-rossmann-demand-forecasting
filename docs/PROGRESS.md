@@ -2,12 +2,13 @@
 
 ## Current Phase
 
-Phase 2 — Data Preparation & EDA.
+Phase 3 — Feature Engineering.
 
 ## Status
 
-**COMPLETE.** Phase 2 preparation, warning investigations, EDA, documentation, and quality gates are
-complete. Phase 3 has not started.
+**PLANNING / NOT YET IMPLEMENTED.** Phase 2 preparation, warning investigations, EDA,
+documentation, and quality gates are complete. The Phase 3 execution plan is awaiting user review;
+no feature code, feature dataset, or model has been implemented.
 
 ## Completed
 
@@ -24,13 +25,13 @@ complete. Phase 3 has not started.
 
 ## In Progress
 
-None.
+Phase 3 execution-plan review on branch `feat/feature-engineering`.
 
 ## Next
 
-Begin Phase 3 Feature Engineering only under its own reviewed execution plan. Maintain
-forecast-origin-safe information rules, exclude future actual Customers, use chronological
-validation, and preserve the untouched final holdout.
+User review and approval of `plans/active/phase-3-feature-engineering.md` before implementation.
+Maintain forecast-origin-safe information rules, exclude future actual Customers, use chronological
+validation in later modeling phases, and preserve the untouched final holdout.
 
 ## Source and Preparation Evidence
 
