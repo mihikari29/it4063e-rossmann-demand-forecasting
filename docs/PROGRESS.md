@@ -1,13 +1,14 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-05
+## Current implementation and Git state — 2026-10-06
 
 | Scope | State | Integration |
 |---|---|---|
 | Phases 0–4 | COMPLETE | On `main`; Phase 3 PR #3/#4, Phase 4 PR #5/#6 |
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
-| Phase 6 and later | PLANNED; implementation not started | Phase 5 closeout is complete; Phase 6 requires a separate approved design before implementation |
+| Phase 6 — Global LightGBM | DESIGN PROPOSED / AWAITING APPROVAL; implementation not started | Design plan: [plans/active/phase-6-global-lightgbm.md](../plans/active/phase-6-global-lightgbm.md) |
+| Phase 7 and later | PLANNED; implementation not started | Phase 6 design must be reviewed and approved before implementation; Phase 7 remains out of scope |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -24,9 +25,10 @@ snapshots, not separate results to update. No final project model has been selec
 
 ## Immediate next boundary
 
-Phase 5 is formally COMPLETE following PR #7 integration and this explicit closeout. Phase 6
-remains planned and unimplemented; this closeout does not authorize Phase 6 work. Any later Phase 6
-implementation requires its own approved design, using the
+Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 design has
+started under a separate authorization; its plan is **PROPOSED / AWAITING APPROVAL** and Phase 6
+remains unimplemented. No Phase 6 model work is authorized until the design is explicitly approved.
+Phase 7 has not started. The proposal uses the
 [repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
