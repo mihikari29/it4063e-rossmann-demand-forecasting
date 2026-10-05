@@ -9,10 +9,11 @@ units and supply-chain fields will be explicitly simulated.
 
 ## Current Status
 
-Phase 1 - Data Acquisition & Validation, Phase 2 - Data Preparation & EDA, and Phase 3 - Feature
-Engineering are COMPLETE. Phase 3 was externally reviewed and merged to `main` in PR #3. Phase 4 -
-Seasonal Naive Baseline is IMPLEMENTED / UNDER REVIEW. Development-only results are recorded in
-[`docs/PROGRESS.md`](docs/PROGRESS.md); the final holdout remains untouched. Raw Rossmann data
+Phase 1 - Data Acquisition & Validation, Phase 2 - Data Preparation & EDA, Phase 3 - Feature
+Engineering, and Phase 4 - Seasonal Naive Baseline are COMPLETE. Phase 3 was merged in PR #3 and
+Phase 4 in PR #5. Phase 5 - Exponential Smoothing / Holt-Winters - is next and planning only; its
+implementation has not begun. Development results are recorded in
+[`docs/PROGRESS.md`](docs/PROGRESS.md), and the final holdout remains untouched. Raw Rossmann data
 remain immutable; prepared tables, feature Parquet files, EDA exports, and forecast outputs are
 reproducible and ignored local outputs.
 
@@ -90,8 +91,8 @@ The runner verifies raw and Phase 2 provenance, filters historical inputs throug
 before evaluation, and evaluates only the three approved 14-day windows. Forecast records and
 window, pooled, horizon, and coverage summaries are written under the ignored
 `data/processed/seasonal_naive/` directory. It does not forecast or evaluate the final holdout.
-See the [active Phase 4 plan](plans/active/phase-4-seasonal-naive.md) for the approved methodology
-and [`docs/PROGRESS.md`](docs/PROGRESS.md) for recorded results.
+See the [completed Phase 4 plan](plans/completed/phase-4-seasonal-naive.md) for the approved
+methodology and [`docs/PROGRESS.md`](docs/PROGRESS.md) for recorded results.
 
 ## Quality Checks
 
