@@ -18,6 +18,7 @@ from rossmann_forecasting.features.history import (
     build_historical_history_features,
     build_origin_history_features,
 )
+from rossmann_forecasting.features.keys import canonicalize_store_date_keys
 from rossmann_forecasting.features.promotion import build_promotion_features
 
 _STORE_FIELDS = ("StoreType", "Assortment", "CompetitionDistance")
@@ -28,17 +29,6 @@ _OPEN_RESOLUTION_FIELDS = (
     "historical_open_rate",
     "resolution_uncertain",
 )
-
-
-def _validate_store_ids(rows: pd.DataFrame) -> pd.Series:
-    if "Store" not in rows:
-        raise ValueError("Feature rows must include Store.")
-    values = pd.to_numeric(rows["Store"], errors="coerce")
-    if values.isna().any() or values.mod(1).ne(0).any():
-        raise ValueError("Store must be a non-missing integer identity.")
-    if values.lt(1).any() or values.gt(np.iinfo(np.int64).max).any():
-        raise ValueError("Store is outside the supported positive int64 identity range.")
-    return values.astype("int64")
 
 
 def _static_store_value(rows: pd.DataFrame, column: str) -> pd.Series:
@@ -66,27 +56,23 @@ def _cast_predictors(frame: pd.DataFrame) -> pd.DataFrame:
 def build_static_predictors(rows: pd.DataFrame) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     """Build Store identity, calendar, holiday/promotion, store, and competition predictors."""
 
-    if rows[["Store", "Date"]].isna().any(axis=None):
-        raise ValueError("Feature rows contain missing Store × Date keys.")
-    if rows.duplicated(["Store", "Date"]).any():
-        raise ValueError("Feature rows contain duplicate Store × Date keys.")
-
-    store = _validate_store_ids(rows)
-    calendar = build_calendar_features(rows)
-    promotion, promotion_findings = build_promotion_features(rows)
-    competition, competition_findings = build_competition_features(rows)
+    canonical_rows = canonicalize_store_date_keys(rows, name="Feature rows")
+    store = canonical_rows["Store"]
+    calendar = build_calendar_features(canonical_rows)
+    promotion, promotion_findings = build_promotion_features(canonical_rows)
+    competition, competition_findings = build_competition_features(canonical_rows)
 
     for field in ("StoreType", "Assortment"):
-        if field not in rows or rows[field].isna().any():
+        if field not in canonical_rows or canonical_rows[field].isna().any():
             raise ValueError(f"{field} must be present and non-missing for every feature row.")
     store_features = pd.DataFrame(
         {
             "Store": store,
-            "store_type": rows["StoreType"].astype("string"),
-            "assortment": rows["Assortment"].astype("string"),
-            "competition_distance": _static_store_value(rows, "CompetitionDistance"),
+            "store_type": canonical_rows["StoreType"].astype("string"),
+            "assortment": canonical_rows["Assortment"].astype("string"),
+            "competition_distance": _static_store_value(canonical_rows, "CompetitionDistance"),
         },
-        index=rows.index,
+        index=canonical_rows.index,
     )
     static = pd.concat(
         [

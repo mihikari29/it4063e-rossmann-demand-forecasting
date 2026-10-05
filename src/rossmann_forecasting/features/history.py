@@ -9,6 +9,7 @@ import pandas as pd
 
 from rossmann_forecasting.features.calendar import normalize_dates
 from rossmann_forecasting.features.contract import DYNAMIC_PREDICTOR_COLUMNS
+from rossmann_forecasting.features.keys import canonicalize_store_date_keys
 
 _DAY_NS = 86_400_000_000_000
 _LAGS = (1, 7, 14, 28)
@@ -31,26 +32,16 @@ def _day_numbers(values: pd.Series, *, name: str) -> np.ndarray:
     return dates.astype("int64").to_numpy() // _DAY_NS
 
 
-def _validate_keys(frame: pd.DataFrame, name: str) -> None:
-    missing = {"Store", "Date"}.difference(frame.columns)
-    if missing:
-        raise ValueError(f"{name} requires Store and Date columns; missing {sorted(missing)}.")
-    if frame[["Store", "Date"]].isna().any(axis=None):
-        raise ValueError(f"{name} contains missing Store × Date keys.")
-    if frame.duplicated(["Store", "Date"]).any():
-        raise ValueError(f"{name} contains duplicate Store × Date keys.")
-
-
 def _store_histories(history: pd.DataFrame, *, sales_column: str) -> dict[int, _StoreHistory]:
     if sales_column not in history:
         raise ValueError(f"Sales history is missing {sales_column}.")
-    _validate_keys(history, "Sales history")
-    sales = pd.to_numeric(history[sales_column], errors="coerce")
+    canonical_history = canonicalize_store_date_keys(history, name="Sales history")
+    sales = pd.to_numeric(canonical_history[sales_column], errors="coerce")
     invalid = sales.isna() | ~np.isfinite(sales) | sales.lt(0)
     if invalid.any():
         raise ValueError(f"{sales_column} history must contain finite, non-negative values.")
 
-    prepared = history[["Store", "Date"]].copy()
+    prepared = canonical_history[["Store", "Date"]].copy()
     prepared["_day"] = _day_numbers(prepared["Date"], name="Sales history Date")
     prepared["_sales"] = sales.to_numpy(dtype=np.float64)
     result: dict[int, _StoreHistory] = {}
@@ -74,14 +65,13 @@ def _store_histories(history: pd.DataFrame, *, sales_column: str) -> dict[int, _
 def _calculate_history_features(
     target_rows: pd.DataFrame, history: pd.DataFrame, *, sales_column: str
 ) -> pd.DataFrame:
-    _validate_keys(target_rows, "Target rows")
+    canonical_targets = canonicalize_store_date_keys(target_rows, name="Target rows")
     histories = _store_histories(history, sales_column=sales_column)
-    target_stores = pd.to_numeric(target_rows["Store"], errors="coerce")
-    if target_stores.isna().any() or target_stores.mod(1).ne(0).any():
-        raise ValueError("Target Store keys must be integer identifiers.")
-    target_days = _day_numbers(target_rows["Date"], name="Target Date")
-    store_values = target_stores.to_numpy(dtype=np.int64)
-    matrix = np.full((len(target_rows), len(DYNAMIC_PREDICTOR_COLUMNS)), np.nan, dtype=np.float64)
+    target_days = _day_numbers(canonical_targets["Date"], name="Target Date")
+    store_values = canonical_targets["Store"].to_numpy(dtype=np.int64)
+    matrix = np.full(
+        (len(canonical_targets), len(DYNAMIC_PREDICTOR_COLUMNS)), np.nan, dtype=np.float64
+    )
 
     for row_position, (store, target_day) in enumerate(zip(store_values, target_days, strict=True)):
         store_history = histories.get(int(store))
@@ -122,7 +112,7 @@ def _calculate_history_features(
             matrix[row_position, 4 + window_position] = mean
             matrix[row_position, 7 + window_position] = np.sqrt(variance)
 
-    return pd.DataFrame(matrix, columns=DYNAMIC_PREDICTOR_COLUMNS, index=target_rows.index)
+    return pd.DataFrame(matrix, columns=DYNAMIC_PREDICTOR_COLUMNS, index=canonical_targets.index)
 
 
 def build_historical_history_features(
@@ -153,20 +143,19 @@ def build_origin_history_features(
     prediction must precede at least one requested target for its Store.
     """
 
-    _validate_keys(target_rows, "Target rows")
-    _validate_keys(actual_history_through_origin, "actual_history_through_origin")
-    if "Sales" not in actual_history_through_origin:
+    canonical_targets = canonicalize_store_date_keys(target_rows, name="Target rows")
+    actual = canonicalize_store_date_keys(
+        actual_history_through_origin, name="actual_history_through_origin"
+    )
+    if "Sales" not in actual:
         raise ValueError("actual_history_through_origin must contain Sales.")
     origin = normalize_dates(pd.Series([forecast_origin]), name="forecast_origin").iloc[0]
-    actual_dates = normalize_dates(
-        actual_history_through_origin["Date"], name="actual_history_through_origin.Date"
-    )
-    target_dates = normalize_dates(target_rows["Date"], name="Target Date")
+    actual_dates = actual["Date"]
+    target_dates = canonical_targets["Date"]
     if target_dates.le(origin).any():
         raise ValueError("Inference target dates must be strictly after forecast_origin.")
 
-    actual = actual_history_through_origin[["Store", "Date", "Sales"]].copy()
-    actual["Date"] = actual_dates.to_numpy()
+    actual = actual[["Store", "Date", "Sales"]].copy()
     if prior_recursive_predictions is None or prior_recursive_predictions.empty:
         if actual_dates.gt(origin).any():
             latest = actual_dates.max()
@@ -180,11 +169,11 @@ def build_origin_history_features(
     missing = sorted(required.difference(prior_recursive_predictions.columns))
     if missing:
         raise ValueError(f"prior_recursive_predictions is missing columns: {missing}")
-    predictions = prior_recursive_predictions[["Store", "Date", "PredictedSales"]].copy()
-    _validate_keys(predictions, "prior_recursive_predictions")
-    prediction_dates = normalize_dates(predictions["Date"], name="prior_recursive_predictions.Date")
-
-    predictions["Date"] = prediction_dates.to_numpy()
+    predictions = canonicalize_store_date_keys(
+        prior_recursive_predictions[["Store", "Date", "PredictedSales"]],
+        name="prior_recursive_predictions",
+    )
+    prediction_dates = predictions["Date"]
     overlap = actual[["Store", "Date"]].merge(
         predictions[["Store", "Date"]], on=["Store", "Date"], how="inner"
     )
@@ -201,8 +190,7 @@ def build_origin_history_features(
         )
     if prediction_dates.le(origin).any():
         raise ValueError("Recursive predictions must be strictly after forecast_origin.")
-    target_keys = target_rows[["Store"]].copy()
-    target_keys["Date"] = target_dates.to_numpy()
+    target_keys = canonical_targets[["Store", "Date"]].copy()
     latest_target_by_store = target_keys.groupby("Store", sort=False)["Date"].max()
     prediction_latest_targets = predictions[["Store"]].merge(
         latest_target_by_store.rename("latest_target_date"),
