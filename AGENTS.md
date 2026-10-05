@@ -1,156 +1,94 @@
-# AGENTS.md
+# AI Agent Working Contract
 
-## Project
+## Project and scope
 
-This repository contains the IT4063E Introduction to Business Analytics
-group project:
+IT4063E Business Analytics project: forecast Rossmann monetary `Sales` at Store × Date,
+primarily 14 calendar days, then demonstrate simulated inventory-value decision support.
+Sales is turnover, not physical demand or SKU quantities. Synthetic operational variables and
+equivalent units are assumptions, never observed Rossmann inventory or proven business savings.
 
-"Retail Demand Forecasting for Inventory Optimization (FMCG):
-A Store-Level Business Analytics and Inventory Decision Support System
-Using Rossmann Store Sales Data."
+## Read and resolve conflicts
 
-## Sources of Truth
+Start with `git status`, the current branch, and `docs/PROGRESS.md`; do not infer the current
+phase from a completed plan or chat history. For substantial work read the relevant sources in
+this order, and inspect their code interfaces:
 
-Read these files before making substantial changes:
+1. `docs/proposal.md`: business intent and scope.
+2. `docs/DECISIONS.md`: accepted architecture/methodology and superseding records.
+3. `docs/PROJECT_PLAN.md`: dependencies, acceptance criteria, and Phase 6 handoff.
+4. `docs/PROGRESS.md` plus Git/code: actual state and canonical result evidence.
+5. `README.md`: setup, commands, and user-facing capabilities.
+6. This file and `docs/WORKFLOW.md`: agent and contribution rules.
 
-1. `docs/proposal.md` — authoritative project requirements.
-2. `docs/PROJECT_PLAN.md` — project roadmap and milestones.
-3. `docs/PROGRESS.md` — current implementation status.
-4. `docs/WORKFLOW.md` — development and Git workflow.
-5. `docs/DECISIONS.md` — important architectural decisions.
-6. `docs/DATA_DICTIONARY.md` — dataset and synthetic variable definitions.
+Read `docs/DATA_DICTIONARY.md` for field/valuation semantics and `docs/FEATURE_CONTRACT.md`
+for feature work. Acquisition, validation, and EDA docs own their historical evidence.
+Higher-level intent does not silently override an accepted implementation contract: identify the
+conflict and record an authorized clarification/superseding ADR. Edit the proposal only when the
+task authorizes it; preserve its approved `$...$` inline-math formatting.
 
-Do not modify `docs/proposal.md` unless explicitly instructed by the user.
-Its current `$...$` inline-math formatting is approved and must not be reverted.
+## Scope and approval
 
-## Core Project Constraints
+- Work within the requested task. New phases, feature-contract changes, alternative models,
+  validation/metric changes, and new inventory assumptions need a written design before code.
+  Implement those decisions only when the user has authorized them; existing authorization carries
+  forward. Routine fixes within an approved design need no new ceremony.
+- Read the current phase's active plan. Use one concise execution plan for substantial work or
+  update the existing plan for review fixes; a small scoped correction needs no new plan.
+- Distinguish PLANNED, APPROVED, IMPLEMENTED / UNDER REVIEW, REVIEWED, and COMPLETE as defined
+  in WORKFLOW. Implementation/testing alone does not close a phase.
+- Stop at the requested boundary. Do not begin the next phase, add packages for future features,
+  or declare a final model winner merely because one candidate has been implemented.
 
-The unit of analysis is Store × Date.
+## Forecast information boundary
 
-The primary forecast target is Rossmann `Sales`.
+- No shuffled/random forecasting splits. Use the accepted chronological origins and metric
+  contract in ADR-013 and `src/rossmann_forecasting/forecasting/validation.py`.
+- Development model/evaluation reads must filter Date <= 2015-07-03 before labels reach those
+  layers, and each fit/history input must also stop at its forecast origin.
+- Protect 2015-07-04 through 2015-07-31 from development target inspection, tuning, learned
+  preprocessing, and model/policy selection. Final evaluation requires an explicitly authorized
+  frozen Phase 13 protocol; see ADR-015. Earlier full-source descriptive exposure is disclosed in
+  EDA_FINDINGS; it is not permission to reuse full-period statistics for modeling.
+- A precomputed historical lag row is not safe recursive validation input. Rebuild dynamic
+  features from actuals through the origin plus earlier predictions from the same forecast run.
+  Never teacher-force future actual Sales or use future Customers/Customers-derived predictors.
+- Use calendar/holiday/planned promotion or static metadata only under an explicit availability
+  assumption. A snapshot containing a value does not prove it was historically known.
+- Source Open is eligibility/routing information, not a predictor. Generate the raw path before
+  operational routing; unknown future Open stays unknown, and Open_resolved stays audit-only.
+  Planned closures may route operational values to zero; target outcome labels cannot feed back
+  into the raw path.
+- Keep reviewed Seasonal Naive/Holt-Winters algorithms, failure policies, metric denominators,
+  and coverage rules intact unless the task explicitly authorizes a methodological change.
+  MAE is primary; RMSE, cautious MAPE, and WAPE are supplementary on observed source Open=1.
 
-The primary forecast horizon is 14 days.
+## Implementation and evidence
 
-This project is NOT SKU-level forecasting.
+- Preserve raw/interim source values and sparse dates. Do not fix missingness, anomalies, or
+  category meanings with unsupported assumptions; an absent date is not observed zero Sales.
+- Reusable analytics belong in `src/`; notebooks are presentation/exploration and scripts expose
+  commands. Prefer small functions and fixed seeds; avoid speculative frameworks/directories.
+- Keep credentials, raw/derived data, models, caches, and temporary outputs untracked. Use the
+  artifact conventions in `data/README.md`. New generated manifests record command/configuration,
+  source and output hashes, code revision, seed, and environment/lock identity.
+- Use `pyproject.toml` and generated `uv.lock`; add dependencies only for implemented scope.
+  Use the locked environment and the whole-repository quality commands in WORKFLOW.
+- Validate relevant behavior with fixture tests and inspect `git diff` for leakage/scope.
+  Run a real-data development pipeline when forecasting/data behavior changes; documentation
+  edits do not justify expensive model reruns or new holdout reads.
+- Report only checks actually run. Update PROGRESS for meaningful results/state changes,
+  DECISIONS for durable changes, README for setup/usage changes, and affected contracts together.
+  Keep detailed numerical results in PROGRESS, linking rather than copying them into new plans.
 
-Rossmann `Sales` represents monetary turnover, not physical product units.
+## Git and completion
 
-Inventory calculations must therefore be described as inventory-value
-decision support unless explicitly operating on simulated equivalent units.
+Use a focused branch from current `origin/main`; a necessary stacked branch must name its base
+and integration dependency in its plan. Never continue new work on an already merged branch.
+Preserve unrelated user edits; do not force-push, rewrite shared history, or delete branches/data
+without authorization. Commit, push, PR, merge, and remote cleanup follow the user's task scope;
+an implementation request alone does not authorize publication or merge.
 
-Synthetic supply-chain data must never be presented as real Rossmann data.
-
-## Data Leakage Rules
-
-Time-series integrity is mandatory.
-
-Never randomly shuffle observations for forecasting validation.
-
-Features must only contain information available at the forecast origin.
-
-Do not use future actual `Sales` when constructing features.
-
-Lag and rolling features must be time-safe.
-
-Do not use future `Customers` to predict future `Sales`.
-
-Future-known calendar, holiday, and planned promotion information may be used.
-
-## Forecasting Strategy
-
-Required model ladder:
-
-1. Seasonal Naive
-2. Exponential Smoothing / Holt-Winters
-3. Global LightGBM
-
-More complex models require justification.
-
-Use rolling-origin / walk-forward validation.
-
-Keep the final holdout untouched during model and feature selection.
-
-Primary metric: MAE.
-
-Also report RMSE, MAPE with caution, and WAPE.
-
-Evaluate primary forecasting metrics on `Open = 1` observations.
-
-## Engineering Rules
-
-Reusable logic belongs in `src/`, not only in notebooks.
-
-Notebooks are primarily for exploration, analysis, and presentation.
-
-Raw data must never be modified in place.
-
-Generated/intermediate data should be reproducible from scripts.
-
-Use fixed random seeds where randomness is required.
-
-Do not commit secrets, API keys, credentials, large raw datasets,
-generated model binaries, or temporary files.
-
-Prefer small, testable functions.
-
-Avoid unnecessary abstractions.
-
-## Task Workflow
-
-For substantial work:
-
-1. Read the relevant sources of truth.
-2. Inspect the existing implementation.
-3. Create or update a coherent execution plan under `plans/active/`.
-4. Implement the scoped work.
-5. Validate and test it.
-6. Self-review the result and `git diff`.
-7. Update `docs/PROGRESS.md`.
-8. Update `docs/DECISIONS.md` only when a durable decision changed.
-9. Move the completed execution plan to `plans/completed/`.
-
-## Definition of Done
-
-Before considering a coding task complete:
-
-1. Run relevant tests.
-2. Run lint/static checks if configured.
-3. Confirm no obvious time-series leakage was introduced.
-4. Check `git diff`.
-5. Update tests where appropriate.
-6. Update `docs/PROGRESS.md`.
-7. Update `docs/DECISIONS.md` if an architectural decision changed.
-8. Update README only if setup, usage, architecture, or user-facing
-   behavior changed.
-
-Never claim a test passed unless it was actually run.
-
-## Git Rules
-
-`main` is the stable integration branch. Do not work directly on it for
-feature development.
-
-Use focused branches such as:
-
-- `feat/...`
-- `fix/...`
-- `docs/...`
-- `refactor/...`
-- `test/...`
-
-Prefer small, reviewable commits.
-
-Do not force-push or rewrite shared history.
-
-Do not merge into `main` unless explicitly requested.
-
-## Documentation Rule
-
-Code, documentation, implementation, and current project state must agree.
-
-If implementation differs from the current plan, either:
-
-- fix the implementation; or
-- document and justify the changed decision in `docs/DECISIONS.md`.
-
-Never silently change project assumptions.
+A task is done when its scoped result, relevant tests/checks, self-review, and documentation agree.
+Archive a completed ordinary task plan after validation; retain a phase plan active until reviewed,
+merged, and explicitly closed. Hand off changed files, executed validation, unresolved limitations,
+Git state, and the next authorized boundary. `main` remains the stable integration branch.

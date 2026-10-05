@@ -208,7 +208,7 @@ def forecast_holt_winters(
                             numeric_forecast = np.asarray(
                                 forecast_values, dtype=np.float64
                             ).reshape(-1)
-                        except TypeError, ValueError:
+                        except (TypeError, ValueError):
                             failure_reason = "non_numeric_forecast"
                             failure_stage = "forecast_output"
                         else:

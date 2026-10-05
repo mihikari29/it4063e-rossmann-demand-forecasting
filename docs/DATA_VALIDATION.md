@@ -12,6 +12,13 @@ Result: **PASS — 0 errors, 4 warnings, and 12 informational findings.** The va
 that raw-file SHA-256 hashes were unchanged before and after reading. The generated JSON report is
 ignored because it is reproducible; this document is the concise version-controlled record.
 
+This Phase 1 source-quality inspection covered the full labeled history through 2015-07-31,
+including descriptive Sales/Customers summaries for dates later reserved for final forecasting
+evaluation. It produced no model or holdout forecasting score. These historical inspections are
+disclosed in [EDA Findings](EDA_FINDINGS.md#historical-source-exposure-and-later-modeling); later
+modeling must follow the [Phase 3 firewall](FEATURE_CONTRACT.md#final-holdout-firewall), not treat
+full-source summaries as training references or claim the final-period labels were never read.
+
 ## Source Snapshot
 
 | File | Rows | Columns | Bytes | SHA-256 |

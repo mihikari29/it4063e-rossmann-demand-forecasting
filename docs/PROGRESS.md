@@ -1,57 +1,56 @@
 # Project Progress
 
-## Current Phase
+## Current implementation and Git state — 2026-10-05
 
-Phase 4 — COMPLETE.
+| Scope | State | Integration |
+|---|---|---|
+| Phases 0–4 | COMPLETE | On `main`; Phase 3 PR #3/#4, Phase 4 PR #5/#6 |
+| Phase 5 — additive Holt-Winters | IMPLEMENTED / UNDER REVIEW | On unmerged `feat/holt-winters`; development results below |
+| Repository architecture/governance review | COMPLETE as a review task; local/unpublished changes | `docs/architecture-governance-review`, stacked on Phase 5 HEAD `3d4fbfd` |
+| Phase 6 and later | PLANNED; implementation not started | Phase 5 review/integration/closeout is the next gate |
 
-Phase 5 — Exponential Smoothing / Holt-Winters: IMPLEMENTED / UNDER REVIEW.
+Fetched Git and public GitHub PR/branch metadata agree: `origin/main` is
+`01cdedbfa2447bd68c3b8a4d2b75bbb70dd16465`; `origin/feat/holt-winters` is
+`3d4fbfd39e0931f9cf5ea273dc9888733091885e`. PR #1–#6 are merged; no Phase 5 PR exists.
+This review branch inherits Phase 5 code; its new governance/CI files are not yet published.
+No review commit, push or PR has been created; these task changes remain in the worktree.
+Integration must account for that stacked dependency rather than presenting Phase 5 as already
+on main. The public branch metadata reported main unprotected; no GitHub settings were changed.
 
-## Status
+Completed plans under `plans/completed/` preserve their historical approval/results/checkpoint
+records. The [active Phase 5 plan](../plans/active/phase-5-statistical-forecasting.md) remains active.
+PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
+snapshots, not separate results to update. No final project model has been selected.
 
-**PHASES 1–4 COMPLETE — PHASE 5 IMPLEMENTED / UNDER REVIEW.**
-Phase 3 was externally reviewed; the canonical Store × Date key finding was resolved, and PR #3
-was merged into `main` at
-`ef2c23ca79bb239b6c143572b6b4dc545d1de0b5`. Its completed execution plan is archived at
-`plans/completed/phase-3-feature-engineering.md`. The shared `phase-3-v1` contract has 29
-predictors. Phase 4 was externally reviewed and merged in PR #5 at
-`12f80b5fe8a8580b3d8367cd473766decd3ebf31`; its completed execution plan is archived at
-`plans/completed/phase-4-seasonal-naive.md`. The approved Seasonal Naive benchmark remains the
-comparison baseline. Its final implementation suite passed 73 tests and the development runner
-succeeded. Pooled MAE was 1,681.2703. No final-holdout result has been produced. Phase 5 is
-approved for implementation. No statistical forecasts or Phase 5 metrics had been generated at
-the approval checkpoint. The mechanical date-only history audit is recorded below and is not a
-model result.
+## Immediate next boundary
 
-## Completed
+Finish external Phase 5 review, then merge/close it only within explicit authorization. After
+verified closeout, prepare the Phase 6 design using the [repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
+This review does not implement LightGBM, archive Phase 5, or close Phase 5.
 
-- Phase 0 — repository foundation.
-- Phase 1 — official Rossmann acquisition and validation; see the completed Phase 1 plan and
-  verified source findings.
-- Phase 2 — prepared immutable-source train/test data, recorded audit-only Store 622 Open
-  consensus candidates, investigated all four Phase 1 warnings and metadata missingness, generated
-  descriptive reports and 14 figures, and documented findings in [EDA Findings](EDA_FINDINGS.md).
-- Added fixture tests for source preservation, joins, key uniqueness, explicit Open resolution,
-  deterministic representatives, denominators, and Parquet round trips.
-- Archived the completed Phase 2 execution plan at
-  `plans/completed/phase-2-data-preparation-eda.md`.
-- Phase 3 — completed forecast-origin-safe feature engineering; externally reviewed, canonical-key
-  finding resolved, and merged through PR #3. The completed plan is under
-  `plans/completed/phase-3-feature-engineering.md`.
-- Phase 4 — Seasonal Naive baseline and approved development evaluation reviewed and merged in
-  PR #5; 73 tests passed at completion. Its completed plan is under
-  [`plans/completed/phase-4-seasonal-naive.md`](../plans/completed/phase-4-seasonal-naive.md).
+The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
+produced no final-holdout forecasts/metrics. Earlier full-source validation and descriptive EDA
+did include those labels; [EDA_FINDINGS](EDA_FINDINGS.md) records that exposure. Do not claim an
+entirely never-inspected test set or reuse those full-period cohorts for modeling. ADR-015 defers
+the single authorized sequential final evaluation until model, intervals and policies are frozen.
 
-## In Progress
+## Branch cleanup inventory
 
-Phase 4 is COMPLETE. Phase 5 (Exponential Smoothing / Holt-Winters) is implemented on
-`feat/holt-winters` and awaits external review. The fixed candidate and development results are
-recorded below. See the [active Phase 5 plan](../plans/active/phase-5-statistical-forecasting.md).
+GitHub snapshot, 2026-10-05; cleanup is recommended only after checking unique commits and working
+changes. No local or remote branches were deleted in this review.
 
-## Next
+| Candidate branch | Merged work | Disposition |
+|---|---|---|
+| `feat/data-preparation-eda` | [PR #2](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/2) | Retire after unique-change check |
+| `feat/feature-engineering` | [PR #3](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/3) | Retire after unique-change check |
+| `docs/phase-3-closeout` | [PR #4](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/4) | Retire after unique-change check |
+| `feat/seasonal-naive` | [PR #5](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/5) | Retire after unique-change check |
+| `docs/phase-4-closeout` | [PR #6](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/6) | Retire after unique-change check |
 
-Complete external review and close Phase 5 only with the user's explicit approval. Keep the final
-holdout untouched; do not merge, archive the active plan, select a final project model, or begin
-Phase 6 as part of this implementation.
+`feat/holt-winters` is active, not a cleanup candidate. The old
+`origin/feat/data-acquisition-validation` exists only as a stale local tracking ref: that branch
+is absent from GitHub's current branch list. Prune it during authorized maintenance. Main and this
+review branch are retained; fresh work should not continue on merged branches.
 
 ## Source and Preparation Evidence
 
@@ -112,7 +111,7 @@ Phase 6 as part of this implementation.
   includes fractional/out-of-range IDs, canonical Store/Date collisions, valid coercion, and input
   non-mutation.
 
-## Quality Gates
+## Phase 3 Quality Checkpoint (Historical)
 
 - `python scripts/validate_data.py --report reports/validation/rossmann.json`: PASS — 0 errors,
   4 reviewed warnings, 12 informational findings.
@@ -208,10 +207,12 @@ operational forecast after raw generation.
   | validation_2 | 1,115 | 1,115 | 1,115 | 0 | 0 | 0 | 0 | 1,115 / 1,115 (100.00%) |
   | validation_3 | 1,115 | 1,115 | 1,115 | 0 | 0 | 0 | 0 | 1,115 / 1,115 (100.00%) |
 
-- This date-only result suggests the approved minimum-history rule creates no date-availability
-  coverage loss in the approved windows. It does not establish Sales validity or model-fit success;
-  numerical failure prevalence is unmeasured. The approved policy has no fallback.
-- The audit stopped at 2015-07-03. Final-holdout Sales remain untouched and unevaluated.
+- At the approval checkpoint, this date-only result suggested no date-availability coverage loss
+  under the minimum-history rule. It did not establish Sales validity or model-fit success;
+  numerical failures were then unmeasured. The implementation evidence below records the later
+  successful fits. The approved policy has no fallback.
+- The audit stopped at 2015-07-03 and did not read holdout Sales. It produced no holdout forecast
+  or evaluation; the earlier descriptive exposure is disclosed above.
 
 ### Phase 5 Implementation and Development Results
 
@@ -274,7 +275,7 @@ operational forecast after raw generation.
   REVIEW**, not formally closed. `docs/proposal.md`, reviewed Phase 4 model code/artifacts, raw data,
   and Phase 2 prepared data were not modified.
 - External review found that the reusable Holt-Winters API validated horizons from 1–14 but still
-  fitted and emitted a fixed 14-step path. The forecaster now consistently uses the validated
+  generated a fixed 14-step path. The forecaster now consistently uses the validated
   horizon for model forecasts, output-length validation, and internal path rows, records
   `forecast_horizon` for successful and failed fits, and computes clipping rates over successful
   requested forecast steps. Regression tests cover 7- and 14-step behavior, target bounds, output
@@ -286,3 +287,50 @@ operational forecast after raw generation.
   passed**, `ruff check .`, `ruff format --check .`, `git diff --check`, and relative Markdown-link
   validation across 19 files. No holdout forecast or evaluation occurred; Phase 5 remains
   **IMPLEMENTED / UNDER REVIEW**.
+
+## Repository Architecture/Governance Review — 2026-10-05
+
+The [completed review task plan](../plans/completed/repository-architecture-governance-review.md)
+records scope and cross-review. Verdict: **READY for the next authorized design task**, not an
+authorization to implement Phase 6 or a declaration that Phase 5 is closed.
+
+- Reviewed all listed governance/data docs, active/completed plans, source/script/test/notebook
+  structure, and public branch/merged-PR metadata. Current-state, branch, phase, artifact-path,
+  terminology and local Markdown references were cross-checked; archived evidence was preserved.
+- ADR-015–018 trace the fixes: final evaluation after all choices freeze, disclosed descriptive
+  exposure, consistent simulated inventory values/cumulative uncertainty, simpler application and
+  work-package boundaries, portable locked environments and fixture CI. AGENTS/WORKFLOW now own
+  approval/lifecycle rules; this document owns maintained results, not duplicated plan tables.
+- The Phase 6 handoff specifies origin-censored fitting/history, future-known covariates,
+  categorical/null adapter design, raw recursion versus Open routing, metric/coverage interfaces,
+  outputs, tests and approval. No LightGBM or later-phase module/dependency was implemented.
+- Forecast algorithms/configurations and existing numerical evidence were unchanged. Three
+  exception clauses gained tuple parentheses for Python 3.12 compatibility. Source hash-only
+  verification matched all four documented raw hashes; no data/model pipeline or holdout
+  forecasting/evaluation was run for this review.
+
+The continuation recovered the existing dirty review branch at HEAD `3d4fbfd`: 18 modified and
+five new files, nothing staged. Full-file rereads, diff/history inspection and a fresh repository-
+only Phase 6 handoff audit preserved that work. Two residual ambiguities were corrected: LightGBM
+feeds predictions, never unrevealed target actuals; final scheduled preprocessing/model refits may
+update fitted state only under the frozen recipe using already revealed training rows. No new
+phase scope or methodology search was introduced. The quality gate was rerun after these fixes.
+
+Final checks actually executed:
+
+| Check | Result |
+|---|---|
+| `python -m pytest` in the original Python 3.14.5 environment | 106 passed; includes four new Markdown-checker fixtures |
+| Complete fixture suite in isolated locked Python 3.12.15 / 3.14.5 | 106 passed in each environment |
+| `python -m ruff check .` | PASS |
+| `python -m ruff format --check .` | PASS; 63 files already formatted |
+| `python scripts/check_docs.py` | PASS; local files/directories/common heading anchors across 20 Markdown files |
+| `git diff --check` | PASS |
+| `uv lock --check` / `uv pip check` | PASS; current lock and compatible installed packages |
+| Numbering and math checks | Phase 0–14, proposal 1–30, ADR-001–018 and paired proposal dollar delimiters PASS |
+
+Remaining non-blocking limits: only 42 development target days and prior descriptive holdout
+exposure; pooled empirical intervals/simulated policies require their later reviewed designs.
+GitHub Actions has not run remotely, main protection is not enabled, and stale branch cleanup
+needs separate authorization/unique-change checks. Phase 5 external review/integration/closeout
+remains the immediate project gate. All new review changes are local and uncommitted.

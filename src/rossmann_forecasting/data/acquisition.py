@@ -72,7 +72,7 @@ def kaggle_auth_configured() -> bool:
 
     try:
         payload = json.loads(config_path.read_text(encoding="utf-8"))
-    except OSError, json.JSONDecodeError:
+    except (OSError, json.JSONDecodeError):
         return False
     return bool(payload.get("username") and payload.get("key"))
 

@@ -4,6 +4,11 @@
 2026-10-05. The accepted design is recorded in ADR-014. Implementation and the development-only
 evaluation are complete; this plan remains active for external review and explicit closeout.
 
+The design/approval sections preserve their checkpoint history. Current environment policy is
+ADR-018 (Python 3.12–3.14 and a generated lock); the statistical specification and development
+evaluation are unchanged. ADR-015 discloses earlier full-source descriptive exposure and defines
+the later holdout release boundary. PROGRESS owns current Git state and maintained result tables.
+
 ## 1. Objective and current state
 
 Phase 4 is COMPLETE. Its Seasonal Naive implementation and development evaluation were merged in
@@ -15,7 +20,7 @@ Phase 5 evaluates one classical additive Holt-Winters candidate against the revi
 Naive implementation on the same three development windows. This phase evaluates a fixed candidate,
 not the final project model. At the original approval checkpoint no statistical model had been
 fitted or forecast; the implementation results are recorded in Section 15. The final holdout remains
-untouched.
+excluded from Phase 5 forecasting, scoring and model selection.
 
 ## 2. Fixed project constraints — already accepted
 
@@ -123,7 +128,7 @@ This is a calendar/history-availability result only. Under the proposed threshol
 no date-history eligibility loss in these windows, so insufficient history alone does not appear
 to create a material coverage issue or require a fallback design. It does not establish that Sales
 is usable or that a statistical fit will succeed; numerical fit failures and resulting forecast
-coverage have not been measured.
+coverage had not been measured at that design checkpoint; Section 15 records the later run.
 
 ## 5. Approved forecasting semantics
 
@@ -136,7 +141,8 @@ coverage have not been measured.
    internal states for horizons `h = 1..14`.
 5. Do not refit within the target window and do not insert actual target-window Sales into the
    series. This is genuine multi-step forecasting; unlike the later LightGBM design, it requires
-   neither recursive target-window actual insertion nor ML lag features.
+   neither recursive predicted-Sales insertion nor ML lag features. LightGBM feedback uses earlier
+   predictions, never actual Sales after that forecast's origin.
 6. Emit evaluation records only for source-observed target Store × Date keys. The full 14-step
    model path is internal; missing target keys are not synthesized as labels or records.
 
@@ -160,8 +166,8 @@ if model fitting or forecasting fails numerically:
 Do not silently fall back to Seasonal Naive: it is Model 0 and using it as a fallback would blur
 the candidate comparison. Do not fall back to Holt or Simple Exponential Smoothing. The date-only
 audit finds no Stores below the proposed history threshold, so there is no date-availability
-evidence requiring a short-history fallback. Numerical failure prevalence is unknown until an
-approved implementation is run. Keep failures explicit and coverage visible; if numerical
+evidence requiring a short-history fallback. Numerical failure prevalence was unknown at design
+approval and was measured in Section 15. Keep failures explicit and coverage visible; if numerical
 failures later appear material, return for design review rather than silently changing the model
 contract.
 
@@ -217,10 +223,10 @@ The model's smoothing-parameter optimization is ordinary per-origin model fittin
 origin-censored training series, not validation hyperparameter tuning. The approved runtime bound
 is `statsmodels>=0.15,<0.16`; no other direct dependency is added solely for a transitive need.
 
-The project requires Python `>=3.14,<3.15` (current environment: Python 3.14.5), with hand-managed
-runtime dependency bounds in `pyproject.toml`. The external design review verified statsmodels
-0.15.0 supports Python 3.14 and provides CPython 3.14 Windows wheels. Preserve the project's
-Python bound and resolve/install the approved dependency through the normal project workflow.
+At approval, the project required Python `>=3.14,<3.15` (Python 3.14.5); external review verified
+statsmodels 0.15.0 support. ADR-018 now supersedes that interpreter restriction with
+`>=3.12,<3.15` and a generated dependency lock. The statsmodels bound/model settings and recorded
+numerical results remain unchanged; install through the current locked project workflow.
 
 ## 9. Approved output contract
 
@@ -375,7 +381,11 @@ No methodology question remains open. Keep this execution plan under `plans/acti
 status at IMPLEMENTED / UNDER REVIEW; do not evaluate the final holdout, archive this plan, or begin
 Phase 6.
 
-## 15. Implementation and development results
+## 15. Historical Implementation and Development Result Snapshot
+
+This dated checkpoint preserves reviewed evidence. Current maintained numerical results and
+validation/state updates are in [PROGRESS](../../docs/PROGRESS.md); new fixes should reference
+that record rather than independently editing duplicate metric tables here.
 
 Implementation is complete on `feat/holt-winters`; Phase 5 is **IMPLEMENTED / UNDER REVIEW**.
 Source code, tests, and documentation are ready for external review. This checkpoint does not merge
