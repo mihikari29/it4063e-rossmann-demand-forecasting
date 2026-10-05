@@ -9,9 +9,9 @@ units and supply-chain fields will be explicitly simulated.
 
 ## Current Status
 
-Phase 1 acquisition and validation tooling is implemented locally. Completion is blocked because
-the authorized Kaggle download attempt on 2026-10-05 returned HTTP 403 Forbidden. No real source
-data has been validated, and observed dataset facts remain `TBD`.
+Phase 1 - Data Acquisition & Validation is complete. The official Kaggle files were obtained by
+manual web download, validated without modifying raw data, and documented from measured evidence.
+Phase 2 - Data Preparation & EDA is next but has not begun.
 
 ## Environment
 
@@ -29,21 +29,20 @@ Kaggle client; the `dev` extra installs pytest and Ruff.
 
 ## Acquire and Validate Data
 
-Configure Kaggle credentials outside this repository and accept the Rossmann competition rules,
-then run:
+Download the official competition archive manually from Kaggle, extract the four expected CSVs to
+`data/raw/rossmann/`, and run:
 
 ```powershell
-python scripts/acquire_data.py
 python scripts/validate_data.py --report reports/validation/rossmann.json
 ```
 
-The acquisition command writes the four official files to `data/raw/rossmann/` and refuses to
+The optional Kaggle API acquisition command remains available as `python scripts/acquire_data.py`
+after credentials and competition access are configured outside the repository. It refuses to
 overwrite an existing raw directory. The validator is read-only, prints a concise result, writes an
-optional JSON report, and exits nonzero on hard failures. An alternate directory can be supplied
-with `--data-dir`; relative paths resolve from the repository root.
+optional ignored JSON report, and exits nonzero on hard failures.
 
 See [data acquisition](docs/DATA_ACQUISITION.md) and
-[data validation](docs/DATA_VALIDATION.md) for the complete workflow and current blocker.
+[data validation](docs/DATA_VALIDATION.md) for the reproducible workflow and verified findings.
 
 ## Quality Checks
 
@@ -76,7 +75,7 @@ python -m ruff format --check .
 .
 |-- data/README.md
 |-- docs/
-|-- plans/active/
+|-- plans/completed/
 |-- scripts/
 |-- src/rossmann_forecasting/data/
 |-- tests/

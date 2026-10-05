@@ -1,51 +1,58 @@
 # Data Acquisition
 
-## Source
+## Source and Current Snapshot
 
-Use the official [Kaggle Rossmann Store Sales competition](https://www.kaggle.com/c/rossmann-store-sales)
-with competition slug `rossmann-store-sales`. Expected files are `train.csv`, `test.csv`,
-`store.csv`, and `sample_submission.csv`.
+The source is the official
+[Kaggle Rossmann Store Sales competition](https://www.kaggle.com/c/rossmann-store-sales)
+with competition slug `rossmann-store-sales`.
 
-## Automated Workflow
+The Phase 1 snapshot was obtained through the Kaggle web interface and placed, unchanged, under
+`data/raw/rossmann/`. The user confirmed the official Kaggle provenance on 2026-10-05. The earlier
+Kaggle API attempt returned HTTP 403; that API failure did not affect the manually downloaded files
+and is no longer an acquisition blocker.
 
-1. Sign in to Kaggle and accept any competition rules required for download access.
-2. Create or refresh the Kaggle API credential in the user-level Kaggle configuration. Never put
-   credentials in this repository.
-3. Install the project and acquisition extra:
+| File | Bytes | SHA-256 |
+|---|---:|---|
+| `train.csv` | 38,057,952 | `f6e4597c142d7d909a13d53b68a8e85c00b9a4c7b5ff40adbb37d6829cc1f4cc` |
+| `test.csv` | 1,427,425 | `e75f79972de046d88c2fd55da19df627f5ca654aaf418090d4d30c60ea7dbe26` |
+| `store.csv` | 45,010 | `f56bd124a2849489e6bbb5c000f5fc9640204355e316475c918ae4d089afb344` |
+| `sample_submission.csv` | 317,611 | `592d892eb07072ddfa3773f13c4822ce5d01981243134c8d512ae30f016805db` |
+
+These hashes identify the validated local snapshot. Raw files are immutable and ignored by Git.
+
+## Manual Kaggle Download
+
+Manual download is the currently verified acquisition path and does not require Kaggle API access:
+
+1. Sign in to Kaggle and open the official Rossmann Store Sales competition.
+2. Accept any competition rules required for download access.
+3. Download the competition archive through the Kaggle web interface.
+4. Extract exactly `train.csv`, `test.csv`, `store.csv`, and `sample_submission.csv` into
+   `data/raw/rossmann/` without renaming or editing them.
+5. Run the validation command from the repository root:
 
    ```powershell
-   python -m pip install -e ".[acquisition]"
+   python scripts/validate_data.py --report reports/validation/rossmann.json
    ```
 
-4. Run the acquisition command from the repository root:
+Compare file sizes and SHA-256 hashes with the recorded snapshot when reproducing this exact source
+version. Do not copy data from unofficial mirrors, commit the archive or CSV files, or combine files
+from different downloads.
 
-   ```powershell
-   python scripts/acquire_data.py
-   ```
+## Optional Kaggle API Workflow
 
-The command downloads to a temporary directory, verifies that all four expected archive members
-exist and are non-empty, extracts them into a staging directory, and atomically renames that
-directory to `data/raw/rossmann/`. It prints byte sizes and SHA-256 checksums. If the target already
-exists, it stops instead of overwriting or mixing raw files.
-
-An alternate destination can be selected with `--data-dir`. Relative paths are resolved from the
-repository root; absolute paths are accepted.
-
-## Manual Fallback
-
-If the Kaggle client cannot be used, download the official competition archive in a browser after
-accepting the rules. Extract exactly the four expected CSV files into `data/raw/rossmann/`, without
-renaming or editing them, then run:
+The API workflow remains available after competition access and credentials are configured outside
+the repository:
 
 ```powershell
-python scripts/validate_data.py --report reports/validation/rossmann.json
+python -m pip install -e ".[acquisition]"
+python scripts/acquire_data.py
 ```
 
-Do not commit the archive or CSV files. Do not copy data from unofficial mirrors.
+The command downloads into a temporary directory, verifies the expected non-empty archive members,
+extracts into a staging directory, and atomically renames it to `data/raw/rossmann/`. It refuses to
+overwrite or mix an existing raw directory. An alternate destination may be passed with
+`--data-dir`; relative paths resolve from the repository root.
 
-## Current Acquisition Status
-
-On 2026-10-05, Kaggle CLI 2.2.4 was installed in the local ignored environment and a structurally
-configured user credential was detected. The official download returned HTTP 403 Forbidden. No
-target raw-data directory was created. The account must accept the competition rules or refresh its
-access credential before acquisition can be retried.
+Kaggle usernames, API keys, credential files, and browser data must remain outside the repository.
+API access is optional when the official files have already been obtained manually.

@@ -322,23 +322,23 @@ Do not resolve these questions by guessing. Record evidence during implementatio
 
 ## 15. Definition of Done
 
-- [ ] Phase 1 implementation stayed within acquisition and validation scope.
-- [ ] The approved environment strategy and supported Python version are documented.
-- [ ] Official Rossmann files are reproducibly obtainable by authorized contributors.
-- [ ] Credentials and datasets are excluded from Git.
-- [ ] Raw files are immutable and protected from silent overwrite.
-- [ ] File, schema, type, key, date, missingness, domain, join, closed-store, and outlier checks run successfully or have documented findings.
-- [ ] Store × Date remains the validated unit of analysis.
-- [ ] `Sales` remains a monetary target and no SKU-level claim is introduced.
-- [ ] `Customers` is marked unavailable as a future production feature.
-- [ ] No future-looking transformations or random shuffling are introduced.
-- [ ] Synthetic supply-chain and inventory data remain outside Phase 1.
-- [ ] The Data Dictionary contains only verified updates.
-- [ ] Focused validation tests pass, and their command and results are recorded.
-- [ ] Generated reports contain no unnecessary raw data and large outputs remain untracked.
-- [ ] Relevant documentation and `docs/PROGRESS.md` match actual implementation.
-- [ ] `git diff` and `git status` show only intended Phase 1 changes.
-- [ ] This plan is moved to `plans/completed/` only after implementation and validation are finished.
+- [x] Phase 1 implementation stayed within acquisition and validation scope.
+- [x] The approved environment strategy and supported Python version are documented.
+- [x] Official Rossmann files are reproducibly obtainable by authorized contributors.
+- [x] Credentials and datasets are excluded from Git.
+- [x] Raw files are immutable and protected from silent overwrite.
+- [x] File, schema, type, key, date, missingness, domain, join, closed-store, and outlier checks run successfully or have documented findings.
+- [x] Store × Date remains the validated unit of analysis.
+- [x] `Sales` remains a monetary target and no SKU-level claim is introduced.
+- [x] `Customers` is marked unavailable as a future production feature.
+- [x] No future-looking transformations or random shuffling are introduced.
+- [x] Synthetic supply-chain and inventory data remain outside Phase 1.
+- [x] The Data Dictionary contains only verified updates.
+- [x] Focused validation tests pass, and their command and results are recorded.
+- [x] Generated reports contain no unnecessary raw data and large outputs remain untracked.
+- [x] Relevant documentation and `docs/PROGRESS.md` match actual implementation.
+- [x] `git diff` and `git status` show only intended Phase 1 changes.
+- [x] This plan is moved to `plans/completed/` only after implementation and validation are finished.
 
 ## 16. Implementation Record - 2026-10-05
 
@@ -357,8 +357,25 @@ Acquisition readiness found no local source files, found the Kaggle CLI, and det
 structurally configured user credential without printing its values. The official download then
 returned HTTP 403 Forbidden. The command left no partial `data/raw/rossmann/` directory.
 
-This is State C from the implementation instructions. Phase 1 remains blocked and this plan remains
-active. `docs/DATA_DICTIONARY.md` intentionally retains `TBD` observations because no real file was
-available. After competition access is restored, run acquisition and real validation, document the
-observed results, re-run all checks, and only then complete the remaining acceptance criteria and
-move this plan to `plans/completed/`.
+This was State C from the implementation instructions. Phase 1 remained blocked until an official
+source became available.
+
+## 17. Completion Record - 2026-10-05
+
+The user confirmed that the four files in `data/raw/rossmann/` were downloaded manually from the
+official Kaggle competition. The manual path is now the verified acquisition method; the earlier API
+HTTP 403 response did not affect this snapshot and is no longer a blocker. File sizes and SHA-256
+hashes are recorded in `docs/DATA_ACQUISITION.md`.
+
+Formal validation passed with 0 errors, 4 reviewed warnings, and 12 informational findings. It
+verified schemas, date coverage, missingness, categorical domains, non-negative finite targets,
+unique Store × Date and metadata keys, many-to-one joins, and unchanged raw hashes. The warnings
+cover a shared 184-day source gap for 180 stores, 54 open-store zero-sales rows, 11 missing test
+`Open` values for Store 622, and 259 metadata stores absent from the 856-store test subset. None was
+suppressed or treated as permission to modify raw data.
+
+The Data Dictionary now records observed source types, ranges, categories, and missingness while
+keeping future actual `Customers` unavailable, derived features unimplemented, and synthetic
+operational fields explicitly simulated. The reproducible JSON report remains ignored; concise
+verified facts are version-controlled in Markdown. All acceptance criteria were reviewed and
+satisfied, so Phase 1 is complete and this plan is ready for `plans/completed/`.

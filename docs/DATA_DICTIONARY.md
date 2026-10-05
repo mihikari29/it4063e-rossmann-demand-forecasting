@@ -1,28 +1,33 @@
-# Initial Data Dictionary
+# Data Dictionary
 
-This framework contains only variables named or defined in the [project proposal](proposal.md). Types, observed ranges, missingness, and source-specific coding remain **TBD** until the actual Rossmann files are validated. Synthetic variables are simulated and are not Rossmann operational data.
+Real-field observations below were measured from the official Kaggle Rossmann Store Sales snapshot
+validated on 2026-10-05. Category codes are recorded as observed without inventing unsupported
+business meanings. Derived features remain planned and unimplemented; synthetic variables remain
+simulated and are not Rossmann operational data.
 
-## A. Real Rossmann Fields
+## A. Real Rossmann Variables
 
-| Name | Category | Source | Meaning | Unit | Known Range | Generation / Derivation Rule | Availability at Forecast Time | Notes |
-|---|---|---|---|---|---|---|---|---|
-| `Store` | Identifier | Rossmann | Store identifier | Store ID | TBD | Provided | Yes | Primary unit key with `Date` |
-| `Date` | Time key | Rossmann | Observation date | Calendar day | TBD | Provided | Yes | Primary unit key with `Store` |
-| `Sales` | Target | Rossmann | Daily store sales turnover | Monetary value | TBD | Provided | Historical observations only | Not a physical unit quantity |
-| `Customers` | Observed covariate | Rossmann | Customers observed for a store-day | Customers | TBD | Provided | No for future dates | Must not be used as a production forecasting feature |
-| `Open` | Operational status | Rossmann | Whether the store is open | Binary indicator | 0 or 1 | Provided | TBD | Forecast is set to zero when `Open = 0`; primary metrics use `Open = 1` |
-| `Promo` | Promotion | Rossmann | Whether a store promotion is active | Binary indicator | 0 or 1 | Provided | Yes when the promotion is planned | Future-known planned promotion information may be used |
-| `StateHoliday` | Calendar | Rossmann | State-holiday status | TBD | TBD | Provided | Yes | Coding must be validated from source data |
-| `SchoolHoliday` | Calendar | Rossmann | School-holiday status | TBD | TBD | Provided | Yes | Coding must be validated from source data |
-| `StoreType` | Store attribute | Rossmann | Store format/type | TBD | TBD | Provided in `store.csv` | Yes | Category definitions require source validation |
-| `Assortment` | Store attribute | Rossmann | Store assortment classification | TBD | TBD | Provided in `store.csv` | Yes | Category definitions require source validation |
-| `CompetitionDistance` | Competition | Rossmann | Distance to competition | TBD | TBD | Provided in `store.csv` | Yes | Missingness requires validation |
-| `CompetitionOpenSinceMonth` | Competition | Rossmann | Month competition began operating | Calendar month | TBD | Provided in `store.csv` | Yes | Structural and true missingness must be distinguished |
-| `CompetitionOpenSinceYear` | Competition | Rossmann | Year competition began operating | Calendar year | TBD | Provided in `store.csv` | Yes | Structural and true missingness must be distinguished |
-| `Promo2` | Promotion | Rossmann | Participation in the continuing promotion program | TBD | TBD | Provided in `store.csv` | Yes | Coding requires source validation |
-| `Promo2SinceWeek` | Promotion | Rossmann | Week Promo2 participation began | Calendar week | TBD | Provided in `store.csv` | Yes | Structural and true missingness must be distinguished |
-| `Promo2SinceYear` | Promotion | Rossmann | Year Promo2 participation began | Calendar year | TBD | Provided in `store.csv` | Yes | Structural and true missingness must be distinguished |
-| `PromoInterval` | Promotion | Rossmann | Months when Promo2 is active | TBD | TBD | Provided in `store.csv` | Yes | Parsing rules require source validation |
+| Name | Source file(s) | Meaning / unit | Observed type | Observed values or range | Missingness | Forecast-time availability and notes |
+|---|---|---|---|---|---|---|
+| `Id` | `test.csv`, `sample_submission.csv` | Competition row identifier | `int64` | 1–41,088; unique in both files | 0 | Supplied for future rows; test and submission identifier sets match |
+| `Store` | `train.csv`, `test.csv`, `store.csv` | Store identifier | `int64` | 1–1,115; 1,115 train/metadata stores and 856 test stores | 0 | Primary unit key with `Date`; supplied for future rows |
+| `DayOfWeek` | `train.csv`, `test.csv` | Source-provided weekday code | `int64` | 1–7 | 0 | Supplied for future rows; code meanings are not inferred here |
+| `Date` | `train.csv`, `test.csv` | Calendar day | parsed date from source string | Train: 2013-01-01–2015-07-31; test: 2015-08-01–2015-09-17 | 0 | Primary unit key with `Store`; future-known |
+| `Sales` | `train.csv` | Daily store sales turnover; monetary value | `int64` | 0–41,551 | 0 | Historical target only; not a physical-unit quantity |
+| `Customers` | `train.csv` | Customers observed for a store-day | `int64` | 0–7,388 | 0 | Historical observation only; future actual values must not be production features |
+| `Open` | `train.csv`, `test.csv` | Store-open indicator | train `int64`; test `float64` because of nulls | {0, 1} when present | Train: 0; test: 11 (0.026772%) | Supplied for future rows but incomplete in test; Phase 2 must document a policy rather than silently fill it |
+| `Promo` | `train.csv`, `test.csv` | Store-promotion indicator | `int64` | {0, 1} | 0 | Future-known when the promotion is planned |
+| `StateHoliday` | `train.csv`, `test.csv` | State-holiday code | string | Train: {0, a, b, c}; test: {0, a} | 0 | Future-known calendar field; category meanings are not inferred from values alone |
+| `SchoolHoliday` | `train.csv`, `test.csv` | School-holiday indicator | `int64` | {0, 1} | 0 | Future-known calendar field |
+| `StoreType` | `store.csv` | Store type code | string | {a, b, c, d} | 0 | Static store attribute; category meanings are not inferred from values alone |
+| `Assortment` | `store.csv` | Assortment code | string | {a, b, c} | 0 | Static store attribute; category meanings are not inferred from values alone |
+| `CompetitionDistance` | `store.csv` | Source competition-distance measure; source unit not asserted here | `float64` | 20–75,860 when present | 3 (0.269058%) | Static metadata; missing-value handling is deferred |
+| `CompetitionOpenSinceMonth` | `store.csv` | Calendar month competition began operating | `float64` because of nulls | 1–12 when present | 354 (31.748879%) | Static metadata; month/year are jointly missing for all 354 rows |
+| `CompetitionOpenSinceYear` | `store.csv` | Calendar year competition began operating | `float64` because of nulls | 1900–2015 when present | 354 (31.748879%) | Static metadata; the source does not establish the missingness cause |
+| `Promo2` | `store.csv` | Continuing-promotion participation indicator | `int64` | {0, 1} | 0 | Static, schedule-related metadata |
+| `Promo2SinceWeek` | `store.csv` | Calendar week Promo2 participation began | `float64` because of nulls | 1–50 when present | 544 (48.789238%) | Missing exactly for all `Promo2 = 0` stores; structurally absent for non-participants |
+| `Promo2SinceYear` | `store.csv` | Calendar year Promo2 participation began | `float64` because of nulls | 2009–2015 when present | 544 (48.789238%) | Missing exactly for all `Promo2 = 0` stores; structurally absent for non-participants |
+| `PromoInterval` | `store.csv` | Months when Promo2 is active | string with nulls | `Jan,Apr,Jul,Oct`; `Feb,May,Aug,Nov`; `Mar,Jun,Sept,Dec` | 544 (48.789238%) | Missing exactly for all `Promo2 = 0` stores; schedule is future-known when present |
 
 ## B. Derived / Engineered Features
 
@@ -68,4 +73,7 @@ All random synthetic generation will use a documented fixed seed for reproducibi
 
 ## Validation Notes
 
-During Phase 1, update this document only from inspected source data. Record observed types, missingness, categories, and valid ranges without silently replacing the distinction between Rossmann-provided, derived, and simulated fields.
+The real-variable observations are tied to the validated 2026-10-05 source hashes recorded in
+[Data Acquisition](DATA_ACQUISITION.md) and [Data Validation](DATA_VALIDATION.md). Derived features
+listed above are definitions for later phases, not implemented Phase 1 outputs. Synthetic variables
+remain proposed simulation inputs and must never be presented as observed Rossmann data.
