@@ -422,7 +422,23 @@ forecasts, full internal paths, per-fit diagnostics, standalone and paired metri
 guardrail, clipping diagnostics, and a provenance/hash manifest. All 46,830 target keys are unique
 and dates end on 2015-07-03.
 
-Validation: full `pytest` suite **95 passed**; Ruff check and format check passed. All planned
-artifact destinations passed `git check-ignore`. The final real-data runner completed with exit
-code 0. Phase 5 remains under external review; no holdout evaluation, merge, final model selection,
-plan archival, or Phase 6 work is included.
+Initial implementation validation: full `pytest` suite **95 passed**; Ruff check and format check
+passed. All planned artifact destinations passed `git check-ignore`. The real-data runner completed
+with exit code 0. Phase 5 remains under external review; no holdout evaluation, merge, final model
+selection, plan archival, or Phase 6 work is included.
+
+### External-review follow-up — 2026-10-05
+
+External review identified that the reusable forecaster accepted horizons from 1 through 14 but
+always requested and emitted 14 forecast steps. The implementation now applies the validated
+horizon to the model call, output-length check, and internal path, records it in every per-fit
+diagnostic, and calculates clipping rates using the sum of successful requested horizons. Added
+regression coverage verifies 7- and 14-step calls and paths, target bounds, forecast-length
+validation, failed-fit unavailable states, and horizon-aware clipping rates. The Phase 5 runner
+continues to use the approved 14-day horizon; its rerun reproduced the previously recorded counts,
+metrics, paired comparison, clipping results, and passed 99% coverage guardrail unchanged. The
+ignored fit-diagnostics schema now includes `forecast_horizon`, so generated artifact hashes were
+regenerated; numerical results did not change. Full-repository validation passed: 102 pytest tests,
+`ruff check .`, `ruff format --check .`, `git diff --check`, and relative Markdown-link validation
+across 19 files. Phase 5 remains IMPLEMENTED / UNDER REVIEW; the holdout, methodology, model
+specification, fallback policy, and active-plan status are unchanged.

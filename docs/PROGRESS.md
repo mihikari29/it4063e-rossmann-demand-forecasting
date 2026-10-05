@@ -267,8 +267,22 @@ operational forecast after raw generation.
 - Initial executions exposed two post-fit reporting defects (strict JSON serialization of a
   missing pooled label, and a clipping-rate denominator reference); both were corrected and covered
   by tests. The final real-data runner completed with exit code 0 and regenerated all artifacts.
-- Final Phase 5 checks: full pytest suite **95 passed**; `ruff check src tests scripts` and
-  `ruff format --check src tests scripts` passed. Artifact paths were verified Git-ignored;
+- Initial Phase 5 implementation checks: full pytest suite **95 passed**;
+  `ruff check src tests scripts` and `ruff format --check src tests scripts` passed. Artifact paths
+  were verified Git-ignored;
   provenance checks passed before and after evaluation. Phase 5 remains **IMPLEMENTED / UNDER
   REVIEW**, not formally closed. `docs/proposal.md`, reviewed Phase 4 model code/artifacts, raw data,
   and Phase 2 prepared data were not modified.
+- External review found that the reusable Holt-Winters API validated horizons from 1–14 but still
+  fitted and emitted a fixed 14-step path. The forecaster now consistently uses the validated
+  horizon for model forecasts, output-length validation, and internal path rows, records
+  `forecast_horizon` for successful and failed fits, and computes clipping rates over successful
+  requested forecast steps. Regression tests cover 7- and 14-step behavior, target bounds, output
+  lengths, failed-fit paths, and horizon-aware clipping rates. The approved Phase 5 runner continues
+  to request 14 days. Its post-fix rerun reproduced the recorded metrics unchanged: 46,830 forecasts,
+  3,345 successful Store-origin fits, 100% availability in every window, and a passed 99% coverage
+  guardrail. The ignored fit-diagnostics artifact now includes `forecast_horizon`; artifact hashes
+  were regenerated for the updated output schema. Full-repository validation passed: pytest **102
+  passed**, `ruff check .`, `ruff format --check .`, `git diff --check`, and relative Markdown-link
+  validation across 19 files. No holdout forecast or evaluation occurred; Phase 5 remains
+  **IMPLEMENTED / UNDER REVIEW**.
