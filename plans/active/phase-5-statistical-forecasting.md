@@ -1,8 +1,8 @@
 # Phase 5 — Statistical Forecasting (Design and Execution Plan)
 
-**Status:** PLANNING / DESIGN REVIEW. No Phase 5 implementation exists. This plan is a proposed
-methodology and requires explicit user approval before any model, dependency, or forecast code is
-added.
+**Status:** APPROVED / IMPLEMENTATION IN PROGRESS. The user explicitly approved the Phase 5
+methodology on 2026-10-05. The accepted design is recorded in ADR-014. This plan remains active
+through implementation and external review.
 
 ## 1. Objective and current state
 
@@ -11,11 +11,11 @@ PR #5; formal closeout was merged in PR #6. The Phase 4 plan is archived at
 `plans/completed/phase-4-seasonal-naive.md`, and accepted ADR-013 remains the source of truth for
 the fixed windows, baseline, routing, eligibility, and metric contract.
 
-Phase 5 will evaluate one proposed classical additive Holt-Winters candidate against the reviewed
+Phase 5 evaluates one classical additive Holt-Winters candidate against the reviewed
 Seasonal Naive implementation on the same three development windows. This phase will evaluate a
 fixed candidate, not select the final project model. No statistical model has been fitted, no
-statistical forecast has been generated, and no Phase 5 forecast metric exists. The final holdout
-remains untouched.
+statistical forecast has been generated, and no Phase 5 forecast metric exists at this approval
+checkpoint. The final holdout remains untouched.
 
 ## 2. Fixed project constraints — already accepted
 
@@ -50,12 +50,12 @@ greater than zero, adds no epsilon, and reports excluded-zero counts and coverag
 with a reason if the eligible actual-Sales denominator is zero. Pooled metrics are calculated on
 the pooled eligible rows, not as averages of window metrics.
 
-## 3. Proposed primary model — requires user approval
+## 3. Approved primary model
 
-**PROPOSED / REQUIRES USER APPROVAL:** one classical additive Holt-Winters model per Store and
-forecast origin, with this fixed structure:
+**APPROVED:** one classical additive Holt-Winters model per Store and forecast origin, with this
+fixed structure:
 
-| Component | Proposed setting |
+| Component | Approved setting |
 |---|---|
 | Level | Estimated |
 | Trend | Additive |
@@ -78,10 +78,10 @@ results.
 Do not include Open, promotions, calendar fields, store metadata, future-known regressors, or
 other Phase 3 features in this univariate candidate.
 
-## 4. Proposed daily series and sparse-history contract — requires user approval
+## 4. Approved daily series and sparse-history contract
 
-**PROPOSED / REQUIRES USER APPROVAL:** fit on a regular daily calendar series built only from
-observed source Store × Date rows and Sales available at or before the forecast origin.
+**APPROVED:** fit on a regular daily calendar series built only from observed source Store × Date
+rows and Sales available at or before the forecast origin.
 
 - Include observed closed-store rows and their observed Sales values, including Sales equal to
   zero. Do not remove `Open == 0` rows, compress the index to business days, use Open as a
@@ -94,13 +94,11 @@ observed source Store × Date rows and Sales available at or before the forecast
   do not skip it or bridge it.
 - If there is no observed row for the Store at the origin, history length is zero and a forecast
   is unavailable.
-- Proposed minimum eligibility is **28 consecutive daily observations ending at the origin**,
-  corresponding to four complete weekly cycles. This threshold is PROPOSED / REQUIRES USER
-  APPROVAL.
+- Minimum eligibility is **28 consecutive daily observations ending at the origin**, corresponding
+  to four complete weekly cycles.
 - Use the entire most-recent contiguous segment when eligible, not a fixed 28-day lookback. Thus,
   28 days is only the minimum; if 300 contiguous daily observations end at the origin, use all 300.
-  Do not select a lookback length using validation performance. This is PROPOSED / REQUIRES USER
-  APPROVAL.
+  Do not select a lookback length using validation performance.
 
 Source `Open` is post-forecast evaluation/routing information only. It does not determine the
 training series or whether the model fits.
@@ -127,10 +125,9 @@ to create a material coverage issue or require a fallback design. It does not es
 is usable or that a statistical fit will succeed; numerical fit failures and resulting forecast
 coverage have not been measured.
 
-## 5. Proposed forecasting semantics — requires user approval
+## 5. Approved forecasting semantics
 
-**PROPOSED / REQUIRES USER APPROVAL:** for each Store with at least one observed target key in a
-window:
+**APPROVED:** for each Store with at least one observed target key in a window:
 
 1. Censor the Store's historical input at the window's forecast origin.
 2. Extract the eligible most-recent contiguous daily segment defined in Section 4.
@@ -146,9 +143,9 @@ window:
 Generate raw forecasts without target Sales or Open attached. Attach observed target Sales, source
 Open, and the validation-window label only after raw forecast generation has completed.
 
-## 6. Proposed unavailable-forecast and fallback policy — requires user approval
+## 6. Approved unavailable-forecast and fallback policy
 
-**PROPOSED / REQUIRES USER APPROVAL; NOT ACCEPTED YET:**
+**APPROVED; NO FALLBACK:**
 
 ```text
 if contiguous origin-ending history has at least 28 daily rows:
@@ -174,11 +171,11 @@ as `insufficient_contiguous_history` or a sanitized numerical-failure category/d
 fit has a null failure reason. Do not treat a skipped fit due to insufficient history as a fit
 attempt.
 
-## 7. Proposed non-negative forecast and Open-routing policy — requires user approval
+## 7. Approved non-negative forecast and Open-routing policy
 
 Additive Holt-Winters may produce negative values even though Sales is non-negative.
 
-**PROPOSED / REQUIRES USER APPROVAL:** preserve both values:
+**APPROVED:** preserve both values:
 
 - `model_forecast_unclipped`: the direct numeric model output;
 - `raw_statistical_forecast`: `max(0, model_forecast_unclipped)`, the business-feasible forecast
@@ -200,10 +197,9 @@ After raw forecast generation, apply the inherited Phase 4 operational rule:
 Do not use operationally routed forecasts as model-quality inputs. Primary metrics use the clipped
 raw statistical forecast on the Phase 4-compatible open-label population.
 
-## 8. Proposed fitting implementation and dependency consideration
+## 8. Approved fitting implementation and dependency
 
-**PROPOSED / REQUIRES USER APPROVAL:** implement later with a standard library class such as
-`statsmodels.tsa.holtwinters.ExponentialSmoothing`, conceptually configured as:
+Use `statsmodels.tsa.holtwinters.ExponentialSmoothing`, configured as:
 
 ```python
 ExponentialSmoothing(
@@ -218,19 +214,18 @@ ExponentialSmoothing(
 ```
 
 The model's smoothing-parameter optimization is ordinary per-origin model fitting against the
-origin-censored training series, not validation hyperparameter tuning. Do not add statsmodels or
-another statistical-model dependency in this planning task.
+origin-censored training series, not validation hyperparameter tuning. The approved runtime bound
+is `statsmodels>=0.15,<0.16`; no other direct dependency is added solely for a transitive need.
 
 The project requires Python `>=3.14,<3.15` (current environment: Python 3.14.5), with hand-managed
-runtime dependency bounds in `pyproject.toml`. Before implementation, verify that the selected
-statsmodels release and its numerical dependencies support the required Python range and resolve
-in this project; then add an explicit compatible dependency bound through the normal project
-workflow. No dependency has been installed for Phase 5.
+runtime dependency bounds in `pyproject.toml`. The external design review verified statsmodels
+0.15.0 supports Python 3.14 and provides CPython 3.14 Windows wheels. Preserve the project's
+Python bound and resolve/install the approved dependency through the normal project workflow.
 
-## 9. Proposed output contract
+## 9. Approved output contract
 
-**PROPOSED / REQUIRES USER APPROVAL:** emit one auditable row per observed target Store × Date,
-Store, and forecast origin, with at least:
+**APPROVED:** emit one auditable row per observed target Store × Date, Store, and forecast origin,
+with at least:
 
 | Field | Role / semantics |
 |---|---|
@@ -255,9 +250,9 @@ feature fields. Validate unique `(Store, forecast_origin, Date)` keys and `horiz
 forecast_origin`. Keep model inputs limited to origin-censored Sales; labels and Open are attached
 after forecast generation.
 
-## 10. Proposed evaluation and fair baseline comparison
+## 10. Approved evaluation and fair baseline comparison
 
-**PROPOSED / REQUIRES USER APPROVAL:** retain the Phase 4 definitions and produce two views.
+**APPROVED:** retain the Phase 4 definitions and produce two views.
 
 The existing package exposes `forecast_seasonal_naive`,
 `build_development_evaluation_records`, and `summarize_forecast_metrics`. The first implements the
@@ -340,9 +335,9 @@ Also assert output-key uniqueness, fit-series row counts/endpoints, clipping cou
 diagnostics, explicit coverage denominators, and that Sales/Open labels are attached only after raw
 forecasts are complete. No test may fit against or calculate performance on holdout outcomes.
 
-## 13. Phase 5 implementation scope after approval
+## 13. Approved Phase 5 implementation scope
 
-After explicit design approval, a separately authorized implementation should add only:
+The implementation includes only:
 
 - reusable per-Store, per-origin fixed Holt-Winters fitting and origin-safe 14-step forecasting;
 - contiguous-history eligibility and explicit failure diagnostics;
@@ -352,29 +347,30 @@ After explicit design approval, a separately authorized implementation should ad
 
 Do not add SARIMA, large ETS searches, validation-driven variant tuning, Global LightGBM, final
 model selection, holdout evaluation, uncertainty intervals, inventory simulation, API, or dashboard
-in Phase 5. This plan authorizes no Phase 5 implementation or dependency installation.
+in Phase 5.
 
-## 14. Questions requiring explicit methodology approval
+## 14. Approval record and approved implementation clarifications
 
-No Phase 5 methodology is accepted yet. Please approve or revise these proposed items before
-implementation:
+The user explicitly approved the methodology in Sections 3–13 on 2026-10-05. The durable contract
+is recorded in ADR-014. Additional approved implementation clarifications are:
 
-1. The fixed classical additive Holt-Winters structure: additive trend, undamped, additive weekly
-   seasonality of period 7, estimated initialization and smoothing, no transformation or exogenous
-   variables, and no validation-based structural tuning.
-2. A regular daily series containing observed closed-day Sales (including zeros), with no gap fill,
-   interpolation, business-day compression, or Open regressor.
-3. Eligibility requiring a 28-day contiguous origin-ending observed history; use the complete
-   contiguous segment rather than a fixed 28-day lookback.
-4. The no-fallback policy for insufficient history or numerical failure, with explicit unavailable
-   outputs. Date-only audit finds no Stores below 28 days, but numerical fit-failure coverage is
-   unknown until later approved execution.
-5. Preserve unclipped model forecasts, clip negatives to zero for raw statistical metrics, record
-   clipping diagnostics, and apply inherited Open routing separately.
-6. The proposed statsmodels fitting semantics and the requirement to confirm Python 3.14
-   compatibility before adding a bounded dependency.
-7. The output schema, exact Phase 4 metric contract, identical-row paired comparison protocol, and
-   a small metric-helper/adapter boundary that preserves existing Phase 4 outputs.
+- Any history ineligibility, model-construction exception, fit exception, forecast exception,
+  forecast length other than 14, non-numeric/non-finite forecast, or other unusable model output
+  makes that Store-origin forecast unavailable. No fallback model is permitted.
+- Record deterministic sanitized failure categories without stack traces in forecast artifacts.
+  Capture relevant warnings and aggregate warning/failure counts by category. Record optimizer or
+  convergence status separately from forecast availability when the installed result API exposes
+  it.
+- Before interpreting accuracy, calculate Open-label forecast availability by window. If any
+  window is below 99%, produce auditable forecasts, coverage, and diagnostics, mark the result as
+  requiring coverage review, report affected Store-origin fits, and suppress comparative
+  superiority/inferiority interpretation. If every window is at least 99%, continue to the paired
+  comparison. This is a precommitted coverage-quality guardrail, not a tuning parameter.
+- Generate Holt-Winters raw forecasts before attaching target Sales, Open, or validation labels;
+  target-window Sales and Open mutations must not affect raw statistical forecasts.
+- Recompute Seasonal Naive through the reviewed Phase 4 implementation and preserve its algorithm
+  and existing metric outputs. Shared/column-aware metric logic must have regression coverage.
 
-Until explicit approval, Phase 5 remains PLANNING / DESIGN REVIEW. Do not fit a model, install
-statsmodels, generate statistical forecasts or metrics, inspect holdout Sales, or begin Phase 6.
+No methodology question remains open for this implementation. Keep this execution plan under
+`plans/active/` and Phase 5 status at IMPLEMENTED / UNDER REVIEW after the development evaluation;
+do not evaluate the final holdout, archive this plan, or begin Phase 6.

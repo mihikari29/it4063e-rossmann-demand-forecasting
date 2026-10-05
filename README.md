@@ -11,8 +11,9 @@ units and supply-chain fields will be explicitly simulated.
 
 Phase 1 - Data Acquisition & Validation, Phase 2 - Data Preparation & EDA, Phase 3 - Feature
 Engineering, and Phase 4 - Seasonal Naive Baseline are COMPLETE. Phase 3 was merged in PR #3 and
-Phase 4 in PR #5. Phase 5 - Exponential Smoothing / Holt-Winters - is next and planning only; its
-implementation has not begun. Development results are recorded in
+Phase 4 in PR #5. Phase 5 - Exponential Smoothing / Holt-Winters - is approved and under
+implementation on `feat/holt-winters`; it evaluates the fixed statistical candidate against the
+Seasonal Naive baseline on development windows only. Development results are recorded in
 [`docs/PROGRESS.md`](docs/PROGRESS.md), and the final holdout remains untouched. Raw Rossmann data
 remain immutable; prepared tables, feature Parquet files, EDA exports, and forecast outputs are
 reproducible and ignored local outputs.

@@ -4,7 +4,7 @@
 
 Phase 4 — COMPLETE.
 
-Phase 5 — Exponential Smoothing / Holt-Winters: PLANNING / DESIGN REVIEW.
+Phase 5 — Exponential Smoothing / Holt-Winters: APPROVED / IMPLEMENTATION IN PROGRESS.
 
 ## Status
 
@@ -17,10 +17,10 @@ predictors. Phase 4 was externally reviewed and merged in PR #5 at
 `12f80b5fe8a8580b3d8367cd473766decd3ebf31`; its completed execution plan is archived at
 `plans/completed/phase-4-seasonal-naive.md`. The approved Seasonal Naive benchmark remains the
 comparison baseline. Its final implementation suite passed 73 tests and the development runner
-succeeded. Pooled MAE was 1,681.2703. No final-holdout result has been produced. Phase 5 is in
-design review only. Its implementation has not begun; no statistical model has
-been fitted, and no statistical forecasts or Phase 5 metrics have been generated. The mechanical
-date-only history audit is recorded below and is not a model result.
+succeeded. Pooled MAE was 1,681.2703. No final-holdout result has been produced. Phase 5 is
+approved for implementation. No statistical forecasts or Phase 5 metrics had been generated at
+the approval checkpoint. The mechanical date-only history audit is recorded below and is not a
+model result.
 
 ## Completed
 
@@ -43,14 +43,14 @@ date-only history audit is recorded below and is not a model result.
 
 ## In Progress
 
-Phase 4 is COMPLETE. Phase 5 (Exponential Smoothing / Holt-Winters) is PLANNING / DESIGN REVIEW;
-its proposed methodology awaits explicit approval. No Phase 5 model, forecasts, metrics, or new
-dependency have been added. See the [active Phase 5 design plan](../plans/active/phase-5-statistical-forecasting.md).
+Phase 4 is COMPLETE. Phase 5 (Exponential Smoothing / Holt-Winters) is approved and implementation
+is in progress on `feat/holt-winters`. No model or forecast results are available yet. See the
+[active Phase 5 plan](../plans/active/phase-5-statistical-forecasting.md).
 
 ## Next
 
-Obtain explicit approval or revision of the Phase 5 design before implementation. Do not fit a
-statistical model or install its dependency before approval; the final holdout remains untouched.
+Implement and validate only the approved Phase 5 design. Keep the final holdout untouched and do
+not begin Phase 6.
 
 ## Source and Preparation Evidence
 
@@ -187,14 +187,14 @@ known-closed zero rule is applied only to the separate operational forecast afte
   unchanged.
 - Validation at Phase 4 completion: full pytest suite **73 passed**; `ruff check .`,
   `ruff format --check .`, and `git diff --check` passed. The Seasonal Naive CLI completed
-  successfully with unchanged input provenance. Phase 4 is formally COMPLETE. Phase 5
-  implementation has not begun; no final-holdout result has been produced.
+  successfully with unchanged input provenance. Phase 4 is formally COMPLETE. At the Phase 4
+  closeout checkpoint, Phase 5 implementation had not begun; no final-holdout result was produced.
 
-## Phase 5 Statistical Forecasting Design Review
+## Phase 5 Statistical Forecasting Approval and Implementation
 
-- Status: **PLANNING / DESIGN REVIEW**. The proposed Holt-Winters methodology awaits explicit user
-  approval. No statistical model was fitted, no Phase 5 forecast was generated, and no Phase 5
-  forecast metric exists. No statsmodels dependency was installed or added.
+- Status at approval checkpoint: **APPROVED / IMPLEMENTATION IN PROGRESS**. The user explicitly
+  approved the fixed Holt-Winters methodology and its 99% coverage guardrail on 2026-10-05. Phase 5
+  implementation and real-data results are recorded below as they are produced.
 - The design plan is [`plans/active/phase-5-statistical-forecasting.md`](../plans/active/phase-5-statistical-forecasting.md).
 - A mechanical history-availability audit projected only `Store` and `Date` from the existing
   training feature Parquet and filtered dates to `<= 2015-07-03`. It used no Sales, Open,
@@ -207,7 +207,7 @@ known-closed zero rule is applied only to the separate operational forecast afte
   | validation_2 | 1,115 | 1,115 | 1,115 | 0 | 0 | 0 | 0 | 1,115 / 1,115 (100.00%) |
   | validation_3 | 1,115 | 1,115 | 1,115 | 0 | 0 | 0 | 0 | 1,115 / 1,115 (100.00%) |
 
-- This date-only result suggests the proposed minimum-history rule creates no date-availability
+- This date-only result suggests the approved minimum-history rule creates no date-availability
   coverage loss in the approved windows. It does not establish Sales validity or model-fit success;
-  numerical failure prevalence is unmeasured. No fallback policy has been accepted.
+  numerical failure prevalence is unmeasured. The approved policy has no fallback.
 - The audit stopped at 2015-07-03. Final-holdout Sales remain untouched and unevaluated.

@@ -182,3 +182,58 @@ eligible observations, and by horizon. Missing raw forecasts remain visible in o
 summaries rather than silently changing the metric population. No validation window, missing-history
 rule, metric, or routing rule may be changed based on final-holdout outcomes. Phase 4 remains under
 review until its implementation and results are externally reviewed and explicitly closed.
+
+## ADR-014 - Phase 5 Holt-Winters Statistical Forecasting Contract
+
+**Status:** Accepted by explicit user approval on 2026-10-05.
+
+**Decision:** Evaluate one univariate statsmodels Holt-Winters / `ExponentialSmoothing` model per
+Store and forecast origin, using `trend="add"`, `damped_trend=False`, `seasonal="add"`,
+`seasonal_periods=7`, `initialization_method="estimated"`, `use_boxcox=False`, and optimized
+smoothing parameters. Use no exogenous inputs and do not tune model structure using validation
+results. The runtime dependency is bounded to `statsmodels>=0.15,<0.16`; retain the repository's
+Python `>=3.14,<3.15` requirement.
+
+Fit on the regular daily series from the most recent contiguous observed Store × Date Sales segment
+ending at the origin. Include observed closed-day Sales, including zeros. Do not remove closed days,
+fill gaps, interpolate, compress to business days, or use Open as a regressor. Require at least 28
+consecutive daily observations and use the entire eligible contiguous segment. An absent origin key,
+insufficient history, model construction/fit/forecast exception, a forecast other than 14 finite
+numeric values, or other unusable model output makes that Store-origin unavailable. No fallback to
+Seasonal Naive, Holt, or Simple Exponential Smoothing is permitted; record sanitized failure
+categories and capture warning/convergence diagnostics without hiding them.
+
+Retain direct `model_forecast_unclipped` values and define
+`raw_statistical_forecast = max(0, model_forecast_unclipped)`. Record clipping flags and aggregate
+clipping count/rate/minimum diagnostics. After raw generation, route source `Open == 0` to an
+operational zero, `Open == 1` to the raw statistical forecast, and unknown Open to null. Never use
+target Sales or Open to generate raw forecasts; attach labels/routing fields only afterward.
+
+Use exactly the Phase 4 development windows and Phase 4 primary metric, open-label eligibility,
+MAPE/WAPE zero handling, and pooled/horizon aggregation contract. Report standalone Holt-Winters
+coverage and metrics. Recompute Seasonal Naive through the reviewed Phase 4 implementation and
+compare models only on identical primary-evaluation rows where both raw forecasts are available.
+Report paired counts, metrics, MAE difference and relative MAE change, and lower-MAE candidate by
+window, pooled, and horizon.
+
+Before comparative interpretation, require at least 99% Holt-Winters forecast availability among
+open-label targets in every development window. If any window is below 99%, retain auditable
+forecasts, coverage, and fit diagnostics, flag coverage review, report affected fits, and suppress
+claims that either candidate is superior or inferior. This is a precommitted coverage-quality
+guardrail, not a selection hyperparameter.
+
+The final holdout remains 2015-07-04 through 2015-07-31 and is not forecast or evaluated in Phase 5.
+Phase 5 evaluates a fixed candidate but does not select the final project model; Phase 7 remains
+responsible for model-ladder selection after LightGBM exists.
+
+**Reason:** The proposal requires level, trend, and weekly seasonality. This fixed additive
+candidate is transparent and can accommodate zero observations without a multiplicative seasonal
+form. Contiguous-history rules preserve actual calendar spacing and prevent implicit gap filling.
+Explicit failure handling keeps coverage visible and avoids conflating the statistical candidate
+with Model 0. Identical-row pairing and the availability guardrail keep the baseline comparison
+auditable.
+
+**Consequences:** Phase 5 results are development-only and must report fit/warning/failure and
+clipping diagnostics alongside standalone and paired metrics. Do not change model structure from
+validation performance, add automatic fallback, access holdout outcomes, or mark Phase 5 complete
+until external review and explicit closeout.
