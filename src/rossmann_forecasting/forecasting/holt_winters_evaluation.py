@@ -368,6 +368,10 @@ def summarize_fit_diagnostics(diagnostics: pd.DataFrame) -> pd.DataFrame:
     ]
     populations.append(("pooled_development", None, diagnostics))
     for scope, window, subset in populations:
+        successful_horizons = pd.to_numeric(
+            subset.loc[subset["model_fit_success"], "forecast_horizon"], errors="coerce"
+        )
+        successful_forecast_steps = int(successful_horizons.sum())
         failure_counts = subset["fit_failure_reason"].dropna().value_counts().sort_index()
         warning_counts: dict[str, int] = {}
         for categories in subset["warning_categories"].dropna():
@@ -390,11 +394,8 @@ def summarize_fit_diagnostics(diagnostics: pd.DataFrame) -> pd.DataFrame:
                 "optimizer_nonconverged_fits": int(subset["optimizer_converged"].eq(False).sum()),
                 "forecast_was_clipped_count": int(subset["forecast_was_clipped_count"].sum()),
                 "forecast_was_clipped_rate": (
-                    float(
-                        subset["forecast_was_clipped_count"].sum()
-                        / (subset["model_fit_success"].sum() * 14)
-                    )
-                    if subset["model_fit_success"].sum()
+                    float(subset["forecast_was_clipped_count"].sum() / successful_forecast_steps)
+                    if successful_forecast_steps
                     else None
                 ),
                 "minimum_unclipped_forecast": (

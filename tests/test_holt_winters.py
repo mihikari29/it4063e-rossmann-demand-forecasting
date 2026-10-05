@@ -102,6 +102,7 @@ def test_minimum_contiguous_history_is_exact(monkeypatch, days: int, available: 
     )
     assert bool(result.diagnostics.loc[0, "model_fit_success"]) is available
     assert result.diagnostics.loc[0, "training_history_rows"] == (days if available else 0)
+    assert result.diagnostics.loc[0, "forecast_horizon"] == 14
     assert len(received) == int(available)
     assert calls == ([14] if available else [])
 
@@ -140,9 +141,75 @@ def test_fit_receives_only_origin_censored_sales_and_forecasts_fourteen_once(mon
     }
     assert calls == [14]
     assert len(result.internal_forecasts) == 14
+    assert result.diagnostics.loc[0, "forecast_horizon"] == 14
     assert result.forecasts["horizon"].tolist() == [8]
     assert result.forecasts.loc[0, "Date"] == ORIGIN + pd.Timedelta(days=8)
     pd.testing.assert_frame_equal(history, original)
+
+
+def test_horizon_seven_generates_exactly_seven_internal_steps(monkeypatch) -> None:
+    received, calls = _patch_model(monkeypatch, [float(step) for step in range(1, 8)])
+    result = hw.forecast_holt_winters(
+        _targets([ORIGIN + pd.Timedelta(days=1), ORIGIN + pd.Timedelta(days=7)]),
+        actual_history_through_origin=_history(),
+        forecast_origin=ORIGIN,
+        horizon=7,
+    )
+
+    assert len(received) == 1
+    assert calls == [7]
+    assert len(result.internal_forecasts) == 7
+    assert result.internal_forecasts["horizon"].tolist() == list(range(1, 8))
+    assert result.internal_forecasts["horizon"].max() == 7
+    assert result.diagnostics.loc[0, "forecast_horizon"] == 7
+
+
+def test_explicit_horizon_fourteen_remains_fourteen_steps(monkeypatch) -> None:
+    received, calls = _patch_model(monkeypatch, [float(step) for step in range(1, 15)])
+    result = hw.forecast_holt_winters(
+        _targets([ORIGIN + pd.Timedelta(days=14)]),
+        actual_history_through_origin=_history(),
+        forecast_origin=ORIGIN,
+        horizon=14,
+    )
+
+    assert len(received) == 1
+    assert calls == [14]
+    assert len(result.internal_forecasts) == 14
+    assert result.internal_forecasts["horizon"].max() == 14
+
+
+def test_target_outside_requested_horizon_is_rejected(monkeypatch) -> None:
+    _patch_model(monkeypatch)
+    with pytest.raises(ValueError, match="within horizons 1..14"):
+        hw.forecast_holt_winters(
+            _targets([ORIGIN + pd.Timedelta(days=8)]),
+            actual_history_through_origin=_history(),
+            forecast_origin=ORIGIN,
+            horizon=7,
+        )
+
+
+@pytest.mark.parametrize(("output_count", "expected_success"), [(14, False), (7, True)])
+def test_forecast_length_validation_uses_requested_horizon(
+    monkeypatch, output_count: int, expected_success: bool
+) -> None:
+    _patch_model(monkeypatch, [1.0] * output_count)
+    result = hw.forecast_holt_winters(
+        _targets([ORIGIN + pd.Timedelta(days=7)]),
+        actual_history_through_origin=_history(),
+        forecast_origin=ORIGIN,
+        horizon=7,
+    )
+
+    assert bool(result.diagnostics.loc[0, "model_fit_success"]) is expected_success
+    assert len(result.internal_forecasts) == 7
+    if expected_success:
+        assert result.forecasts["raw_statistical_forecast"].notna().all()
+        assert result.diagnostics.loc[0, "fit_failure_reason"] is None
+    else:
+        assert result.diagnostics.loc[0, "fit_failure_reason"] == "invalid_forecast_length"
+        assert result.forecasts["raw_statistical_forecast"].isna().all()
 
 
 def test_exactly_observed_target_keys_are_emitted_and_input_fields_are_narrow(monkeypatch) -> None:
@@ -282,6 +349,27 @@ def test_failures_are_explicit_and_never_fallback(monkeypatch, mode: str, expect
     assert "secret details" not in str(result.diagnostics.to_dict())
 
 
+def test_failed_seven_step_fit_keeps_seven_unavailable_internal_states(monkeypatch) -> None:
+    class FakeModel:
+        def fit(self, *, optimized: bool):
+            raise RuntimeError("synthetic fit error")
+
+    monkeypatch.setattr(hw, "ExponentialSmoothing", lambda *args, **kwargs: FakeModel())
+    result = hw.forecast_holt_winters(
+        _targets([ORIGIN + pd.Timedelta(days=1)]),
+        actual_history_through_origin=_history(),
+        forecast_origin=ORIGIN,
+        horizon=7,
+    )
+
+    assert result.diagnostics.loc[0, "forecast_horizon"] == 7
+    assert result.diagnostics.loc[0, "fit_failure_reason"] == "model_fit:RuntimeError"
+    assert len(result.internal_forecasts) == 7
+    assert result.internal_forecasts["horizon"].max() == 7
+    assert result.internal_forecasts["model_forecast_unclipped"].isna().all()
+    assert result.internal_forecasts["forecast_available"].eq(False).all()
+
+
 def test_warning_categories_are_captured_and_aggregated(monkeypatch) -> None:
     def constructor(series: pd.Series, **kwargs: object):
         class FakeModel:
@@ -298,6 +386,53 @@ def test_warning_categories_are_captured_and_aggregated(monkeypatch) -> None:
     )
     assert result.diagnostics.loc[0, "warning_count"] == 1
     assert result.diagnostics.loc[0, "warning_categories"] == "RuntimeWarning"
+
+
+def test_clipping_rate_uses_effective_horizons_for_seven_and_fourteen_step_fits(
+    monkeypatch,
+) -> None:
+    calls: list[int] = []
+
+    class FakeFit:
+        mle_retvals = {"success": True, "warnflag": 0}
+
+        def forecast(self, steps: int) -> list[float]:
+            calls.append(steps)
+            return [-1.0] + [2.0] * (steps - 1)
+
+    class FakeModel:
+        def fit(self, *, optimized: bool) -> FakeFit:
+            return FakeFit()
+
+    monkeypatch.setattr(hw, "ExponentialSmoothing", lambda *args, **kwargs: FakeModel())
+    targets = _targets([ORIGIN + pd.Timedelta(days=1)])
+    seven = hw.forecast_holt_winters(
+        targets,
+        actual_history_through_origin=_history(),
+        forecast_origin=ORIGIN,
+        horizon=7,
+    )
+    seven_summary = summarize_fit_diagnostics(
+        seven.diagnostics.assign(validation_window="validation_1")
+    )
+    seven_pooled = seven_summary.loc[seven_summary["scope"].eq("pooled_development")].iloc[0]
+    assert seven_pooled["forecast_was_clipped_count"] == 1
+    assert seven_pooled["forecast_was_clipped_rate"] == pytest.approx(1 / 7)
+
+    fourteen = hw.forecast_holt_winters(
+        targets,
+        actual_history_through_origin=_history(),
+        forecast_origin=ORIGIN,
+        horizon=14,
+    )
+    mixed = pd.concat([seven.diagnostics, fourteen.diagnostics], ignore_index=True).assign(
+        validation_window="validation_1"
+    )
+    mixed_summary = summarize_fit_diagnostics(mixed)
+    mixed_pooled = mixed_summary.loc[mixed_summary["scope"].eq("pooled_development")].iloc[0]
+    assert calls == [7, 14]
+    assert mixed_pooled["forecast_was_clipped_count"] == 2
+    assert mixed_pooled["forecast_was_clipped_rate"] == pytest.approx(2 / 21)
 
 
 def _window_data() -> pd.DataFrame:

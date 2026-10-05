@@ -131,7 +131,7 @@ def forecast_holt_winters(
     forecast_origin: str | pd.Timestamp,
     horizon: int = FORECAST_HORIZON,
 ) -> HoltWintersForecastResult:
-    """Fit fixed additive Holt-Winters once per target Store and forecast h=1..14.
+    """Fit fixed additive Holt-Winters once per target Store and forecast the requested horizon.
 
     The inputs are deliberately narrow: targets contain only Store/Date and history only
     Store/Date/Sales. A Store with fewer than 28 contiguous observations ending at the origin,
@@ -199,7 +199,7 @@ def forecast_holt_winters(
                 if fitted is not None:
                     optimizer_converged, optimizer_warnflag = _optimizer_status(fitted)
                     try:
-                        forecast_values = fitted.forecast(FORECAST_HORIZON)
+                        forecast_values = fitted.forecast(steps)
                     except Exception as exc:
                         failure_reason = f"forecast:{type(exc).__name__}"
                         failure_stage = "forecast"
@@ -212,7 +212,7 @@ def forecast_holt_winters(
                             failure_reason = "non_numeric_forecast"
                             failure_stage = "forecast_output"
                         else:
-                            if numeric_forecast.size != FORECAST_HORIZON:
+                            if numeric_forecast.size != steps:
                                 failure_reason = "invalid_forecast_length"
                                 failure_stage = "forecast_output"
                             elif not np.isfinite(numeric_forecast).all():
@@ -239,6 +239,7 @@ def forecast_holt_winters(
             "training_history_start": segment_start if eligible else pd.NaT,
             "training_history_end": origin if eligible else pd.NaT,
             "training_history_rows": history_rows if eligible else 0,
+            "forecast_horizon": steps,
             "model_fit_success": model_success,
             "fit_failure_reason": failure_reason,
             "failure_stage": failure_stage,
@@ -253,7 +254,7 @@ def forecast_holt_winters(
         }
         diagnostics.append(diagnostic)
 
-        for step in range(1, FORECAST_HORIZON + 1):
+        for step in range(1, steps + 1):
             unclipped = float(full_forecast[step - 1]) if model_success else None
             clipped = max(0.0, unclipped) if unclipped is not None else None
             path_records.append(
