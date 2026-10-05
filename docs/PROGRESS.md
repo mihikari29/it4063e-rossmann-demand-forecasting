@@ -6,10 +6,11 @@ Phase 3 — Feature Engineering.
 
 ## Status
 
-**IMPLEMENTATION IN PROGRESS.** Phase 2 preparation, warning investigations, EDA, documentation,
-and quality gates are complete. The Phase 3 feature contract (including Store identity as a
-categorical predictor and the approved competition-status amendment) is approved and checkpointed;
-Phase 3 implementation and validation are now beginning. No forecasting model is in scope.
+**IMPLEMENTED / UNDER REVIEW — PHASE NOT CLOSED.** Phase 2 preparation, warning
+investigations, and EDA are complete. The Phase 3 feature contract is approved and checkpointed;
+implementation, fixture tests, and the real-data integrity audit have been run on
+`feat/feature-engineering`. The active Phase 3 plan remains unarchived. No forecasting model,
+forecast metrics, or model-selection work is in scope.
 
 ## Completed
 
@@ -26,14 +27,14 @@ Phase 3 implementation and validation are now beginning. No forecasting model is
 
 ## In Progress
 
-Phase 3 feature implementation and validation on branch `feat/feature-engineering`, following the
-approved active execution plan.
+Awaiting external code review of the Phase 3 implementation on branch `feat/feature-engineering`.
+Keep the active plan open until review and any requested changes are resolved.
 
 ## Next
 
-Complete the approved Phase 3 feature contract, fixture tests, real-data integrity audit, and
-holdout-firewall checks. Do not train models, compute forecast metrics, or begin later modeling
-phases.
+After review, address requested changes and obtain explicit direction before closing Phase 3 or
+starting any later modeling phase. Do not train models, compute forecast metrics, or inspect
+holdout outcomes as feature-design feedback.
 
 ## Source and Preparation Evidence
 
@@ -55,19 +56,54 @@ phases.
 - Ignored Parquet outputs are reproducible through PyArrow 24.0.0. EDA tables, manifests, and
   figures are local generated artifacts under `reports/eda/`.
 
+## Phase 3 Implementation Evidence (Review Pending)
+
+- `python scripts/build_features.py` completed with contract `phase-3-v1`: 1,017,209 training
+  rows and 41,088 inference rows, preserving input Store × Date keys and the shared ordered
+  29-predictor schema. The outputs and manifest are ignored under `data/processed/`.
+- Development feature-coverage diagnostics end on 2015-07-03. They record 313,436 nulls each for
+  `competition_has_opened` and `competition_age_months` (the 354 jointly missing competition
+  metadata stores), 2,558 missing `competition_distance` values, and expected exact-history warm-up
+  and sparse-gap nulls. No imputations were introduced. Promo2 produced no invalid/incomplete
+  schedule findings in the prepared snapshot; nonparticipants remain inactive despite structural
+  schedule nulls.
+- For a gap-affected store, all dynamic history fields are unavailable on 2015-01-01; lag 1 resumes
+  on Jan 2; lag 7 and the 7-day window resume Jan 8; lag 14 and the 14-day windows resume Jan 15;
+  all ten dynamic fields resume Jan 29 after the complete 28-day window exists. No absent dates
+  were bridged or synthesized.
+- The final holdout remains 2015-07-04 through 2015-07-31 (31,220 store-days). Its audit is
+  mechanical only: predictor schema/order, unique keys, and dtype compatibility. No holdout
+  distribution or forecast metric was summarized. Development coverage stops July 3.
+- The feature runner verified all four raw-source hashes and the three prepared Parquet hashes
+  against the approved source snapshot and Phase 2 manifest before and after the build. The raw
+  validator also passed without errors. Store 622 Open candidates remain audit fields; inference
+  contains no Sales, Customers, or Customers-derived fields.
+- Future-known/static inference predictors are materialized for all test rows. Without recursive
+  predictions, dynamic values needing exact dates after the forecast origin remain null; later
+  recursive steps can supply predictions through the origin-censored history API.
+- Repeated deterministic builds produced the same SHA-256 for each corresponding artifact:
+  `features_train.parquet` matched its prior build, and `features_inference.parquet` matched its
+  prior build. These two distinct artifacts do not share a hash. No holdout distributions were
+  summarized.
+- Detailed field semantics, roles, dtypes, null behavior, and point-in-time rules are in
+  [Feature Contract](FEATURE_CONTRACT.md); the active execution plan remains in
+  `plans/active/phase-3-feature-engineering.md` pending review.
+
 ## Quality Gates
 
-- Real-data validator: PASS — 0 errors, 4 reviewed warnings, 12 informational findings.
-- `python -m pytest`: 23 passed.
-- `python -m ruff check .`: passed.
-- `python -m ruff format --check .`: passed.
+- `python scripts/validate_data.py --report reports/validation/rossmann.json`: PASS — 0 errors,
+  4 reviewed warnings, 12 informational findings.
+- `python scripts/build_features.py`: PASS — raw/interim provenance checks, key preservation,
+  matching predictor schemas/dtypes, holdout mechanical audit, and output generation.
+- `python -m pytest -q --tb=short`: 45 passed.
+- `ruff check .`: passed; `ruff format --check .`: 44 files already formatted.
+- `git diff --check`: passed. Relative Markdown links in changed user-facing documentation: passed.
 - Preparation and EDA commands completed against the official data; both notebooks validated and
   executed successfully with cleared committed outputs.
 
 ## Scope Confirmation
 
-Phase 2 added no lag/rolling model features, forecasting model, model selection, random split,
-inventory simulation, synthetic supply-chain data, API, or dashboard. Sales remains monetary
-turnover at Store × Date; future Customers remains unavailable to production forecasts. Primary
-forecast evaluation on actual Open=1 observations and the proposal's known-closed operational rule
-remain Phase 3/later constraints.
+No forecasting model, model selection, random split, inventory simulation, synthetic supply-chain
+data, API, or dashboard has been added. Sales remains monetary turnover at Store × Date; future
+Customers remains unavailable to production forecasts. Primary forecast evaluation on actual
+Open=1 observations and the proposal's known-closed operational rule remain later-phase constraints.

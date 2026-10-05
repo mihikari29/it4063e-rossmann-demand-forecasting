@@ -14,7 +14,7 @@ immutable. Prepared historical train and future-covariate test remain separate i
 
 ## 2. Scope and exclusions
 
-### In scope for the later Phase 3 implementation
+### Approved Phase 3 implementation scope
 
 - Establish a single documented feature contract shared by historical feature construction and
   future inference.
@@ -326,7 +326,7 @@ run in `docs/PROGRESS.md`. Review the diff for leakage and unintended scope.
 
 ## 9. Implementation sequence and acceptance criteria
 
-After this plan is reviewed and implementation is authorized:
+Execution sequence for the approved Phase 3 scope:
 
 1. Record this user-approved design checkpoint and update the plan before coding.
 2. Add shared point-in-time feature assembly and focused unit tests using fixtures.
@@ -337,8 +337,8 @@ After this plan is reviewed and implementation is authorized:
 5. Run fixture tests, lint/format checks, and real-data integrity/availability audits.
 6. Self-review schemas, null handling, exact-date behavior, and every target-history access for
    leakage; inspect `git diff` and `git status`.
-7. Update `docs/PROGRESS.md` with actual results and move this plan to `plans/completed/` only after
-   implementation and acceptance are complete.
+7. Update `docs/PROGRESS.md` with actual results. Keep this plan active and do not archive it until
+   the user has reviewed the implementation and explicitly accepts Phase 3 closure.
 
 Phase 3 implementation is done only when the shared feature contract and train/inference schema
 are documented; every feature has source, derivation, availability, null, and leakage rules; sparse
@@ -514,3 +514,28 @@ additional feature behavior is inferred from them.
   Customers, Customers-derived fields, or target labels.
 - **Reversible later?:** Yes. Storage layout can change without changing feature meanings, provided
   the common predictor schema, role separation, and point-in-time rules remain enforced.
+
+## Implementation Execution Record — Review Pending
+
+Implementation is checkpointed in focused commits on `feat/feature-engineering` for external code
+review. Phase 3 is not formally closed and this plan remains active. No Phase 4 or forecasting work
+was started.
+
+- Reusable implementation: `src/rossmann_forecasting/features/{contract,calendar,promotion,competition,history,pipeline,runner}.py`.
+- Command: `scripts/build_features.py`, backed by `rossmann-build-features`.
+- Documentation: `docs/FEATURE_CONTRACT.md`; Section B of `docs/DATA_DICTIONARY.md`; ADR-012;
+  progress results in `docs/PROGRESS.md`.
+- Tests: `tests/test_feature_engineering.py`; full repository suite passed, 45 tests.
+- Real-data build: 1,017,209 train rows and 41,088 inference rows; same ordered 29-predictor
+  schema and matching dtypes. Raw source hashes (4 files) and Phase 2 prepared Parquet hashes
+  (3 files) matched before/after. Outputs and local manifest are ignored.
+- Development diagnostics stop at 2015-07-03. Final holdout integrity-only range is 2015-07-04
+  through 2015-07-31; no holdout outcome/distribution summary or forecast metric was produced.
+- Gap audit for Store 13: no dynamic history on Jan 1, 2015; exact lag/window availability resumes
+  incrementally, with all ten dynamic features available Jan 29 after 28 complete prior dates.
+- Checks actually run: raw validator (0 errors, 4 warnings, 12 info); repeated deterministic builds
+  matched each corresponding artifact hash; pytest (45 passed); Ruff check; Ruff format check (44
+  files); `git diff --check`; relative Markdown links.
+
+The execution record documents completed technical work, not final phase acceptance. Do not move
+the plan to `plans/completed/` or mark Phase 3 complete before user review.

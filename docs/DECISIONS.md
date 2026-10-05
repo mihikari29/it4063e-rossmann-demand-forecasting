@@ -1,6 +1,7 @@
 # Architecture and Methodology Decision Log
 
-Only durable decisions supported by the authoritative proposal belong here. Changes require a new or superseding decision record rather than a silent rewrite.
+Only durable decisions supported by the authoritative proposal or explicitly approved phase design
+belong here. Changes require a new or superseding decision record rather than a silent rewrite.
 
 ## ADR-001 — Forecast Granularity
 
@@ -122,3 +123,24 @@ without committing restricted data or credentials.
 **Consequences:** Each contributor must obtain authorized competition access. A source refresh
 requires explicitly moving the existing raw directory aside and rerunning acquisition and
 validation. Derived data must be written elsewhere in a later phase.
+
+## ADR-012 - Phase 3 Point-in-Time Feature Contract
+
+**Status:** Accepted for Phase 3 implementation; contract version `phase-3-v1`.
+
+**Decision:** Use one ordered 29-predictor schema for historical training and inference. Preserve
+`Store` unchanged as both a key and later categorical model input; keep Date key-only and Sales as
+label/history source. Dynamic target-history features use exact calendar dates, complete trailing
+windows, and origin-censored actual history with optional earlier recursive predictions. Missing
+exact history stays null. Competition opening status/age use month-level semantics, and invalid or
+missing metadata is not imputed. Open-resolution candidates remain audit-only. The latest 28
+labeled days are protected by a holdout firewall.
+
+**Reason:** This preserves source precision and sparse coverage while making target-history
+availability explicit for recursive forecasting; it also prevents train/inference schema drift and
+future actuals from leaking through precomputed historical rows.
+
+**Consequences:** The detailed, versioned field manifest and output roles are defined in
+[`FEATURE_CONTRACT.md`](FEATURE_CONTRACT.md). Phase 3 adds no model-specific encoding, scaling,
+same-weekday features, imputation, or forecasting model. Any later contract change must be reviewed,
+regenerated, and must not be selected using final-holdout outcomes.

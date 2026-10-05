@@ -10,8 +10,10 @@ units and supply-chain fields will be explicitly simulated.
 ## Current Status
 
 Phase 1 - Data Acquisition & Validation and Phase 2 - Data Preparation & EDA are complete. Phase 3
-- Feature Engineering is next and has not begun. Raw Rossmann data remain immutable; prepared
-tables and EDA exports are reproducible and ignored local outputs.
+- Feature Engineering is implemented on `feat/feature-engineering` and ready for external code
+review; it is not formally closed. No forecasting model or forecast metrics have been run. Raw Rossmann
+data remain immutable; prepared tables, feature Parquet files, and EDA exports are reproducible
+and ignored local outputs.
 
 ## Environment
 
@@ -60,6 +62,21 @@ EDA uses labelled historical train Sales and test covariates only, writing summa
 `reports/eda/`. These outputs are ignored and can be regenerated. The numbered notebooks provide a
 thin presentation layer over the same reusable package functions.
 
+## Build Phase 3 Features
+
+After Phase 2 preparation, build the frozen shared train/inference schema with:
+
+```powershell
+python scripts/build_features.py
+```
+
+The command verifies raw-source and Phase 2 input hashes, writes ignored
+`data/processed/features_train.parquet`, `features_inference.parquet`, and
+`feature_manifest.json`, and records development-only coverage plus mechanical final-holdout
+checks. See the [Feature Contract](docs/FEATURE_CONTRACT.md) for field roles, dtypes, null rules,
+and the origin-censored recursive-history interface. This step trains no models and computes no
+forecast metrics.
+
 ## Quality Checks
 
 ```powershell
@@ -76,6 +93,7 @@ python -m ruff format --check .
 - [Development workflow](docs/WORKFLOW.md)
 - [Decision log](docs/DECISIONS.md)
 - [Data dictionary](docs/DATA_DICTIONARY.md)
+- [Phase 3 feature contract](docs/FEATURE_CONTRACT.md)
 - [Phase 2 EDA findings](docs/EDA_FINDINGS.md)
 
 ## Team
@@ -94,7 +112,7 @@ python -m ruff format --check .
 |-- docs/
 |-- plans/completed/
 |-- scripts/
-|-- src/rossmann_forecasting/{analysis,data}/
+|-- src/rossmann_forecasting/{analysis,data,features}/
 |-- notebooks/
 |-- tests/
 `-- pyproject.toml
