@@ -482,7 +482,7 @@ implementation began. Later implementation and selection results are maintained 
 
 **Status:** Accepted after external Phase 8 methodology review, 2026-10-06.
 
-**Clarifies:** ADR-015–017, ADR-019–020; [active Phase 8 plan](../plans/active/phase-8-forecast-uncertainty.md).
+**Clarifies:** ADR-015–017, ADR-019–020; [completed Phase 8 plan](../plans/completed/phase-8-forecast-uncertainty.md).
 
 **Context:** ADR-020 selected `global_lightgbm_gbdt_regression_l1`, trial A at exactly 180
 boosting rounds with the approved ordered 29 predictors. Three selected development origins
@@ -566,7 +566,7 @@ boundaries, expose sparse strata instead of hiding them with fallback, and retai
 within-path dependence while keeping the opening-schedule assumption and holdout firewall explicit.
 
 **Consequences:** The full estimator, diagnostics, artifacts, fixture criteria, operational
-failure behavior, and Phase 10 handoff are specified in the active plan. Acceptance authorizes
+failure behavior, and Phase 10 handoff are specified in the completed plan. Acceptance authorizes
 implementing and evaluating only this protocol after PR #14 integrates into `main`; this approval
 sync does not implement an uncertainty runner, calculate intervals or quantile tables, or freeze
 fitted values. External review of implementation results is required before fitted-table freeze.

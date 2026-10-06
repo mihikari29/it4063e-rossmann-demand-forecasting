@@ -17,18 +17,20 @@ work into four manageable packages:
 | Delivery | 14 | Consolidated results, reproducible demo, report and slides |
 
 A package may share one concise execution plan, but each model/methodology approval and phase
-boundary stays explicit. Phase 9 may proceed alongside Phase 8 only under its separate approved
-scope; Phases 9–10 have not started and are outside the current Phase 8 closeout-preparation task.
+boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
+Phase 9 remains PLANNED and not started; Phases 9–10 require their separate design and
+authorization and are outside this Phase 8 closeout.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
 PR #10. Phase 7 is complete on `main` through PR #13, preserving ADR-020's selected LightGBM
 trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021; implementation PR
 [#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) was squash-merged
-into `main` at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`. The external results review accepted
-the canonical run and its Fit B values are frozen for that artifact identity. Its
-[active plan](../plans/active/phase-8-forecast-uncertainty.md) is **REVIEWED / FORMAL CLOSEOUT
-PENDING**; retain it until this documentation integration and explicit closeout verification.
+into `main` at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`. PR #16 recorded independent numerical
+review acceptance and Fit B freeze, and was squash-merged into `main` at
+`4dd7717fed57ff3b1f14789b980772c1968f3cba`. Phase 8 is **COMPLETE** as of the explicit
+2026-10-07 closeout in the [completed plan](../plans/completed/phase-8-forecast-uncertainty.md).
+The frozen values apply only to the canonical artifact identities in [PROGRESS](PROGRESS.md).
 
 ## Phase 0 — Repository Foundation
 
@@ -112,7 +114,9 @@ reviewed protocol used consistently for all candidates, not opportunistic window
 
 **Objective:** Quantify daily and cumulative uncertainty for the selected fixed method.
 **Dependencies:** Phase 7 development out-of-sample forecasts/residuals.
-**Design:** [Phase 8 uncertainty plan](../plans/active/phase-8-forecast-uncertainty.md),
+**Status:** COMPLETE following verified PR #15/#16 integration, accepted results review and
+explicit closeout on 2026-10-07. See the [completed Phase 8 plan](../plans/completed/phase-8-forecast-uncertainty.md).
+**Design:** [Phase 8 uncertainty plan](../plans/completed/phase-8-forecast-uncertainty.md),
 approved in ADR-021 and integrated by PR #14. PR #15 implemented the unchanged approved protocol
 from saved Phase 7 development artifacts and was merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`.
 External numerical review accepted the canonical results; Fit B values are frozen for that exact
@@ -131,9 +135,9 @@ Final-holdout actual Open cannot serve as a planned schedule before issuance; op
 requiring future Open remain unavailable without separately reviewed origin-known schedule
 provenance or a separately approved synthetic/conditional schedule not derived from protected
 actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
-calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 remains
-REVIEWED / FORMAL CLOSEOUT PENDING until this documentation integration and explicit closeout
-verification; Phases 9–10 remain outside this boundary.
+calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 is COMPLETE
+for the accepted canonical development run; Phases 9–10 remain PLANNED and not started, outside
+this boundary and requiring separate authorization.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 

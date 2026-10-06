@@ -9,8 +9,8 @@
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
-| Phase 8 - forecast uncertainty | REVIEWED / FORMAL CLOSEOUT PENDING | PR #15 squash-merged into `main` at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; external results review ACCEPTED and Fit B values frozen for the canonical run; explicit closeout still pending |
-| Phase 9 and later | PLANNED; not started | Await their dependencies and separate authorization |
+| Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
+| Phase 9 and later | PLANNED; not started | Separate design and authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -25,7 +25,7 @@ records, including the [completed Phase 5 plan](../plans/completed/phase-5-stati
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
 snapshots, not separate results to update. Phase 7's development-only selection is integrated and
 formally closed. Its result and closeout do not constitute final-holdout evaluation or production
-approval. Phase 8 methodology is approved in ADR-021; implementation PR #15 is integrated, and the external results review accepted the canonical development run. Fit B values are frozen for that run. This governance update records REVIEWED status, not COMPLETE; explicit formal closeout remains pending after this documentation change is integrated.
+approval. Phase 8 methodology is approved in ADR-021; implementation PR #15 and results-acceptance PR #16 are integrated, and the external results review accepted the canonical development run. Fit B values are frozen for that run. Phase 8 is COMPLETE following the explicit closeout recorded below and in the completed plan. Phase 9 and later remain planned and not started.
 
 ## Immediate next boundary
 
@@ -39,10 +39,10 @@ The Phase 6 development-only results and coverage evidence remain recorded below
 [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged into
 `main` at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`. Phase 7 is **COMPLETE**; the selected
 `global_lightgbm_gbdt_regression_l1` recipe remains trial A at exactly 180 rounds.
-Phase 8 implementation/results are **REVIEWED** after PR #15 merged at
-`c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; Fit B values are frozen for the identified
-development run. Phase 8 is **REVIEWED / FORMAL CLOSEOUT PENDING**, not COMPLETE. The current
-documentation/governance integration and a later explicit closeout verification remain necessary.
+Phase 8 implementation/results were accepted after PR #15 merged at
+`c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; the Fit B freeze was integrated by PR #16 at
+`4dd7717fed57ff3b1f14789b980772c1968f3cba`. Phase 8 is **COMPLETE** following the closeout
+recorded below. Its completed plan preserves the approved method and review checkpoints.
 Final-holdout evaluation remains unreleased. The
 [historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the interfaces and boundary used.
@@ -806,7 +806,7 @@ must remain operationally unavailable.
 
 ### Phase 8 design checkpoint
 
-At the reviewed PR #14 design head, the [active Phase 8 plan](../plans/active/phase-8-forecast-uncertainty.md)
+At the reviewed PR #14 design head, the [Phase 8 plan active at that checkpoint](../plans/completed/phase-8-forecast-uncertainty.md)
 was **PROPOSED / AWAITING APPROVAL** and included a draft ADR-021. The 2026-10-06 approval sync
 below supersedes that proposal checkpoint; the accepted methodology is recorded in ADR-021.
 
@@ -1080,7 +1080,7 @@ remains `global_lightgbm_gbdt_regression_l1`. No raw/interim data or protected J
 or Customers were read, loaded or hashed. Fit B stays unfrozen pending external results review;
 Phase 8 remains under review and Phases 9-10 remain unstarted.
 
-## Phase 8 external results acceptance and Fit B freeze — 2026-10-07
+## Phase 8 external results acceptance and Fit B freeze — 2026-10-07 (historical pre-closeout checkpoint)
 
 GitHub confirms PR #15 was squash-merged into `main` at
 `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`. The external reviewer decision supplied for the
@@ -1125,7 +1125,7 @@ origin-anchored prefixes; no daily-review suffix calibration is authorized for P
 The selected identity remains `global_lightgbm_gbdt_regression_l1` (trial A, 180 rounds). No Phase
 9/10 work has started.
 
-### Documentation integration validation — 2026-10-07
+### Documentation integration validation — 2026-10-07 (historical pre-closeout checkpoint)
 
 | Check | Result |
 |---|---|
@@ -1145,3 +1145,67 @@ in place. This documentation/governance change must first be reviewed and integr
 perform a separate explicit closeout verification against the merged PR, accepted review, frozen
 artifact identities, and holdout firewall. Only that authorized closeout may mark Phase 8 COMPLETE
 and archive the plan.
+
+## Phase 8 formal closeout — 2026-10-07
+
+The closeout branch started from fetched `origin/main` at
+`4dd7717fed57ff3b1f14789b980772c1968f3cba`. GitHub reports PR #15 and PR #16 as merged; the
+verified squash-merge commits are `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821` and
+`4dd7717fed57ff3b1f14789b980772c1968f3cba`, respectively. Both commits are ancestors of
+`origin/main`, and PR #16's merge commit directly follows PR #15's merge commit.
+
+The independent external results review ACCEPTED the canonical development results: all 56 daily
+quantiles, 84 cumulative quantiles, 62,440 daily interval records, 93,660 cumulative records, and
+392 diagnostics. The Fit B freeze record is present on merged `main`. The canonical run is
+`phase8-impl-20261006-provenance-review`; its immutable local artifacts were available and checked
+without regeneration:
+
+| Frozen identity | SHA-256 | Local artifact verification |
+|---|---|---|
+| Run manifest | `63a00fc8c50ccff99360cd8790498e977e08ec6a9846780a4e1a8ab3498d71c2` | Match |
+| Daily quantiles | `5c985c912d14b502a5d370090353624907e7fddd6d0d8552c102ee3a1ad7eda8` | Match |
+| Cumulative quantiles | `1a0bba7916b498f2048f080dcd3b24f6cd47472d2f71fca92b94f1b678cb70ff` | Match |
+| Canonical policy/config identity | `49f4811bf7b01ffe6472ea76233eefa50e211207aa0b6246dada934cd4611d93` | Match to the config's self-excluding canonical identity |
+| `calibration_config.json` file | `afe563632a2ebff937f1500f568d53cdb93be35d6dc299654464c2615ae64a08` | Match |
+
+The immutable run manifest retains its original publication-time flags:
+`external_fit_b_results_review_pending=true` and `fit_b_quantiles_frozen=false`. The later
+governance freeze does not rewrite the manifest, config, quantile tables, other run artifacts, or
+current pointer. ADR-021 and the selected LightGBM recipe are unchanged.
+
+**Closeout decision:** Phase 8 is **COMPLETE** as of 2026-10-07 based on verified PR #15/#16
+integration, independent results acceptance, frozen identity checks, and confirmation of the
+holdout firewall. The explicit acceptance limitations remain:
+
+- Fit B raw-primary coverage is 12,263/13,437 (91.26%), below nominal 95%.
+- Sunday h2/h9 calibration is sparse: 65/64 rows from 33/32 distinct stores across two origins.
+- Forecast errors are dependent across stores and forecast origins.
+- Operational results are a conditional historical replay assuming saved source Open was known at
+  origin. Fit B's 14,436/15,610 (92.48%) pooled coverage is closure-inflated relative to its
+  12,263/13,437 (91.26%) Open=1 coverage; deterministic closed routes contribute 13.92% of the
+  pooled usable denominator.
+- No conformal, per-store, production, or service-level guarantee is established.
+- Cumulative quantiles apply only to approved origin-anchored prefixes. No later daily-review
+  suffix calibration is authorized.
+- The protected 2015-07-04 through 2015-07-31 final holdout remains unreleased.
+- The target is monetary Sales turnover, not SKU-level physical demand.
+
+Phase 9 remains PLANNED and not started; separate design and authorization are required. Phase 10
+also remains unstarted. The closeout changes documentation only and does not change implementation,
+calibration results, quantile tables, model artifacts, or dependencies.
+
+### Formal closeout quality gates — 2026-10-07
+
+| Check | Result |
+|---|---|
+| Full `python -m pytest` (Python 3.14.5) | PASS — 200 tests |
+| Ruff lint | PASS — `ruff check .` |
+| Ruff format | PASS — 77 files already formatted |
+| Documentation link checker | PASS — 154 local destinations/anchors across 23 Markdown files |
+| `uv lock --check` (uv 0.12.23) | PASS — 84 packages resolved; lock unchanged |
+| Python 3.14 `pip check` | PASS — no broken requirements |
+| `git diff --check` | PASS — no whitespace errors |
+
+The project virtual environment was used for Python/Ruff checks. Pinned uv 0.12.23 was run from
+a temporary directory because no uv executable was installed on PATH; `uv.lock` and project
+dependencies remain unchanged.
