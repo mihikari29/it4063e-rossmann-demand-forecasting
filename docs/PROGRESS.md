@@ -606,5 +606,6 @@ Python 3.12.15. `ruff check .` passed; `ruff format --check .` passed (73 files)
 checker passed (111 local destinations/anchors across 22 documents); `uv lock --check` resolved 84
 packages; `python -m pip check` passed on Python 3.14.5; and `uv pip check` passed on the locked
 Python 3.12 environment (60 packages). `git diff --check` passed with only expected Windows
-LF-to-CRLF notices on the three new Python files. The implementation PR records these checks.
-Phase 7 remains under review; this checkpoint is not a phase closeout.
+LF-to-CRLF notices on the three new Python files. [Implementation PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13)
+is open for review and records these checks. Phase 7 remains under review; this checkpoint is not a
+phase closeout.

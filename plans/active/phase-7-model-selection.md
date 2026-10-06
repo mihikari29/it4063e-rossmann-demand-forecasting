@@ -387,4 +387,5 @@ runner completed with both integrity statuses and coverage passing and returned
 
 No methodology/ADR or proposal edits, dependency additions, candidate fits, holdout reads or Phase
 8 work were made. Phase 7 remains under review and this plan stays active until review, authorized
-integration and explicit closeout.
+integration and explicit closeout. [Implementation PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13)
+is open against `main`; it has not been merged.
