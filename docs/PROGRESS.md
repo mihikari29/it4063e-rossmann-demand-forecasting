@@ -409,6 +409,7 @@ Final quality checks after the documentation update:
 | Check | Result |
 |---|---|
 | Full fixture suite (`python -m pytest`, Python 3.14.5) | PASS — 151 passed in 22.39s |
+| PR #10 GitHub Quality workflow | PASS — Python 3.12 and 3.14 jobs; tests, dependency check, Ruff, formatting, and Markdown links |
 | `python -m ruff check .` | PASS |
 | `python -m ruff format --check .` | PASS — 69 files already formatted |
 | `python scripts/check_docs.py` | PASS — 85 local destinations/anchors across 21 Markdown files |
