@@ -9,7 +9,7 @@
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
-| Phase 8 — forecast uncertainty | APPROVED in ADR-021; implementation not started | [Active plan](../plans/active/phase-8-forecast-uncertainty.md); PR #14 remains open as the design integration gate; no intervals or cumulative quantiles calculated |
+| Phase 8 - forecast uncertainty | IMPLEMENTED / UNDER REVIEW | [Active plan](../plans/active/phase-8-forecast-uncertainty.md); ADR-021 integrated by PR #14; [PR #15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and unmerged; fitted values await external review |
 | Phase 9 and later | PLANNED; not started | Await their dependencies and separate authorization |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -25,8 +25,7 @@ records, including the [completed Phase 5 plan](../plans/completed/phase-5-stati
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
 snapshots, not separate results to update. Phase 7's development-only selection is integrated and
 formally closed. Its result and closeout do not constitute final-holdout evaluation or production
-approval. Phase 8 methodology is approved in ADR-021; implementation has not started and PR #14
-remains the open design integration gate.
+approval. Phase 8 methodology is approved in ADR-021 and PR #14 is integrated. The bounded development implementation and evidence are recorded below; its external implementation/results review remains open.
 
 ## Immediate next boundary
 
@@ -40,8 +39,7 @@ The Phase 6 development-only results and coverage evidence remain recorded below
 [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged into
 `main` at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`. Phase 7 is **COMPLETE**; the selected
 `global_lightgbm_gbdt_regression_l1` recipe remains trial A at exactly 180 rounds.
-Phase 8 methodology is approved in ADR-021; implementation has not started and PR #14 remains
-open. Final-holdout evaluation remains unreleased. The
+Phase 8 methodology is approved in ADR-021 and implementation is **UNDER REVIEW**. Final-holdout evaluation remains unreleased. The
 [historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the interfaces and boundary used.
 
@@ -867,3 +865,213 @@ Approval-sync local validation on Python 3.14.5 with the locked environment:
 | `uv lock --check` | PASS — 84 packages resolved; lock unchanged |
 | `uv pip check` | PASS — 61 installed packages compatible |
 | `git diff --check` | PASS |
+
+## Phase 8 development-only implementation checkpoint - 2026-10-06
+
+The approved ADR-021 implementation is **IMPLEMENTED / UNDER REVIEW** on branch
+`feat/phase-8-uncertainty-implementation`, based on merged PR #14 commit
+`305ddc80a4e3399698f64762ec26da2fc79cfb10`. Implementation PR
+[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and
+unmerged; external implementation/results review is pending. The selected Phase 7 identity remains
+`global_lightgbm_gbdt_regression_l1`; this work reads its saved paths only and performs no point
+model fit, refit, tuning or selection change.
+
+The canonical development run is `phase8-impl-20261006-final`, under the ignored directory
+`data/processed/uncertainty/phase8-impl-20261006-final/`. An earlier implementation-validation run,
+`phase8-impl-20261006`, is retained as an immutable prior run; `current.json` points to the canonical
+run recorded here. Its manifest status is
+`complete_with_unavailable_strata`; dates are 2015-05-23 through 2015-07-03 across the three
+approved development windows. The run read 46,830 selected residual-path rows, with 38,553
+Open=1 raw-primary errors and 46,830 routed operational errors. The saved Phase 7 outputs,
+selected candidate manifest and all three original candidate output sets were SHA-256 verified
+before and after the run; every input hash was unchanged. The run did not read or hash source
+datasets or protected July 4-31 Open, Sales or Customers values.
+
+Fit A has 22 of 28 daily tail strata available. Its h2 (n=32), h3 (n=33) and h9 (n=32) lower and
+upper tails remain unavailable as `insufficient_calibration`; no neighboring-horizon fallback
+was used. Fit B has 28 of 28 daily tail strata available. All 42 cumulative `(k,p)` strata are
+available for each fit: 1,115 complete calibration Store-origin prefixes for Fit A and 2,230 for
+Fit B at every k=1-14. The saved schedule interpretation is explicitly
+`saved_source_open_assumed_known_at_origin`, a conditional historical replay. Empirical coverage
+and width diagnostics are descriptive and have no approved numeric acceptance threshold or
+production/service guarantee. Fit B fitted values remain unfrozen pending external review.
+
+The run manifest records source revision `305ddc80a4e3399698f64762ec26da2fc79cfb10`,
+`worktree_modified=true`, implementation source hash
+`993e9e687eaa3ec3f662e0851e57a8fd7c93c499642c13c5d0a103cd6f36edce`, and `uv.lock` hash
+`584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. Output row counts and
+hashes are recorded in that manifest; primary table identities are:
+
+| Artifact | Rows | SHA-256 |
+|---|---:|---|
+| `calibration_config.json` | - | `afe563632a2ebff937f1500f568d53cdb93be35d6dc299654464c2615ae64a08` |
+| `daily_residual_quantiles.csv` | 56 | `5c985c912d14b502a5d370090353624907e7fddd6d0d8552c102ee3a1ad7eda8` |
+| `cumulative_error_quantiles.csv` | 84 | `1a0bba7916b498f2048f080dcd3b24f6cd47472d2f71fca92b94f1b678cb70ff` |
+| `daily_intervals.parquet` | 62,440 | `160e68f4dd0237b61e60d20d041e06d0760fd94b006f7e89730e24e96b601fd2` |
+| `cumulative_uncertainty.parquet` | 93,660 | `f338ff7189d652e64c8aa27f3d03c205c313185fb205f9f8a50b9776d59c0a0e` |
+| `coverage_diagnostics.csv` | 392 | `7517435e7e4dd4bf0d08aa705c3555bb1ea945d6cae3dff8db8dfdf46ca0aaa4` |
+
+| Check | Result |
+|---|---|
+| Full `python -m pytest` | PASS - 199 tests in 92.05s |
+| `python -m ruff check .` | PASS |
+| `python -m ruff format --check .` | PASS - 77 files already formatted |
+| `python scripts/check_docs.py` | PASS - 149 local destinations/anchors across 23 Markdown files |
+| `uv lock --check` | PASS - 84 packages resolved; lock unchanged |
+| `git diff --check` | PASS |
+
+The implementation adds `src/rossmann_forecasting/forecasting/uncertainty.py`,
+`scripts/run_forecast_uncertainty.py` and fixture coverage in `tests/test_uncertainty.py`. It also
+updates this state record, the Phase 8 active plan, README usage/state text, and the ignored-data
+layout guide. No ADR-021 methodology, Phase 7 algorithm/artifact, proposal, inventory layer,
+Phase 9/10 work or final-holdout protocol changed. Canonical run manifest SHA-256 is
+`d32ea0d3de331fc9e61ece091742edd8d23291383a2bb64779a1af945073a2bb`; its canonical policy/config hash is
+`49f4811bf7b01ffe6472ea76233eefa50e211207aa0b6246dada934cd4611d93`. Whole-repository checks on
+Python 3.14.5 with the locked environment passed as listed above.
+
+## Phase 8 targeted provenance and results review (2026-10-06)
+
+PR #15 remains **OPEN / UNMERGED**; Phase 8 remains **IMPLEMENTED / UNDER REVIEW**, and Fit B is
+**UNFROZEN**. The focused follow-up did not change ADR-021, quantile ranks/sample floors, Fit A/B
+chronology, the selected LightGBM recipe, conditional saved-Open replay, or the final-holdout
+firewall.
+
+### Post-computation input-integrity gate
+
+After estimation and staged-output verification, the runner now reruns the same allowlisted Phase 7
+integrity verifier and compares the complete canonical input-lineage snapshot with the identities
+verified before computation. The second pass rechecks the Phase 7 selection manifest and all six
+manifest-listed selection outputs, then the three original candidate manifests and all 34
+manifest-listed candidate artifacts. Candidate paths must still match the reviewed allowlist and
+Parquet Date metadata must still stop by 2015-07-03 before file hashing. A failed recheck occurs
+before the run manifest, official run-directory rename, or `current.json` update; staging is
+removed, and earlier runs/current pointer remain unchanged. No raw/interim or unexpected source
+path is opened or hashed.
+
+A targeted fixture mutates the previously verified residual-path artifact during uncertainty
+calculation. The post-computation identity comparison rejects publication; the fixture confirms
+that an existing run and pointer retain their exact bytes and no failed run/staging directory is
+left behind.
+
+### New canonical development run and provenance
+
+After the code fix, the runner published `phase8-impl-20261006-provenance-review` and atomically
+advanced `current.json` to it. Both earlier immutable runs, `phase8-impl-20261006` and
+`phase8-impl-20261006-final`, and every listed output hash in those runs were checked before and
+after and remained unchanged. The runner's post-computation pass and an independent post-run
+verification matched the initial Phase 7 input identities. The new manifest records all six Phase
+7 selection outputs, all three original candidate manifests, and all 34 candidate-artifact hashes.
+
+The new run manifest SHA-256 is
+`63a00fc8c50ccff99360cd8790498e977e08ec6a9846780a4e1a8ab3498d71c2`. Its current implementation
+source SHA-256 is `b89e3a9f16e5395632b2de55be90327aad6e546ead4251812606a878cabad04b`, matching the
+source bytes measured for the new run; `uv.lock` remains
+`584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. The prior canonical run
+recorded source hash `993e9e687eaa3ec3f662e0851e57a8fd7c93c499642c13c5d0a103cd6f36edce`; direct
+source-byte hashing confirmed that it matched the then-current implementation before this fix. It
+does not match the implementation after adding the integrity gate. The new run's recorded Git
+revision is `95d988abb0e381ed3c4b0aab58218435b494ee39` with `worktree_modified=true`; its source
+hash, rather than Git revision alone, identifies the code bytes used.
+
+The selected Phase 7 lineage remains unchanged: selection manifest
+`03a1f26ba5855fd0576667bf280df938664c196a802de0a71e696a600b281cdc`; selected residual paths
+`509bb4a822157850e8fb0309114a4003b98bcbc6b56f4a49244d8b6593e03382`; selected forecasts
+`72566349b233ef26c8de5b4f9c1623ac66df8676ad0370ad63b192ed4c1b5b09`; recipe
+`9ef3ee340ac57f14394857203ca3de5445ebae70972ec541a51947f38a49f799`; and original candidate
+manifest hashes remain SN `f5e3a18a0a8bff709cb06b4e6282e22cbe3f84668937d3c3e57245b7c76072e3`, HW
+`37b46babad1d197143bfda2f4f11aa65291c350b6b0687410bc4496b7171903b`, LightGBM
+`ddd379fe4264dd90f618ba57791b97fcce3fd64199ffe95410c4f0d0695810c1`. The new output artifact
+hashes match the prior canonical output hashes byte-for-byte; the new run ID and manifest bind this
+publication to the post-fix code.
+
+### Chronological assessment results
+
+The run covers 46,830 selected residual-path rows from 2015-05-23 through 2015-07-03, with 38,553
+raw-primary Open=1 errors and 46,830 conditional operational errors. Fit A assesses validation_2
+(origin 2015-06-05); Fit B assesses validation_3 (origin 2015-06-19). Daily widths below use only
+available raw-primary intervals; coverage denominators are the usable assessed interval rows.
+
+| Fit | Open=1 labels | Daily intervals available | Availability | Hits / usable denominator | Empirical coverage | Width n | Mean width | Median width |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| A | 13,438 | 12,258 | 91.22% | 10,344 / 12,258 | 84.39% | 12,258 | 4,128.75 | 4,203.37 |
+| B | 13,437 | 13,437 | 100.00% | 12,263 / 13,437 | 91.26% | 13,437 | 4,116.49 | 4,152.12 |
+
+Individual horizon diagnostics retain the approved sparse-stratum reasons and expose calibration
+sample sizes separately from assessment denominators:
+
+| Fit / horizon | Calibration n (distinct stores) | Assessment Open=1 eligible | Available / usable | Hits / usable | Coverage | Mean / median width |
+|---|---:|---:|---:|---:|---:|---:|
+| A / h2 | 32 (32) | 33 | 0 / 0 | - | unavailable | - |
+| A / h3 | 33 (33) | 1,115 | 0 / 0 | - | unavailable | - |
+| A / h9 | 32 (32) | 32 | 0 / 0 | - | unavailable | - |
+| A / h10 | 1,115 | 1,114 | 1,114 / 1,114 | 1,084 / 1,114 | 97.31% | 7,382.53 / 7,382.53 |
+| B / h2 | 65 (33) | 32 | 32 / 32 | 32 / 32 | 100.00% | 13,870.23 / 13,870.23 |
+| B / h9 | 64 (32) | 32 | 32 / 32 | 32 / 32 | 100.00% | 15,183.32 / 15,212.95 |
+| B / h10 | 2,229 | 1,115 | 1,115 / 1,115 | 1,069 / 1,115 | 95.87% | 6,873.54 / 6,873.54 |
+
+Both tails at Fit A h2, h3, and h9 remain unavailable as `insufficient_calibration`; their
+assessment populations include 33, 1,115, and 32 Open=1 labels respectively, with zero usable
+intervals. No coverage value is reported where the issued interval is unavailable. Fit B h2/h9
+results use only 33/32 distinct calibration stores across two origins and remain fragile despite
+valid support.
+
+| Fit | Operational population | Label-eligible rows | Available / eligible | Hits / usable denominator | Coverage |
+|---|---|---:|---:|---:|---:|
+| A | Open=1 | 13,438 | 12,258 / 13,438 (91.22%) | 10,344 / 12,258 | 84.39% |
+| A | Open=0 | 2,172 | 2,172 / 2,172 (100.00%) | 2,172 / 2,172 | 100.00% |
+| A | Pooled | 15,610 | 14,430 / 15,610 (92.44%) | 12,516 / 14,430 | 86.74% |
+| B | Open=1 | 13,437 | 13,437 / 13,437 (100.00%) | 12,263 / 13,437 | 91.26% |
+| B | Open=0 | 2,173 | 2,173 / 2,173 (100.00%) | 2,173 / 2,173 | 100.00% |
+| B | Pooled | 15,610 | 15,610 / 15,610 (100.00%) | 14,436 / 15,610 | 92.48% |
+
+Deterministic closed `[0,0]` routes account for 15.05% of Fit A's pooled usable denominator and
+13.92% of Fit B's. Pooled coverage is respectively 2.35 and 1.22 percentage points above the
+Open=1 branch. The diagnostics record zero Open=0 / positive-Sales violations for both fits.
+This closure-driven increase is conditional-replay coverage inflation, not raw-model accuracy.
+
+Cumulative upper-bound results are coverage of assessed actual operational prefixes `actual_total
+<= U_k`. Every cell has 1,115 complete assessment prefixes and 1,115 available bounds; calibration
+support is 1,115 prefixes for Fit A and 2,230 for Fit B. There are no unavailable reasons for
+k=3..8.
+
+| k | Fit A p=.90 | Fit A p=.95 | Fit A p=.98 | Fit B p=.90 | Fit B p=.95 | Fit B p=.98 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 3 | 861/1,115 (77.22%) | 970/1,115 (87.00%) | 1,075/1,115 (96.41%) | 1,040/1,115 (93.27%) | 1,079/1,115 (96.77%) | 1,101/1,115 (98.74%) |
+| 4 | 1,044/1,115 (93.63%) | 1,070/1,115 (95.96%) | 1,101/1,115 (98.74%) | 1,095/1,115 (98.21%) | 1,102/1,115 (98.83%) | 1,107/1,115 (99.28%) |
+| 5 | 1,044/1,115 (93.63%) | 1,084/1,115 (97.22%) | 1,100/1,115 (98.65%) | 1,096/1,115 (98.30%) | 1,101/1,115 (98.74%) | 1,107/1,115 (99.28%) |
+| 6 | 1,047/1,115 (93.90%) | 1,091/1,115 (97.85%) | 1,100/1,115 (98.65%) | 1,098/1,115 (98.48%) | 1,107/1,115 (99.28%) | 1,110/1,115 (99.55%) |
+| 7 | 1,100/1,115 (98.65%) | 1,105/1,115 (99.10%) | 1,107/1,115 (99.28%) | 1,106/1,115 (99.19%) | 1,110/1,115 (99.55%) | 1,111/1,115 (99.64%) |
+| 8 | 1,103/1,115 (98.92%) | 1,106/1,115 (99.19%) | 1,111/1,115 (99.64%) | 1,106/1,115 (99.19%) | 1,110/1,115 (99.55%) | 1,110/1,115 (99.55%) |
+
+Across k=1..14 pooled by the 15,610 assessed prefixes per level, Fit A coverage is 15,009/15,610
+(96.15%) at p=.90, 15,271/15,610 (97.83%) at p=.95, and 15,467/15,610 (99.08%) at p=.98.
+Fit B coverage is 15,058/15,610 (96.46%), 15,317/15,610 (98.12%), and 15,477/15,610 (99.15%),
+respectively. These repeated, dependent prefixes are descriptive, not independent replications or
+service guarantees.
+
+New run output hashes (byte-identical to the earlier canonical run's six outputs):
+
+| Artifact | Rows | SHA-256 |
+|---|---:|---|
+| `calibration_config.json` | - | `afe563632a2ebff937f1500f568d53cdb93be35d6dc299654464c2615ae64a08` |
+| `daily_residual_quantiles.csv` | 56 | `5c985c912d14b502a5d370090353624907e7fddd6d0d8552c102ee3a1ad7eda8` |
+| `cumulative_error_quantiles.csv` | 84 | `1a0bba7916b498f2048f080dcd3b24f6cd47472d2f71fca92b94f1b678cb70ff` |
+| `daily_intervals.parquet` | 62,440 | `160e68f4dd0237b61e60d20d041e06d0760fd94b006f7e89730e24e96b601fd2` |
+| `cumulative_uncertainty.parquet` | 93,660 | `f338ff7189d652e64c8aa27f3d03c205c313185fb205f9f8a50b9776d59c0a0e` |
+| `coverage_diagnostics.csv` | 392 | `7517435e7e4dd4bf0d08aa705c3555bb1ea945d6cae3dff8db8dfdf46ca0aaa4` |
+
+| Follow-up check | Result |
+|---|---|
+| Focused Phase 8 fixtures | PASS - 13 tests in 28.98s |
+| Full `python -m pytest` | PASS - 200 tests in 95.14s |
+| `python -m ruff check .` | PASS |
+| `python -m ruff format --check .` | PASS - 77 files already formatted |
+| `python scripts/check_docs.py` | PASS - 149 local destinations/anchors across 23 Markdown files |
+| `uv lock --check` | PASS - 84 packages resolved; lock unchanged |
+| Python 3.14 `pip check` | PASS - no broken requirements |
+| `git diff --check` | PASS - only Git's expected LF-to-CRLF notices for the two edited Python files |
+
+The implementation adds no model fit/refit/tuning or methodology change; the selected identity
+remains `global_lightgbm_gbdt_regression_l1`. No raw/interim data or protected July 4-31 Open, Sales
+or Customers were read, loaded or hashed. Fit B stays unfrozen pending external results review;
+Phase 8 remains under review and Phases 9-10 remain unstarted.

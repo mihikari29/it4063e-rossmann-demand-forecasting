@@ -22,9 +22,12 @@ No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, 
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
 PR #10. Phase 7 is complete on `main` through PR #13, preserving ADR-020's selected LightGBM
-trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021. Its [active plan](../plans/active/phase-8-forecast-uncertainty.md)
-is **APPROVED / IMPLEMENTATION NOT STARTED**; PR #14 remains open as the design integration gate.
-Implementation may begin after integration and is limited to the approved protocol.
+trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021 and PR #14 is merged into
+`main` at `305ddc80a4e3399698f64762ec26da2fc79cfb10`. Its [active plan](../plans/active/phase-8-forecast-uncertainty.md)
+is **IMPLEMENTED / UNDER REVIEW**; implementation PR
+[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and
+unmerged for external review. Fitted uncertainty tables remain unfrozen pending that
+review.
 
 ## Phase 0 — Repository Foundation
 
@@ -109,9 +112,10 @@ reviewed protocol used consistently for all candidates, not opportunistic window
 **Objective:** Quantify daily and cumulative uncertainty for the selected fixed method.
 **Dependencies:** Phase 7 development out-of-sample forecasts/residuals.
 **Design:** [Phase 8 uncertainty plan](../plans/active/phase-8-forecast-uncertainty.md),
-APPROVED in ADR-021; implementation has not started and awaits PR #14 integration. The accepted
-quantile estimators, chronological fits, sparse-data policy and conditional development
-opening-schedule replay assumption are fixed for implementation.
+approved in ADR-021 and integrated by PR #14; the accepted quantile estimators, chronological fits,
+sparse-data policy and conditional development opening-schedule replay assumption are implemented
+under review. Implementation operates only on saved Phase 7 artifacts and leaves the selected
+point model unchanged.
 **Deliverables:** Horizon-specific 95% intervals, cumulative lead/protection-period quantiles,
 chronological coverage diagnostics and explicit sample/availability counts.
 **Acceptance / boundary:** Calibrate on earlier development residuals and assess on later origins
@@ -124,6 +128,9 @@ results externally before fitted-table freeze. Final-holdout actual Open cannot 
 schedule before issuance; operational outputs requiring future Open remain unavailable without
 separately reviewed origin-known schedule provenance or a separately approved synthetic/conditional
 schedule not derived from protected actual Open. No final-holdout evaluation is authorized here.
+Fitted Fit B tables remain unfrozen until external implementation/results review. Phase 8 stays
+under review until its implementation PR is reviewed and integrated; Phases 9–10 and final-holdout
+evaluation remain outside this boundary.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
