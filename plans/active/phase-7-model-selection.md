@@ -1,10 +1,11 @@
 # Phase 7 — Walk-Forward Validation and Model Selection
 
-**Status: APPROVED / IMPLEMENTATION NOT STARTED** (WORKFLOW: APPROVED).
-Methodology approved after external review on 2026-10-06; implementation has not started and no
-final model is officially selected. The approval accepts this policy after observing the Phase 4–6
-results; it does not make the thresholds preregistered or select a model. Implementation may begin
-only after design PR #12 merges into `main`.
+**Status: IMPLEMENTED / UNDER REVIEW** (methodology APPROVED; offline CPU development selection
+recorded for LightGBM, awaiting external integration review).
+Methodology was approved after external review on 2026-10-06 and implementation proceeded after
+design PR #12 integrated into `main`. The approval accepts this policy after observing the Phase
+4–6 results; it does not make the thresholds preregistered or select a model. This plan remains
+active through PR #13 review, integration and explicit Phase 7 closeout.
 
 ## 1. Authority, verified base, and execution boundary
 
@@ -359,3 +360,102 @@ The approval sync changes only this plan, DECISIONS, PROGRESS, PROJECT_PLAN and 
 passed (152 tests on Python 3.14.5 and 152 on Python 3.12.15); Ruff lint/format, Markdown links,
 `uv lock --check` and `git diff --check` passed. No forecasting code, tests, dependencies, model
 selection, generated artifacts, new validation windows, holdout access or Phase 8 work were added.
+
+## 9. Implementation checkpoint — 2026-10-06
+
+Phase 7 is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-7-model-selection`, based on updated
+`main` after PR #12 integrated ADR-020. The package engine, thin CLI, synthetic fixture suite,
+README usage and this checkpoint are implemented. The saved-data run verified original manifest
+artifacts/configuration/source identities and recomputed the approved comparisons without fitting
+or tuning. All 34 manifest-listed candidate artifact hashes passed; candidate keys and labels
+matched across all 46,830 targets, and the common eligible population contains 38,553 rows.
+
+All candidates and the three-way population pass 100% open-label coverage in each window. The
+numeric ladder retains Seasonal Naive after Holt-Winters fails the pooled h8–14 regression cap;
+LightGBM passes the numerical gates against the retained Seasonal Naive. Candidate-level
+operational decisions remain unknown in the reviewed record, so the runner reports
+`operational_review_required` and emits no official selected identity, recipe, selected forecast or
+residual artifact. Detailed metrics, promotion results and the h2/h9/h10 disclosures are in
+[PROGRESS](../../docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06).
+
+Validation on 2026-10-06: full pytest passed (**179 tests**) on Python 3.14.5 and **179 tests** on
+Python 3.12.15; `ruff check .`, `ruff format --check .` (73 files), the documentation checker (111
+local destinations/anchors across 22 documents), `uv lock --check` (84 packages), Python 3.14
+`pip check`, Python 3.12 `uv pip check` (60 packages), and `git diff --check` passed. The diff check
+reported only expected Windows LF-to-CRLF notices for the three new Python files. The saved-data
+runner completed with both integrity statuses and coverage passing and returned
+`operational_review_required`; the Phase 7 evidence is in [PROGRESS](../../docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06).
+GitHub Actions [Quality run #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37429992491)
+passed on implementation commit `f95fa9d`, including both Python 3.12 and Python 3.14 jobs. The
+subsequent review-documentation-only PR head passed the documentation checker and diff check
+locally; no workflow run was created for those doc-only updates.
+
+No methodology/ADR or proposal edits, dependency additions, candidate fits, holdout reads or Phase
+8 work were made. Phase 7 remains under review and this plan stays active until review, authorized
+integration and explicit closeout. [Implementation PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13)
+is open against `main`; it has not been merged.
+
+## 10. External review follow-up — 2026-10-06
+
+The PR #13 lifecycle follow-up preserves ADR-020 and adds a fail-closed output protocol. It writes
+an in-progress manifest before reading evidence, stages a coherent output set under a unique run
+ID, hashes all outputs, and publishes the complete manifest last. Only hash-verified files from
+the four known selected-output paths are retired; conflicts and unrelated files remain untouched.
+The detailed implementation and synthetic regression cases are recorded in the new
+[PROGRESS follow-up checkpoint](../../docs/PROGRESS.md#phase-7-external-review-follow-up--2026-10-06).
+
+Full validation passed **187 tests** on Python 3.14.5 and **187 tests** on Python 3.12.15. The
+cached no-approval run and its unchanged development metrics, source hashes, coverage, and other
+quality checks are recorded in the [PROGRESS follow-up checkpoint](../../docs/PROGRESS.md#phase-7-external-review-follow-up--2026-10-06).
+No selected model, candidate fit, holdout read or Phase 8 work resulted. Phase 7 remains
+**IMPLEMENTED / UNDER REVIEW**; PR #13 remains open and unmerged. Implementation commit
+`dbb1712bdc856a2c9b6787a34493cb429d5b8e3c` is pushed to PR #13, and GitHub Actions
+[Quality run #22](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37441277676)
+passed both Python 3.12 and Python 3.14 jobs.
+
+## 11. Offline operational acceptance and actual selection — 2026-10-06
+
+**Phase 7: IMPLEMENTED / UNDER REVIEW. Selection decision: RECORDED / AWAITING EXTERNAL
+INTEGRATION REVIEW.** The candidate-level operational review is versioned at
+[`configs/phase-7-operational-review-v1.json`](../../configs/phase-7-operational-review-v1.json)
+and recorded in [PROGRESS](../../docs/PROGRESS.md#phase-7-offline-operational-acceptance-and-selection-2026-10-06).
+It approves Seasonal Naive, leaves Holt-Winters `unknown`, and approves LightGBM, solely for the
+`offline_cpu_course_demonstration` scope. The references establish no named human signature or
+production certification.
+
+The official reviewed CLI completed with `status=selected`, selecting
+`global_lightgbm_gbdt_regression_l1`; run ID is
+`365f22d4c3f94722a594ab934a22c4f6`. Integrity passed for all 34 cached candidate artifacts and
+all record checks. All 12 coverage gates passed at 100% in the three approved windows (11,678,
+13,438 and 13,437 observed open-label denominators); the common population is 38,553 rows among
+46,830 saved target rows. Pooled MAE was 1,681.2703 for SN, 1,281.7446 for HW, and 871.0612 for
+LightGBM. HW improves pooled MAE 23.7633% and wins two windows but fails the pooled h8–14 cap
+(+13.7492%), so SN remains its incumbent. LightGBM improves 48.1903% against SN, wins all three
+windows, and passes the window and pooled horizon-block caps. Full numerical gates, h2/h9/h10
+diagnostics and all artifact hashes are in the linked PROGRESS record.
+
+Publication is complete. The seven files are the two comparison outputs, four selected outputs,
+and `manifest.json`; each output hash matches the manifest. The selected config and refit recipe,
+forecast rows and residual paths all bind to this run ID. The recipe freezes LightGBM global CPU
+GBDT `regression_l1`, trial A, exactly 180 rounds, and the ordered 29 Phase 3 predictors. It is
+recipe-only (`fit_performed=false`, no tuning or refit); no fitted model was generated. The
+selected and residual Parquet each contain 46,830 rows through 2015-07-03 across 3,345 paths of
+exactly 14 horizons. Residual signs, masks and complete/partial flags were checked. Original
+candidate manifest hashes and metadata remain unchanged; the source-code and legacy provenance
+limits remain disclosed in PROGRESS.
+
+No production latency/reliability or memory SLA, comparative end-to-end timing, real inventory
+outcome, business savings, or universal accuracy superiority is established. The h2, h9 and h10
+weaknesses remain visible. July 4–31 outcomes were not read or hashed, and no holdout forecast or
+evaluation was emitted. ADR-020 is unchanged; Phase 8 has not started. This plan remains active;
+Phase 7 is not COMPLETE and PR #13 must not be merged before its external integration review and
+authorized integration.
+
+Acceptance validation: full pytest passed **187 tests** on Python 3.14.5 and **187 tests** on
+Python 3.12.15; Ruff lint and formatting passed (73 files); the documentation checker passed (115
+local destinations/anchors across 22 Markdown files); `uv lock --check` resolved 84 packages;
+Python 3.14 `pip check` and locked Python 3.12 `uv pip check` (60 packages) passed; and
+`git diff --check` passed. The generated output hashes, selected recipe, masks and H14 date bounds
+were rechecked after publication. No implementation code, tests, dependencies or ADR-020
+methodology changed. No candidate fit/tuning or final-holdout access occurred. The final PR-head CI
+result is included in the PR description after the authorized push.

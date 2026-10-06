@@ -415,8 +415,9 @@ evaluation.
 ## ADR-020 — Development-Only Model Selection and Frozen Refit Policy
 
 **Status:** Accepted after external Phase 7 methodology review, 2026-10-06. Approval was
-synchronized for PR #12 reviewed head `1c15ab0b6ee94f3ecccb8f04c84da97d58bbb225`; PR #12 remains
-the open integration gate.
+synchronized for PR #12 reviewed head `1c15ab0b6ee94f3ecccb8f04c84da97d58bbb225`. PR #12 was the
+required design-integration gate at methodology approval and later merged into `main` at
+`64dbf2359c34cc06d81ee4fc1640ad7225db3973` before Phase 7 implementation began.
 
 **Decision:** Compare exactly Seasonal Naive, additive Holt-Winters and the frozen global LightGBM
 on the three approved chronological H14 development windows. Use primary MAE on identical three-way
@@ -461,8 +462,10 @@ provenance; Phase 8 owns uncertainty intervals.
 
 The Phase 7 development firewall continues through 2015-07-03. This ADR does not authorize any
 2015-07-04–31 target access or final forecast/evaluation. Final release remains subject to ADR-015's
-separately authorized frozen sequential Phase 13 protocol. Approval of methodology does not select
-a model; Phase 7 implementation may begin only after design PR #12 merges into `main`.
+separately authorized frozen sequential Phase 13 protocol. Methodology approval itself did not
+select a model. At that approval checkpoint, Phase 7 implementation could begin only after design
+PR #12 merged into `main`; it later did, and the subsequent implementation and selection results
+are maintained in [PROGRESS](PROGRESS.md).
 
 **Reason:** A pooled MAE lead alone does not account for practical gain, consistency, coverage,
 horizon tradeoffs, complexity or artifact lineage. A fixed simple-first rule makes those project
@@ -470,6 +473,7 @@ choices reproducible without overstating the evidence.
 
 **Consequences:** Full thresholds, descriptive evidence, candidate recipes, implementation checks,
 artifacts and Phase 8 handoff are in the [active Phase 7 plan](../plans/active/phase-7-model-selection.md).
-The Phase 7 plan is approved, but its runner is not implemented and no final model is officially
-selected. Integration of PR #12 is the implementation boundary; Phase 8 and final-holdout release
-remain separate future work.
+At methodology approval, the Phase 7 plan was approved, its runner was not implemented, and no
+model had been selected. PR #12 was the implementation integration boundary and merged before
+implementation began. Later implementation and selection results are maintained in
+[PROGRESS](PROGRESS.md); Phase 8 and final-holdout release remain separate future work.
