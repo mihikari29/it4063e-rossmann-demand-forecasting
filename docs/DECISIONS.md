@@ -472,8 +472,103 @@ horizon tradeoffs, complexity or artifact lineage. A fixed simple-first rule mak
 choices reproducible without overstating the evidence.
 
 **Consequences:** Full thresholds, descriptive evidence, candidate recipes, implementation checks,
-artifacts and Phase 8 handoff are in the [active Phase 7 plan](../plans/active/phase-7-model-selection.md).
+artifacts and Phase 8 handoff are in the [completed Phase 7 plan](../plans/completed/phase-7-model-selection.md).
 At methodology approval, the Phase 7 plan was approved, its runner was not implemented, and no
 model had been selected. PR #12 was the implementation integration boundary and merged before
 implementation began. Later implementation and selection results are maintained in
 [PROGRESS](PROGRESS.md); Phase 8 and final-holdout release remain separate future work.
+
+## ADR-021 — Chronological Empirical Forecast Uncertainty and Conditional Operational Replay
+
+**Status:** Accepted after external Phase 8 methodology review, 2026-10-06.
+
+**Clarifies:** ADR-015–017, ADR-019–020; [active Phase 8 plan](../plans/active/phase-8-forecast-uncertainty.md).
+
+**Context:** ADR-020 selected `global_lightgbm_gbdt_regression_l1`, trial A at exactly 180
+boosting rounds with the approved ordered 29 predictors. Three selected development origins
+provide sparse and dependent residual evidence. Saved historical Open supports reproducing
+operational routing only under a conditional course-replay assumption; it does not prove that a
+schedule was available at any forecast origin. ADR-015 protects July 4–31 outcomes for a
+separately authorized sequential Phase 13 evaluation.
+
+**Decision:** Keep the selected point model and its recipe unchanged. Approve only the following
+development uncertainty protocol:
+
+- Daily residuals are signed `actual_sales - raw_forecast` on the observed Open=1 primary-eligible
+  population. Partial paths contribute eligible individual observations. Pool Store-origin rows
+  equally within each exact horizon h=1..14; do not borrow across horizons, stores, or candidate
+  models, and do not replace this population with the 32-store raw-complete H14 subset.
+- For sorted residuals `e_(1)..e_(n)`, use 1-indexed ranks
+  `floor((n+1)/40)` and `ceil(39*(n+1)/40)` for the nominal two-sided 95% tails. Retain ties,
+  use no interpolation or rank clamping, require n>=40 and both ranks in 1..n, and leave
+  unsupported horizons unavailable with explicit reasons. The 40-row floor is a pragmatic rule,
+  not a reliability guarantee. Fit B h2/h9 contain 65/64 rows but only 33/32 distinct stores,
+  so their Sunday estimates remain fragile. Add signed quantiles to the saved clipped nonnegative point;
+  clip each bound independently at zero, preserve pre-clipping values/flags, reject nonfinite or
+  inverted bounds, and do not force the point inside the interval. Fit A h2/h3/h9 remain
+  unavailable; Fit B Sunday support remains fragile and must be disclosed. These are nominal
+  marginal horizon-specific intervals, not conformal, simultaneous, per-store, or guaranteed
+  95% coverage.
+- Use only the approved chronological fits: Fit A calibrates validation_1 and assesses
+  validation_2, with calibration labels through 2015-06-05 at that issuance; Fit B calibrates
+  validation_1+validation_2 and assesses validation_3, with labels through 2015-06-19. Calibration
+  labels must be available by the assessment origin; the assessment's own labels are excluded.
+  No other origins/windows or automatic protocol changes are allowed. Later-origin evidence is
+  descriptive because all windows participated in point-model selection.
+- For each Store-origin and exact prefix k=1..14, construct signed cumulative operational error
+  `E_k=sum(actual_sales_h-operational_forecast_h)` only from complete valid components h=1..k.
+  Missing later components do not invalidate a shorter prefix; missing components are never filled
+  with zero. Pool complete prefixes at the same k, preserving paths and within-path dependence.
+  For p={0.90,0.95,0.98}, use the 1-indexed upper rank `ceil((n+1)*p)`, no interpolation or rank
+  clamping, and require at least 50 complete prefixes and a valid rank; otherwise the stratum is
+  unavailable. Retain signed q, including negative values. Under ADR-016, use
+  `D_k=sum(operational_forecast_h)`, `U_k=max(0,D_k+q_p(E_k))`,
+  `SafetyStock_k=max(0,U_k-D_k)`, and `Target_k=max(D_k,U_k)`. These terminal cumulative
+  monetary bounds are not realized inventory cycle-service probabilities. Never sum marginal
+  daily upper endpoints or assume independent daily errors.
+- Permit `saved_source_open_assumed_known_at_origin` only to reproduce existing DEVELOPMENT
+  operational forecasts as a **conditional historical course replay**. This assumption is not
+  evidence of origin-time schedule availability; label operational calibration and assessment
+  accordingly. A closed-day `[0,0]` route is valid only for an explicitly known or approved
+  assumed closure and describes turnover, not latent demand. Keep Open=1, Open=0, and pooled
+  operational diagnostics separate and disclose deterministic-closure inflation. A development
+  replay does not authorize final-holdout operational replay.
+- For Phase 13, never read, hash, load, or substitute final-holdout actual Open as planned schedule
+  before the corresponding forecast issuance. Do not expose protected July 4–31 Open, Sales, or
+  Customers early. Operational issuance requires separately reviewed origin-known schedule
+  provenance or a separately approved synthetic/conditional schedule that is not derived from
+  protected future actual Open. Without an authorized schedule, operational forecasts, routed
+  intervals, and prefixes requiring future Open remain unavailable. Join actual Open only after
+  issuance and the separately authorized sequential outcome reveal. Raw forecasts and raw
+  interval calibration must not use future actual Open as predictors.
+- Approve origin-anchored complete prefixes only for the Phase 10 handoff. Preserve ADR-016's
+  R=1, L=2..7, and P=3..8 context. A later daily-review suffix is a different error population;
+  q_P for an origin prefix cannot be reused as its calibrated bound. Phase 10 must obtain a
+  separately reviewed suffix method or restrict its demonstration to supported origin-anchored
+  decisions.
+- Keep the limitations prominent: only three Friday development origins; shared stores/common-date
+  shocks and serial dependence; weekday/horizon confounding; sparse Sunday Open=1 evidence; weak
+  h10 point performance; only 96 complete raw-primary H14 paths from 32 stores repeated across
+  three origins; 3,345 operational paths depend on the conditional saved-Open interpretation;
+  historical counts are not independent temporal replications; development windows were involved
+  in point-model selection; and original candidate/selection provenance limitations remain.
+  Make no significance, confidence, bootstrap, conformal, or guaranteed-coverage claims and invent
+  no empirical coverage results.
+
+The approved calibration policy does not freeze any fitted quantile values. Fit B tables,
+diagnostics, hashes, and availability must receive external implementation/results review before
+their values are frozen. Do not automatically change the predeclared protocol in response to
+diagnostics or refit on validation_3 merely to increase sample size. Do not mix models, use other
+windows, or conduct final evaluation under this ADR.
+
+**Reason:** These fixed empirical estimators preserve the accepted point-model and chronology
+boundaries, expose sparse strata instead of hiding them with fallback, and retain cumulative
+within-path dependence while keeping the opening-schedule assumption and holdout firewall explicit.
+
+**Consequences:** The full estimator, diagnostics, artifacts, fixture criteria, operational
+failure behavior, and Phase 10 handoff are specified in the active plan. Acceptance authorizes
+implementing and evaluating only this protocol after PR #14 integrates into `main`; this approval
+sync does not implement an uncertainty runner, calculate intervals or quantile tables, or freeze
+fitted values. External review of implementation results is required before fitted-table freeze.
+No final-holdout outcome access or Phase 13 evaluation is authorized; ADR-015 still requires a
+separate frozen sequential protocol. Phase 9/10 implementation remains outside this decision.

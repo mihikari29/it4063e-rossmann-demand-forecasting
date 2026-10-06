@@ -21,8 +21,10 @@ boundary stays explicit. Phase 9 can proceed alongside Phase 8 using development
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
-PR #10. Phase 7's methodology is approved by ADR-020 on design PR #12; implementation may begin
-only after that PR integrates into `main`.
+PR #10. Phase 7 is complete on `main` through PR #13, preserving ADR-020's selected LightGBM
+trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021. Its [active plan](../plans/active/phase-8-forecast-uncertainty.md)
+is **APPROVED / IMPLEMENTATION NOT STARTED**; PR #14 remains open as the design integration gate.
+Implementation may begin after integration and is limited to the approved protocol.
 
 ## Phase 0 — Repository Foundation
 
@@ -106,14 +108,22 @@ reviewed protocol used consistently for all candidates, not opportunistic window
 
 **Objective:** Quantify daily and cumulative uncertainty for the selected fixed method.
 **Dependencies:** Phase 7 development out-of-sample forecasts/residuals.
+**Design:** [Phase 8 uncertainty plan](../plans/active/phase-8-forecast-uncertainty.md),
+APPROVED in ADR-021; implementation has not started and awaits PR #14 integration. The accepted
+quantile estimators, chronological fits, sparse-data policy and conditional development
+opening-schedule replay assumption are fixed for implementation.
 **Deliverables:** Horizon-specific 95% intervals, cumulative lead/protection-period quantiles,
 chronological coverage diagnostics and explicit sample/availability counts.
 **Acceptance / boundary:** Calibrate on earlier development residuals and assess on later origins
 not used for that calibration; fitting-set coverage is diagnostic only. Selection-related
 development assessment is not an independent final test. Preserve complete Store-origin residual
-paths for cumulative errors, including declared operational closure assumptions; never sum
-marginal daily upper bounds or assume independent errors silently. Pooled empirical intervals
-promise neither per-store coverage nor conformal guarantees. Freeze calibration before Phase 13.
+paths for cumulative errors, including the explicitly conditional saved-Open development replay;
+never sum marginal daily upper bounds or assume independent errors silently. Pooled empirical
+intervals promise neither per-store coverage nor conformal guarantees. Review Fit B implementation
+results externally before fitted-table freeze. Final-holdout actual Open cannot serve as a planned
+schedule before issuance; operational outputs requiring future Open remain unavailable without
+separately reviewed origin-known schedule provenance or a separately approved synthetic/conditional
+schedule not derived from protected actual Open. No final-holdout evaluation is authorized here.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
