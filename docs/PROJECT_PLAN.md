@@ -21,8 +21,9 @@ boundary stays explicit. Phase 9 can proceed alongside Phase 8 using development
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
-PR #10. Phase 7's methodology is approved by ADR-020 on design PR #12; implementation may begin
-only after that PR integrates into `main`.
+PR #10. Phase 7 is complete on `main` through PR #13, preserving ADR-020's selected LightGBM
+trial A / 180-round recipe. Phase 8's [design](../plans/active/phase-8-forecast-uncertainty.md)
+is proposed and awaiting approval; uncertainty implementation is not authorized by this design task.
 
 ## Phase 0 — Repository Foundation
 
@@ -106,6 +107,9 @@ reviewed protocol used consistently for all candidates, not opportunistic window
 
 **Objective:** Quantify daily and cumulative uncertainty for the selected fixed method.
 **Dependencies:** Phase 7 development out-of-sample forecasts/residuals.
+**Design:** [Phase 8 uncertainty plan](../plans/active/phase-8-forecast-uncertainty.md), PROPOSED /
+AWAITING APPROVAL. Its quantile estimator, chronological fits, sparse-data policy and conditional
+opening-schedule replay assumptions require external approval before implementation.
 **Deliverables:** Horizon-specific 95% intervals, cumulative lead/protection-period quantiles,
 chronological coverage diagnostics and explicit sample/availability counts.
 **Acceptance / boundary:** Calibrate on earlier development residuals and assess on later origins

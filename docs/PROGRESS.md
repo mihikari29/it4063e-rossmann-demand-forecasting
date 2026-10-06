@@ -8,8 +8,9 @@
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
-| Phase 7 — model selection | IMPLEMENTED / UNDER REVIEW | [Active plan](../plans/active/phase-7-model-selection.md), ADR-020; offline CPU development selection records LightGBM, awaiting external integration review; [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) is open |
-| Phase 8 and later | PLANNED; not started | Await their dependencies and separate authorization |
+| Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
+| Phase 8 — forecast uncertainty | PROPOSED / AWAITING APPROVAL; implementation not started | [Active design](../plans/active/phase-8-forecast-uncertainty.md); no intervals or cumulative quantiles calculated |
+| Phase 9 and later | PLANNED; not started | Await their dependencies and separate authorization |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -22,9 +23,9 @@ the 2026-10-05 branch-metadata snapshot; no settings were changed.
 Completed plans under `plans/completed/` preserve their historical approval/results/checkpoint
 records, including the [completed Phase 5 plan](../plans/completed/phase-5-statistical-forecasting.md).
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
-snapshots, not separate results to update. Phase 7 now records a development-only model selection
-pending external integration review; this does not close Phase 7 or constitute final-holdout
-evaluation or production approval.
+snapshots, not separate results to update. Phase 7's development-only selection is integrated and
+formally closed. Its result and closeout do not constitute final-holdout evaluation or production
+approval. Phase 8 design is awaiting methodology approval.
 
 ## Immediate next boundary
 
@@ -34,10 +35,12 @@ was merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its comple
 archived.
 The Phase 6 development-only results and coverage evidence remain recorded below. Phase 6 closeout
 [PR #11](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/11) merged at
-`0b8d55144ace29cb8b5367d11aeedc59cfb33a65`. Phase 7 methodology is approved in ADR-020 and its
-implementation is under review in [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13).
-The Phase 7 development-only decision now records LightGBM and awaits external integration review.
-Phase 8 is not started, and final-holdout evaluation remains unreleased. The
+`0b8d55144ace29cb8b5367d11aeedc59cfb33a65`. Phase 7 methodology is approved in ADR-020, and
+[PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged into
+`main` at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`. Phase 7 is **COMPLETE**; the selected
+`global_lightgbm_gbdt_regression_l1` recipe remains trial A at exactly 180 rounds.
+Phase 8 methodology design has started and awaits approval; implementation has not started.
+Final-holdout evaluation remains unreleased. The
 [historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the interfaces and boundary used.
 
@@ -465,7 +468,7 @@ Phase 7 has not started and requires a separate approved design and authorizatio
 ## Phase 7 Design and Development Evidence Audit — 2026-10-06
 
 **At the evidence-audit checkpoint: design started, implementation not started, methodology
-awaiting approval, and no final model officially selected.** The [active plan](../plans/active/phase-7-model-selection.md)
+awaiting approval, and no final model officially selected.** The [active plan](../plans/completed/phase-7-model-selection.md)
 was PROPOSED / AWAITING APPROVAL on `docs/phase-7-model-selection-design`, based on verified PR #11
 integration. Its thresholds were proposed after observing the existing results, not
 preregistered. Historical Phase 4–6 result records above remain unchanged.
@@ -761,3 +764,74 @@ check` (60 packages) passed; `git diff --check` passed. The runner output and al
 candidate hashes were independently reverified after publication. No implementation code, tests,
 dependencies or methodology changed. No candidate was fit or tuned and no protected outcome was
 read or hashed.
+
+## Phase 7 formal closeout and Phase 8 evidence audit — 2026-10-06
+
+GitHub and fetched `origin/main` verify PR #13 merged at
+`89bcb861642ee28259e4a402e8e8ee98a999a6e5`. Its integrated tree matches the reviewed final head
+`688d673f3ebaf802cbe47f9fa3236fcb4aaa3dea`; final-head Quality run #25 passed Python 3.12 and
+3.14. The accepted external review, verified integration and this explicitly authorized closeout
+make Phase 7 **COMPLETE**. The [completed plan](../plans/completed/phase-7-model-selection.md)
+preserves historical approval, implementation and selection checkpoints. ADR-020 and the selected
+`global_lightgbm_gbdt_regression_l1` identity remain unchanged: frozen trial A, 180 rounds,
+29 predictors and the same raw recursive/operational routing behavior.
+
+The clean `docs/phase-8-uncertainty-design` branch started from that latest `origin/main`.
+A read-only audit of existing ignored development exports verified the seven selection-file
+hashes above and all 34 original candidate artifacts; no source dataset or protected outcomes were
+read or hashed. The selected run ID remains `365f22d4c3f94722a594ab934a22c4f6`. Recipe and
+manifest still record no refit, tuning or future-origin forecasting. Historical candidate
+provenance limitations remain disclosed rather than being repaired by regenerating evidence.
+
+The residual export has 35 fields and 46,830 unique Store-origin-Date rows, ending 2015-07-03:
+3,345 paths with exactly h1–14. Masks, signed residuals (`actual_sales - forecast`), path flags
+and saved Open routing match the implementation. No target keys are absent, no Open values are
+unknown, and all required labels/forecasts are finite in these saved records.
+
+| Audited population | Result and interpretation |
+|---|---|
+| Complete raw-primary H14 paths | 96, from the same 32 distinct stores in each of three origins; 3,249 paths are partial. Closed labels are outside the raw-primary Open=1 population. |
+| Complete operational H14 paths | 3,345, covering all 1,115 stores per origin under saved Open routing. |
+| Observed closed-day rows | 8,277, all with actual Sales=0 and routed forecast=0. These are observed turnover outcomes, not imputed missing residuals or uncensored physical demand. |
+| Raw-primary counts at sparse h2 / h3 / h9, validation_1 | 32 / 33 / 32. |
+| Raw-primary counts at h2 / h9, validation_1 + validation_2 | 65 / 64, reusing only 33 / 32 distinct stores across two origins. |
+
+Operational completeness depends on using saved historical Open. This does not establish that
+the schedule was known at origin. The proposed Phase 8 plan explicitly separates that unverified
+availability from a newly proposed, conditional offline replay assumption; unknown future Open
+must remain operationally unavailable.
+
+### Phase 8 design checkpoint
+
+The [active Phase 8 plan](../plans/active/phase-8-forecast-uncertainty.md) is **PROPOSED /
+AWAITING APPROVAL**. It drafts ADR-021 within the plan, recommends signed horizon-specific daily
+95% residual intervals and upper cumulative operational-prefix error quantiles, and specifies
+earlier-calibration/later-assessment fits using only the three approved windows. Numerical
+quantile conventions, minimum samples, service-level grid, opening-schedule assumption and freeze
+policy are new review decisions. None is accepted or implemented by this documentation task.
+
+No uncertainty runner or tests were added; no intervals, empirical quantile values, inventory
+outcomes or new forecasts were calculated. Phase 8 implementation and Phases 9–10 remain
+unstarted. Final-holdout outcomes for 2015-07-04 through 2015-07-31 remain protected under ADR-015;
+their release requires the separately authorized frozen Phase 13 protocol.
+
+### Phase 8 design delivery validation
+
+Executed on Python 3.14.5 in the development environment with uv 0.12.23; a subsequent
+`uv sync --locked --extra dev --python 3.14` verified the same environment (60 managed packages,
+no package changes):
+
+| Check | Result |
+|---|---|
+| Full `python -m pytest` | PASS — 187 tests in 87.93s; existing fixtures only |
+| `python -m ruff check .` | PASS |
+| `python -m ruff format --check .` | PASS — 74 files already formatted |
+| `python scripts/check_docs.py` | PASS — 146 local destinations/anchors across 23 Markdown files |
+| `uv lock --check` | PASS — 84 packages resolved; lock unchanged |
+| `uv pip check` | PASS — 61 compatible installed packages |
+| `git diff --check` | PASS |
+
+Complete diff review confirms changes are limited to Phase 7 lifecycle closeout/archive, the
+Phase 8 proposal and mechanical links/current-status synchronization. No code, tests, dependencies,
+proposal or selected artifacts
+changed. New-PR CI is not yet verified; delivery stops after opening the authorized design PR.

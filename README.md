@@ -6,7 +6,7 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` contains completed Phases 0–6. Phase 5 additive Holt-Winters was integrated with the
+`main` contains completed Phases 0–7. Phase 5 additive Holt-Winters was integrated with the
 architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
@@ -14,14 +14,17 @@ LightGBM candidate was reviewed and merged by
 [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) at
 `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its [formal closeout plan](plans/completed/phase-6-global-lightgbm.md)
 preserves the development-only results and confirms no final-holdout evaluation.
-[PROGRESS](docs/PROGRESS.md) records development results. Phase 7 methodology is approved in ADR-020.
-Candidate-level offline operational review is recorded for the offline CPU course demonstration,
-and the ADR-020 development-only selection selected Global LightGBM
-(`global_lightgbm_gbdt_regression_l1`). Selection is **RECORDED / AWAITING EXTERNAL INTEGRATION
-REVIEW**; Phase 7 remains **IMPLEMENTED / UNDER REVIEW** on this branch, and PR #13 is open and
-unmerged. Phase 8 has not started. The final holdout, 2015-07-04 through 2015-07-31, remains
-protected for the separately authorized Phase 13 protocol. This development selection is not a
-final-holdout evaluation or production approval.
+[PROGRESS](docs/PROGRESS.md) records development results. Phase 7 is **COMPLETE** after
+[PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged into
+`main` at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; its
+[completed plan](plans/completed/phase-7-model-selection.md) preserves the approval and selection
+history. The development selection under ADR-020 chose Global LightGBM
+(`global_lightgbm_gbdt_regression_l1`), frozen trial A at 180 rounds, for the offline CPU course
+demonstration using development evidence.
+Phase 8's [uncertainty design](plans/active/phase-8-forecast-uncertainty.md) is **PROPOSED /
+AWAITING APPROVAL**; implementation has not started. The final holdout, 2015-07-04 through
+2015-07-31, remains protected for the separately authorized Phase 13 protocol. Development
+selection and phase closeout do not constitute final-holdout evaluation or production approval.
 
 ## Environment and quick start
 
@@ -77,7 +80,7 @@ runners, rerun tuning, or fit candidates. Candidate-level offline operational re
 provided with `--operational-review path/to/review.json`. The versioned review input in this
 command approves Seasonal Naive and LightGBM and leaves Holt-Winters `unknown`, within the
 `offline_cpu_course_demonstration` scope. The current development-only decision selects LightGBM
-under ADR-020; it remains under external integration review. Without an operational review or with
+under ADR-020 and is integrated by PR #13. Without an operational review or with
 unresolved required decisions, the runner writes the comparison and an
 `operational_review_required` decision without selected-model artifacts. Outputs are staged and
 hashed before publication; prior selected outputs are retired only when their hashes match the
@@ -99,10 +102,10 @@ Thin command scripts expose reusable logic; notebooks are exploration/presentati
 
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
 
-- Phases 6–7: Phase 6 global recursive LightGBM candidate is complete; Phase 7's ADR-020
-  development-only decision records LightGBM for the offline CPU course demonstration and awaits
-  external integration review.
-- Phases 8–10: out-of-sample uncertainty, separate synthetic scenarios and stateful inventory.
+- Phases 6–7: complete; ADR-020's development-only decision selected the frozen LightGBM method
+  for the offline CPU course demonstration.
+- Phases 8–10: Phase 8 uncertainty methodology is proposed and awaiting approval; its
+  implementation, separate synthetic scenarios and stateful inventory have not started.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
@@ -111,7 +114,7 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 Later inventory/app modules are created when their work is approved; there is no speculative
 service framework. The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5 and 6 are integrated and
-formally closed. Phase 7 remains under review, and Phase 8 has not started.
+formally closed, as is Phase 7. Phase 8 has a proposed design and no uncertainty implementation.
 
 ## Quality and repository layout
 

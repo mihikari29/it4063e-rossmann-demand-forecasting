@@ -472,7 +472,7 @@ horizon tradeoffs, complexity or artifact lineage. A fixed simple-first rule mak
 choices reproducible without overstating the evidence.
 
 **Consequences:** Full thresholds, descriptive evidence, candidate recipes, implementation checks,
-artifacts and Phase 8 handoff are in the [active Phase 7 plan](../plans/active/phase-7-model-selection.md).
+artifacts and Phase 8 handoff are in the [completed Phase 7 plan](../plans/completed/phase-7-model-selection.md).
 At methodology approval, the Phase 7 plan was approved, its runner was not implemented, and no
 model had been selected. PR #12 was the implementation integration boundary and merged before
 implementation began. Later implementation and selection results are maintained in

@@ -1,11 +1,12 @@
 # Phase 7 — Walk-Forward Validation and Model Selection
 
-**Status: IMPLEMENTED / UNDER REVIEW** (methodology APPROVED; offline CPU development selection
-recorded for LightGBM, awaiting external integration review).
+**Status: COMPLETE.** PR #13 merged into `main` at
+`89bcb861642ee28259e4a402e8e8ee98a999a6e5`; formal closeout is recorded in section 12.
 Methodology was approved after external review on 2026-10-06 and implementation proceeded after
 design PR #12 integrated into `main`. The approval accepts this policy after observing the Phase
 4–6 results; it does not make the thresholds preregistered or select a model. This plan remains
-active through PR #13 review, integration and explicit Phase 7 closeout.
+archived after verified PR #13 integration and explicit Phase 7 closeout. Historical checkpoints
+below preserve their status at the time.
 
 ## 1. Authority, verified base, and execution boundary
 
@@ -459,3 +460,21 @@ Python 3.14 `pip check` and locked Python 3.12 `uv pip check` (60 packages) pass
 were rechecked after publication. No implementation code, tests, dependencies or ADR-020
 methodology changed. No candidate fit/tuning or final-holdout access occurred. The final PR-head CI
 result is included in the PR description after the authorized push.
+
+## 12. Formal Phase 7 closeout — 2026-10-06
+
+Phase 7 is **COMPLETE**. GitHub reports PR #13 merged at
+`89bcb861642ee28259e4a402e8e8ee98a999a6e5`; fetched `origin/main` resolves to that integration
+commit and its tree matches the reviewed final head `688d673f3ebaf802cbe47f9fa3236fcb4aaa3dea`.
+The supplied external review accepted the offline selection, and final-head
+[Quality run #25](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37465059501)
+passed Python 3.12 and 3.14. The user's Phase 8 design task authorizes this explicit closeout and
+archive within the same design PR.
+
+The selected method remains `global_lightgbm_gbdt_regression_l1`, frozen trial A / 180 rounds
+and the 29 Phase 3 predictors. ADR-020, selection results and original ignored artifacts remain
+unchanged. The [closeout and residual audit in PROGRESS](../../docs/PROGRESS.md#phase-7-formal-closeout-and-phase-8-evidence-audit--2026-10-06)
+records independently checked hashes, schema and masks. No model, interval or inventory operation
+was run for closeout, and no final-holdout outcomes were accessed. Phase 8 proceeds only as a
+[proposed methodology design](../active/phase-8-forecast-uncertainty.md); its implementation needs
+separate approval.
