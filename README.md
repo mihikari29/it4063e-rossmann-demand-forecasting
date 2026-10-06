@@ -14,9 +14,14 @@ LightGBM candidate was reviewed and merged by
 [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) at
 `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its [formal closeout plan](plans/completed/phase-6-global-lightgbm.md)
 preserves the development-only results and confirms no final-holdout evaluation.
-[PROGRESS](docs/PROGRESS.md) records development results. Phase 7 methodology is approved in ADR-020;
-its development-only implementation is under review on this branch. Candidate-level operational
-acceptance is still unresolved, so no final project model has been selected.
+[PROGRESS](docs/PROGRESS.md) records development results. Phase 7 methodology is approved in ADR-020.
+Candidate-level offline operational review is recorded for the offline CPU course demonstration,
+and the ADR-020 development-only selection selected Global LightGBM
+(`global_lightgbm_gbdt_regression_l1`). Selection is **RECORDED / AWAITING EXTERNAL INTEGRATION
+REVIEW**; Phase 7 remains **IMPLEMENTED / UNDER REVIEW** on this branch, and PR #13 is open and
+unmerged. Phase 8 has not started. The final holdout, 2015-07-04 through 2015-07-31, remains
+protected for the separately authorized Phase 13 protocol. This development selection is not a
+final-holdout evaluation or production approval.
 
 ## Environment and quick start
 
