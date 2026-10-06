@@ -9,7 +9,7 @@
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
-| Phase 8 - forecast uncertainty | IMPLEMENTED / UNDER REVIEW | [Active plan](../plans/active/phase-8-forecast-uncertainty.md); ADR-021 was integrated by PR #14; development-only tables and diagnostics are available; fitted values remain unfrozen pending external review |
+| Phase 8 - forecast uncertainty | IMPLEMENTED / UNDER REVIEW | [Active plan](../plans/active/phase-8-forecast-uncertainty.md); ADR-021 integrated by PR #14; [PR #15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and unmerged; fitted values await external review |
 | Phase 9 and later | PLANNED; not started | Await their dependencies and separate authorization |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -870,8 +870,9 @@ Approval-sync local validation on Python 3.14.5 with the locked environment:
 
 The approved ADR-021 implementation is **IMPLEMENTED / UNDER REVIEW** on branch
 `feat/phase-8-uncertainty-implementation`, based on merged PR #14 commit
-`305ddc80a4e3399698f64762ec26da2fc79cfb10`. PR creation and external implementation/results review
-are the next integration steps. The selected Phase 7 identity remains
+`305ddc80a4e3399698f64762ec26da2fc79cfb10`. Implementation PR
+[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and
+unmerged; external implementation/results review is pending. The selected Phase 7 identity remains
 `global_lightgbm_gbdt_regression_l1`; this work reads its saved paths only and performs no point
 model fit, refit, tuning or selection change.
 

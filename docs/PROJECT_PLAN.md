@@ -24,8 +24,10 @@ policy/scenarios, and monitoring thresholds must all be frozen before authorized
 PR #10. Phase 7 is complete on `main` through PR #13, preserving ADR-020's selected LightGBM
 trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021 and PR #14 is merged into
 `main` at `305ddc80a4e3399698f64762ec26da2fc79cfb10`. Its [active plan](../plans/active/phase-8-forecast-uncertainty.md)
-is **IMPLEMENTED / UNDER REVIEW**; its implementation branch is preparing the external-review PR.
-Fitted uncertainty tables remain unfrozen pending that review.
+is **IMPLEMENTED / UNDER REVIEW**; implementation PR
+[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and
+unmerged for external review. Fitted uncertainty tables remain unfrozen pending that
+review.
 
 ## Phase 0 — Repository Foundation
 

@@ -2,9 +2,10 @@
 
 **Status: IMPLEMENTED / UNDER REVIEW.** The accepted ADR-021 method is implemented on branch
 `feat/phase-8-uncertainty-implementation`, based on PR #14 merge commit
-`305ddc80a4e3399698f64762ec26da2fc79cfb10`. The implementation PR is being prepared for external
-review. Fit B's fitted values remain unfrozen pending separate implementation/results review. The
-Open information boundary below remains mandatory.
+`305ddc80a4e3399698f64762ec26da2fc79cfb10`. Implementation PR
+[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and
+unmerged for external review. Fit B's fitted values remain unfrozen pending separate
+implementation/results review. The Open information boundary below remains mandatory.
 
 ## 1. Authority, base and boundary
 

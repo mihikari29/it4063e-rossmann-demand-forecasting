@@ -23,7 +23,9 @@ history. The development selection under ADR-020 chose Global LightGBM
 demonstration using development evidence.
 Phase 8's ADR-021 protocol is **IMPLEMENTED / UNDER REVIEW** on the focused implementation
 branch. PR #14 merged the approved design into `main` at `305ddc80a4e3399698f64762ec26da2fc79cfb10`;
-the implementation PR is being prepared for external review. The selected candidate remains
+the implementation is under external review in
+[PR #15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15), which is open
+and unmerged. The selected candidate remains
 `global_lightgbm_gbdt_regression_l1`. The canonical development-only uncertainty run has produced
 chronological daily intervals, operational-prefix quantiles and diagnostics. Fit A has unavailable
 daily tails at h2, h3 and h9 under the approved sample floor; Fit B values remain unfrozen pending
