@@ -9,9 +9,10 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 `main` contains completed Phases 0–5. Phase 5 additive Holt-Winters was integrated with the
 architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
-the development-only results and does not evaluate the final holdout. [PROGRESS](docs/PROGRESS.md)
-records the integration and canonical development results. Phase 6 and all later modules remain
-planned; Phase 6 implementation has not started.
+the development-only results and does not evaluate the final holdout. Phase 6's approved global
+LightGBM candidate is implemented on `feat/phase-6-global-lightgbm` and under review; it is not yet
+integrated. [PROGRESS](docs/PROGRESS.md) records development results. Phase 7 has not started, and
+no final project model has been selected.
 
 ## Environment and quick start
 
@@ -41,6 +42,7 @@ python scripts/prepare_data.py
 python scripts/build_features.py
 python scripts/run_seasonal_naive.py
 python scripts/run_holt_winters.py
+python scripts/run_lightgbm.py
 ```
 
 Preparation retains source rows/nulls, asserts many-to-one metadata joins, and writes separate
@@ -49,10 +51,11 @@ train/test Parquet. Feature artifacts use the frozen 29-predictor
 validation-target lags must be rebuilt recursively. Default Kaggle inference uses origin July 31
 and must not be reused as development inference.
 
-The two forecast runners filter labels through 2015-07-03 at read time, use the same three approved
-14-day windows, and save ignored artifacts under `data/processed/seasonal_naive/` and
-`data/processed/holt_winters/`. Phase 5 recomputes Seasonal Naive for identical-row comparison.
-These commands do not forecast/score final holdout or select the final project model.
+Forecast runners apply the 2015-07-03 label ceiling at read time and use the three approved
+14-day windows. Phase 6's LightGBM runner saves ignored artifacts under `data/processed/lightgbm/`
+and serialized models under `artifacts/lightgbm/`; it recomputes both reviewed baselines on paired
+development rows. These commands do not forecast or score the final holdout or select the final
+project model.
 
 `python scripts/run_eda.py` and the two notebooks reproduce the historical **full-source**
 descriptive audit, not a development-model gate. That earlier audit included July 4–31 labels;
@@ -68,7 +71,8 @@ Thin command scripts expose reusable logic; notebooks are exploration/presentati
 
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
 
-- Phases 6–7: global recursive LightGBM candidate and development-only model selection.
+- Phases 6–7: Phase 6 global recursive LightGBM candidate under review; Phase 7 owns later
+  development-only model selection.
 - Phases 8–10: out-of-sample uncertainty, separate synthetic scenarios and stateful inventory.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
@@ -77,8 +81,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 
 Later inventory/app modules are created when their work is approved; there is no speculative
 service framework. The [Phase 6 handoff](docs/PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code)
-maps inputs, origins, metrics, artifacts, tests and design approval. Phase 5 is integrated and
-formally closed; Phase 6 implementation remains subject to a separate approved design.
+maps inputs, origins, metrics, artifacts and tests. Phase 5 is integrated and formally closed;
+Phase 6 follows accepted ADR-019 and remains under review on its implementation branch.
 
 ## Quality and repository layout
 

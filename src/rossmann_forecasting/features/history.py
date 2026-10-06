@@ -16,7 +16,7 @@ _LAGS = (1, 7, 14, 28)
 _WINDOWS = (7, 14, 28)
 
 
-@dataclass(frozen=True)
+@dataclass
 class _StoreHistory:
     """Lookup and prefix statistics for one store's observed/predicted dates."""
 
@@ -63,10 +63,19 @@ def _store_histories(history: pd.DataFrame, *, sales_column: str) -> dict[int, _
 
 
 def _calculate_history_features(
-    target_rows: pd.DataFrame, history: pd.DataFrame, *, sales_column: str
+    target_rows: pd.DataFrame,
+    history: pd.DataFrame | None,
+    *,
+    sales_column: str,
+    prepared_histories: dict[int, _StoreHistory] | None = None,
 ) -> pd.DataFrame:
     canonical_targets = canonicalize_store_date_keys(target_rows, name="Target rows")
-    histories = _store_histories(history, sales_column=sales_column)
+    if prepared_histories is None:
+        if history is None:
+            raise ValueError("Sales history or prepared store histories are required.")
+        histories = _store_histories(history, sales_column=sales_column)
+    else:
+        histories = prepared_histories
     target_days = _day_numbers(canonical_targets["Date"], name="Target Date")
     store_values = canonical_targets["Store"].to_numpy(dtype=np.int64)
     matrix = np.full(
@@ -113,6 +122,92 @@ def _calculate_history_features(
             matrix[row_position, 7 + window_position] = np.sqrt(variance)
 
     return pd.DataFrame(matrix, columns=DYNAMIC_PREDICTOR_COLUMNS, index=canonical_targets.index)
+
+
+class OriginHistoryFeatureCache:
+    """Reuse an origin-censored history index as recursive predictions arrive."""
+
+    def __init__(
+        self, actual_history_through_origin: pd.DataFrame, forecast_origin: str | pd.Timestamp
+    ):
+        actual = canonicalize_store_date_keys(
+            actual_history_through_origin, name="actual_history_through_origin"
+        )
+        if "Sales" not in actual:
+            raise ValueError("actual_history_through_origin must contain Sales.")
+        self.forecast_origin = normalize_dates(
+            pd.Series([forecast_origin]), name="forecast_origin"
+        ).iloc[0]
+        if actual["Date"].gt(self.forecast_origin).any():
+            latest = actual["Date"].max()
+            raise ValueError(
+                "actual_history_through_origin contains actual Sales after forecast_origin "
+                f"({latest.date()} > {self.forecast_origin.date()})."
+            )
+        actual = actual.loc[:, ["Store", "Date", "Sales"]]
+        self._histories = _store_histories(actual, sales_column="Sales")
+        self._origin_day = int(
+            _day_numbers(pd.Series([self.forecast_origin]), name="forecast_origin")[0]
+        )
+
+    def features(self, target_rows: pd.DataFrame) -> pd.DataFrame:
+        """Calculate predictors using actuals plus predictions already appended to the cache."""
+
+        canonical_targets = canonicalize_store_date_keys(target_rows, name="Target rows")
+        if canonical_targets["Date"].le(self.forecast_origin).any():
+            raise ValueError("Inference target dates must be strictly after forecast_origin.")
+        return _calculate_history_features(
+            target_rows,
+            None,
+            sales_column="Sales",
+            prepared_histories=self._histories,
+        )
+
+    def append_predictions(self, predictions: pd.DataFrame) -> None:
+        """Append one completed recursive horizon; omitted stores remain missing for that date."""
+
+        required = {"Store", "Date", "PredictedSales"}
+        missing = sorted(required.difference(predictions.columns))
+        if missing:
+            raise ValueError(f"Recursive predictions are missing columns: {missing}")
+        canonical = canonicalize_store_date_keys(
+            predictions[["Store", "Date"]], name="recursive predictions"
+        )
+        if canonical["Date"].le(self.forecast_origin).any():
+            raise ValueError("Recursive predictions must be strictly after forecast_origin.")
+        values = pd.to_numeric(predictions["PredictedSales"], errors="coerce")
+        value_array = values.to_numpy(dtype=np.float64)
+        if values.isna().any() or not np.isfinite(value_array).all() or values.lt(0).any():
+            raise ValueError("Recursive predictions must be finite and non-negative.")
+
+        day_numbers = _day_numbers(canonical["Date"], name="recursive prediction Date")
+        stores = canonical["Store"].to_numpy(dtype=np.int64)
+        for store, day_number, value in zip(stores, day_numbers, value_array, strict=True):
+            store_history = self._histories.get(int(store))
+            if store_history is None:
+                store_history = _StoreHistory(
+                    days=np.array([], dtype=np.int64),
+                    day_positions={},
+                    prefix_sum=np.array([0.0]),
+                    prefix_square_sum=np.array([0.0]),
+                    values=np.array([], dtype=np.float64),
+                )
+                self._histories[int(store)] = store_history
+            if int(day_number) in store_history.day_positions:
+                raise ValueError("Recursive prediction overlaps an existing Store × Date value.")
+            if len(store_history.days) and int(day_number) <= int(store_history.days[-1]):
+                raise ValueError("Recursive predictions must be appended in date order per store.")
+            next_position = len(store_history.values)
+            store_history.days = np.append(store_history.days, day_number)
+            store_history.values = np.append(store_history.values, value)
+            store_history.day_positions[int(day_number)] = next_position
+            store_history.prefix_sum = np.append(
+                store_history.prefix_sum, store_history.prefix_sum[-1] + value
+            )
+            store_history.prefix_square_sum = np.append(
+                store_history.prefix_square_sum,
+                store_history.prefix_square_sum[-1] + value * value,
+            )
 
 
 def build_historical_history_features(
