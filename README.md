@@ -10,7 +10,8 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
-LightGBM candidate is implemented on `feat/phase-6-global-lightgbm` and under review; it is not yet
+LightGBM candidate is implemented on `feat/phase-6-global-lightgbm` and under review in
+[PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10); it is not yet
 integrated. [PROGRESS](docs/PROGRESS.md) records development results. Phase 7 has not started, and
 no final project model has been selected.
 

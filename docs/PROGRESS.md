@@ -7,7 +7,7 @@
 | Phases 0–4 | COMPLETE | On `main`; Phase 3 PR #3/#4, Phase 4 PR #5/#6 |
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
-| Phase 6 — Global LightGBM | IMPLEMENTED / UNDER REVIEW | Candidate and development evidence on `feat/phase-6-global-lightgbm`; ADR-019 and PR #9 design are on `main`; [active implementation plan](../plans/active/phase-6-global-lightgbm.md) |
+| Phase 6 — Global LightGBM | IMPLEMENTED / UNDER REVIEW | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) on `feat/phase-6-global-lightgbm`; ADR-019 and PR #9 design are on `main`; [active implementation plan](../plans/active/phase-6-global-lightgbm.md) |
 | Phase 7 and later | PLANNED; implementation not started | Phase 7 remains out of scope |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -28,7 +28,8 @@ snapshots, not separate results to update. No final project model has been selec
 Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 methodology
 review is complete, ADR-019 is accepted, and the design was integrated into `main` by PR #9 at
 `79ddb510e94fe5695c4bc17814153fd47695e16f`. Phase 6 is **IMPLEMENTED / UNDER REVIEW** on
-`feat/phase-6-global-lightgbm`, following the approved active plan. The development-only run passed
+`feat/phase-6-global-lightgbm`, with [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
+open for review and following the approved active plan. The development-only run passed
 its coverage gates; detailed results are recorded below. Phase 7 has not started. The approved design follows the
 [repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
 

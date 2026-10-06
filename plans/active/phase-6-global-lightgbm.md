@@ -3,7 +3,8 @@
 **Status: IMPLEMENTED / UNDER REVIEW.** Phase 6 follows the methodology externally reviewed and
 approved in ADR-019, integrated into `main` by PR #9 at
 `79ddb510e94fe5695c4bc17814153fd47695e16f`. Implementation and development evidence are complete
-on `feat/phase-6-global-lightgbm`; review, authorized integration, and explicit closeout remain.
+on `feat/phase-6-global-lightgbm`; [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
+is open for review. Authorized integration and explicit closeout remain.
 
 ## 1. Objective, scope, and boundaries
 
