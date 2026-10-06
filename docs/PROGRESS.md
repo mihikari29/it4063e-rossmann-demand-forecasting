@@ -1002,15 +1002,18 @@ sample sizes separately from assessment denominators:
 | Fit / horizon | Calibration n (distinct stores) | Assessment Open=1 eligible | Available / usable | Hits / usable | Coverage | Mean / median width |
 |---|---:|---:|---:|---:|---:|---:|
 | A / h2 | 32 (32) | 33 | 0 / 0 | - | unavailable | - |
+| A / h3 | 33 (33) | 1,115 | 0 / 0 | - | unavailable | - |
 | A / h9 | 32 (32) | 32 | 0 / 0 | - | unavailable | - |
 | A / h10 | 1,115 | 1,114 | 1,114 / 1,114 | 1,084 / 1,114 | 97.31% | 7,382.53 / 7,382.53 |
 | B / h2 | 65 (33) | 32 | 32 / 32 | 32 / 32 | 100.00% | 13,870.23 / 13,870.23 |
 | B / h9 | 64 (32) | 32 | 32 / 32 | 32 / 32 | 100.00% | 15,183.32 / 15,212.95 |
 | B / h10 | 2,229 | 1,115 | 1,115 / 1,115 | 1,069 / 1,115 | 95.87% | 6,873.54 / 6,873.54 |
 
-Both tails at Fit A h2, h3 (n=33), and h9 remain unavailable as `insufficient_calibration`; no
-coverage value is reported where the issued interval is unavailable. Fit B h2/h9 results use only
-33/32 distinct calibration stores across two origins and remain fragile despite valid support.
+Both tails at Fit A h2, h3, and h9 remain unavailable as `insufficient_calibration`; their
+assessment populations include 33, 1,115, and 32 Open=1 labels respectively, with zero usable
+intervals. No coverage value is reported where the issued interval is unavailable. Fit B h2/h9
+results use only 33/32 distinct calibration stores across two origins and remain fragile despite
+valid support.
 
 | Fit | Operational population | Label-eligible rows | Available / eligible | Hits / usable denominator | Coverage |
 |---|---|---:|---:|---:|---:|
