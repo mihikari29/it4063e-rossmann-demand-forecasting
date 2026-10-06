@@ -575,3 +575,18 @@ explicit closeout. Phases 9-10 and final-holdout evaluation have not started.
 
 The authorized Phase 8 fixtures and whole-repository validation run with this implementation;
 actual check results are recorded alongside its implementation checkpoint in PROGRESS.
+
+## 16. Targeted provenance/results-review follow-up - 2026-10-06
+
+PR #15 remains open and unmerged. A post-computation integrity pass now reruns the allowlisted
+Phase 7 verifier after estimation and staged-output verification, compares the full input-lineage
+snapshot to the pre-computation snapshot, and fails before the run manifest, run-directory publish,
+or `current.json` update if any referenced input changed. A fixture mutates an upstream artifact
+during computation and confirms failed publication preserves earlier runs and the prior pointer.
+
+The new canonical run and all empirical daily, operational and cumulative assessment values are
+recorded in the [provenance/results follow-up in PROGRESS](../../docs/PROGRESS.md#phase-8-targeted-provenance-and-results-review-2026-10-06).
+Both prior immutable runs remain unchanged. The old canonical run's source hash matched the code
+before this fix; it differs from the post-fix source hash recorded by the new run. ADR-021,
+Fit A/Fit B chronology, selected LightGBM identity, conditional saved-Open assumption and holdout
+firewall are unchanged. Fit B remains unfrozen pending external results review.

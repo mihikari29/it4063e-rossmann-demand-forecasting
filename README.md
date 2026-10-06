@@ -109,9 +109,10 @@ python scripts/run_forecast_uncertainty.py
 ```
 
 The command verifies the saved Phase 7 hashes and selected-model identity, then calculates the
-approved Fit A/Fit B uncertainty protocol without refitting or tuning the point model. It writes an
-immutable run under `data/processed/uncertainty/<run_id>/` and updates the ignored `current.json`
-pointer only after output verification. Read `manifest.json` and `coverage_diagnostics.csv` with the
+approved Fit A/Fit B uncertainty protocol without refitting or tuning the point model. After
+calculation, it rechecks the allowlisted Phase 7 manifests and artifacts against their original
+hashes before publishing an immutable run under `data/processed/uncertainty/<run_id>/` and updating
+the ignored `current.json` pointer. Read `manifest.json` and `coverage_diagnostics.csv` with the
 tables. Sparse strata remain explicitly unavailable; Fit B's fitted values await external review
 before freeze. Operational results are a conditional historical replay assuming saved source Open
 was known at each development origin. This command does not access the protected final holdout,

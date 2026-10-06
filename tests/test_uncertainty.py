@@ -384,6 +384,54 @@ def test_failed_publication_preserves_prior_run_and_current_pointer(
     assert not list(output.glob(".stage-failed-run-*"))
 
 
+def test_upstream_artifact_mutation_during_computation_blocks_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _publication_root(tmp_path)
+    output = root / "data/processed/uncertainty"
+    output.mkdir(parents=True)
+    previous = output / "previous-run"
+    previous.mkdir()
+    (previous / "manifest.json").write_text('{"status":"complete"}\n', encoding="utf-8")
+    pointer = output / "current.json"
+    pointer.write_text('{"run_id":"previous-run"}\n', encoding="utf-8")
+    previous_manifest = (previous / "manifest.json").read_bytes()
+    previous_pointer = pointer.read_bytes()
+
+    upstream = root / "data/processed/model_selection/development_residual_paths.parquet"
+    upstream.parent.mkdir(parents=True)
+    upstream.write_bytes(b"verified Phase 7 artifact")
+
+    def verify_fixture_inputs(_root: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
+        lineage = _publication_lineage()
+        lineage["phase7_outputs"] = {
+            upstream.name: {
+                "path": upstream.relative_to(root).as_posix(),
+                "sha256": uncertainty.sha256_file(upstream),
+            }
+        }
+        return _fixture_paths(), lineage
+
+    original_calculation = uncertainty.calculate_uncertainty
+
+    def calculate_then_mutate(paths: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        results = original_calculation(paths)
+        upstream.write_bytes(b"mutated during computation")
+        return results
+
+    monkeypatch.setattr(uncertainty, "_verify_phase7_inputs", verify_fixture_inputs)
+    monkeypatch.setattr(uncertainty, "calculate_uncertainty", calculate_then_mutate)
+    monkeypatch.setattr(uncertainty, "_assert_ignored", lambda _root: None)
+
+    with pytest.raises(uncertainty.UncertaintyIntegrityError, match="Post-computation"):
+        uncertainty.run_uncertainty(root, run_id="mutated-input-run")
+
+    assert (previous / "manifest.json").read_bytes() == previous_manifest
+    assert pointer.read_bytes() == previous_pointer
+    assert not (output / "mutated-input-run").exists()
+    assert not list(output.glob(".stage-mutated-input-run-*"))
+
+
 def test_holdout_manifest_path_is_rejected_before_any_candidate_output_hash(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

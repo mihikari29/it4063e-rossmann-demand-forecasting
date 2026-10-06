@@ -494,6 +494,20 @@ def _verify_phase7_inputs(root: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
     return paths, lineage
 
 
+def _verify_phase7_inputs_unchanged(root: Path, expected_lineage: dict[str, Any]) -> None:
+    """Re-hash every allowlisted Phase 7 input and compare with its pre-compute identity."""
+    try:
+        _, current_lineage = _verify_phase7_inputs(root)
+    except UncertaintyIntegrityError as error:
+        raise UncertaintyIntegrityError(
+            "Post-computation Phase 7 input integrity recheck failed; refusing publication."
+        ) from error
+    if _canonical_json_bytes(current_lineage) != _canonical_json_bytes(expected_lineage):
+        raise UncertaintyIntegrityError(
+            "Post-computation Phase 7 input identities changed; refusing publication."
+        )
+
+
 def _validate_selected_forecast_identity(residuals: pd.DataFrame, forecasts: pd.DataFrame) -> None:
     required = {"Store", "forecast_origin", "Date", "raw_forecast", "candidate_id"}
     if not required.issubset(forecasts.columns):
@@ -1787,6 +1801,9 @@ def run_uncertainty(root: str | Path | None = None, *, run_id: str | None = None
             stage / "coverage_diagnostics.csv", index=False, na_rep="", float_format="%.17g"
         )
         output_metadata = _verify_staged_outputs(stage)
+        # Revalidate all reviewed Phase 7 manifests/artifacts after calculation and staging, but
+        # before writing the run manifest or publishing the run directory/current pointer.
+        _verify_phase7_inputs_unchanged(repository, lineage)
         daily_has_unavailable = bool((~results["daily_residual_quantiles"]["available"]).any())
         cumulative_has_unavailable = bool(
             (~results["cumulative_error_quantiles"]["available"]).any()
