@@ -1,10 +1,9 @@
 # Phase 6 — Global LightGBM (Design and Execution Plan)
 
-**Status: IMPLEMENTED / UNDER REVIEW.** Phase 6 follows the methodology externally reviewed and
-approved in ADR-019, integrated into `main` by PR #9 at
-`79ddb510e94fe5695c4bc17814153fd47695e16f`. Implementation and development evidence are complete
-on `feat/phase-6-global-lightgbm`; [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
-is open for review. Authorized integration and explicit closeout remain.
+**Status: COMPLETE.** Phase 6 follows the methodology externally reviewed and approved in ADR-019,
+integrated into `main` by PR #9 at `79ddb510e94fe5695c4bc17814153fd47695e16f`. The implementation
+was reviewed and merged by [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
+at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; formal closeout is recorded in section 14.
 
 ## 1. Objective, scope, and boundaries
 
@@ -402,6 +401,20 @@ origin-history cache and `feature_pre_filter=false` on the shared Dataset addres
 the frozen trials' differing `min_data_in_leaf` values; no feature, trial recipe, objective,
 selection rule, or evaluation boundary changed.
 
-This phase plan stays active while the implementation is under review. Do not archive it or mark
-Phase 6 COMPLETE until external findings are addressed, integration is authorized and verified, and
-the phase receives an explicit closeout. Phase 7 remains unauthorized by this implementation task.
+At this implementation checkpoint, external review, integration, and explicit Phase 6 closeout
+were still pending. Their completion is recorded in section 14. Phase 7 remains outside this plan's
+scope.
+
+## 14. Formal Phase 6 Closeout — 2026-10-06
+
+Phase 6 is **COMPLETE**. PR #10 was merged into `main` at
+`dac71d26bd8a9e43eff7d33592460906ae6fee6f`. The external-review findings were addressed in final
+fix commit `9a33e8f673ec438fe4a5546011d06219d66e6a92`; the PR's final-head
+[Quality workflow run #12](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37419362812)
+passed on Python 3.12 and 3.14. The final full fixture suite contained 152 passing tests.
+
+The approved development run used LightGBM 4.7.0, selected trial A at 180 rounds, achieved 100%
+development open-label coverage, and recorded pooled MAE 871.0612 with the 99% coverage guardrail
+passed. The [Phase 6 results in PROGRESS](../../docs/PROGRESS.md#phase-6-global-lightgbm-implementation--2026-10-06)
+remain authoritative; these results were not changed by review fixes. No final-holdout forecast or
+evaluation occurred. Phase 7 has not started and awaits its own approved design and authorization.

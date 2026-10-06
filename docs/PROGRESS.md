@@ -7,7 +7,7 @@
 | Phases 0–4 | COMPLETE | On `main`; Phase 3 PR #3/#4, Phase 4 PR #5/#6 |
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
-| Phase 6 — Global LightGBM | IMPLEMENTED / UNDER REVIEW | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) on `feat/phase-6-global-lightgbm`; ADR-019 and PR #9 design are on `main`; [active implementation plan](../plans/active/phase-6-global-lightgbm.md) |
+| Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 and later | PLANNED; implementation not started | Phase 7 remains out of scope |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -25,13 +25,14 @@ snapshots, not separate results to update. No final project model has been selec
 
 ## Immediate next boundary
 
-Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 methodology
-review is complete, ADR-019 is accepted, and the design was integrated into `main` by PR #9 at
-`79ddb510e94fe5695c4bc17814153fd47695e16f`. Phase 6 is **IMPLEMENTED / UNDER REVIEW** on
-`feat/phase-6-global-lightgbm`, with [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
-open for review and following the approved active plan. The development-only run passed
-its coverage gates; detailed results are recorded below. Phase 7 has not started. The approved design follows the
-[repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
+Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 is **COMPLETE**:
+ADR-019 remains accepted, and [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
+was merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its completed plan is
+archived.
+The Phase 6 development-only results and coverage evidence remain recorded below. Phase 7 has not
+started and awaits a separate approved design. The
+[historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
+records the interfaces and boundary used.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -354,8 +355,9 @@ methodology above are unchanged.
 
 ## Phase 6 Global LightGBM Implementation — 2026-10-06
 
-Phase 6 is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-6-global-lightgbm`. The candidate follows
-ADR-019 and the [active Phase 6 plan](../plans/active/phase-6-global-lightgbm.md). It is a
+At the implementation checkpoint, Phase 6 was **IMPLEMENTED / UNDER REVIEW** on
+`feat/phase-6-global-lightgbm`. The candidate follows
+ADR-019 and the [completed Phase 6 plan](../plans/completed/phase-6-global-lightgbm.md). It is a
 development candidate only; Phase 7 has not started, and no final project model has been selected.
 
 - `lightgbm>=4.7,<4.8` resolved to LightGBM 4.7.0 in the locked Python 3.14.5 / Windows 11
@@ -417,9 +419,9 @@ Final quality checks after the documentation update:
 | `python -m pip check` | PASS — no broken requirements |
 | `git diff --check` | PASS — Git reported only the existing uv.lock LF-to-CRLF working-copy warning |
 
-The runner completed successfully and its manifest hashes the ignored development outputs and
-date-censored input projections. The plan remains active until external review, authorized
-integration, and explicit Phase 6 closeout.
+At the implementation checkpoint, the runner completed successfully and its manifest hashed the
+ignored development outputs and date-censored input projections. External review, authorized
+integration, and formal closeout were then pending; the closeout is recorded below.
 
 ### External-review follow-up — 2026-10-06
 
@@ -434,7 +436,21 @@ integration, and explicit Phase 6 closeout.
   release out and `uv.lock` remains at Narwhals 2.26.0; the effective locked runtime is unchanged.
 - The review fixes do not alter the successful Phase 6 forecasts or recorded metrics. The
   approved real-data development command was not rerun because the locked runtime did not change.
-  Phase 6 remains **IMPLEMENTED / UNDER REVIEW**; Phase 7 and the final holdout remain untouched.
+  At this follow-up checkpoint Phase 6 remained **IMPLEMENTED / UNDER REVIEW**; Phase 7 and the
+  final holdout remained untouched.
 - Follow-up validation passed: full suite **152 passed** on Python 3.12.15 and **152 passed** on
   Python 3.14.5; Ruff lint and formatting, documentation links, `uv lock --check`, dependency
   consistency in both environments, and `git diff --check` passed.
+
+## Phase 6 Formal Closeout — 2026-10-06
+
+Phase 6 is **COMPLETE**. PR #10 merged into `main` at
+`dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its completed execution plan is
+[archived](../plans/completed/phase-6-global-lightgbm.md). The external-review fixes are in final
+commit `9a33e8f673ec438fe4a5546011d06219d66e6a92`, and final-head
+[Quality workflow run #12](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37419362812)
+passed on Python 3.12 and 3.14. Review did not change the approved development results documented
+above: trial A at 180 rounds, 100% open-label coverage, pooled MAE 871.0612, and the 99% coverage
+guardrail passed. The full
+fixture suite finished with 152 passing tests. No final-holdout forecast or evaluation occurred.
+Phase 7 has not started and requires a separate approved design and authorization.
