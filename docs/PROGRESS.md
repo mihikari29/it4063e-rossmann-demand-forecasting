@@ -9,7 +9,7 @@
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
-| Phase 8 — forecast uncertainty | APPROVED in ADR-021; implementation not started | [Active plan](../plans/active/phase-8-forecast-uncertainty.md); PR #14 remains open as the design integration gate; no intervals or cumulative quantiles calculated |
+| Phase 8 - forecast uncertainty | IMPLEMENTED / UNDER REVIEW | [Active plan](../plans/active/phase-8-forecast-uncertainty.md); ADR-021 was integrated by PR #14; development-only tables and diagnostics are available; fitted values remain unfrozen pending external review |
 | Phase 9 and later | PLANNED; not started | Await their dependencies and separate authorization |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -25,8 +25,7 @@ records, including the [completed Phase 5 plan](../plans/completed/phase-5-stati
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
 snapshots, not separate results to update. Phase 7's development-only selection is integrated and
 formally closed. Its result and closeout do not constitute final-holdout evaluation or production
-approval. Phase 8 methodology is approved in ADR-021; implementation has not started and PR #14
-remains the open design integration gate.
+approval. Phase 8 methodology is approved in ADR-021 and PR #14 is integrated. The bounded development implementation and evidence are recorded below; its external implementation/results review remains open.
 
 ## Immediate next boundary
 
@@ -40,8 +39,7 @@ The Phase 6 development-only results and coverage evidence remain recorded below
 [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged into
 `main` at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`. Phase 7 is **COMPLETE**; the selected
 `global_lightgbm_gbdt_regression_l1` recipe remains trial A at exactly 180 rounds.
-Phase 8 methodology is approved in ADR-021; implementation has not started and PR #14 remains
-open. Final-holdout evaluation remains unreleased. The
+Phase 8 methodology is approved in ADR-021 and implementation is **UNDER REVIEW**. Final-holdout evaluation remains unreleased. The
 [historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the interfaces and boundary used.
 
@@ -867,3 +865,65 @@ Approval-sync local validation on Python 3.14.5 with the locked environment:
 | `uv lock --check` | PASS — 84 packages resolved; lock unchanged |
 | `uv pip check` | PASS — 61 installed packages compatible |
 | `git diff --check` | PASS |
+
+## Phase 8 development-only implementation checkpoint - 2026-10-06
+
+The approved ADR-021 implementation is **IMPLEMENTED / UNDER REVIEW** on branch
+`feat/phase-8-uncertainty-implementation`, based on merged PR #14 commit
+`305ddc80a4e3399698f64762ec26da2fc79cfb10`. PR creation and external implementation/results review
+are the next integration steps. The selected Phase 7 identity remains
+`global_lightgbm_gbdt_regression_l1`; this work reads its saved paths only and performs no point
+model fit, refit, tuning or selection change.
+
+The canonical development run is `phase8-impl-20261006-final`, under the ignored directory
+`data/processed/uncertainty/phase8-impl-20261006-final/`. An earlier implementation-validation run,
+`phase8-impl-20261006`, is retained as an immutable prior run; `current.json` points to the canonical
+run recorded here. Its manifest status is
+`complete_with_unavailable_strata`; dates are 2015-05-23 through 2015-07-03 across the three
+approved development windows. The run read 46,830 selected residual-path rows, with 38,553
+Open=1 raw-primary errors and 46,830 routed operational errors. The saved Phase 7 outputs,
+selected candidate manifest and all three original candidate output sets were SHA-256 verified
+before and after the run; every input hash was unchanged. The run did not read or hash source
+datasets or protected July 4-31 Open, Sales or Customers values.
+
+Fit A has 22 of 28 daily tail strata available. Its h2 (n=32), h3 (n=33) and h9 (n=32) lower and
+upper tails remain unavailable as `insufficient_calibration`; no neighboring-horizon fallback
+was used. Fit B has 28 of 28 daily tail strata available. All 42 cumulative `(k,p)` strata are
+available for each fit: 1,115 complete calibration Store-origin prefixes for Fit A and 2,230 for
+Fit B at every k=1-14. The saved schedule interpretation is explicitly
+`saved_source_open_assumed_known_at_origin`, a conditional historical replay. Empirical coverage
+and width diagnostics are descriptive and have no approved numeric acceptance threshold or
+production/service guarantee. Fit B fitted values remain unfrozen pending external review.
+
+The run manifest records source revision `305ddc80a4e3399698f64762ec26da2fc79cfb10`,
+`worktree_modified=true`, implementation source hash
+`993e9e687eaa3ec3f662e0851e57a8fd7c93c499642c13c5d0a103cd6f36edce`, and `uv.lock` hash
+`584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. Output row counts and
+hashes are recorded in that manifest; primary table identities are:
+
+| Artifact | Rows | SHA-256 |
+|---|---:|---|
+| `calibration_config.json` | - | `afe563632a2ebff937f1500f568d53cdb93be35d6dc299654464c2615ae64a08` |
+| `daily_residual_quantiles.csv` | 56 | `5c985c912d14b502a5d370090353624907e7fddd6d0d8552c102ee3a1ad7eda8` |
+| `cumulative_error_quantiles.csv` | 84 | `1a0bba7916b498f2048f080dcd3b24f6cd47472d2f71fca92b94f1b678cb70ff` |
+| `daily_intervals.parquet` | 62,440 | `160e68f4dd0237b61e60d20d041e06d0760fd94b006f7e89730e24e96b601fd2` |
+| `cumulative_uncertainty.parquet` | 93,660 | `f338ff7189d652e64c8aa27f3d03c205c313185fb205f9f8a50b9776d59c0a0e` |
+| `coverage_diagnostics.csv` | 392 | `7517435e7e4dd4bf0d08aa705c3555bb1ea945d6cae3dff8db8dfdf46ca0aaa4` |
+
+| Check | Result |
+|---|---|
+| Full `python -m pytest` | PASS - 199 tests in 92.05s |
+| `python -m ruff check .` | PASS |
+| `python -m ruff format --check .` | PASS - 77 files already formatted |
+| `python scripts/check_docs.py` | PASS - 149 local destinations/anchors across 23 Markdown files |
+| `uv lock --check` | PASS - 84 packages resolved; lock unchanged |
+| `git diff --check` | PASS |
+
+The implementation adds `src/rossmann_forecasting/forecasting/uncertainty.py`,
+`scripts/run_forecast_uncertainty.py` and fixture coverage in `tests/test_uncertainty.py`. It also
+updates this state record, the Phase 8 active plan, README usage/state text, and the ignored-data
+layout guide. No ADR-021 methodology, Phase 7 algorithm/artifact, proposal, inventory layer,
+Phase 9/10 work or final-holdout protocol changed. Canonical run manifest SHA-256 is
+`d32ea0d3de331fc9e61ece091742edd8d23291383a2bb64779a1af945073a2bb`; its canonical policy/config hash is
+`49f4811bf7b01ffe6472ea76233eefa50e211207aa0b6246dada934cd4611d93`. Whole-repository checks on
+Python 3.14.5 with the locked environment passed:

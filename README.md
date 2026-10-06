@@ -21,11 +21,15 @@ preserves the development-only results and confirms no final-holdout evaluation.
 history. The development selection under ADR-020 chose Global LightGBM
 (`global_lightgbm_gbdt_regression_l1`), frozen trial A at 180 rounds, for the offline CPU course
 demonstration using development evidence.
-Phase 8 methodology is **APPROVED / IMPLEMENTATION NOT STARTED** in ADR-021. [PR #14](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/14)
-remains open and unmerged as the design integration gate. Approval authorizes implementation and
-development evaluation of the fixed protocol after integration; no intervals or quantile tables
-have been calculated or frozen. The final holdout, 2015-07-04 through 2015-07-31, remains
-protected. Final-holdout evaluation and production approval require separate authorization.
+Phase 8's ADR-021 protocol is **IMPLEMENTED / UNDER REVIEW** on the focused implementation
+branch. PR #14 merged the approved design into `main` at `305ddc80a4e3399698f64762ec26da2fc79cfb10`;
+the implementation PR is being prepared for external review. The selected candidate remains
+`global_lightgbm_gbdt_regression_l1`. The canonical development-only uncertainty run has produced
+chronological daily intervals, operational-prefix quantiles and diagnostics. Fit A has unavailable
+daily tails at h2, h3 and h9 under the approved sample floor; Fit B values remain unfrozen pending
+external implementation/results review. The final holdout, 2015-07-04 through 2015-07-31, remains
+protected. Development model selection and uncertainty assessment are not final-holdout evaluation
+or production approval.
 
 ## Environment and quick start
 
@@ -94,6 +98,23 @@ descriptive audit, not a development-model gate. That earlier audit included Jul
 explicit audit scope; model cohorts/statistics must be recomputed from origin training data.
 The current modeling firewall still excludes July 4–31 from selection, tuning and calibration.
 
+## Phase 8 development-only uncertainty
+
+With verified Phase 7 outputs in `data/processed/model_selection/`, run:
+
+```powershell
+python scripts/run_forecast_uncertainty.py
+```
+
+The command verifies the saved Phase 7 hashes and selected-model identity, then calculates the
+approved Fit A/Fit B uncertainty protocol without refitting or tuning the point model. It writes an
+immutable run under `data/processed/uncertainty/<run_id>/` and updates the ignored `current.json`
+pointer only after output verification. Read `manifest.json` and `coverage_diagnostics.csv` with the
+tables. Sparse strata remain explicitly unavailable; Fit B's fitted values await external review
+before freeze. Operational results are a conditional historical replay assuming saved source Open
+was known at each development origin. This command does not access the protected final holdout,
+evaluate a production model, or authorize Phases 9–13.
+
 ## Architecture and remaining work
 
 Implemented packages: `data/` (provenance/preparation), `analysis/` (descriptive EDA),
@@ -105,9 +126,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 
 - Phases 6–7: complete; ADR-020's development-only decision selected the frozen LightGBM method
   for the offline CPU course demonstration.
-- Phases 8–10: Phase 8 methodology is approved in ADR-021; PR #14 is still open as the design
-  integration gate. Implementation, separate synthetic scenarios and stateful inventory have not
-  started.
+- Phase 8: implemented under review following PR #14 integration; fitted values remain unfrozen
+  pending external review. Phases 9–10 synthetic scenarios and stateful inventory have not started.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
@@ -116,8 +136,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 Later inventory/app modules are created when their work is approved; there is no speculative
 service framework. The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5 and 6 are integrated and
-formally closed, as is Phase 7. Phase 8 methodology is approved, but implementation has not
-started and no uncertainty results exist yet.
+formally closed, as is Phase 7. Phase 8 methodology is approved and its first bounded development
+implementation is under review; no fitted quantiles are frozen and the final holdout remains
+protected.
 
 ## Quality and repository layout
 
