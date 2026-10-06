@@ -1,15 +1,16 @@
-# Phase 8 — Forecast Uncertainty Methodology Design
+# Phase 8 — Forecast Uncertainty Methodology (Approved)
 
-**Status: PROPOSED / AWAITING APPROVAL.** Design only; uncertainty implementation, fitted quantile
-tables, intervals and inventory calculations have not started. All new choices below require
-external approval before code. Accepted ADRs remain authoritative.
+**Status: APPROVED / IMPLEMENTATION NOT STARTED.** The external Phase 8 methodology review is
+accepted in ADR-021. This plan specifies the approved implementation/evaluation scope; the current
+PR #14 is its design integration gate. No uncertainty runner, calculated interval/quantile tables,
+or Phase 8 fitted-table freeze exists. The Open information boundary below is mandatory.
 
 ## 1. Authority, base and boundary
 
-The user's Phase 8 design task authorizes Phase 7 closeout, this methodology proposal, repository
-quality checks, one documentation commit/push and one PR against `main`. It does not authorize
-uncertainty implementation, new fixture tests, point-model selection/tuning/refits, new origins,
-Phase 9/10 work or final-holdout reads.
+This methodology approval authorizes implementing and evaluating only the protocol below after
+PR #14 integrates into `main`. This approval-sync task is documentation/governance only: it does
+not implement Phase 8 or calculate intervals/quantiles. Point-model selection/tuning/refits, new
+origins, final-holdout reads, and Phase 9/10 work are outside this plan's authorization.
 
 GitHub confirms PR #13 merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; fetched
 `origin/main` matches that integration SHA and the final reviewed PR tree. A clean
@@ -71,7 +72,7 @@ All 46,830 audited rows end by July 3; all 3,345 operational H14 paths are compl
 raw-primary H14 paths are complete, with 3,249 partial paths. Those 96 are the same 32 stores in
 each of three origins, so restricting all uncertainty to complete raw paths would select an
 unrepresentative always-open-in-these-windows cohort. Daily intervals should retain eligible
-individual horizons of partial paths. Raw cumulative calibration is outside this proposal;
+individual horizons of partial paths. Raw cumulative calibration is outside this design;
 raw-complete paths are not a substitute for the operational population.
 
 There are 8,277 observed closed-day records, all actual Sales=0 and routed forecasts=0. Their
@@ -79,33 +80,48 @@ operational errors are observed zeros, which explains much of the completeness d
 They are not fabricated missing residuals, uncensored latent demand, physical units or evidence
 that demand would have been zero had the store been open. Sales is monetary turnover.
 
-### Proposed opening-schedule interpretation
+### Approved development opening-schedule interpretation and holdout firewall
 
-**Newly proposed / awaiting approval:** use `saved_source_open_assumed_known_at_origin` solely
-for a conditional offline course replay. It assumes the recorded opening/closure schedule was
-known at each historical origin and that a planned closure implies zero operational Sales. The
-dataset does not establish that availability; the assumption is disclosed, not retrospectively
-verified. Operational completeness and coverage claims are conditional on it.
+ADR-021 approves `saved_source_open_assumed_known_at_origin` solely to reproduce existing
+DEVELOPMENT operational forecasts as a **conditional historical course replay**. It assumes the
+recorded opening/closure schedule was known at each historical origin and that a planned closure
+implies zero operational Sales. The dataset does not establish that availability. Label all
+operational development calibration and assessment as conditional replay; make no prospective
+availability claim.
 
-For any future issuance, distinguish `known_open`, `known_closed` and `unknown` from an explicit
-schedule input with source/version/hash, issue-time evidence <= forecast origin and the declared
-availability assumption. If no such schedule or explicitly approved replay assumption exists,
-operational intervals and every prefix crossing an unknown day remain unavailable. Historical
-actual Open must not silently populate a supposedly verified origin-time schedule.
+For a Phase 13 operational issuance, actual holdout Open must never be read, hashed, loaded or
+substituted as a planned schedule before the corresponding forecast issuance. No protected July
+4–31 Open, Sales or Customers value may be revealed early. An operational forecast requires a
+separately reviewed origin-known schedule source with provenance, or a separately approved
+synthetic/conditional schedule that does not derive from protected future actual Open. Without
+such an authorized schedule, operational forecasts, routed intervals and cumulative bounds that
+depend on future Open remain unavailable. Future actual Open may be joined only after issuance
+and the separately authorized sequential outcome reveal. Development replay approval alone does
+not authorize final-holdout operational replay.
 
-The raw model remains unchanged for every day; calibration/evaluation claims apply only to
-observed Open=1 Sales. Raw intervals displayed on closed/unknown days would be audit outputs,
-with no claimed coverage for closed-day or hypothetical latent-demand outcomes. Interval routing
-occurs after raw construction and never changes future raw features, feedback or model fitting.
+For any authorized schedule input, distinguish `known_open`, `known_closed` and `unknown` from
+its source/version/hash, issue-time evidence <= forecast origin and declared availability
+assumption. If no authorized schedule exists, operational intervals and every prefix crossing an
+unknown day remain unavailable. Historical actual Open must not silently populate a supposedly
+verified origin-time schedule.
 
-## 3. Recommendation and alternatives
+The raw model and raw interval calibration never use future actual Open as predictors and remain
+unchanged for every day; daily raw calibration applies only to observed Open=1 Sales. Raw
+intervals displayed on closed/unknown days are audit outputs, with no claimed coverage for
+closed-day or hypothetical latent-demand outcomes. Interval routing occurs after raw construction
+and never changes future raw features, feedback or model fitting. A closed-day `[0,0]` operational
+bound is permitted only for an explicitly known or approved assumed closure and describes
+turnover, not latent demand. Preserve separate Open=1, Open=0 and pooled operational diagnostics,
+including deterministic-closure inflation.
 
-**Newly proposed / awaiting approval:** use empirical signed residual order statistics pooled
-across stores within each exact horizon, with outward finite-sample rank rounding. This preserves
-asymmetry and observed horizon effects, is easy to audit and requires no new model or resampling.
-Use separately fitted cumulative operational-prefix errors for one-sided upper monetary bounds.
+## 3. Approved method and alternatives
 
-| Alternative | Decision for this proposal |
+ADR-021 accepts empirical signed residual order statistics pooled across stores within each exact
+horizon, with the exact outward finite-sample ranks below. This preserves asymmetry and observed
+horizon effects, is easy to audit and requires no new model or resampling. Use separately fitted
+cumulative operational-prefix errors for one-sided upper monetary bounds.
+
+| Alternative | Decision under the approved protocol |
 |---|---|
 | Interpolated empirical quantiles | Valid descriptive estimators, but interpolation creates a convention-dependent tail value in sparse strata. Prefer explicit observed order statistics and exact rank arithmetic. |
 | Absolute-error symmetric bands | Simple, but discard signed bias/asymmetry. Do not combine them with signed bands after seeing assessment results. |
@@ -114,7 +130,7 @@ Use separately fitted cumulative operational-prefix errors for one-sided upper m
 | Conformal or block-bootstrap methods | Do not claim conformal validity or bootstrap uncertainty here. Only one/two calibration-origin clusters and selected development data do not support an exchangeable calibration/test argument or a reliable temporal block resampling assessment. |
 
 NumPy's default `linear` quantile interpolates using q(n-1); specifying a method changes the
-estimator. The implementation proposal therefore defines ranks directly rather than relying on
+estimator. The approved method therefore defines ranks directly rather than relying on
 default interpolation or an ambiguous `higher` option.
 [NumPy quantile documentation](https://numpy.org/doc/2.4/reference/generated/numpy.quantile.html)
 describes these conventions.
@@ -135,8 +151,8 @@ Only the ADR-013 approved windows are used:
 | validation_2 | 2015-06-05 | 2015-06-06 through 2015-06-19 |
 | validation_3 | 2015-06-19 | 2015-06-20 through 2015-07-03 |
 
-**Newly proposed / awaiting approval:** two predetermined expanding calibration fits, shared
-by daily and cumulative estimators:
+ADR-021 approves two predetermined expanding calibration fits, shared by daily and cumulative
+estimators:
 
 | Fit | Calibration windows / last calibration label | Assessment issuance and targets |
 |---|---|---|
@@ -159,21 +175,23 @@ Later-origin coverage is useful development evidence. All three windows informed
 model selection, so none is an independent untouched test of the whole modeling process.
 Final-holdout coverage is unavailable.
 
-**Proposed freeze:** after authorized implementation and external Phase 8 review, freeze the
-policy and Fit B's tables, calibrated on validation_1+2 and assessed on validation_3, with hashes.
-Do not refit quantiles on all three windows: that would create an unassessed final calibration.
+The policy is approved, but its fitted values are not frozen. After authorized implementation,
+Fit B's tables, diagnostics, hashes and availability must receive external implementation/results
+review before those values are frozen. Fit B remains calibrated on validation_1+2 and assessed on
+validation_3. Do not refit quantiles on all three windows: that would create an unassessed final
+calibration.
 Fit B occurs by the predeclared schedule regardless of Fit A's diagnostics, not as a remedial
 adjustment. Do not change levels, ranks, samples, strata or widths after adverse assessment
 without a separately approved methodology revision. Poor or unavailable results must be reported
 and reviewed; design approval is not an automatic coverage-acceptance decision.
 
 Phase 13 may use only the frozen reviewed policy/tables with its separately approved model
-refit/release protocol. This proposal supplies no authorization for a July forecast, refit,
-recalibration, holdout-derived interval correction or automatic post-origin update.
+refit/release protocol. This approval does not authorize a July forecast, refit, recalibration,
+holdout-derived interval correction or automatic post-origin update.
 
 ## 5. Daily two-sided marginal 95% intervals
 
-**Newly proposed / awaiting approval**, for each fit and exact h in 1..14:
+Under the approved ADR-021 policy, for each fit and exact h in 1..14:
 
 1. Select calibration rows with `raw_primary_error_available=true`, consistent observed Open=1
    labels and finite clipped raw forecasts. Partial H14 paths may contribute eligible h rows.
@@ -186,8 +204,8 @@ recalibration, holdout-derived interval correction or automatic post-origin upda
    The two tail levels are 0.025 and 0.975. Use exact integer/rational rank arithmetic and
    `q_low=e_(r_low)`, `q_high=e_(r_high)`; no interpolation or rank clamping.
 4. Require both ranks in 1..n and **at least 40 eligible residual rows** at that h.
-   The proposed 40-row rule is a pragmatic tail-resolution floor, not a statistical-power or
-   independence guarantee; n=39 can already have valid extreme ranks, but is below this proposed
+   The approved 40-row rule is a pragmatic tail-resolution floor, not a statistical-power or
+   independence guarantee; n=39 can already have valid extreme ranks, but is below the approved
    minimum. Report distinct stores/origins and do not describe 40 rows as 40 independent trials.
 5. For the issued nonnegative raw point forecast f, retain pre-support bounds
    `a=f+q_low`, `b=f+q_high`. Publish `lower=max(0,a)`, `upper=max(0,b)` and
@@ -197,8 +215,9 @@ recalibration, holdout-derived interval correction or automatic post-origin upda
 6. If sample/rank/forecast requirements fail, publish null bounds/width and an explicit reason,
    along with n, ranks and availability counts. There is no fallback hierarchy or model mixing.
 
-The sample floor and ranks are proposed after inspecting availability counts, not preregistered
-rules. In Fit A, h2, h3 and h9 have 32, 33 and 32 rows and would be unavailable under this policy.
+The sample floor and ranks were accepted after reviewing availability counts; this chronology is
+not a claim that the rules were preregistered. In Fit A, h2, h3 and h9 have 32, 33 and 32 rows
+and remain unavailable under this policy.
 Fit B's h2/h9 have 65/64 rows, from only 33/32 distinct stores across two origins. Their estimates
 would use extreme tail observations and remain fragile even when the sample rule passes.
 No quantile values or intervals have been computed in this design task.
@@ -212,7 +231,7 @@ assessed chronologically.
 
 ### Operational daily routing
 
-Under the approved-if-accepted schedule interpretation: known Open=1 copies raw bounds;
+Under the approved conditional replay interpretation: known Open=1 copies raw bounds;
 known Open=0 yields `[0,0]` for operational turnover only; unknown Open yields null operational
 bounds with `opening_schedule_unknown`. Keep raw and operational records distinct, with schedule
 provenance and a closure-assumption flag. This zero is a stated known-closure routing rule, never
@@ -226,11 +245,10 @@ overwrite it, change the point forecast or recalibrate automatically.
 
 ## 6. Cumulative operational-prefix uncertainty
 
-**Newly proposed / awaiting approval:** the all-store operational population is suitable only
-for the disclosed schedule-conditional monetary course replay, not physical/latent-demand
-calibration or a production service promise. If that assumption is not approved, this component
-remains unavailable pending a supported schedule protocol; do not silently replace it with
-raw errors from the 32-store complete-path cohort.
+The all-store operational population is suitable only for the disclosed schedule-conditional
+monetary course replay, not physical/latent-demand calibration or a production service promise.
+If no authorized schedule applies, this component remains unavailable; do not silently replace it
+with raw errors from the 32-store complete-path cohort.
 
 For each Store-origin and k=1..14, use exactly the first k calendar components. A prefix is
 complete only if every h=1..k has its observed target key, observed finite Sales, finite routed
@@ -248,12 +266,12 @@ and neither count is a count of independent temporal replications.
 Pooling includes different numbers and placements of closed days; it supplies no coverage
 guarantee conditional on a particular future opening schedule.
 
-Propose nominal one-sided levels **p in {0.90, 0.95, 0.98}**, a transparent small service-level
-grid requiring approval. Sort complete `E_k` values with multiplicity; use
+Use the approved nominal one-sided levels **p in {0.90, 0.95, 0.98}**, a transparent small
+service-level grid. Sort complete `E_k` values with multiplicity; use
 `r_p = ceil((n+1)*p)`, `q_p(E_k)=E_(r_p)`, exact rational ranks and no interpolation.
 Require a valid rank in 1..n and **at least 50 complete prefixes** for the requested (k,p).
-The proposed 50-path floor allows a finite extreme 0.98 rank; n=49 also has a valid such rank,
-but is below this proposed pragmatic floor. Neither floor demonstrates tail reliability.
+The approved 50-path floor allows a finite extreme 0.98 rank; n=49 also has a valid such rank,
+but is below this pragmatic floor. Neither floor demonstrates tail reliability.
 No pooling across k, clipping residuals to positive errors or fallback to daily interval bounds.
 
 For a complete issued operational forecast prefix, use ADR-016's accepted equations:
@@ -286,12 +304,13 @@ L in 2..7 and protection period P=L+R in 3..8, all <=14. Supply prefix tables fo
 with inventory consumers restricted to the approved L/P values, selected identity, origin,
 policy/fit identity, p and availability. No currency-to-SKU conversion or physical demand claim.
 
-Proposed handoff rows contain `D_k, q_p, U_k, SafetyStock_k, Target_k`, completeness,
+Handoff rows contain `D_k, q_p, U_k, SafetyStock_k, Target_k`, completeness,
 sample counts, schedule assumptions and provenance. Phase 10 must check identities, supported
 horizons and all required availability before applying its separately approved inventory rules;
 it must propagate unavailability and may not replace it with zero stock, a baseline or a point
 forecast passed off as a calibrated bound. Phase 10 must freeze its chosen p, scenarios, costs,
-schedule and policy before Phase 13; this proposed grid does not select its inventory policy.
+schedule and policy before Phase 13; the approved uncertainty grid does not select the inventory
+policy.
 
 These quantiles describe **prefixes anchored at the forecasting origin**. At a later daily
 review inside a saved H14 block, a P-day suffix is a different error population: q_P for h1..P
@@ -310,7 +329,7 @@ and selected. Promotions, holidays and changing closure patterns can shift error
 pooling stores does not erase these shifts. LightGBM's recorded h10 weakness remains visible;
 no interval adjustment or model change is justified by that finding alone.
 
-Proposed diagnostics, separately for Fit A/B and calibration/assessment:
+Approved diagnostics, separately for Fit A/B and calibration/assessment:
 
 - Per h and raw/operational branch: expected target count, observed keys, label-eligible count
   (derived without requiring forecast availability),
@@ -334,16 +353,16 @@ later approved covariate diagnostics must use a separately scoped development-on
 and a declared availability contract.
 
 No IID standard errors, significance claims, binomial confidence intervals or reliable temporal
-bootstrap claims are proposed. Dependence-aware bootstrap would require defensible blocks and
+bootstrap claims are permitted. Dependence-aware bootstrap would require defensible blocks and
 more temporal replication; independently redrawing rows/days would lose dependence.
 [FPP3's block-bootstrap discussion](https://otexts.com/fpp3/bootstrap.html) motivates that
-distinction, but this plan does not propose a bootstrap with only one/two calibration origins.
+distinction, but this plan does not define a bootstrap with only one/two calibration origins.
 Report descriptive counts and coverage limits; do not invent a numerical coverage acceptance
-threshold or claim the proposed nominal levels have been achieved.
+threshold or claim the approved nominal levels have been achieved.
 
 ## 9. Failure and publication policies
 
-| Condition | Proposed response |
+| Condition | Approved response |
 |---|---|
 | Missing residual/label/key or an incomplete path | Daily: exclude the affected component; unaffected eligible horizons remain usable. Cumulative: exclude any prefix containing the missing component and report why; a later missing day does not erase a complete shorter prefix. Missing assessment labels give null hit indicators and explicit unavailable denominators. |
 | Too few calibration samples or rank outside 1..n | Null quantile/bounds for that stratum with `insufficient_calibration` or `quantile_rank_unavailable`; keep counts. No rank clamping, borrowing, baseline or model fallback. |
@@ -364,15 +383,16 @@ Stage a fresh immutable run directory, verify outputs, publish the manifest last
 current-run pointer only after success. Preserve prior immutable runs; never leave a stale
 pointer appearing to describe a failed/new run.
 
-## 10. Proposed artifacts and provenance
+## 10. Implementation artifacts and provenance
 
 Ignored root: `data/processed/uncertainty/<run_id>/`, following
-[data artifact conventions](../../data/README.md). No files are generated by this design task.
+[data artifact conventions](../../data/README.md). No files are generated by this design or its
+approval sync.
 All error/bound/stock fields use the source Sales monetary scale; no physical units.
 
 | Artifact | Keys and minimum content |
 |---|---|
-| `calibration_config.json` | Proposed policy `phase-8-uncertainty-v1`, frozen selected identity/recipe hash, Fit A/B window/date sets, masks/signs, pooling/rank conventions, levels, minimum samples, no-fallback rules, support/routing/schedule assumptions and Fit B freeze designation. Includes the split specification. |
+| `calibration_config.json` | Approved policy `phase-8-uncertainty-v1`, frozen selected identity/recipe hash, Fit A/B window/date sets, masks/signs, pooling/rank conventions, levels, minimum samples, no-fallback rules, support/routing/schedule assumptions and the pending Fit B implementation/results review gate. Includes the split specification. |
 | `daily_residual_quantiles.csv` | `(fit_id, horizon, tail_level)`; error population, n/distinct stores/origins, last calibration label, rank, nullable signed quantile, availability/reason and policy/model identity. |
 | `cumulative_error_quantiles.csv` | `(fit_id, k, p)`; operational prefix definition, total/complete/excluded paths, n/stores/origins, rank, nullable signed quantile, completeness/schedule scope and identities. |
 | `daily_intervals.parquet` | `(fit_id, Store, forecast_origin, Date, interval_kind)`, kind raw/operational; h, point, pre-support/post-support endpoints, width, clipping/availability/reason, schedule and fit/model provenance. Assessment labels/masks/hits are joined only after bounds are fixed and clearly marked outcome fields. |
@@ -392,9 +412,11 @@ must have a specified serialization in implementation review. No stochastic algo
 seed is `not_applicable`. Record environment/lock identity for numerical reproducibility; runtime
 IDs/timestamps and library-dependent Parquet bytes need not be identical across separate runs.
 
-Freeze both the approved policy hash and Fit B quantile-table hashes after Phase 8 review.
-Carry sample/failure flags into the frozen package; freezing does not turn unavailable strata
-into available ones. Phase 13 must verify that package before any authorized outcome release.
+Freeze the approved policy hash only after it is implemented and validated; freeze Fit B
+quantile-table hashes only after separate external implementation/results review. Carry
+sample/failure flags into the frozen package; freezing does not turn unavailable strata into
+available ones. Phase 13 must verify that package before any separately authorized outcome
+release.
 
 ## 11. Fixture-test design and implementation acceptance
 
@@ -405,7 +427,7 @@ These are proposed future fixture tests only; no tests or runner are written now
 2. Exact chronology: approved three windows, labels <= issue origin, targets > origin, reject
    own-window/later assessment contamination and earlier unsupported issuances.
 3. Quantiles: hand-sorted fixtures, ties, exact two-sided ranks and p-grid upper ranks; n=39/40
-   daily and n=49/50 cumulative distinguish valid ranks from the proposed sample floors.
+   daily and n=49/50 cumulative distinguish valid ranks from the approved sample floors.
 4. Nonnegative support: clip both endpoints, retain zero width/pre-support values; the point
    need not be enclosed. Invalid/nonfinite/inverted bounds remain unavailable.
 5. Sparse strata: no cross-horizon/store/baseline fallback; null values/reasons and denominators
@@ -433,22 +455,24 @@ These are proposed future fixture tests only; no tests or runner are written now
 15. Publication: stage/output verification/manifest-last behavior, partial-stratum status,
     fatal failure with no official artifacts and preservation of prior immutable runs.
 
-After methodology approval, implementation acceptance requires these fixtures, normal locked
+After PR #14 integration, implementation acceptance requires these fixtures, normal locked
 quality checks, one authorized development-only uncertainty run, complete provenance and
 chronological diagnostics with limitations. No numeric coverage-passage threshold is currently
 approved. External review must adjudicate usefulness and failures before freeze/closeout.
 
-## 12. Draft ADR-021 — empirical development uncertainty
+## 12. Historical draft ADR-021 — superseded by accepted ADR-021
 
-**Status: PROPOSED / AWAITING APPROVAL; draft within this plan only.**
-No accepted ADR-021 is added to DECISIONS by this task.
+**Historical status at the original PR #14 design checkpoint: PROPOSED / AWAITING APPROVAL.**
+This draft is superseded by accepted [ADR-021](../../docs/DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay),
+which is authoritative for current methodology. The historical wording below records the draft
+recommendation before external approval; it does not describe current approval status.
 
 **Context:** Development selection under ADR-020 chose a frozen global LightGBM method; ADR-015
 protects the final holdout and ADR-016 requires cumulative errors preserving path dependence.
 Three selected development origins provide sparse and dependent raw-primary evidence, while saved operational
 paths are complete under a historically unverified opening-schedule availability assumption.
 
-**Proposed decision:** adopt sections 4–10: earlier-window Fit A/B calibration, pooled signed
+**Draft recommendation at that checkpoint:** adopt sections 4–10: earlier-window Fit A/B calibration, pooled signed
 horizon order statistics for marginal daily 95% intervals, complete operational-prefix upper
 quantiles for the small service grid, explicit sample floors/no fallback, conditional schedule
 replay, descriptive coverage and Fit B/policy freeze. All numerical and operational choices
@@ -462,53 +486,61 @@ Implementation and final evaluation need their own authorizations.
 
 ## 13. Documentation delivery checkpoint
 
-This PR combines the authorized Phase 7 closeout/plan archive, mechanical links/current-status
-updates and Phase 8 design. Historical checkpoints, ADR-020 methodology, selection results,
-proposal, implementation and dependencies remain unchanged.
+PR #14 combines the Phase 7 closeout and Phase 8 design integration. The current approval sync
+updates the accepted Phase 8 policy/status only. Historical checkpoints, ADR-020 methodology,
+selection results, proposal, implementation and dependencies remain unchanged.
 
 Repository quality-check results are recorded in
 [PROGRESS](../../docs/PROGRESS.md#phase-8-design-delivery-validation).
-This design task generates no uncertainty artifact or new modeling evidence. Delivery stops at
-one open documentation PR; no merge or Phase 8 implementation is authorized.
+This approval-sync task generates no uncertainty artifact or new modeling evidence. Delivery
+stops with PR #14 open as the design integration gate; no implementation occurs before it
+integrates.
 
 ## 14. Numbered approval checklist
 
-1. **Newly proposed / awaiting approval — daily interval method:** signed residual, two-sided
+ADR-021 accepts the listed methodology and inherited contracts. Fit B's actual fitted tables
+remain pending a separate external implementation/results review before freeze.
+
+1. **Accepted in ADR-021 — daily interval method:** signed residual, two-sided
    marginal 95% intervals for each h, clipped saved raw forecast and nonnegative bounds.
-2. **Newly proposed / awaiting approval — quantile convention:** exact outward (n+1) order
+2. **Accepted in ADR-021 — quantile convention:** exact outward (n+1) order
    ranks, ties retained, no interpolation/clamping; no conformal guarantee.
-3. **Newly proposed / awaiting approval — calibration/assessment chronology:** Fit A v1 -> v2;
+3. **Accepted in ADR-021 — calibration/assessment chronology:** Fit A v1 -> v2;
    Fit B v1+v2 -> v3, with no own/later targets in calibration.
-4. **Newly proposed / awaiting approval — pooled calibration:** equal Store-origin weights
+4. **Accepted in ADR-021 — pooled calibration:** equal Store-origin weights
    within exact h or k, no store/segment normalization or cross-horizon borrowing.
-5. **Newly proposed / awaiting approval — sample floors/fallback:** daily n>=40; cumulative
+5. **Accepted in ADR-021 — sample floors/fallback:** daily n>=40; cumulative
    complete-prefix n>=50; invalid ranks/unavailable strata stay null; no fallback.
 6. **Inherited from accepted ADR-013/017/020 — raw/operational definitions:** observed Open=1
    raw-primary mask versus routed operational error mask, signed actual-minus-forecast errors,
    unchanged raw recursion/point identity and explicit missingness.
-7. **Newly proposed / awaiting approval — cumulative population:** all-store complete
+7. **Accepted in ADR-021 — cumulative population:** all-store complete
    operational prefixes, conditional on the explicit offline known-opening replay assumption;
    no replacement by the small raw-complete cohort.
-8. **Newly proposed / awaiting approval — one-sided service quantiles:** exact upper (n+1)
+8. **Accepted in ADR-021 — one-sided service quantiles:** exact upper (n+1)
    ranks with p={0.90,0.95,0.98}; signed q retained; nominal parameter, not verified cycle service.
-9. **Newly proposed / awaiting approval — diagnostics:** inclusive coverage/width/tail and
+9. **Accepted in ADR-021 — diagnostics:** inclusive coverage/width/tail and
    availability denominators, fit/assessment/origin/open-branch separation; no IID inference
    or pretense that model-selected development origins are an untouched test.
-10. **Newly proposed / awaiting approval — freeze/provenance:** immutable policy plus reviewed
-    Fit B tables, no v3 recalibration, hash-verified inputs/outputs and atomic publication rules.
+10. **Accepted in ADR-021 — freeze/provenance:** immutable approved policy, then Fit B tables
+    only after separate external implementation/results review; no v3 recalibration,
+    hash-verified inputs/outputs and atomic publication rules.
 11. **Inherited from accepted ADR-016 — Phase 10 equations/domain:** monetary D/U/SafetyStock/
     Target, R=1, L=2..7, P=3..8 <=14; cumulative errors rather than sums of marginal uppers.
 12. **Inherited from accepted ADR-015 — protected Phase 13 boundary:** no holdout outcomes
     before separately authorized sequential release of the fully frozen pipeline/policies.
-13. **Newly proposed / awaiting approval — operational daily replay routing:** explicit
+13. **Accepted in ADR-021 — operational daily replay routing:** explicit
     assumed-known Open=0 -> [0,0], Open=1 copies raw, unknown remains unavailable; closed
     turnover is not latent/physical demand.
-14. **Unresolved with alternatives — actual future Open availability:** verified supplied
-    origin-time planned schedule, explicitly conditional course replay, or unavailable
-    operational outputs. This dataset cannot establish historical schedule availability.
+14. **Unresolved schedule provenance, with mandatory boundary — actual future Open availability:**
+    separately reviewed origin-known schedule or a separately approved synthetic/conditional
+    schedule not derived from protected future actual Open; absent an authorized schedule,
+    operational outputs requiring future Open remain unavailable. This dataset cannot establish
+    historical schedule availability. The development-only conditional replay is not a Phase 13
+    authorization.
 15. **Unresolved with alternatives — later daily Phase 10 review:** authorize fresh issuance/
     suffix calibration in its own design, or restrict this package to origin-anchored prefixes;
     no reuse of q_P as an unvalidated later suffix bound.
-16. **Newly proposed / awaiting approval — implementation/artifact/failure contract:** fixtures
-    and bounded development-only run after approval, explicit null/fatal statuses, no automatic
+16. **Accepted in ADR-021 — implementation/artifact/failure contract:** fixtures
+    and bounded development-only run after PR #14 integration, explicit null/fatal statuses, no automatic
     adverse-diagnostic correction and external review before freeze/Phase 8 closeout.

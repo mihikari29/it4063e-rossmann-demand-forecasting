@@ -21,10 +21,11 @@ preserves the development-only results and confirms no final-holdout evaluation.
 history. The development selection under ADR-020 chose Global LightGBM
 (`global_lightgbm_gbdt_regression_l1`), frozen trial A at 180 rounds, for the offline CPU course
 demonstration using development evidence.
-Phase 8's [uncertainty design](plans/active/phase-8-forecast-uncertainty.md) is **PROPOSED /
-AWAITING APPROVAL**; implementation has not started. The final holdout, 2015-07-04 through
-2015-07-31, remains protected for the separately authorized Phase 13 protocol. Development
-selection and phase closeout do not constitute final-holdout evaluation or production approval.
+Phase 8 methodology is **APPROVED / IMPLEMENTATION NOT STARTED** in ADR-021. [PR #14](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/14)
+remains open and unmerged as the design integration gate. Approval authorizes implementation and
+development evaluation of the fixed protocol after integration; no intervals or quantile tables
+have been calculated or frozen. The final holdout, 2015-07-04 through 2015-07-31, remains
+protected. Final-holdout evaluation and production approval require separate authorization.
 
 ## Environment and quick start
 
@@ -104,8 +105,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 
 - Phases 6–7: complete; ADR-020's development-only decision selected the frozen LightGBM method
   for the offline CPU course demonstration.
-- Phases 8–10: Phase 8 uncertainty methodology is proposed and awaiting approval; its
-  implementation, separate synthetic scenarios and stateful inventory have not started.
+- Phases 8–10: Phase 8 methodology is approved in ADR-021; PR #14 is still open as the design
+  integration gate. Implementation, separate synthetic scenarios and stateful inventory have not
+  started.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
@@ -114,7 +116,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 Later inventory/app modules are created when their work is approved; there is no speculative
 service framework. The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5 and 6 are integrated and
-formally closed, as is Phase 7. Phase 8 has a proposed design and no uncertainty implementation.
+formally closed, as is Phase 7. Phase 8 methodology is approved, but implementation has not
+started and no uncertainty results exist yet.
 
 ## Quality and repository layout
 

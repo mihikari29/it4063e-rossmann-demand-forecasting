@@ -9,7 +9,7 @@
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
-| Phase 8 — forecast uncertainty | PROPOSED / AWAITING APPROVAL; implementation not started | [Active design](../plans/active/phase-8-forecast-uncertainty.md); no intervals or cumulative quantiles calculated |
+| Phase 8 — forecast uncertainty | APPROVED in ADR-021; implementation not started | [Active plan](../plans/active/phase-8-forecast-uncertainty.md); PR #14 remains open as the design integration gate; no intervals or cumulative quantiles calculated |
 | Phase 9 and later | PLANNED; not started | Await their dependencies and separate authorization |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -25,7 +25,8 @@ records, including the [completed Phase 5 plan](../plans/completed/phase-5-stati
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
 snapshots, not separate results to update. Phase 7's development-only selection is integrated and
 formally closed. Its result and closeout do not constitute final-holdout evaluation or production
-approval. Phase 8 design is awaiting methodology approval.
+approval. Phase 8 methodology is approved in ADR-021; implementation has not started and PR #14
+remains the open design integration gate.
 
 ## Immediate next boundary
 
@@ -39,8 +40,8 @@ The Phase 6 development-only results and coverage evidence remain recorded below
 [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged into
 `main` at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`. Phase 7 is **COMPLETE**; the selected
 `global_lightgbm_gbdt_regression_l1` recipe remains trial A at exactly 180 rounds.
-Phase 8 methodology design has started and awaits approval; implementation has not started.
-Final-holdout evaluation remains unreleased. The
+Phase 8 methodology is approved in ADR-021; implementation has not started and PR #14 remains
+open. Final-holdout evaluation remains unreleased. The
 [historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the interfaces and boundary used.
 
@@ -803,12 +804,9 @@ must remain operationally unavailable.
 
 ### Phase 8 design checkpoint
 
-The [active Phase 8 plan](../plans/active/phase-8-forecast-uncertainty.md) is **PROPOSED /
-AWAITING APPROVAL**. It drafts ADR-021 within the plan, recommends signed horizon-specific daily
-95% residual intervals and upper cumulative operational-prefix error quantiles, and specifies
-earlier-calibration/later-assessment fits using only the three approved windows. Numerical
-quantile conventions, minimum samples, service-level grid, opening-schedule assumption and freeze
-policy are new review decisions. None is accepted or implemented by this documentation task.
+At the reviewed PR #14 design head, the [active Phase 8 plan](../plans/active/phase-8-forecast-uncertainty.md)
+was **PROPOSED / AWAITING APPROVAL** and included a draft ADR-021. The 2026-10-06 approval sync
+below supersedes that proposal checkpoint; the accepted methodology is recorded in ADR-021.
 
 No uncertainty runner or tests were added; no intervals, empirical quantile values, inventory
 outcomes or new forecasts were calculated. Phase 8 implementation and Phases 9–10 remain
@@ -835,3 +833,37 @@ Complete diff review confirms changes are limited to Phase 7 lifecycle closeout/
 Phase 8 proposal and mechanical links/current-status synchronization. No code, tests, dependencies,
 proposal or selected artifacts
 changed. New-PR CI is not yet verified; delivery stops after opening the authorized design PR.
+
+## Phase 8 methodology approval sync — 2026-10-06
+
+The external Phase 8 methodology review is accepted in [ADR-021](DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay).
+Phase 8 is **APPROVED / IMPLEMENTATION NOT STARTED**. PR #14 remains open and unmerged as the
+design integration gate; implementation of the approved bounded protocol may begin after it
+integrates into `main`.
+
+Approval fixes the daily signed-residual estimator, exact horizon-specific ranks and n>=40 floor,
+Fit A/Fit B chronology, and the complete operational-prefix estimator with p={0.90,0.95,0.98},
+upper-rank rule and n>=50 floor. The saved historical Open values authorize development-only
+conditional course replay and do not prove origin-time schedule availability. For Phase 13, actual
+holdout Open must not be read, hashed, loaded or substituted before issuance; operational outputs
+requiring future Open remain unavailable without separately reviewed origin-known schedule
+provenance or a separately approved synthetic/conditional schedule that is not derived from
+protected actual Open.
+
+No uncertainty runner, fixture tests, interval calculations, quantile tables or fitted-table
+freeze were produced in this approval sync. Fit B's actual tables, diagnostics, hashes and
+availability require separate external implementation/results review before the values are
+frozen. No Phase 9/10 implementation, final-holdout access or evaluation occurred; protected
+2015-07-04 through 2015-07-31 outcomes remain unreleased.
+
+Approval-sync local validation on Python 3.14.5 with the locked environment:
+
+| Check | Result |
+|---|---|
+| Full `python -m pytest` | PASS — 187 tests in 92.93s; existing fixtures only |
+| `python -m ruff check .` | PASS |
+| `python -m ruff format --check .` | PASS — 74 files already formatted |
+| `python scripts/check_docs.py` | PASS — 148 local destinations/anchors across 23 Markdown files |
+| `uv lock --check` | PASS — 84 packages resolved; lock unchanged |
+| `uv pip check` | PASS — 61 installed packages compatible |
+| `git diff --check` | PASS |
