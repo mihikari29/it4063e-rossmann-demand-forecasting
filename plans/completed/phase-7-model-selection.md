@@ -476,5 +476,5 @@ and the 29 Phase 3 predictors. ADR-020, selection results and original ignored a
 unchanged. The [closeout and residual audit in PROGRESS](../../docs/PROGRESS.md#phase-7-formal-closeout-and-phase-8-evidence-audit--2026-10-06)
 records independently checked hashes, schema and masks. No model, interval or inventory operation
 was run for closeout, and no final-holdout outcomes were accessed. Phase 8 proceeds only as a
-[proposed methodology design](../active/phase-8-forecast-uncertainty.md); its implementation needs
+[proposed methodology design](phase-8-forecast-uncertainty.md); its implementation needs
 separate approval.

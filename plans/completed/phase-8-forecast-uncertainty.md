@@ -1,12 +1,13 @@
 # Phase 8 — Forecast Uncertainty Methodology (Approved)
 
-**Status: REVIEWED / FORMAL CLOSEOUT PENDING.** PR #15
+**Status: COMPLETE.** Formal closeout was recorded on 2026-10-07 after verifying that PR #15
 ([implementation](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15)) was
-squash-merged into `main` at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; the external numerical
-results decision is ACCEPTED, and Fit B fitted quantile values are frozen for the exact canonical
-run recorded in Section 17. The method remains ADR-021. Keep this plan active until the present
-documentation/governance change is integrated and a separate explicit closeout verification is
-recorded. Phase 8 is not COMPLETE yet. The Open information boundary below remains mandatory.
+squash-merged into `main` at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821` and PR #16
+([results acceptance](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/16))
+was squash-merged into `main` at `4dd7717fed57ff3b1f14789b980772c1968f3cba`. The external
+numerical-results decision is ACCEPTED, and Fit B fitted quantile values are frozen for the exact
+canonical run recorded in Section 17. The method remains ADR-021. The Open information boundary
+below remains mandatory.
 
 ## 1. Authority, base and boundary
 
@@ -592,7 +593,7 @@ before this fix; it differs from the post-fix source hash recorded by the new ru
 Fit A/Fit B chronology, selected LightGBM identity, conditional saved-Open assumption and holdout
 firewall are unchanged. Fit B remains unfrozen pending external results review.
 
-## 17. External results acceptance and Fit B freeze — 2026-10-07
+## 17. External results acceptance and Fit B freeze — 2026-10-07 (historical acceptance checkpoint)
 
 PR #15 is integrated into `main` at squash-merge commit
 `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`. The external reviewer decision supplied for the
@@ -623,6 +624,65 @@ production guarantees. Cumulative quantiles authorize origin-anchored prefixes o
 authorize Phase 10 daily-review suffix calibration. The ADR-015 final-holdout firewall remains in
 force, and no Phase 9/10 work has started.
 
-Phase 8 is **REVIEWED / FORMAL CLOSEOUT PENDING**, not COMPLETE. This governance documentation
-change must be reviewed and integrated before a separate explicit closeout verification. Keep
-this plan under `plans/active/` until that closeout is recorded.
+Phase 8 was **REVIEWED / FORMAL CLOSEOUT PENDING** at this historical acceptance checkpoint.
+The subsequent explicit closeout is recorded in Section 18.
+
+## 18. Formal closeout — 2026-10-07
+
+### Verified integration and external acceptance
+
+At closeout, `origin/main` was `4dd7717fed57ff3b1f14789b980772c1968f3cba`. GitHub showed both
+implementation PR #15 and results-acceptance PR #16 as merged. The verified squash-merge commits
+are:
+
+| Pull request | Merged commit | Evidence |
+|---|---|---|
+| [PR #15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) | `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821` | Phase 8 implementation integrated; external numerical review later accepted the canonical results |
+| [PR #16](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/16) | `4dd7717fed57ff3b1f14789b980772c1968f3cba` | Independent results acceptance and Fit B freeze recorded; this commit is a child of the PR #15 merge |
+
+The independent reviewer ACCEPTED all 56 daily quantiles, 84 cumulative quantiles, 62,440 issued
+daily interval records, 93,660 cumulative records, and 392 diagnostics. The merged main branch
+contains the accepted Fit B freeze record. This closeout does not change ADR-021 or the selected
+`global_lightgbm_gbdt_regression_l1` recipe.
+
+### Canonical run identity verification
+
+The approved canonical run is `phase8-impl-20261006-provenance-review`. Its immutable local
+artifacts were available and checked without regenerating them:
+
+| Identity | Expected SHA-256 | Local verification |
+|---|---|---|
+| `manifest.json` | `63a00fc8c50ccff99360cd8790498e977e08ec6a9846780a4e1a8ab3498d71c2` | Match |
+| `daily_residual_quantiles.csv` | `5c985c912d14b502a5d370090353624907e7fddd6d0d8552c102ee3a1ad7eda8` | Match |
+| `cumulative_error_quantiles.csv` | `1a0bba7916b498f2048f080dcd3b24f6cd47472d2f71fca92b94f1b678cb70ff` | Match |
+| Canonical policy/config identity | `49f4811bf7b01ffe6472ea76233eefa50e211207aa0b6246dada934cd4611d93` | Match to the config's self-excluding canonical identity |
+| `calibration_config.json` file | `afe563632a2ebff937f1500f568d53cdb93be35d6dc299654464c2615ae64a08` | Match |
+
+The immutable manifest retains `external_fit_b_results_review_pending=true` and
+`fit_b_quantiles_frozen=false`, the values recorded when the run was published. The later
+governance freeze applies to the listed identities and does not rewrite or regenerate the manifest,
+configuration, quantile tables, other run artifacts, or current pointer.
+
+### Explicit closeout decision and limitations
+
+Phase 8 is **COMPLETE** as of 2026-10-07. The closeout follows verified PR #15/#16 integration,
+independent results acceptance, the exact Fit B identity checks above, and confirmation that the
+holdout boundary remains intact. No Python implementation, calibration result, quantile table,
+model artifact, or dependency is changed by this documentation closeout.
+
+The following limitations remain part of the accepted result:
+
+- Fit B raw-primary coverage is 12,263/13,437 (91.26%), below nominal 95%.
+- Sunday h2/h9 calibration is sparse: 65/64 rows from only 33/32 distinct stores across two
+  origins.
+- Forecast errors are dependent across stores and forecast origins.
+- Operational coverage is a conditional historical replay assuming saved source Open was known
+  at origin; deterministic closure routing inflates pooled coverage.
+- The results provide no conformal, per-store, production, or service-level guarantee.
+- Cumulative quantiles are valid only for approved origin-anchored prefixes. No later daily-review
+  suffix calibration is authorized.
+- The protected 2015-07-04 through 2015-07-31 final holdout remains unreleased.
+- The target is monetary Sales turnover, not SKU-level physical demand.
+
+Phase 9 remains PLANNED and not started; separate design and authorization are required. Phase 10
+also remains unstarted. Neither phase is approved or initiated by this closeout.

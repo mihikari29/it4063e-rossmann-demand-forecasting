@@ -6,7 +6,7 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` contains completed Phases 0–7. Phase 5 additive Holt-Winters was integrated with the
+`main` contains completed Phases 0–8. Phase 5 additive Holt-Winters was integrated with the
 architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
@@ -24,17 +24,19 @@ demonstration using development evidence.
 Phase 8's ADR-021 implementation was squash-merged by
 [PR #15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) into `main` at
 `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`. The external results review ACCEPTED the canonical
-development run, and its Fit B fitted quantile values are **FROZEN** for that exact run. Phase 8 is
-**REVIEWED / FORMAL CLOSEOUT PENDING**; its active plan remains in place until the documentation
-integration and a separate explicit closeout verification. The selected candidate remains
-`global_lightgbm_gbdt_regression_l1`. Fit A daily tails at h2, h3 and h9 remain unavailable under
-the approved sample floor. Fit B raw-primary daily assessment coverage is 12,263/13,437 (91.26%),
-below nominal 95%. Operational assessment uses conditional saved-Open replay; deterministic closed
-routes inflate pooled coverage. Sparse Sunday h2/h9 evidence and dependence across stores/origins
-remain limitations. These empirical tables provide no conformal or production guarantee. Cumulative
-uncertainty supports origin-anchored prefixes only; no Phase 10 suffix calibration is approved.
-The final holdout, 2015-07-04 through 2015-07-31, remains protected. Development results are not
-final-holdout evaluation or production approval.
+development run, and its Fit B fitted quantile values are **FROZEN** for that exact run. PR #16
+recorded the accepted review and was squash-merged at
+`4dd7717fed57ff3b1f14789b980772c1968f3cba`. Phase 8 is **COMPLETE**; the
+[completed plan](plans/completed/phase-8-forecast-uncertainty.md) records the explicit closeout.
+The selected candidate remains `global_lightgbm_gbdt_regression_l1`. Fit A daily tails at h2, h3
+and h9 remain unavailable under the approved sample floor. Fit B raw-primary daily assessment
+coverage is 12,263/13,437 (91.26%), below nominal 95%. Operational assessment is a conditional
+historical replay assuming saved source Open was known at origin; closure routing inflates pooled
+coverage. Sparse Sunday h2/h9 evidence and dependence across stores/origins remain limitations.
+These empirical tables provide no conformal, per-store, production or service-level guarantee.
+Cumulative uncertainty supports approved origin-anchored prefixes only; no later daily-review
+suffix calibration is authorized. The final holdout, 2015-07-04 through 2015-07-31, remains
+protected and unreleased. Forecast Sales is monetary turnover, not SKU-level physical demand.
 
 ## Environment and quick start
 
@@ -136,9 +138,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 
 - Phases 6–7: complete; ADR-020's development-only decision selected the frozen LightGBM method
   for the offline CPU course demonstration.
-- Phase 8: results reviewed and Fit B values frozen for the canonical run after PR #15 integration;
-  formal closeout remains pending. Its cumulative tables support origin-anchored prefixes only.
-  Phases 9–10 synthetic scenarios and stateful inventory have not started.
+- Phase 8: **COMPLETE** after PR #15/#16 integration, independent results acceptance and explicit
+  closeout. Fit B values are frozen for the canonical run; cumulative tables support approved
+  origin-anchored prefixes only. Phases 9–10 remain planned and have not started.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
@@ -146,10 +148,10 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 
 Later inventory/app modules are created when their work is approved; there is no speculative
 service framework. The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
-records the inputs, origins, metrics, artifacts and tests used. Phases 5–7 are integrated and
+records the inputs, origins, metrics, artifacts and tests used. Phases 5–8 are integrated and
 formally closed. Phase 8 methodology remains as approved in ADR-021; its implementation/results
-review is accepted and Fit B is frozen for the identified development run, while explicit formal
-closeout remains pending. The final holdout remains protected.
+review is accepted and Fit B is frozen for the identified development run. Phase 9 and later work
+requires separate design and authorization. The final holdout remains protected.
 
 ## Quality and repository layout
 
