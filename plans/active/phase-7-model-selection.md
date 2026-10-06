@@ -1,9 +1,10 @@
 # Phase 7 — Walk-Forward Validation and Model Selection
 
-**Status: PROPOSED / AWAITING APPROVAL** (WORKFLOW: PLANNED).
-Design started 2026-10-06; implementation not started; no final model officially selected.
-This document proposes a policy after observing the Phase 4–6 development results. Approval
-of a documentation PR alone does not authorize implementation or accept a model selection.
+**Status: APPROVED / IMPLEMENTATION NOT STARTED** (WORKFLOW: APPROVED).
+Methodology approved after external review on 2026-10-06; implementation has not started and no
+final model is officially selected. The approval accepts this policy after observing the Phase 4–6
+results; it does not make the thresholds preregistered or select a model. Implementation may begin
+only after design PR #12 merges into `main`.
 
 ## 1. Authority, verified base, and execution boundary
 
@@ -22,11 +23,12 @@ Read completely: AGENTS, [WORKFLOW](../../docs/WORKFLOW.md),
 [Phase 5](../completed/phase-5-statistical-forecasting.md), and
 [Phase 6](../completed/phase-6-global-lightgbm.md) plans.
 Inspected validation, metrics, three forecasters, evaluation interfaces, and LightGBM runner.
-ADR-008/013/014/015/017/019 remain authoritative; no accepted ADR or proposal is amended here.
+ADR-008/013/014/015/017/019 remain authoritative; accepted Phase 7 policy is recorded in ADR-020.
+No proposal is amended.
 
-Authorized now: this design, minimal progress update, normal quality gate, commit/push/design PR.
-The next gate is explicit methodology approval and implementation authorization. This task ends
-with the open PR; the active phase plan stays active through later review/integration/closeout.
+The reviewed implementation scope remains limited to this design. Methodology is approved, but
+implementation starts only after PR #12 is integrated; the active phase plan stays active through
+review/integration/closeout.
 No selection runner, new tests, model changes, dependencies, tuning, additional windows, final
 evaluation, or Phase 8 interval work is part of this design task.
 
@@ -155,19 +157,25 @@ not an implementation-time adjustment to make a model pass.
 
 ### 3.3 Operational acceptance and failure semantics
 
-Before recording a selection, require a versioned review input per potential incumbent:
-`operational_acceptance = approved | rejected | unknown`, evidence references and rationale.
-Review fit/inference cost evidence and missing measurements, maintenance burden, reproducible
+Before recording a selection, require a versioned, auditable operational input per potential
+incumbent: `operational_acceptance = approved | rejected | unknown`, evidence references and
+rationale. The methodology review accepts a qualitative assessment for the existing offline CPU
+course demonstration without requiring a new benchmark before selection. Assess known fit-time
+evidence, explicitly missing full-pipeline/inference and memory measurements, maintenance burden,
 locked environment/configuration, availability assumptions and the unchanged failure policy.
+Record the approved scope; do not silently invent measurements or extend acceptance to an
+unexamined deployment environment.
 SN must be approved to initialize the ladder; otherwise return `operational_review_required`.
 For a candidate that passes the MAE gates: approved permits promotion; rejected retains the
 incumbent and records the cost/maintenance/assumption reason; unknown stops with that review
 status and no official selection. Candidates failing MAE gates cannot be promoted by cost votes.
 
-This project has no approved latency/memory SLA. A reviewer may explicitly accept the documented
-unmeasured end-to-end costs for the course's offline batch demonstration; do not equate unknown
-with cheap. If a measured resource envelope is needed, preapprove a fixed-config common benchmark
-protocol and budget separately, without new scoring windows or tuning. None is run here.
+This project has no approved latency/memory SLA. The external review explicitly accepts qualitative
+operational assessment for the existing offline course demonstration; no new benchmark is a
+precondition to its Phase 7 selection. This does not establish API latency, throughput, production
+reliability, comparative end-to-end speed, measured memory requirements or real operational
+savings. If a broader measured resource envelope is later needed, approve its scope separately;
+do not add scoring windows or tuning. None is run here.
 Reproducibility mismatch is an integrity failure, not a tradeoff for better accuracy. Identical
 numeric results are expected in the pinned environment; no universal cross-platform bitwise
 guarantee is asserted. Unavailable predictions remain null with reasons; no model fallback is
@@ -175,12 +183,14 @@ introduced. Selecting a simpler method is a project decision, not row-wise fallb
 
 ### 3.4 Sufficiency and inference limits
 
-Current evidence is sufficient to apply the proposed descriptive MAE/coverage gates once policy,
-artifact provenance and operational acceptance are approved. On these observations HW fails the
-week-2 cap against SN (about +13.75%); LightGBM passes the numeric gates against SN. This is a
-conditional policy illustration, not an accepted winner. Costs/provenance/horizon tradeoffs
-still need review. If review cannot accept them, retain an approved simpler incumbent or stop
-for the specified review status; do not force a complex winner.
+Current development evidence and its scoped original-manifest lineage are accepted for applying
+the approved descriptive MAE/coverage policy in this course project, provided the implementation
+rechecks hashes, keys, labels, masks and configuration identities and stops on any mismatch.
+Preserve source/version metadata; never rewrite old manifests or claim regeneration from current
+`main`. On the observed common rows HW fails the week-2 cap against SN (about +13.75%); LightGBM
+passes the numeric gates against SN. This remains a conditional rule illustration, not a selected
+winner. Approval of qualitative offline operations/provenance does not waive those implementation
+integrity checks or support broader runtime or generalization claims.
 
 There are only 42 late-May–early-July target days, three non-overlapping 14-day blocks, repeated
 Friday origins and shared stores. Horizon and weekday are confounded; shared holidays/promotions
@@ -290,23 +300,16 @@ belongs to the selection aggregation, not retroactively to old fits. The reviewe
 this documented evidence lineage or require a separately scoped reproducibility audit. Hash
 verification and exact label/key agreement alone do not reconstruct unrecorded historical code.
 
-Proposed ADR (not assigned/accepted): **Phase 7 fixed model-ladder selection and refit freeze**.
-Context: accepted outer evidence is observed; MAE lead alone is insufficient to authorize final
-selection. Proposed decision: adopt §§3–5 after explicit review, including post-observation status,
-unchanged candidates/windows, simpler preference, freeze/handoff and inherited holdout boundary.
-Consequences: a complex candidate can lose despite best pooled MAE; unresolved evidence/cost
-stops selection; horizon-level regressions may coexist with passing block gates. On explicit
-acceptance, record the durable policy in DECISIONS through the authorized implementation task.
+ADR-020 records the externally approved methodology and durable refit/Phase 8 boundary. The
+approval accepts the 5% promotion threshold, two-of-three window wins, 10% per-window and pooled
+horizon-block caps, simpler-model ladder, 99% standalone/common coverage gates, individual-horizon
+reporting, qualitative offline operational scope, and disclosed cached-provenance lineage. It
+does not declare any model selected. The thresholds were introduced after results were observed;
+that disclosure, individual-horizon losses, lack of statistical significance/generalization claims,
+and origin/holdout protections remain permanent parts of the decision.
 
-Approval must resolve together:
-
-- 5% practical promotion threshold, two window wins, 10% window/block regression caps and
-  permission for individual-horizon regressions; no claim that these thresholds are optimal.
-- SN < HW < LightGBM maintenance order; all-candidate/common 99% coverage gates and stop statuses.
-- Operational acceptance for each possible selected method, including whether unmeasured
-  end-to-end cost is acceptable for offline use or a separately approved benchmark is required.
-- Acceptance of cached provenance limitations, full recipe/config identity and Phase 8 masks.
-- Explicit implementation authorization. No final model selection is approved by this proposal.
+Implementation status remains not started. PR #12's merge into `main` is the required integration
+gate before implementation begins. No final model selection is approved by methodology acceptance.
 
 ## 7. Future fixture test and execution plan
 
@@ -331,13 +334,28 @@ requires review of remediation scope before rerunning a model or changing method
 
 ## 8. Design delivery checkpoint
 
-Only this plan and the current-state/evidence-audit addition in PROGRESS change. Run full pytest,
+For this initial design PR, only this plan and the current-state/evidence-audit addition in PROGRESS
+changed. Run full pytest,
 Ruff lint/format, Markdown links, `git diff --check` and `uv lock --check`; inspect the complete
 diff, then commit `docs: propose Phase 7 model selection design`, push and open the design PR.
-Record actual outcomes before publication. Do not merge or mark Phase 7 APPROVED/COMPLETE.
+Record actual outcomes before publication. Do not merge the design PR.
 
 Design validation on 2026-10-06: full pytest **152 passed** on Python 3.14.5 and **152 passed**
 on Python 3.12.15; Ruff lint passed; Ruff format check passed (70 files); Markdown checker passed
 (107 local destinations/anchors across 22 Markdown files); `uv lock --check` and `git diff --check`
 passed. Complete documentation diff inspected for scope and holdout boundary. No new fixture
 tests or generated selection outputs were added; the table above is the future test plan.
+
+### Methodology approval synchronization — 2026-10-06
+
+External approval for PR #12 reviewed head `1c15ab0b6ee94f3ecccb8f04c84da97d58bbb225` was
+recorded in ADR-020. It accepts the policy exactly as written, including its post-observation
+threshold disclosure and individual-horizon reporting; it does not select a model. Qualitative
+operational assessment is accepted only for the existing offline CPU course demonstration, and
+historical artifact lineage is accepted only with the required integrity rechecks. Design PR #12
+remains the integration gate before implementation.
+
+The approval sync changes only this plan, DECISIONS, PROGRESS, PROJECT_PLAN and README. Full pytest
+passed (152 tests on Python 3.14.5 and 152 on Python 3.12.15); Ruff lint/format, Markdown links,
+`uv lock --check` and `git diff --check` passed. No forecasting code, tests, dependencies, model
+selection, generated artifacts, new validation windows, holdout access or Phase 8 work were added.

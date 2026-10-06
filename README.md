@@ -14,8 +14,8 @@ LightGBM candidate was reviewed and merged by
 [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) at
 `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its [formal closeout plan](plans/completed/phase-6-global-lightgbm.md)
 preserves the development-only results and confirms no final-holdout evaluation.
-[PROGRESS](docs/PROGRESS.md) records development results. Phase 7 has not started, and no final
-project model has been selected.
+[PROGRESS](docs/PROGRESS.md) records development results. Phase 7 methodology is approved in ADR-020;
+implementation awaits integration of design PR #12. No final project model has been selected.
 
 ## Environment and quick start
 
@@ -75,7 +75,8 @@ Thin command scripts expose reusable logic; notebooks are exploration/presentati
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
 
 - Phases 6–7: Phase 6 global recursive LightGBM candidate is complete; Phase 7 owns later
-  development-only model selection and awaits separate design approval.
+  development-only model selection under the approved ADR-020 policy. Implementation awaits
+  integration of design PR #12.
 - Phases 8–10: out-of-sample uncertainty, separate synthetic scenarios and stateful inventory.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
@@ -85,7 +86,7 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 Later inventory/app modules are created when their work is approved; there is no speculative
 service framework. The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5 and 6 are integrated and
-formally closed; Phase 7 awaits separate design approval.
+formally closed; Phase 7's design is approved but remains unintegrated and unimplemented.
 
 ## Quality and repository layout
 

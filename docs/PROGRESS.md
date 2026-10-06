@@ -8,7 +8,7 @@
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
-| Phase 7 — model selection | PLANNED; design started, implementation not started | [Proposed plan](../plans/active/phase-7-model-selection.md): methodology awaiting approval; no final model officially selected |
+| Phase 7 — model selection | APPROVED; implementation not started | [Approved plan](../plans/active/phase-7-model-selection.md), ADR-020; PR #12 is the required integration gate; no final model officially selected |
 | Phase 8 and later | PLANNED; not started | Await their dependencies and separate authorization |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -33,9 +33,10 @@ archived.
 The Phase 6 development-only results and coverage evidence remain recorded below. Phase 6 closeout
 [PR #11](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/11) merged at
 `0b8d55144ace29cb8b5367d11aeedc59cfb33a65`. Phase 7 design has started in the
-[proposed plan](../plans/active/phase-7-model-selection.md); implementation has not started,
-methodology awaits approval, and no final model is officially selected. The next boundary is
-methodology review and explicit implementation authorization. The
+[approved plan](../plans/active/phase-7-model-selection.md) and ADR-020; implementation has not
+started, and no final model is officially selected. Implementation may begin only after design
+PR #12 integrates into `main`. Phase 8 is not started, and final-holdout evaluation remains
+unreleased. The
 [historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the interfaces and boundary used.
 
@@ -462,10 +463,10 @@ Phase 7 has not started and requires a separate approved design and authorizatio
 
 ## Phase 7 Design and Development Evidence Audit — 2026-10-06
 
-**Design started; implementation not started; methodology awaiting approval; no final model
-officially selected.** The [active plan](../plans/active/phase-7-model-selection.md) is
-PROPOSED / AWAITING APPROVAL on `docs/phase-7-model-selection-design`, based on verified PR #11
-integration. Its thresholds are newly proposed after observing the existing results, not
+**At the evidence-audit checkpoint: design started, implementation not started, methodology
+awaiting approval, and no final model officially selected.** The [active plan](../plans/active/phase-7-model-selection.md)
+was PROPOSED / AWAITING APPROVAL on `docs/phase-7-model-selection-design`, based on verified PR #11
+integration. Its thresholds were proposed after observing the existing results, not
 preregistered. Historical Phase 4–6 result records above remain unchanged.
 
 Read-only audit of ignored development outputs: SHA-256 checks match the original manifests for
@@ -503,3 +504,36 @@ Design quality gate passed: full pytest **152 passed** on each of Python 3.14.5 
 Ruff lint/format (70 files), Markdown links (107 local destinations/anchors, 22 documents),
 `uv lock --check` and `git diff --check`. Only documentation changes; no new tests, models,
 dependencies, selection artifacts or interval calculations. Full diff reviewed before publication.
+
+## Phase 7 Methodology Approval Sync — 2026-10-06
+
+External methodology approval was synchronized for reviewed PR #12 head
+`1c15ab0b6ee94f3ecccb8f04c84da97d58bbb225`. Phase 7 is **APPROVED / IMPLEMENTATION NOT
+STARTED**, and [ADR-020](DECISIONS.md#adr-020--development-only-model-selection-and-frozen-refit-policy)
+records the accepted policy. PR #12 remains the open design integration gate; implementation may
+begin only after it merges into `main`.
+
+The approved phase-7-v1 rule is unchanged: SN → HW → LightGBM; same three-way eligible/available
+open-label population; ≥5% pooled MAE improvement, lower MAE in at least 2/3 windows, and ≤10%
+regression in each window and pooled horizon block 1–7/8–14; ties or failed gates retain the
+simpler incumbent. Each standalone candidate and the common population must meet 99% coverage in
+every approved window, with integrity checks passing. Thresholds remain disclosed as introduced
+after observing results, not preregistered; there is no significance or generalization claim.
+Keep individual-horizon weaknesses visible, including sparse Sundays and horizon 10; no horizon
+veto or forecast mixing is added.
+
+Qualitative operational assessment is accepted for the existing offline CPU course demonstration
+without a new benchmark. This grants no API, production, end-to-end runtime, measured-memory or
+savings claims. The existing artifact lineage is accepted only for this development selection,
+subject to rechecking hashes, keys, labels, masks and configurations; original metadata remains
+unchanged. Later operational inputs must be explicit, versioned and auditable.
+
+The selection runner remains unimplemented; no final model is officially selected. Phase 8 has
+not started. Final-holdout access remains prohibited until a separately authorized ADR-015 Phase
+13 protocol; no holdout was accessed in this approval sync.
+
+Approval-sync checks passed: full pytest **152 passed** on Python 3.14.5 and **152 passed** on
+Python 3.12.15; Ruff lint and format (70 files), Markdown checker (109 local destinations/anchors
+across 22 Markdown files), `uv lock --check` and `git diff --check`. No fixture tests or model
+pipelines were added or run; the requested existing fixture suites passed. Full documentation diff
+was inspected.

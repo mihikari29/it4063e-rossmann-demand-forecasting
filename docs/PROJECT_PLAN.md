@@ -21,7 +21,8 @@ boundary stays explicit. Phase 9 can proceed alongside Phase 8 using development
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
-PR #10; Phase 7 awaits its own design and authorization.
+PR #10. Phase 7's methodology is approved by ADR-020 on design PR #12; implementation may begin
+only after that PR integrates into `main`.
 
 ## Phase 0 — Repository Foundation
 

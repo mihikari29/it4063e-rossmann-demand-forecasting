@@ -411,3 +411,65 @@ failure policy, and artifacts are in the [completed Phase 6 plan](../plans/compl
 Acceptance authorizes Phase 6 implementation only after PR #9 integrates the design into main. It
 does not authorize Phase 7 model selection, final-holdout access, or any final-holdout forecast or
 evaluation.
+
+## ADR-020 — Development-Only Model Selection and Frozen Refit Policy
+
+**Status:** Accepted after external Phase 7 methodology review, 2026-10-06. Approval was
+synchronized for PR #12 reviewed head `1c15ab0b6ee94f3ecccb8f04c84da97d58bbb225`; PR #12 remains
+the open integration gate.
+
+**Decision:** Compare exactly Seasonal Naive, additive Holt-Winters and the frozen global LightGBM
+on the three approved chronological H14 development windows. Use primary MAE on identical three-way
+eligible/available open-label rows, while reporting standalone, pairwise and common coverage and
+supplementary RMSE/MAPE/WAPE, window, horizon-block and individual-horizon diagnostics. Require at
+least 99% open-label coverage in every window for each standalone candidate and the three-way common
+population, and pass all key, label, mask, configuration and original-manifest integrity checks;
+otherwise stop selection and suppress superiority claims.
+
+Apply the fixed simplicity ladder SN → HW → LightGBM. Promote from the current incumbent only when
+pooled MAE improves by at least 5%, MAE is lower in at least two of three windows, no window has
+more than 10% regression, and neither pooled horizon block (1–7, 8–14) has more than 10% regression.
+Exact ties, smaller gains, fewer window wins or a failed regression gate retain the simpler
+incumbent. A failed HW promotion does not prevent comparing LightGBM to SN. Keep unavailable values
+null and apply each reviewed failure policy; no fallback or model mixing. Report every individual
+horizon, including unfavorable and sparse Sunday results; no per-horizon veto is added.
+
+These numeric thresholds and the simplicity preference were proposed after Phase 4–6 results had
+been observed. They are transparent project decision heuristics, not preregistered thresholds,
+statistical significance tests or estimates. Three late-season windows, repeated Friday origins,
+shared stores and correlated Store × Date errors do not establish independent out-of-sample
+confirmation, universal horizon/Store dominance or year-round generalization.
+
+For the existing offline CPU course demonstration, qualitative operational assessment is accepted;
+a new performance benchmark is not a precondition to selection. This does not establish API
+latency, throughput, production reliability, comparative end-to-end runtime, measured memory needs
+or operational savings. Any later implementation must record versioned operational inputs and
+their evidence; this acceptance does not extend to unexamined deployment environments.
+
+Accept the cached development evidence lineage within this scope: verify original manifest hashes,
+target keys, labels, masks, model/configuration identities and stop on any mismatch. Preserve old
+source/version metadata; do not rewrite manifests or claim historical runs were regenerated from
+current `main`. SN/HW legacy provenance and the recorded modified LightGBM worktree remain disclosed.
+
+Freeze only the reviewed recipes, not fitted model state: SN exact d−7 lookup then prior raw
+recursive values; Holt-Winters additive trend and weekly seasonality 7 on each store's latest
+contiguous history of at least 28 days; LightGBM trial A at exactly 180 rounds with its reviewed
+Phase 6 predictors, shared parameters, fit-only categories and recursive feedback. Use only
+information available through each authorized origin. Phase 8 receives selected identity/config,
+out-of-sample records, residual definitions, masks, complete/partial paths, missingness and
+provenance; Phase 8 owns uncertainty intervals.
+
+The Phase 7 development firewall continues through 2015-07-03. This ADR does not authorize any
+2015-07-04–31 target access or final forecast/evaluation. Final release remains subject to ADR-015's
+separately authorized frozen sequential Phase 13 protocol. Approval of methodology does not select
+a model; Phase 7 implementation may begin only after design PR #12 merges into `main`.
+
+**Reason:** A pooled MAE lead alone does not account for practical gain, consistency, coverage,
+horizon tradeoffs, complexity or artifact lineage. A fixed simple-first rule makes those project
+choices reproducible without overstating the evidence.
+
+**Consequences:** Full thresholds, descriptive evidence, candidate recipes, implementation checks,
+artifacts and Phase 8 handoff are in the [active Phase 7 plan](../plans/active/phase-7-model-selection.md).
+The Phase 7 plan is approved, but its runner is not implemented and no final model is officially
+selected. Integration of PR #12 is the implementation boundary; Phase 8 and final-holdout release
+remain separate future work.
