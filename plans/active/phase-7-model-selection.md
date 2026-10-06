@@ -407,5 +407,7 @@ Full validation passed **187 tests** on Python 3.14.5 and **187 tests** on Pytho
 cached no-approval run and its unchanged development metrics, source hashes, coverage, and other
 quality checks are recorded in the [PROGRESS follow-up checkpoint](../../docs/PROGRESS.md#phase-7-external-review-follow-up--2026-10-06).
 No selected model, candidate fit, holdout read or Phase 8 work resulted. Phase 7 remains
-**IMPLEMENTED / UNDER REVIEW**; PR #13 remains open and unmerged. The follow-up commit and CI result
-will be recorded after push.
+**IMPLEMENTED / UNDER REVIEW**; PR #13 remains open and unmerged. Implementation commit
+`dbb1712bdc856a2c9b6787a34493cb429d5b8e3c` is pushed to PR #13, and GitHub Actions
+[Quality run #22](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37441277676)
+passed both Python 3.12 and Python 3.14 jobs.

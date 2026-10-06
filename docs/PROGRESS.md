@@ -644,5 +644,6 @@ Final review-fix checks passed: `ruff check .`; `ruff format --check .` (73 file
 `python scripts/check_docs.py` (112 local destinations/anchors across 22 documents);
 `uv lock --check` (84 packages); Python 3.14 `pip check`; Python 3.12 `uv pip check` (60
 packages); and `git diff --check` (only expected Windows LF-to-CRLF notices for the two changed
-Python files). The requested commit and post-push PR #13 CI result will be recorded after they
-complete.
+Python files). Implementation commit `dbb1712bdc856a2c9b6787a34493cb429d5b8e3c` was pushed to
+PR #13; GitHub Actions [Quality run #22](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37441277676)
+passed both Python 3.12 and Python 3.14 jobs on that commit.
