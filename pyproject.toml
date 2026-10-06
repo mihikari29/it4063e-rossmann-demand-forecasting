@@ -14,6 +14,7 @@ dependencies = [
     "pyarrow>=20,<25",
     "matplotlib>=3.10,<4",
     "statsmodels>=0.15,<0.16",
+    "lightgbm>=4.7,<4.8",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +36,7 @@ rossmann-eda = "rossmann_forecasting.analysis.eda:cli_main"
 rossmann-build-features = "rossmann_forecasting.features.runner:cli_main"
 rossmann-seasonal-naive = "rossmann_forecasting.forecasting.runner:cli_main"
 rossmann-holt-winters = "rossmann_forecasting.forecasting.holt_winters_runner:cli_main"
+rossmann-lightgbm = "rossmann_forecasting.forecasting.lightgbm_runner:cli_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

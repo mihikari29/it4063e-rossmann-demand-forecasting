@@ -1,9 +1,10 @@
 # Phase 6 — Global LightGBM (Design and Execution Plan)
 
-**Status: APPROVED / IMPLEMENTATION NOT STARTED.** The Phase 6 methodology has been externally
-reviewed and approved. This governance update is on PR #9; implementation may begin only after this
-design PR is integrated into main. No LightGBM package, model code, tuning, forecast, or generated
-artifact has been added or run.
+**Status: IMPLEMENTED / UNDER REVIEW.** Phase 6 follows the methodology externally reviewed and
+approved in ADR-019, integrated into `main` by PR #9 at
+`79ddb510e94fe5695c4bc17814153fd47695e16f`. Implementation and development evidence are complete
+on `feat/phase-6-global-lightgbm`; [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
+is open for review. Authorized integration and explicit closeout remain.
 
 ## 1. Objective, scope, and boundaries
 
@@ -375,7 +376,7 @@ Add focused synthetic tests before any expensive real-data development run:
     2015-07-03 before downstream feature/model/metric work; changing synthetic post-boundary values
     cannot affect development outputs.
 
-After this methodology has been approved and PR #9 is integrated into main, implementation may run
+After this methodology was approved and PR #9 was integrated into `main`, implementation may run
 the predeclared inner tuning and three outer development origins only after the required fixture
 tests pass. The final holdout remains untouched.
 
@@ -386,7 +387,21 @@ docs/DECISIONS.md. This plan remains the detailed implementation reference for t
 
 ## 12. Approval gate and completion boundary
 
-The methodology is approved. Phase 6 implementation may begin only after PR #9 integrates this
-design into main. Until that integration, do not add a LightGBM dependency, source/model code,
-real-data tuning, forecasts, or generated outputs. The approval does not authorize final-holdout
-access, Phase 7 model selection, or Phase 7 implementation.
+The methodology is approved and PR #9 integrated this design into `main`. The implementation task
+authorizes the scoped Phase 6 dependency, code, fixtures, tuning, development forecasts, artifacts,
+quality checks, commit, push, and pull request. It does not authorize final-holdout access, Phase 7
+model selection, or Phase 7 implementation.
+
+## 13. Implementation checkpoint — 2026-10-06
+
+The authorized code, fixture suite, and real-data development run are implemented on
+`feat/phase-6-global-lightgbm`. The final inner tuning selected trial A at 180 rounds; the three
+outer origins passed the 99% coverage guardrail. The [Phase 6 section in PROGRESS](../../docs/PROGRESS.md#phase-6-global-lightgbm-implementation--2026-10-06)
+records metrics, paired baseline comparisons, provenance and checks. A semantics-preserving
+origin-history cache and `feature_pre_filter=false` on the shared Dataset address run-time costs and
+the frozen trials' differing `min_data_in_leaf` values; no feature, trial recipe, objective,
+selection rule, or evaluation boundary changed.
+
+This phase plan stays active while the implementation is under review. Do not archive it or mark
+Phase 6 COMPLETE until external findings are addressed, integration is authorized and verified, and
+the phase receives an explicit closeout. Phase 7 remains unauthorized by this implementation task.

@@ -15,6 +15,7 @@ from rossmann_forecasting.features.contract import (
     STATIC_PREDICTOR_COLUMNS,
 )
 from rossmann_forecasting.features.history import (
+    OriginHistoryFeatureCache,
     build_historical_history_features,
     build_origin_history_features,
 )
@@ -172,6 +173,7 @@ def build_inference_features(
     actual_history_through_origin: pd.DataFrame,
     forecast_origin: str | pd.Timestamp,
     prior_recursive_predictions: pd.DataFrame | None = None,
+    history_cache: OriginHistoryFeatureCache | None = None,
     open_resolution: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     """Build inference predictors, rejecting any Sales/Customers-derived source inputs."""
@@ -185,12 +187,20 @@ def build_inference_features(
         raise ValueError(
             f"Inference rows contain forbidden Sales/Customers-derived fields: {forbidden}"
         )
-    history_features = build_origin_history_features(
-        inference_rows,
-        actual_history_through_origin=actual_history_through_origin,
-        forecast_origin=forecast_origin,
-        prior_recursive_predictions=prior_recursive_predictions,
-    )
+    if history_cache is not None:
+        if prior_recursive_predictions is not None:
+            raise ValueError("Pass either history_cache or prior_recursive_predictions, not both.")
+        origin = normalize_dates(pd.Series([forecast_origin]), name="forecast_origin").iloc[0]
+        if origin != history_cache.forecast_origin:
+            raise ValueError("history_cache origin differs from forecast_origin.")
+        history_features = history_cache.features(inference_rows)
+    else:
+        history_features = build_origin_history_features(
+            inference_rows,
+            actual_history_through_origin=actual_history_through_origin,
+            forecast_origin=forecast_origin,
+            prior_recursive_predictions=prior_recursive_predictions,
+        )
     predictors, findings = _assemble_predictors(inference_rows, history_features=history_features)
     output = predictors.copy()
     output["Date"] = normalize_dates(inference_rows["Date"])

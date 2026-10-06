@@ -7,8 +7,8 @@
 | Phases 0–4 | COMPLETE | On `main`; Phase 3 PR #3/#4, Phase 4 PR #5/#6 |
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
-| Phase 6 — Global LightGBM | APPROVED / IMPLEMENTATION NOT STARTED | ADR-019 accepted; [approved plan](../plans/active/phase-6-global-lightgbm.md); PR #9 is the integration gate |
-| Phase 7 and later | PLANNED; implementation not started | Phase 6 implementation may begin after PR #9 integration; Phase 7 remains out of scope |
+| Phase 6 — Global LightGBM | IMPLEMENTED / UNDER REVIEW | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) on `feat/phase-6-global-lightgbm`; ADR-019 and PR #9 design are on `main`; [active implementation plan](../plans/active/phase-6-global-lightgbm.md) |
+| Phase 7 and later | PLANNED; implementation not started | Phase 7 remains out of scope |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -26,10 +26,11 @@ snapshots, not separate results to update. No final project model has been selec
 ## Immediate next boundary
 
 Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 methodology
-review is complete and its plan is **APPROVED / IMPLEMENTATION NOT STARTED**. PR #9 remains open as
-the design integration gate; implementation may begin only after it is integrated into main. No
-LightGBM code, dependency, training, tuning, or forecast has been added or run. Phase 7 has not
-started. The approved design follows the
+review is complete, ADR-019 is accepted, and the design was integrated into `main` by PR #9 at
+`79ddb510e94fe5695c4bc17814153fd47695e16f`. Phase 6 is **IMPLEMENTED / UNDER REVIEW** on
+`feat/phase-6-global-lightgbm`, with [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
+open for review and following the approved active plan. The development-only run passed
+its coverage gates; detailed results are recorded below. Phase 7 has not started. The approved design follows the
 [repository handoff](PROJECT_PLAN.md#phase-6-handoff--read-before-design-or-code).
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
@@ -347,5 +348,93 @@ PR metadata's `merge_commit_sha` matches the fetched `origin/main` and the close
 Phase 5 is **COMPLETE**; its fixed additive Holt-Winters implementation and development-only
 evaluation are integrated. The completed execution plan is archived at
 [`plans/completed/phase-5-statistical-forecasting.md`](../plans/completed/phase-5-statistical-forecasting.md).
-No final-holdout forecasting or evaluation was performed, and Phase 6 remains planned and
-unimplemented. The historical metric tables and methodology above are unchanged.
+No final-holdout forecasting or evaluation was performed, and Phase 6 implementation began only
+after the separate authorization recorded in its active plan. The historical metric tables and
+methodology above are unchanged.
+
+## Phase 6 Global LightGBM Implementation — 2026-10-06
+
+Phase 6 is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-6-global-lightgbm`. The candidate follows
+ADR-019 and the [active Phase 6 plan](../plans/active/phase-6-global-lightgbm.md). It is a
+development candidate only; Phase 7 has not started, and no final project model has been selected.
+
+- `lightgbm>=4.7,<4.8` resolved to LightGBM 4.7.0 in the locked Python 3.14.5 / Windows 11
+  environment. The runner writes ignored outputs only under `data/processed/lightgbm/` and
+  `artifacts/lightgbm/`; `git check-ignore` confirmed the generated outputs are ignored.
+- The exact 29-predictor phase-3-v1 matrix and four frozen trial recipes were used. Inner tuning
+  ran 109 recursive checkpoints: A 23, B 6, C 40, and D 40. It selected trial A at 180 rounds
+  (learning rate 0.05, 15 leaves, max depth 4, min_data_in_leaf 200), with inner open-label MAE
+  **1,305.1707** and **100%** open-label coverage. Trials C and D reached the 400-round cap; A and
+  B stopped after five checkpoints without strict improvement. Every fit succeeded.
+- The predeclared outer refits completed for all three origins. Each 14-day window emitted 15,610
+  target rows; the 46,830 pooled target rows include 38,553 eligible observed source Open=1 labels.
+  Open-label coverage was 100% in every window (11,678/11,678; 13,438/13,438; and
+  13,437/13,437), exceeding the frozen 99% guardrail. There were no unavailable forecasts and no
+  negative-output clipping events.
+
+Standalone development metrics use the primary population of observed source Open=1 and Sales with
+an available clipped raw forecast. MAPE is reported as a percentage; WAPE is a ratio.
+
+| Scope | Eligible rows | Open-label coverage | MAE | RMSE | MAPE | WAPE |
+|---|---:|---:|---:|---:|---:|---:|
+| validation_1 | 11,678 | 100% | 1,051.4335 | 1,512.2577 | 12.5686% | 0.136702 |
+| validation_2 | 13,438 | 100% | 790.9941 | 1,193.4810 | 10.9700% | 0.113184 |
+| validation_3 | 13,437 | 100% | 794.3741 | 1,350.5876 | 10.6797% | 0.112646 |
+| pooled | 38,553 | 100% | **871.0612** | 1,350.9138 | 11.3531% | 0.120586 |
+
+The pooled values are recomputed over eligible rows. Paired baseline summaries use the identical
+38,553 eligible Store × Date rows with both forecasts available; these are descriptive Phase 6
+development comparisons, not final model selection.
+
+| Scope | Paired rows | LightGBM MAE | Seasonal Naive MAE | Holt-Winters MAE | LightGBM MAE change vs SN | vs Holt-Winters |
+|---|---:|---:|---:|---:|---:|---:|
+| validation_1 | 11,678 | 1,051.4335 | 1,101.5940 | 1,195.5661 | -4.55% | -12.06% |
+| validation_2 | 13,438 | 790.9941 | 2,269.7721 | 1,136.8306 | -65.15% | -30.42% |
+| validation_3 | 13,437 | 794.3741 | 1,596.5170 | 1,501.5664 | -50.24% | -47.10% |
+| pooled | 38,553 | **871.0612** | 1,681.2703 | 1,281.7446 | -48.19% | -32.04% |
+
+The final manifest records `development_only_through=2015-07-03`,
+`final_holdout_forecast_or_evaluation=false`, and that Phase 6 neither read nor hashed final-holdout
+outcomes. Emitted inner forecasts end on 2015-05-08; outer forecasts end on 2015-07-03. Phase 7
+and the protected 2015-07-04 through 2015-07-31 holdout remain outside this implementation.
+
+Implementation tuning exposed a repeated history-index build across recursive steps; a reusable
+origin-censored history cache now matches the reviewed builder exactly across fixture horizons and
+preserves missing-date behavior. LightGBM also required `feature_pre_filter=false` on the shared
+Dataset because the frozen trial grid varies `min_data_in_leaf`; the four recipes and objective
+were unchanged. The final real-data run completed without fit failures.
+
+Final quality checks after the documentation update:
+
+| Check | Result |
+|---|---|
+| Full fixture suite (`python -m pytest`, Python 3.14.5) | PASS — 151 passed in 22.39s |
+| PR #10 GitHub Quality workflow | PASS — Python 3.12 and 3.14 jobs; tests, dependency check, Ruff, formatting, and Markdown links |
+| `python -m ruff check .` | PASS |
+| `python -m ruff format --check .` | PASS — 69 files already formatted |
+| `python scripts/check_docs.py` | PASS — 85 local destinations/anchors across 21 Markdown files |
+| `uv lock --check` | PASS — 84 packages resolved |
+| `python -m pip check` | PASS — no broken requirements |
+| `git diff --check` | PASS — Git reported only the existing uv.lock LF-to-CRLF working-copy warning |
+
+The runner completed successfully and its manifest hashes the ignored development outputs and
+date-censored input projections. The plan remains active until external review, authorized
+integration, and explicit Phase 6 closeout.
+
+### External-review follow-up — 2026-10-06
+
+- Recursive feature/history construction now has its own failure boundary; prediction API errors
+  use the approved `model_fit_failure` reason, while explicit schema and categorical-adapter
+  failures keep their approved reasons. The fake-booster regression and feature-construction
+  failure fixture pass.
+- Removed the `narwhals!=2.27.0` resolver exclusion after the LightGBM fixtures passed with
+  LightGBM 4.7.0 and Narwhals 2.27.0 on Python 3.12.15 and 3.14.5 (46 passed in each
+  environment). PyPI marks 2.27.0 yanked for Pointblank breakage; no incompatibility relevant to
+  this repository or LightGBM was reproduced. The normal resolver therefore keeps the yanked
+  release out and `uv.lock` remains at Narwhals 2.26.0; the effective locked runtime is unchanged.
+- The review fixes do not alter the successful Phase 6 forecasts or recorded metrics. The
+  approved real-data development command was not rerun because the locked runtime did not change.
+  Phase 6 remains **IMPLEMENTED / UNDER REVIEW**; Phase 7 and the final holdout remain untouched.
+- Follow-up validation passed: full suite **152 passed** on Python 3.12.15 and **152 passed** on
+  Python 3.14.5; Ruff lint and formatting, documentation links, `uv lock --check`, dependency
+  consistency in both environments, and `git diff --check` passed.
