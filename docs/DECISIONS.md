@@ -407,7 +407,7 @@ while retaining origin-censored temporal evaluation, the existing forecast contr
 baseline-comparison boundary.
 
 **Consequences:** The detailed specification, fixed configurations, windows, diagnostics, tests,
-failure policy, and artifacts are in the [active Phase 6 plan](../plans/active/phase-6-global-lightgbm.md).
+failure policy, and artifacts are in the [completed Phase 6 plan](../plans/completed/phase-6-global-lightgbm.md).
 Acceptance authorizes Phase 6 implementation only after PR #9 integrates the design into main. It
 does not authorize Phase 7 model selection, final-holdout access, or any final-holdout forecast or
 evaluation.

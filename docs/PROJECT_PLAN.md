@@ -20,8 +20,8 @@ A package may share one concise execution plan, but each model/methodology appro
 boundary stays explicit. Phase 9 can proceed alongside Phase 8 using development-only history.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
-(ADR-015/016). Phase 5 is complete on `main` through PR #7; Phase 6 methodology is approved on PR #9,
-with implementation gated on integrating that design into `main`.
+(ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
+PR #10; Phase 7 awaits its own design and authorization.
 
 ## Phase 0 — Repository Foundation
 
@@ -189,13 +189,12 @@ on holdout outcomes. State historical descriptive exposure, short evaluation spa
 assumptions and negative results honestly. Deployment is a course demonstration, not a live
 Rossmann production claim.
 
-## Phase 6 handoff — read before design or code
+## Phase 6 implementation handoff (historical)
 
-Phase 6 is not implemented. The Phase 5 closeout did not authorize Phase 6 work; its methodology
-has since been reviewed and approved under PR #9 and ADR-019. Implementation may begin only after
-PR #9 integrates the approved design into `main`.
-Phase 5 integration and explicit closeout are complete. These repository interfaces are the starting
-point, not the uncommitted/generated output of a previous agent:
+Phase 6 is complete under accepted ADR-019 and was integrated into `main` by PR #10. This section
+records the repository interfaces and boundary used for that implementation; the
+[completed Phase 6 plan](../plans/completed/phase-6-global-lightgbm.md) records its execution and
+formal closeout. Phase 7 owns later model selection and awaits separate design approval.
 
 | Need | Source / interface |
 |---|---|
@@ -226,16 +225,17 @@ boundary; closed actual zeros versus raw recursive values can cause training/inf
 which must be reported in development horizon diagnostics. Closure-aware feedback or direct
 multi-horizon forecasting is a separately reviewed extension, justified by development evidence.
 
-Before implementation the Phase 6 plan must fix: categorical/nullable adapter; loss/objective and
-negative handling; recursive state and unavailable-path policy; future-covariate availability
+The Phase 6 plan fixed the following before implementation: categorical/nullable adapter;
+loss/objective and negative handling; recursive state and unavailable-path policy; future-covariate availability
 assumptions; finite tuning budget/seed; chronological early stopping (inner training split or
 approved origin evaluation); coverage/paired-comparison protocol and artifact manifest.
 No shuffled split, full-history volume cohort, future Customers, Open_resolved routing, broad
 model search or final-holdout-based decision is allowed.
 
-Required behavioral evidence includes target Sales/Open mutation invariance of raw forecasts,
+The required behavioral evidence included target Sales/Open mutation invariance of raw forecasts,
 origin rejection and h>1 recursion without teacher forcing, key/schema/category/null consistency,
 missing-date/covariate behavior, raw/operational separation, coverage and identical-row metrics,
 input non-mutation and ignored/provenance outputs. Run fixture/whole-repository checks and an
-approved real-data development runner. Update PROGRESS and the execution plan; change DECISIONS/
-FEATURE_CONTRACT only for authorized durable changes. Phase 7 owns final selection.
+approved real-data development runner. PROGRESS and the completed execution plan record the
+outcome. Phase 7 owns final selection under a separate approved design; no Phase 7 design or
+implementation has started.
