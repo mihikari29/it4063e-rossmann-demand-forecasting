@@ -64,15 +64,20 @@ project model.
 After the approved Phase 4–6 development forecast artifacts exist, run model selection separately:
 
 ```powershell
-python scripts/run_model_selection.py
+python scripts/run_model_selection.py --operational-review configs/phase-7-operational-review-v1.json
 ```
 
 The Phase 7 runner validates and aggregates those cached forecasts; it does not call the model
 runners, rerun tuning, or fit candidates. Candidate-level offline operational reviews can be
-provided with `--operational-review path/to/review.json`. Without approved reviews, it writes the
-comparison and an `operational_review_required` decision without selected-model artifacts. Outputs
-are staged and hashed before publication; prior selected outputs are retired only when their hashes
-match the runner manifest.
+provided with `--operational-review path/to/review.json`. The versioned review input in this
+command approves Seasonal Naive and LightGBM and leaves Holt-Winters `unknown`, within the
+`offline_cpu_course_demonstration` scope. The current development-only decision selects LightGBM
+under ADR-020; it remains under external integration review. Without an operational review or with
+unresolved required decisions, the runner writes the comparison and an
+`operational_review_required` decision without selected-model artifacts. Outputs are staged and
+hashed before publication; prior selected outputs are retired only when their hashes match the
+runner manifest. The selected output is a frozen recipe and development evidence, not a fitted
+future model or final-holdout result.
 
 `python scripts/run_eda.py` and the two notebooks reproduce the historical **full-source**
 descriptive audit, not a development-model gate. That earlier audit included July 4–31 labels;
@@ -89,8 +94,9 @@ Thin command scripts expose reusable logic; notebooks are exploration/presentati
 
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
 
-- Phases 6–7: Phase 6 global recursive LightGBM candidate is complete; Phase 7 applies the
-  approved ADR-020 development-only selection policy. Phase 7 implementation remains under review.
+- Phases 6–7: Phase 6 global recursive LightGBM candidate is complete; Phase 7's ADR-020
+  development-only decision records LightGBM for the offline CPU course demonstration and awaits
+  external integration review.
 - Phases 8–10: out-of-sample uncertainty, separate synthetic scenarios and stateful inventory.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently

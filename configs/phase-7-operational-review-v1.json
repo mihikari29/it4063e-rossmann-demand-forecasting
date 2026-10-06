@@ -1,0 +1,46 @@
+{
+  "schema_version": "phase-7-operational-review-v1",
+  "scope_of_acceptance": "offline_cpu_course_demonstration",
+  "reviews": {
+    "seasonal_naive": {
+      "candidate_id": "seasonal_naive",
+      "policy_version": "phase-7-operational-review-v1",
+      "decision": "approved",
+      "reviewer_or_approval_reference": "docs/PROGRESS.md#phase-7-offline-operational-acceptance-and-selection-2026-10-06",
+      "rationale": "Approved for the offline CPU course demonstration as the initial incumbent: deterministic same-weekday recurrence with minimal computational complexity and no optimization or native model dependency.",
+      "scope_of_acceptance": "offline_cpu_course_demonstration",
+      "evidence_references": [
+        "docs/DECISIONS.md#adr-020--development-only-model-selection-and-frozen-refit-policy",
+        "docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06",
+        "docs/PROGRESS.md#phase-7-offline-operational-acceptance-and-selection-2026-10-06"
+      ]
+    },
+    "holt_winters_additive_weekly": {
+      "candidate_id": "holt_winters_additive_weekly",
+      "policy_version": "phase-7-operational-review-v1",
+      "decision": "unknown",
+      "reviewer_or_approval_reference": "docs/PROGRESS.md#phase-7-offline-operational-acceptance-and-selection-2026-10-06",
+      "rationale": "This candidate fails ADR-020's pooled h8–14 regression cap. Candidate-specific operational approval is unnecessary for this selection; retain the operational decision as unknown rather than infer rejection.",
+      "scope_of_acceptance": "offline_cpu_course_demonstration",
+      "evidence_references": [
+        "docs/DECISIONS.md#adr-020--development-only-model-selection-and-frozen-refit-policy",
+        "docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06",
+        "docs/PROGRESS.md#phase-7-offline-operational-acceptance-and-selection-2026-10-06"
+      ]
+    },
+    "global_lightgbm_gbdt_regression_l1": {
+      "candidate_id": "global_lightgbm_gbdt_regression_l1",
+      "policy_version": "phase-7-operational-review-v1",
+      "decision": "approved",
+      "reviewer_or_approval_reference": "docs/PROGRESS.md#phase-7-offline-operational-acceptance-and-selection-2026-10-06",
+      "rationale": "Approved for the offline CPU course demonstration: reviewed global CPU implementation, frozen trial A at 180 rounds, reproducible locked environment, 100% development coverage, substantial pooled MAE improvement, and no observed development fit failure. This is not a production or comparative runtime/resource claim.",
+      "scope_of_acceptance": "offline_cpu_course_demonstration",
+      "evidence_references": [
+        "docs/DECISIONS.md#adr-020--development-only-model-selection-and-frozen-refit-policy",
+        "docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06",
+        "docs/PROGRESS.md#phase-7-external-review-follow-up--2026-10-06",
+        "docs/PROGRESS.md#phase-7-offline-operational-acceptance-and-selection-2026-10-06"
+      ]
+    }
+  }
+}

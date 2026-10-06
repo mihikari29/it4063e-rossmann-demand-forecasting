@@ -8,7 +8,7 @@
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
-| Phase 7 — model selection | IMPLEMENTED / UNDER REVIEW | [Active plan](../plans/active/phase-7-model-selection.md), ADR-020; [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) is open; no final model officially selected |
+| Phase 7 — model selection | IMPLEMENTED / UNDER REVIEW | [Active plan](../plans/active/phase-7-model-selection.md), ADR-020; offline CPU development selection records LightGBM, awaiting external integration review; [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) is open |
 | Phase 8 and later | PLANNED; not started | Await their dependencies and separate authorization |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -22,7 +22,9 @@ the 2026-10-05 branch-metadata snapshot; no settings were changed.
 Completed plans under `plans/completed/` preserve their historical approval/results/checkpoint
 records, including the [completed Phase 5 plan](../plans/completed/phase-5-statistical-forecasting.md).
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
-snapshots, not separate results to update. No final project model has been selected.
+snapshots, not separate results to update. Phase 7 now records a development-only model selection
+pending external integration review; this does not close Phase 7 or constitute final-holdout
+evaluation or production approval.
 
 ## Immediate next boundary
 
@@ -34,8 +36,8 @@ The Phase 6 development-only results and coverage evidence remain recorded below
 [PR #11](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/11) merged at
 `0b8d55144ace29cb8b5367d11aeedc59cfb33a65`. Phase 7 methodology is approved in ADR-020 and its
 implementation is under review in [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13).
-No final model is officially selected. Phase 8 is not started, and final-holdout evaluation remains
-unreleased. The
+The Phase 7 development-only decision now records LightGBM and awaits external integration review.
+Phase 8 is not started, and final-holdout evaluation remains unreleased. The
 [historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the interfaces and boundary used.
 
@@ -647,3 +649,115 @@ packages); and `git diff --check` (only expected Windows LF-to-CRLF notices for 
 Python files). Implementation commit `dbb1712bdc856a2c9b6787a34493cb429d5b8e3c` was pushed to
 PR #13; GitHub Actions [Quality run #22](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37441277676)
 passed both Python 3.12 and Python 3.14 jobs on that commit.
+
+## Phase 7 Offline Operational Acceptance and Selection 2026-10-06
+
+The external technical review supplied for PR #13 records candidate-level operational decisions
+for the **offline CPU course demonstration** only. These are project technical-review decisions;
+this record does not assert a named human reviewer or signature. The versioned input is
+[configs/phase-7-operational-review-v1.json](../configs/phase-7-operational-review-v1.json), and
+its reviewer reference points back to this section.
+
+| Candidate | Decision | Rationale |
+|---|---|---|
+| Seasonal Naive | approved | Minimal computational complexity and deterministic same-weekday recurrence make it suitable as the initial incumbent. It needs no optimization or native model dependency. |
+| Holt-Winters additive weekly | unknown | It fails ADR-020's pooled h8–14 regression cap; a candidate-specific operational approval is unnecessary for this selection. The operational decision remains unknown rather than being inferred as a rejection. |
+| Global LightGBM GBDT regression L1 | approved | The reviewed global CPU implementation uses frozen trial A at 180 rounds in the reproducible locked environment, has 100% development coverage, improves pooled MAE substantially, and had no observed development fit failure. |
+
+This approval is limited to the existing offline CPU demonstration. It establishes no production
+latency SLA, reliability guarantee, end-to-end inference-speed comparison, memory SLA, real
+inventory result, business savings, or universal accuracy superiority. The h2, h9 and h10
+weaknesses and the original candidate-provenance limitations remain in force. The input does not
+change ADR-020 thresholds, authorize fitting or tuning, or authorize access to final-holdout
+outcomes. The actual CLI result and output integrity checks are recorded next.
+
+### Selection result and artifact verification
+
+The reviewed command ran with the versioned input:
+`python scripts/run_model_selection.py --operational-review configs/phase-7-operational-review-v1.json`.
+The runner returned **`selected`**; artifact integrity, record integrity and coverage statuses all
+**passed**. The selected candidate is `global_lightgbm_gbdt_regression_l1`, selection run ID
+`365f22d4c3f94722a594ab934a22c4f6`, and publication state **`complete`**. This is the Phase 7
+offline development selection, **RECORDED / AWAITING EXTERNAL INTEGRATION REVIEW**; Phase 7 remains
+**IMPLEMENTED / UNDER REVIEW**.
+
+All original candidate-manifest artifacts were rehashed and passed: 5 Seasonal Naive, 11
+Holt-Winters and 18 LightGBM artifacts. Their unchanged manifest SHA-256 identities are:
+
+| Candidate | Original manifest SHA-256 |
+|---|---|
+| Seasonal Naive | `f5e3a18a0a8bff709cb06b4e6282e22cbe3f84668937d3c3e57245b7c76072e3` |
+| Holt-Winters | `37b46babad1d197143bfda2f4f11aa65291c350b6b0687410bc4496b7171903b` |
+| LightGBM | `ddd379fe4264dd90f618ba57791b97fcce3fd64199ffe95410c4f0d0695810c1` |
+
+The runner matched 46,830 saved Store-origin target rows across 3,345 H14 paths, all ending on
+2015-07-03. All 12 standalone/common 99% coverage gates passed at 100%: denominators were 11,678,
+13,438 and 13,437 in `validation_1`, `validation_2` and `validation_3`, respectively. The common
+eligible population contains 38,553 observed source Open=1 Sales rows.
+
+| Candidate | Pooled common-row MAE | Policy result versus incumbent |
+|---|---:|---|
+| Seasonal Naive | 1,681.2703 | Initial incumbent |
+| Holt-Winters additive weekly | 1,281.7446 | Improves 23.7633% and wins 2/3 windows, but fails the pooled h8–14 cap at +13.7492%; Seasonal Naive remains incumbent. Operational decision remains `unknown`. |
+| Global LightGBM GBDT regression L1 | 871.0612 | Improves 48.1903% against Seasonal Naive, wins all 3 windows, and passes every window and pooled horizon-block cap; approved operationally for the scoped demonstration and selected. |
+
+Actual window MAEs and the 10% caps against the retained Seasonal Naive incumbent:
+
+| Window | Seasonal Naive MAE | Holt-Winters MAE (change; cap) | LightGBM MAE (change; cap) |
+|---|---:|---:|---:|
+| validation_1 | 1,101.5940 | 1,195.5661 (+8.5306%; pass) | 1,051.4335 (-4.5534%; pass) |
+| validation_2 | 2,269.7721 | 1,136.8306 (-49.9143%; pass) | 790.9941 (-65.1509%; pass) |
+| validation_3 | 1,596.5170 | 1,501.5664 (-5.9474%; pass) | 794.3741 (-50.2433%; pass) |
+
+The pooled horizon-block comparisons also pass for LightGBM and fail only for Holt-Winters h8–14:
+
+| Horizon block | Seasonal Naive MAE | Holt-Winters MAE (change; cap) | LightGBM MAE (change; cap) |
+|---|---:|---:|---:|
+| h1–7 | 2,136.3558 | 1,155.6570 (-45.9052%; pass) | 643.0551 (-69.8994%; pass) |
+| h8–14 | 1,235.4154 | 1,405.2746 (+13.7492%; fail) | 1,094.4426 (-11.4110%; pass) |
+
+The selection output retains the weaker h2 and h9 Sunday results and h10 Monday result: their
+LightGBM MAEs are 1,572.8966 (97 rows), 1,707.5285 (96 rows) and 2,280.9889 (3,344 rows),
+versus Seasonal Naive MAEs 861.8763, 752.7188 and 1,025.8322. No per-horizon veto was introduced.
+
+The selected recipe exactly matches the reviewed LightGBM candidate configuration: global CPU
+GBDT regression L1, trial A, 180 rounds and the ordered 29 Phase 3 predictors. It is a recipe only;
+`fit_performed=false`, `no_tuning_or_refit_performed=true`, and no fitted future July model was
+generated. The four selected artifacts share the run ID above. Their SHA-256 hashes, plus the two
+comparison outputs and completed manifest, are:
+
+| Generated artifact | SHA-256 |
+|---|---|
+| `selected_model_config.json` | `de53a477b4bed768a9fbaa459e7f347be28c05063f5c5e379c0dfbb40d21960b` |
+| `refit_recipe.json` | `9ef3ee340ac57f14394857203ca3de5445ebae70972ec541a51947f38a49f799` |
+| `selected_development_forecasts.parquet` | `72566349b233ef26c8de5b4f9c1623ac66df8676ad0370ad63b192ed4c1b5b09` |
+| `development_residual_paths.parquet` | `509bb4a822157850e8fb0309114a4003b98bcbc6b56f4a49244d8b6593e03382` |
+| `model_comparison.csv` | `c648e8e407dc367e56f26cb421656dabc8d742a9a3cd3d3b092b746a84b10357` |
+| `selection_decision.json` | `02c00b7f0b72e260db03b6f786e443db93844a146f3a93fb8c4c4ea076f2e5de` |
+| `manifest.json` | `03a1f26ba5855fd0576667bf280df938664c196a802de0a71e696a600b281cdc` |
+
+The manifest binds the review input at SHA-256
+`9ef1c1fa28fc12db318d510a5ae48a29fd2198116a0114e0d5ee866dc66d7516`. Its selection code revision
+is reviewed PR #13 head `ca3d51fff53e6e98b55fae2ac84a5cfe1af7324a`, with current source hash
+`20028b1133053489f8b3a68b5a38b272e7bf8a9947581395f96e64e5d57be997`; the runner records a
+modified worktree because the review input and this record were present. No forecasting source or
+runner code differed from that reviewed head. The original cached provenance limitations remain:
+legacy SN/HW manifests lack modern source-code/lock identity, and the LightGBM manifest records its
+historical modified-worktree run. All seven published files remain Git-ignored.
+
+Residual checks verified the signed definition `actual_sales - forecast`, raw-primary masks,
+operational masks and their complete/partial counts. Every Store-origin path has exactly horizons
+1–14; 96 raw-primary paths are complete and 3,249 are partial because closed-day labels are not in
+the primary population. All 3,345 operational paths are complete under the saved Open routing.
+Closed-day raw residuals remain descriptive and excluded from primary metrics; unavailable values
+were not filled. The manifest records no July 4–31 read/hash/forecast/evaluation and
+`phase_8_started=false`; no Phase 8 work began.
+
+Acceptance quality checks: full pytest passed **187 tests** on Python 3.14.5 (71.21s) and **187
+tests** on Python 3.12.15 (69.61s); Ruff lint passed; Ruff format check passed (73 files); the
+documentation checker passed (115 local destinations/anchors across 22 Markdown files);
+`uv lock --check` resolved 84 packages; Python 3.14 `pip check` and locked Python 3.12 `uv pip
+check` (60 packages) passed; `git diff --check` passed. The runner output and all original
+candidate hashes were independently reverified after publication. No implementation code, tests,
+dependencies or methodology changed. No candidate was fit or tuned and no protected outcome was
+read or hashed.
