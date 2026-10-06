@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -9,8 +10,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import rossmann_forecasting.forecasting.model_selection as model_selection
 from rossmann_forecasting.forecasting.model_selection import (
     CANDIDATE_IDS,
+    CandidateEvidence,
     EvidenceReviewRequired,
     build_refit_recipe,
     build_selected_artifacts,
@@ -54,8 +57,9 @@ def _records(*, stores_per_window: tuple[int, int, int] = (2, 2, 2)) -> dict[str
                     }
                 )
     combined = pd.DataFrame(rows)
-    return {
-        candidate: combined.loc[
+    output: dict[str, pd.DataFrame] = {}
+    for candidate in CANDIDATE_IDS:
+        frame = combined.loc[
             :,
             [
                 "Store",
@@ -74,8 +78,10 @@ def _records(*, stores_per_window: tuple[int, int, int] = (2, 2, 2)) -> dict[str
                 "forecast_was_clipped",
             ],
         ].copy()
-        for candidate in CANDIDATE_IDS
-    }
+        frame["operational_forecast"] = frame[RAW_COLUMNS[candidate]]
+        frame["model_forecast_unclipped"] = frame[RAW_COLUMNS[candidate]]
+        output[candidate] = frame
+    return output
 
 
 def _reviews(decision: str = "approved") -> dict[str, dict[str, object]]:
@@ -537,3 +543,356 @@ def test_output_directory_is_git_ignored() -> None:
     from rossmann_forecasting.forecasting.model_selection import assert_output_directory_ignored
 
     assert_output_directory_ignored(Path(__file__).resolve().parents[1])
+
+
+_SELECTED_ARTIFACTS = (
+    "selected_model_config.json",
+    "refit_recipe.json",
+    "selected_development_forecasts.parquet",
+    "development_residual_paths.parquet",
+)
+
+
+def _runner_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, CandidateEvidence]:
+    evidence: dict[str, CandidateEvidence] = {}
+    for candidate in CANDIDATE_IDS:
+        manifest_path = root / "data" / "processed" / candidate / "manifest.json"
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest = {"candidate_id": candidate, "fixture_only": True}
+        manifest_bytes = (json.dumps(manifest, sort_keys=True) + "\n").encode("utf-8")
+        manifest_path.write_bytes(manifest_bytes)
+        configuration = None
+        if candidate == CANDIDATE_IDS[2]:
+            configuration = {
+                "selected_trial": "A",
+                "selected_boosting_rounds": 180,
+                "trial_parameters": dict(model_selection.TRIAL_PARAMETERS["A"]),
+                "predictor_columns": list(model_selection.PREDICTOR_COLUMNS),
+                "shared_parameters": dict(model_selection.LIGHTGBM_FIXED_PARAMETERS),
+            }
+        evidence[candidate] = CandidateEvidence(
+            candidate_id=candidate,
+            manifest_path=manifest_path,
+            manifest=manifest,
+            manifest_sha256=hashlib.sha256(manifest_bytes).hexdigest(),
+            artifact_hashes={},
+            configuration=configuration,
+        )
+
+    records = _records()
+    monkeypatch.setattr(model_selection, "assert_output_directory_ignored", lambda _root: None)
+    monkeypatch.setattr(model_selection, "verify_candidate_manifests", lambda _root: evidence)
+    monkeypatch.setattr(
+        model_selection,
+        "_load_saved_forecasts",
+        lambda _root, _evidence: {key: value.copy(deep=True) for key, value in records.items()},
+    )
+    return evidence
+
+
+def _synthetic_reviews_path(root: Path) -> Path:
+    path = root / "synthetic-operational-review-fixture.json"
+    path.write_text(json.dumps({"reviews": _reviews()}), encoding="utf-8")
+    return path
+
+
+def _read_json(path: Path) -> dict[str, object]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _assert_manifest_has_no_current_selection(manifest: dict[str, object]) -> None:
+    assert manifest["selected_candidate_id"] is None
+    assert manifest["selected_model_artifacts"] == {}
+    assert not set(_SELECTED_ARTIFACTS).intersection(manifest["outputs"])
+
+
+def _assert_manifest_output_hashes(manifest: dict[str, object], output_dir: Path) -> None:
+    outputs = manifest["outputs"]
+    for name, metadata in outputs.items():
+        actual_hash = hashlib.sha256((output_dir / name).read_bytes()).hexdigest()
+        assert actual_hash == metadata["sha256"]
+
+
+def test_synthetic_operational_approvals_can_select_and_publish_four_coherent_artifacts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    evidence = _runner_fixture(tmp_path, monkeypatch)
+    original_manifests = {
+        candidate: item.manifest_path.read_bytes() for candidate, item in evidence.items()
+    }
+    review_path = _synthetic_reviews_path(tmp_path)
+
+    result = model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+
+    output_dir = tmp_path / "data" / "processed" / "model_selection"
+    manifest = _read_json(output_dir / "manifest.json")
+    assert result["status"] == "selected"
+    assert result["selected_candidate_id"] == CANDIDATE_IDS[2]
+    assert manifest["status"] == "selected"
+    assert manifest["selected_candidate_id"] == CANDIDATE_IDS[2]
+    assert manifest["publication_state"] == "complete"
+    assert set(manifest["selected_model_artifacts"]) == set(_SELECTED_ARTIFACTS)
+    assert set(_SELECTED_ARTIFACTS).issubset(manifest["outputs"])
+
+    decision = _read_json(output_dir / "selection_decision.json")
+    recipe = _read_json(output_dir / "refit_recipe.json")
+    selected_config = _read_json(output_dir / "selected_model_config.json")
+    run_id = manifest["selection_run_id"]
+    assert decision["selection_run_id"] == run_id
+    assert recipe["selection_run_id"] == run_id
+    assert selected_config["selection_run_id"] == run_id
+    assert (
+        selected_config["refit_recipe_sha256"]
+        == manifest["selected_model_artifacts"]["refit_recipe.json"]["sha256"]
+    )
+    for name in _SELECTED_ARTIFACTS:
+        path = output_dir / name
+        assert path.is_file()
+        actual_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+        assert actual_hash == manifest["outputs"][name]["sha256"]
+        assert actual_hash == manifest["selected_model_artifacts"][name]["sha256"]
+    _assert_manifest_output_hashes(manifest, output_dir)
+
+    for name in ("selected_development_forecasts.parquet", "development_residual_paths.parquet"):
+        frame = pd.read_parquet(output_dir / name)
+        assert frame["model_selection_run_id"].eq(run_id).all()
+    assert {candidate: item.manifest_path.read_bytes() for candidate, item in evidence.items()} == (
+        original_manifests
+    )
+
+
+def test_unknown_operational_review_retires_owned_selected_outputs_and_preserves_unrelated_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    evidence = _runner_fixture(tmp_path, monkeypatch)
+    review_path = _synthetic_reviews_path(tmp_path)
+    model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+    output_dir = tmp_path / "data" / "processed" / "model_selection"
+    unrelated = output_dir / "user-note.txt"
+    unrelated.write_text("leave me intact", encoding="utf-8")
+    original_manifests = {
+        candidate: item.manifest_path.read_bytes() for candidate, item in evidence.items()
+    }
+
+    result = model_selection.run_model_selection(root=tmp_path)
+
+    manifest = _read_json(output_dir / "manifest.json")
+    assert result["status"] == "operational_review_required"
+    assert manifest["status"] == "operational_review_required"
+    _assert_manifest_has_no_current_selection(manifest)
+    assert all(not (output_dir / name).exists() for name in _SELECTED_ARTIFACTS)
+    _assert_manifest_output_hashes(manifest, output_dir)
+    assert unrelated.read_text(encoding="utf-8") == "leave me intact"
+    assert {candidate: item.manifest_path.read_bytes() for candidate, item in evidence.items()} == (
+        original_manifests
+    )
+
+
+def test_integrity_failure_retires_owned_selected_outputs_without_current_selection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _runner_fixture(tmp_path, monkeypatch)
+    review_path = _synthetic_reviews_path(tmp_path)
+    model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+    output_dir = tmp_path / "data" / "processed" / "model_selection"
+    real_verify = model_selection.verify_candidate_manifests
+    calls = 0
+
+    def fail_second_verification(root: str | Path) -> dict[str, CandidateEvidence]:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise EvidenceReviewRequired("synthetic original artifact hash mismatch")
+        return real_verify(root)
+
+    monkeypatch.setattr(model_selection, "verify_candidate_manifests", fail_second_verification)
+    result = model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+
+    manifest = _read_json(output_dir / "manifest.json")
+    assert result["status"] == "evidence_review_required"
+    assert manifest["status"] == "evidence_review_required"
+    _assert_manifest_has_no_current_selection(manifest)
+    assert all(not (output_dir / name).exists() for name in _SELECTED_ARTIFACTS)
+    _assert_manifest_output_hashes(manifest, output_dir)
+
+
+def test_selected_artifact_generation_failure_publishes_failure_and_retires_old_selection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _runner_fixture(tmp_path, monkeypatch)
+    review_path = _synthetic_reviews_path(tmp_path)
+    model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+    output_dir = tmp_path / "data" / "processed" / "model_selection"
+    real_to_parquet = pd.DataFrame.to_parquet
+
+    def fail_selected_parquet(frame: pd.DataFrame, *args: object, **kwargs: object) -> None:
+        raise OSError("synthetic selected-artifact write failure")
+
+    monkeypatch.setattr(pd.DataFrame, "to_parquet", fail_selected_parquet)
+    result = model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+    monkeypatch.setattr(pd.DataFrame, "to_parquet", real_to_parquet)
+
+    manifest = _read_json(output_dir / "manifest.json")
+    decision = _read_json(output_dir / "selection_decision.json")
+    assert result["status"] == "artifact_generation_failed"
+    assert manifest["status"] == "artifact_generation_failed"
+    assert decision["status"] == "artifact_generation_failed"
+    assert decision["artifact_publication_status"] == "failed"
+    _assert_manifest_has_no_current_selection(manifest)
+    assert all(not (output_dir / name).exists() for name in _SELECTED_ARTIFACTS)
+    _assert_manifest_output_hashes(manifest, output_dir)
+
+
+def test_unverified_selected_file_is_preserved_and_publication_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _runner_fixture(tmp_path, monkeypatch)
+    review_path = _synthetic_reviews_path(tmp_path)
+    model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+    output_dir = tmp_path / "data" / "processed" / "model_selection"
+    tampered_path = output_dir / _SELECTED_ARTIFACTS[0]
+    tampered_path.write_bytes(tampered_path.read_bytes() + b"external edit")
+    tampered_hash = hashlib.sha256(tampered_path.read_bytes()).hexdigest()
+
+    result = model_selection.run_model_selection(root=tmp_path)
+
+    manifest = _read_json(output_dir / "manifest.json")
+    assert result["status"] == "artifact_publication_failed"
+    assert manifest["status"] == "artifact_publication_failed"
+    _assert_manifest_has_no_current_selection(manifest)
+    assert tampered_path.is_file()
+    assert hashlib.sha256(tampered_path.read_bytes()).hexdigest() == tampered_hash
+    assert any(
+        conflict["path"] == _SELECTED_ARTIFACTS[0]
+        for conflict in manifest["publication"]["conflicts"]
+    )
+    _assert_manifest_output_hashes(manifest, output_dir)
+
+
+def test_cannot_invalidate_manifest_leaves_prior_selection_intact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _runner_fixture(tmp_path, monkeypatch)
+    review_path = _synthetic_reviews_path(tmp_path)
+    model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+    output_dir = tmp_path / "data" / "processed" / "model_selection"
+    manifest_path = output_dir / "manifest.json"
+    original_manifest = manifest_path.read_bytes()
+    original_artifacts = {
+        name: hashlib.sha256((output_dir / name).read_bytes()).hexdigest()
+        for name in _SELECTED_ARTIFACTS
+    }
+
+    def fail_manifest_write(path: Path, _value: dict[str, object]) -> None:
+        if path == manifest_path:
+            raise OSError("synthetic manifest replacement failure")
+        raise AssertionError("runner must stop before staging if it cannot publish its marker")
+
+    monkeypatch.setattr(model_selection, "_write_json_atomically", fail_manifest_write)
+    result = model_selection.run_model_selection(root=tmp_path)
+
+    assert result["status"] == "artifact_publication_failed"
+    assert manifest_path.read_bytes() == original_manifest
+    assert {
+        name: hashlib.sha256((output_dir / name).read_bytes()).hexdigest()
+        for name in _SELECTED_ARTIFACTS
+    } == original_artifacts
+
+
+def test_runner_never_invokes_candidate_fit_or_tuning(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _runner_fixture(tmp_path, monkeypatch)
+    review_path = _synthetic_reviews_path(tmp_path)
+    commands: list[str] = []
+    real_run = model_selection.subprocess.run
+
+    def guarded_run(args: object, *positional: object, **kwargs: object) -> object:
+        command = " ".join(str(item) for item in args)
+        commands.append(command)
+        assert not any(
+            runner in command
+            for runner in ("run_seasonal_naive.py", "run_holt_winters.py", "run_lightgbm.py")
+        )
+        return real_run(args, *positional, **kwargs)
+
+    def forbidden_fit(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("selection runner must not fit or tune a candidate")
+
+    monkeypatch.setattr(model_selection.subprocess, "run", guarded_run)
+    monkeypatch.setattr(model_selection.lgb, "train", forbidden_fit)
+    result = model_selection.run_model_selection(root=tmp_path, operational_review_path=review_path)
+
+    output_dir = tmp_path / "data" / "processed" / "model_selection"
+    recipe = _read_json(output_dir / "refit_recipe.json")
+    assert result["status"] == "selected"
+    assert recipe["fit_performed"] is False
+    assert recipe["no_tuning_or_refit_performed"] is True
+    assert all(
+        not any(
+            runner in command
+            for runner in ("run_seasonal_naive.py", "run_holt_winters.py", "run_lightgbm.py")
+        )
+        for command in commands
+    )
+
+
+def test_residual_paths_preserve_keys_masks_signs_and_complete_partial_path_flags() -> None:
+    records = _records()
+    candidate = CANDIDATE_IDS[0]
+    frame = records[candidate]
+    selected_window = APPROVED_DEVELOPMENT_WINDOWS[0]
+    frame = frame.loc[
+        frame["validation_window"].eq(selected_window.name) & frame["Store"].isin([1, 2])
+    ].copy()
+    missing_date = selected_window.forecast_origin + pd.Timedelta(days=7)
+    frame = frame.loc[~(frame["Store"].eq(1) & frame["Date"].eq(missing_date))].copy()
+    closed = frame.index[frame["Store"].eq(1) & frame["horizon"].eq(1)][0]
+    unknown = frame.index[frame["Store"].eq(1) & frame["horizon"].eq(4)][0]
+    underforecast = frame.index[frame["Store"].eq(1) & frame["horizon"].eq(3)][0]
+    frame.loc[closed, "source_open"] = 0.0
+    frame.loc[closed, "operational_forecast"] = 0.0
+    frame.loc[closed, "primary_evaluation_eligible"] = False
+    frame.loc[unknown, "source_open"] = np.nan
+    frame.loc[unknown, "operational_forecast"] = np.nan
+    frame.loc[unknown, "primary_evaluation_eligible"] = False
+    frame.loc[underforecast, "raw_baseline_forecast"] = (
+        frame.loc[underforecast, "actual_sales"] - 10.0
+    )
+    frame.loc[underforecast, "operational_forecast"] = frame.loc[
+        underforecast, "raw_baseline_forecast"
+    ]
+    frame.loc[underforecast, "model_forecast_unclipped"] = frame.loc[
+        underforecast, "raw_baseline_forecast"
+    ]
+
+    output = build_selected_artifacts(candidate, frame, build_refit_recipe(candidate, {}))
+    paths = output["development_residual_paths"]
+    store_one = paths.loc[paths["Store"].eq(1)].sort_values("horizon")
+    store_two = paths.loc[paths["Store"].eq(2)].sort_values("horizon")
+    assert store_one[["Store", "forecast_origin", "horizon"]].drop_duplicates().shape[0] == 14
+    assert store_one["horizon"].tolist() == list(range(1, 15))
+    assert store_two["horizon"].tolist() == list(range(1, 15))
+
+    closed_row = store_one.loc[store_one["horizon"].eq(1)].iloc[0]
+    assert closed_row["raw_forecast"] > 0
+    assert closed_row["operational_forecast"] == 0.0
+    assert not bool(closed_row["raw_primary_error_available"])
+    assert bool(closed_row["operational_error_available"])
+    overforecast_row = store_one.loc[store_one["horizon"].eq(2)].iloc[0]
+    underforecast_row = store_one.loc[store_one["horizon"].eq(3)].iloc[0]
+    assert overforecast_row["raw_residual"] < 0
+    assert underforecast_row["raw_residual"] == pytest.approx(10.0)
+    assert bool(overforecast_row["primary_evaluation_eligible"])
+    unknown_row = store_one.loc[store_one["horizon"].eq(4)].iloc[0]
+    assert pd.isna(unknown_row["operational_forecast"])
+    assert not bool(unknown_row["operational_error_available"])
+    missing_row = store_one.loc[store_one["horizon"].eq(7)].iloc[0]
+    assert not bool(missing_row["target_key_observed"])
+    assert pd.isna(missing_row["actual_sales"])
+    assert pd.isna(missing_row["raw_forecast"])
+    assert not bool(missing_row["primary_evaluation_eligible"])
+    assert not bool(store_one["raw_primary_path_complete"].iloc[0])
+    assert not bool(store_one["operational_path_complete"].iloc[0])
+    assert bool(store_two["raw_primary_path_complete"].iloc[0])
+    assert bool(store_two["operational_path_complete"].iloc[0])

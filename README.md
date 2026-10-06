@@ -70,7 +70,9 @@ python scripts/run_model_selection.py
 The Phase 7 runner validates and aggregates those cached forecasts; it does not call the model
 runners, rerun tuning, or fit candidates. Candidate-level offline operational reviews can be
 provided with `--operational-review path/to/review.json`. Without approved reviews, it writes the
-comparison and an `operational_review_required` decision without selected-model artifacts.
+comparison and an `operational_review_required` decision without selected-model artifacts. Outputs
+are staged and hashed before publication; prior selected outputs are retired only when their hashes
+match the runner manifest.
 
 `python scripts/run_eda.py` and the two notebooks reproduce the historical **full-source**
 descriptive audit, not a development-model gate. That earlier audit included July 4–31 labels;

@@ -1,10 +1,10 @@
 # Phase 7 — Walk-Forward Validation and Model Selection
 
-**Status: APPROVED / IMPLEMENTATION NOT STARTED** (WORKFLOW: APPROVED).
-Methodology approved after external review on 2026-10-06; implementation has not started and no
-final model is officially selected. The approval accepts this policy after observing the Phase 4–6
-results; it does not make the thresholds preregistered or select a model. Implementation may begin
-only after design PR #12 merges into `main`.
+**Status: IMPLEMENTED / UNDER REVIEW** (methodology APPROVED; no final model selected).
+Methodology was approved after external review on 2026-10-06 and implementation proceeded after
+design PR #12 integrated into `main`. The approval accepts this policy after observing the Phase
+4–6 results; it does not make the thresholds preregistered or select a model. This plan remains
+active through PR #13 review, integration and explicit Phase 7 closeout.
 
 ## 1. Authority, verified base, and execution boundary
 
@@ -393,3 +393,19 @@ No methodology/ADR or proposal edits, dependency additions, candidate fits, hold
 8 work were made. Phase 7 remains under review and this plan stays active until review, authorized
 integration and explicit closeout. [Implementation PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13)
 is open against `main`; it has not been merged.
+
+## 10. External review follow-up — 2026-10-06
+
+The PR #13 lifecycle follow-up preserves ADR-020 and adds a fail-closed output protocol. It writes
+an in-progress manifest before reading evidence, stages a coherent output set under a unique run
+ID, hashes all outputs, and publishes the complete manifest last. Only hash-verified files from
+the four known selected-output paths are retired; conflicts and unrelated files remain untouched.
+The detailed implementation and synthetic regression cases are recorded in the new
+[PROGRESS follow-up checkpoint](../../docs/PROGRESS.md#phase-7-external-review-follow-up--2026-10-06).
+
+Full validation passed **187 tests** on Python 3.14.5 and **187 tests** on Python 3.12.15. The
+cached no-approval run and its unchanged development metrics, source hashes, coverage, and other
+quality checks are recorded in the [PROGRESS follow-up checkpoint](../../docs/PROGRESS.md#phase-7-external-review-follow-up--2026-10-06).
+No selected model, candidate fit, holdout read or Phase 8 work resulted. Phase 7 remains
+**IMPLEMENTED / UNDER REVIEW**; PR #13 remains open and unmerged. The follow-up commit and CI result
+will be recorded after push.

@@ -8,7 +8,7 @@
 | Phase 5 — additive Holt-Winters | COMPLETE | PR #7 squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`; formal closeout recorded here |
 | Repository architecture/governance review | COMPLETE | Integrated with Phase 5 by PR #7 at `76707a03b7d10dbaa79d3ef26b39e31994431d70` |
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
-| Phase 7 — model selection | APPROVED; implementation not started | [Approved plan](../plans/active/phase-7-model-selection.md), ADR-020; PR #12 is the required integration gate; no final model officially selected |
+| Phase 7 — model selection | IMPLEMENTED / UNDER REVIEW | [Active plan](../plans/active/phase-7-model-selection.md), ADR-020; [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) is open; no final model officially selected |
 | Phase 8 and later | PLANNED; not started | Await their dependencies and separate authorization |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -32,10 +32,9 @@ was merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its comple
 archived.
 The Phase 6 development-only results and coverage evidence remain recorded below. Phase 6 closeout
 [PR #11](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/11) merged at
-`0b8d55144ace29cb8b5367d11aeedc59cfb33a65`. Phase 7 design has started in the
-[approved plan](../plans/active/phase-7-model-selection.md) and ADR-020; implementation has not
-started, and no final model is officially selected. Implementation may begin only after design
-PR #12 integrates into `main`. Phase 8 is not started, and final-holdout evaluation remains
+`0b8d55144ace29cb8b5367d11aeedc59cfb33a65`. Phase 7 methodology is approved in ADR-020 and its
+implementation is under review in [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13).
+No final model is officially selected. Phase 8 is not started, and final-holdout evaluation remains
 unreleased. The
 [historical Phase 6 implementation handoff](PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the interfaces and boundary used.
@@ -613,3 +612,37 @@ formatting and Markdown links, on implementation commit `f95fa9d`. Later PR-head
 updated review documentation; the documentation checker and diff check passed locally, and no new
 workflow run was created for those doc-only updates. Phase 7 remains under review; this checkpoint
 is not a phase closeout.
+
+## Phase 7 External Review Follow-up — 2026-10-06
+
+The PR #13 review follow-up hardens generated-artifact lifecycle handling without changing
+ADR-020. Before reading candidate evidence, the runner atomically replaces its prior manifest with
+an in-progress marker. It stages the comparison, decision, and—only for a selected decision—all
+four selected-model artifacts under one run ID; each output is hashed, and the complete manifest is
+published last. An interrupted publication therefore cannot leave a complete manifest pointing at
+a partial selection. Unresolved or failed runs publish no selected identity or selected-artifact
+references. Cleanup is limited to the four fixed selected-output names and only removes files whose
+hashes match prior runner-owned metadata. Modified or unverified paths are preserved and reported as
+conflicts. Original candidate manifests and files are read-only.
+
+Synthetic lifecycle coverage now includes successful approvals and all four hashed outputs,
+subsequent unknown reviews, integrity failure, selected-artifact generation failure, ownership
+conflicts, inability to invalidate the existing manifest, preservation of unrelated files and
+original manifests, no fit/tuning calls, and residual path keys/masks/errors/completeness. The full
+suite passed **187 tests** on Python 3.14.5 and **187 tests** on Python 3.12.15.
+
+The real cached selection command ran without an operational-review file. It returned
+`operational_review_required`, selected candidate `null`, and no selected-model files. On the same
+38,553 common eligible rows, pooled MAE remained Seasonal Naive **1,681.2703**, Holt-Winters
+**1,281.7446**, and LightGBM **871.0612**. All 12 standalone/common per-window coverage gates
+passed. The pre-run verification and post-run checks confirmed every original candidate manifest
+and every artifact hash still matches its source manifest. No candidate was fitted or tuned, no
+final-holdout outcomes were read or hashed, and Phase 8 did not start. Phase 7 remains
+**IMPLEMENTED / UNDER REVIEW**; there is no official final model selection.
+
+Final review-fix checks passed: `ruff check .`; `ruff format --check .` (73 files);
+`python scripts/check_docs.py` (112 local destinations/anchors across 22 documents);
+`uv lock --check` (84 packages); Python 3.14 `pip check`; Python 3.12 `uv pip check` (60
+packages); and `git diff --check` (only expected Windows LF-to-CRLF notices for the two changed
+Python files). The requested commit and post-push PR #13 CI result will be recorded after they
+complete.

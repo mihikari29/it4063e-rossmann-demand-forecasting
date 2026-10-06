@@ -6,9 +6,12 @@ import hashlib
 import importlib.metadata
 import json
 import math
+import os
 import platform
 import subprocess
 import sys
+import tempfile
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -57,6 +60,15 @@ FORECAST_COLUMNS = {
 MODEL_SELECTION_POLICY_VERSION = "phase-7-adr-020-v1"
 OPERATIONAL_REVIEW_SCHEMA_VERSION = "phase-7-operational-review-v1"
 OPERATIONAL_SCOPE = "offline_cpu_course_demonstration"
+RUNNER_COMMAND = "rossmann-model-selection"
+SELECTED_ARTIFACT_FILENAMES = (
+    "selected_model_config.json",
+    "refit_recipe.json",
+    "selected_development_forecasts.parquet",
+    "development_residual_paths.parquet",
+)
+CORE_ARTIFACT_FILENAMES = ("model_comparison.csv", "selection_decision.json")
+RUNNER_ARTIFACT_FILENAMES = CORE_ARTIFACT_FILENAMES + SELECTED_ARTIFACT_FILENAMES
 COVERAGE_THRESHOLD = 0.99
 PROMOTION_THRESHOLD = 0.05
 REGRESSION_CAP = 0.10
@@ -1237,6 +1249,7 @@ def build_selected_artifacts(
     normalized["model_configuration_sha256"] = hashlib.sha256(
         json.dumps(recipe, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
     ).hexdigest()
+    normalized["model_selection_run_id"] = recipe.get("selection_run_id")
     source_identity = recipe.get("provenance_identity", {})
     normalized["source_manifest_sha256"] = source_identity.get("source_manifest_sha256")
     selected = normalized.sort_values(list(KEY_COLUMNS), kind="mergesort").reset_index(drop=True)
@@ -1256,6 +1269,7 @@ def build_selected_artifacts(
         grid["horizon"] = (grid["Date"] - grid["forecast_origin"]).dt.days.astype("int8")
         grid["target_key_observed"] = grid["_merge"].eq("both")
         grid = grid.drop(columns="_merge")
+        grid["model_selection_run_id"] = recipe.get("selection_run_id")
         grid["validation_window"] = grid["validation_window"].fillna(
             observed["validation_window"].iloc[0]
         )
@@ -1606,6 +1620,256 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
     )
 
 
+def _write_json_atomically(path: Path, value: dict[str, Any]) -> None:
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        _write_json(temporary, value)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _read_runner_manifest(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) and value.get("command") == RUNNER_COMMAND else None
+
+
+def _hash_values(value: Any) -> set[str]:
+    if isinstance(value, str):
+        values = {value}
+    elif isinstance(value, list):
+        values = {item for item in value if isinstance(item, str)}
+    elif isinstance(value, dict) and isinstance(value.get("sha256"), str):
+        values = {value["sha256"]}
+    else:
+        values = set()
+    return {
+        digest
+        for digest in values
+        if len(digest) == 64 and all(c in "0123456789abcdef" for c in digest)
+    }
+
+
+def _owned_output_hashes(manifest: dict[str, Any] | None) -> dict[str, set[str]]:
+    owned: dict[str, set[str]] = {}
+    if manifest is None:
+        return owned
+
+    sources: list[dict[str, Any]] = []
+    for field in ("outputs", "selected_model_artifacts"):
+        entries = manifest.get(field)
+        if isinstance(entries, dict):
+            sources.append(entries)
+    publication = manifest.get("publication")
+    if isinstance(publication, dict):
+        for field in ("previous_output_hashes", "pending_output_hashes"):
+            entries = publication.get(field)
+            if isinstance(entries, dict):
+                sources.append(entries)
+
+    for entries in sources:
+        for name, metadata in entries.items():
+            if name not in RUNNER_ARTIFACT_FILENAMES:
+                continue
+            digest = metadata.get("sha256") if isinstance(metadata, dict) else metadata
+            owned.setdefault(name, set()).update(_hash_values(digest))
+    return owned
+
+
+def _output_metadata(path: Path) -> dict[str, Any]:
+    metadata: dict[str, Any] = {"sha256": sha256_file(path), "rows": None}
+    if path.suffix == ".parquet":
+        metadata["rows"] = int(pd.read_parquet(path, columns=["Store"]).shape[0])
+    elif path.suffix == ".csv":
+        with path.open(encoding="utf-8") as stream:
+            metadata["rows"] = max(0, sum(1 for _ in stream) - 1)
+    return metadata
+
+
+def _output_conflicts(
+    output_dir: Path,
+    names: tuple[str, ...],
+    owned_hashes: dict[str, set[str]],
+) -> list[dict[str, str]]:
+    conflicts: list[dict[str, str]] = []
+    for name in names:
+        path = output_dir / name
+        try:
+            if not path.exists():
+                continue
+            if not path.is_file():
+                conflicts.append({"path": name, "reason": "existing_path_is_not_a_file"})
+                continue
+            actual_hash = sha256_file(path)
+            if actual_hash in owned_hashes.get(name, set()):
+                continue
+            conflicts.append(
+                {"path": name, "reason": "existing_file_is_not_verified_runner_output"}
+            )
+        except OSError:
+            conflicts.append({"path": name, "reason": "ownership_hash_check_failed"})
+    return conflicts
+
+
+def _retire_owned_selected_outputs(
+    output_dir: Path, owned_hashes: dict[str, set[str]]
+) -> tuple[list[str], list[dict[str, str]]]:
+    retired: list[str] = []
+    conflicts: list[dict[str, str]] = []
+    for name in SELECTED_ARTIFACT_FILENAMES:
+        path = output_dir / name
+        try:
+            if not path.exists():
+                continue
+            if not path.is_file():
+                conflicts.append({"path": name, "reason": "existing_path_is_not_a_file"})
+                continue
+            actual_hash = sha256_file(path)
+            if actual_hash not in owned_hashes.get(name, set()):
+                conflicts.append(
+                    {"path": name, "reason": "existing_file_is_not_verified_runner_output"}
+                )
+                continue
+            path.unlink()
+            retired.append(name)
+        except OSError:
+            conflicts.append({"path": name, "reason": "ownership_check_or_retirement_failed"})
+    return retired, conflicts
+
+
+def _publish_failure_state(
+    *,
+    repository: Path,
+    output_dir: Path,
+    manifest_path: Path,
+    selection_run_id: str,
+    status: str,
+    reason: str,
+    owned_hashes: dict[str, set[str]],
+    conflicts: list[dict[str, str]] | None = None,
+) -> dict[str, Any]:
+    _retired, retirement_conflicts = _retire_owned_selected_outputs(output_dir, owned_hashes)
+    all_conflicts = [*(conflicts or []), *retirement_conflicts]
+    failure_hashes = {name: set(hashes) for name, hashes in owned_hashes.items()}
+    decision = _base_decision(status, reason)
+    decision.update(
+        {
+            "selection_run_id": selection_run_id,
+            "artifact_publication_status": "failed",
+            "selected_model_artifacts": {},
+        }
+    )
+    decision_path = output_dir / "selection_decision.json"
+    try:
+        can_replace_decision = not decision_path.exists() or (
+            decision_path.is_file()
+            and sha256_file(decision_path) in owned_hashes.get(decision_path.name, set())
+        )
+        if can_replace_decision:
+            _write_json_atomically(decision_path, decision)
+            failure_hashes.setdefault(decision_path.name, set()).add(sha256_file(decision_path))
+    except OSError:
+        pass
+
+    outputs: dict[str, Any] = {}
+    for name in CORE_ARTIFACT_FILENAMES:
+        path = output_dir / name
+        try:
+            if not path.is_file():
+                continue
+            digest = sha256_file(path)
+            if digest not in failure_hashes.get(name, set()):
+                continue
+            if name == "selection_decision.json":
+                current_decision = json.loads(path.read_text(encoding="utf-8"))
+                if (
+                    not isinstance(current_decision, dict)
+                    or current_decision.get("status") != status
+                    or current_decision.get("selected_candidate_id") is not None
+                ):
+                    continue
+            outputs[name] = _output_metadata(path)
+        except (OSError, json.JSONDecodeError):
+            all_conflicts.append({"path": name, "reason": "failure_output_hash_check_failed"})
+
+    manifest = {
+        "command": RUNNER_COMMAND,
+        "policy_version": MODEL_SELECTION_POLICY_VERSION,
+        "selection_run_id": selection_run_id,
+        "status": status,
+        "publication_state": "failed",
+        "selected_candidate_id": None,
+        "selected_model_artifacts": {},
+        "outputs": outputs,
+        "publication": {
+            "state": "failed",
+            "reason": reason,
+            "conflicts": all_conflicts,
+            "retired_previous_selected_outputs": _retired,
+        },
+        "final_holdout_forecast_or_evaluation": False,
+        "final_holdout_outcomes_read_or_hashed": False,
+        "phase_8_started": False,
+    }
+    try:
+        _write_json_atomically(manifest_path, manifest)
+    except OSError:
+        # The in-progress manifest remains the fail-closed marker if storage rejects this write.
+        pass
+    return {
+        "output_directory": output_dir.relative_to(repository).as_posix(),
+        "status": status,
+        "selected_candidate_id": None,
+        "comparison_rows": 0,
+        "manifest": manifest_path.relative_to(repository).as_posix(),
+        "decision": decision,
+    }
+
+
+def _mark_decision_failure(
+    decision: dict[str, Any], status: str, reason: str, selection_run_id: str
+) -> dict[str, Any]:
+    failed = dict(decision)
+    failed["status"] = status
+    failed["status_reason"] = reason
+    failed.pop("selected_candidate_id", None)
+    failed.pop("selected_model_identity", None)
+    failed["selected_candidate_id"] = None
+    failed["selection_run_id"] = selection_run_id
+    failed["artifact_publication_status"] = "failed"
+    failed["selected_model_artifacts"] = {}
+    failed["selected_artifact_names"] = []
+    return failed
+
+
+def _unpublished_failure_result(
+    repository: Path,
+    output_dir: Path,
+    manifest_path: Path,
+    selection_run_id: str,
+    reason: str,
+) -> dict[str, Any]:
+    decision = _mark_decision_failure(
+        _base_decision("artifact_publication_failed", reason),
+        "artifact_publication_failed",
+        reason,
+        selection_run_id,
+    )
+    return {
+        "output_directory": output_dir.relative_to(repository).as_posix(),
+        "status": "artifact_publication_failed",
+        "selected_candidate_id": None,
+        "comparison_rows": 0,
+        "manifest": manifest_path.relative_to(repository).as_posix(),
+        "decision": decision,
+    }
+
+
 def _empty_comparison() -> pd.DataFrame:
     return pd.DataFrame(
         columns=[
@@ -1671,239 +1935,417 @@ def run_model_selection(
     assert_output_directory_ignored(repository)
     output_dir = repository / "data" / "processed" / "model_selection"
     output_dir.mkdir(parents=True, exist_ok=True)
-    comparison_path = output_dir / "model_comparison.csv"
-    decision_path = output_dir / "selection_decision.json"
     manifest_path = output_dir / "manifest.json"
-    review_input: dict[str, Any] | None = None
-    evidence: dict[str, CandidateEvidence] = {}
-    comparison = _empty_comparison()
-    selected_files: dict[str, Path] = {}
-    input_evidence_summary: dict[str, Any] = {}
-    artifact_integrity_status = "not_checked"
-    record_integrity_status = "not_checked"
-    try:
-        reviews = _read_operational_reviews(operational_review_path)
-        if operational_review_path is not None:
-            review_input = {
-                "path": str(Path(operational_review_path).resolve()),
-                "sha256": sha256_file(Path(operational_review_path)),
-            }
-        artifact_integrity_status = "checking"
-        evidence = verify_candidate_manifests(repository)
-        artifact_integrity_status = "passed"
-        record_integrity_status = "checking"
-        records = _load_saved_forecasts(repository, evidence)
-        result = evaluate_model_selection(records, operational_reviews=reviews)
-        comparison = result["model_comparison"]
-        decision = result["decision"]
-        record_integrity_status = "passed"
-        decision["artifact_integrity_status"] = artifact_integrity_status
-        decision["record_integrity_status"] = record_integrity_status
-        input_evidence_summary = {
-            "forecast_rows_by_candidate": {
-                candidate: int(len(result["normalized_records"][candidate]))
-                for candidate in CANDIDATE_IDS
-            },
-            "common_eligible_rows": int(
-                _summary_lookup(
-                    comparison,
-                    "three_way_common",
-                    CANDIDATE_IDS[0],
-                    "pooled",
-                    metric="eligible_rows",
-                )
-                or 0
-            ),
-            "forecast_target_min": min(
-                frame["Date"].min() for frame in result["normalized_records"].values()
-            )
-            .date()
-            .isoformat(),
-            "forecast_target_max": max(
-                frame["Date"].max() for frame in result["normalized_records"].values()
-            )
-            .date()
-            .isoformat(),
-        }
-        if decision["status"] == "selected":
-            selected = decision["selected_candidate_id"]
-            selected_manifest = evidence[selected].manifest
-            selected_configuration = evidence[selected].configuration
-            if selected == CANDIDATE_IDS[0]:
-                selected_configuration = {
-                    "methodology": selected_manifest.get("methodology"),
-                    "target": selected_manifest.get("target"),
-                }
-            recipe = build_refit_recipe(
-                selected,
-                selected_configuration,
-                provenance_identity={
-                    "source_manifest_sha256": evidence[selected].manifest_sha256,
-                    "source_manifest_code_revision": selected_manifest.get("code_revision"),
-                    "source_manifest_worktree_modified": selected_manifest.get(
-                        "code_worktree_modified"
-                    ),
-                    "source_manifest_working_tree_sha256": selected_manifest.get(
-                        "working_tree_source_sha256"
-                    ),
-                    "configuration_sha256": selected_manifest.get("configuration_sha256"),
-                },
-            )
-            selected_artifacts = build_selected_artifacts(
-                selected, result["normalized_records"][selected], recipe
-            )
-            config_path = output_dir / "selected_model_config.json"
-            recipe_path = output_dir / "refit_recipe.json"
-            forecasts_path = output_dir / "selected_development_forecasts.parquet"
-            residuals_path = output_dir / "development_residual_paths.parquet"
-            recipe_sha256 = hashlib.sha256(
-                json.dumps(recipe, sort_keys=True, separators=(",", ":"), allow_nan=False).encode(
-                    "utf-8"
-                )
-            ).hexdigest()
-            _write_json(
-                config_path,
-                {
-                    "candidate_id": selected,
-                    "algorithm": recipe.get("algorithm"),
-                    "configuration": recipe["configuration"],
-                    "source_identity": recipe["provenance_identity"],
-                    "refit_recipe_sha256": recipe_sha256,
-                    "fit_performed": False,
-                },
-            )
-            _write_json(recipe_path, recipe)
-            selected_artifacts["selected_development_forecasts"].to_parquet(
-                forecasts_path, engine="pyarrow", index=False, compression="zstd"
-            )
-            selected_artifacts["development_residual_paths"].to_parquet(
-                residuals_path, engine="pyarrow", index=False, compression="zstd"
-            )
-            selected_files = {
-                path.name: path
-                for path in (config_path, recipe_path, forecasts_path, residuals_path)
-            }
-        decision["operational_review_input"] = review_input
-        decision["source_manifest_sha256"] = {
-            candidate: evidence[candidate].manifest_sha256 for candidate in CANDIDATE_IDS
-        }
-        decision["source_artifact_sha256"] = {
-            candidate: evidence[candidate].artifact_hashes for candidate in CANDIDATE_IDS
-        }
-    except (EvidenceReviewRequired, OSError, ValueError, KeyError, TypeError) as error:
-        decision = _base_decision("evidence_review_required", str(error), review_input)
-        decision["artifact_integrity_status"] = (
-            "failed" if artifact_integrity_status == "checking" else artifact_integrity_status
+    previous_manifest = _read_runner_manifest(manifest_path)
+    selection_run_id = uuid.uuid4().hex
+    if manifest_path.exists() and previous_manifest is None:
+        return _unpublished_failure_result(
+            repository,
+            output_dir,
+            manifest_path,
+            selection_run_id,
+            "Existing manifest is not a verified model-selection runner manifest.",
         )
-        decision["record_integrity_status"] = (
-            "failed" if record_integrity_status == "checking" else record_integrity_status
-        )
-        decision["evidence_review_required_reason"] = str(error)
-        selected_files = {}
-
-    comparison.to_csv(comparison_path, index=False, float_format="%.17g", na_rep="")
-    _write_json(decision_path, decision)
-    outputs = {
-        comparison_path.name: {"sha256": sha256_file(comparison_path), "rows": len(comparison)},
-        decision_path.name: {"sha256": sha256_file(decision_path), "rows": None},
-    }
-    for name, path in selected_files.items():
-        rows = None
-        if path.suffix == ".parquet":
-            rows = int(pd.read_parquet(path, columns=["Store"]).shape[0])
-        outputs[name] = {"sha256": sha256_file(path), "rows": rows}
-    input_manifests = {
-        candidate: {
-            "path": evidence[candidate].manifest_path.relative_to(repository).as_posix(),
-            "sha256": evidence[candidate].manifest_sha256,
-            "original_artifacts": evidence[candidate].artifact_hashes,
-            "original_artifact_metadata": evidence[candidate].manifest.get(
-                "outputs", evidence[candidate].manifest.get("artifacts")
-            ),
-            "original_identity_metadata": {
-                key: evidence[candidate].manifest.get(key)
-                for key in (
-                    "command",
-                    "code_revision",
-                    "code_worktree_modified",
-                    "working_tree_source_sha256",
-                    "configuration_sha256",
-                    "selected_trial",
-                    "selected_boosting_rounds",
-                    "selected_trial_parameters",
-                    "predictor_contract_identity",
-                    "input_provenance",
-                    "input_snapshot_identifiers",
-                    "censored_input_sha256",
-                )
-            },
-        }
-        for candidate in evidence
-    }
-    lock_path = repository / "uv.lock"
-    manifest = {
-        "command": "rossmann-model-selection",
+    owned_hashes = _owned_output_hashes(previous_manifest)
+    previous_manifest_sha256 = sha256_file(manifest_path) if manifest_path.is_file() else None
+    marker: dict[str, Any] = {
+        "command": RUNNER_COMMAND,
         "policy_version": MODEL_SELECTION_POLICY_VERSION,
-        "candidate_order": list(CANDIDATE_IDS),
-        "configuration": POLICY_CONFIGURATION,
-        "configuration_sha256": _canonical_sha256(POLICY_CONFIGURATION),
-        "status": decision["status"],
-        "input_integrity_status": decision.get("artifact_integrity_status", "failed"),
-        "record_integrity_status": decision.get("record_integrity_status", "not_checked"),
-        "selected_candidate_id": decision.get("selected_candidate_id"),
-        "input_manifests": input_manifests,
-        "input_evidence_summary": input_evidence_summary,
-        "operational_review_input": review_input,
-        "date_bounds": {
-            "first_development_target": min(
-                window.target_start for window in APPROVED_DEVELOPMENT_WINDOWS
-            )
-            .date()
-            .isoformat(),
-            "last_development_target": LAST_DEVELOPMENT_DATE.date().isoformat(),
-            "final_holdout_start": FINAL_HOLDOUT_START.date().isoformat(),
+        "selection_run_id": selection_run_id,
+        "status": "publication_in_progress",
+        "publication_state": "in_progress",
+        "selected_candidate_id": None,
+        "selected_model_artifacts": {},
+        "outputs": {},
+        "publication": {
+            "state": "in_progress",
+            "previous_manifest_sha256": previous_manifest_sha256,
+            "previous_output_hashes": {
+                name: sorted(hashes) for name, hashes in owned_hashes.items()
+            },
+            "pending_output_hashes": {},
+            "staging_directory": None,
         },
         "final_holdout_forecast_or_evaluation": False,
         "final_holdout_outcomes_read_or_hashed": False,
         "phase_8_started": False,
-        "legacy_lineage_disclosure": (
-            "SN/HW manifests have legacy provenance limits; LightGBM preserves the original "
-            "dirty-worktree provenance. No old manifest was rewritten or treated as generated "
-            "from the current revision."
-        ),
-        "operational_scope_disclosure": {
-            "accepted_scope": OPERATIONAL_SCOPE,
-            "qualitative_assessment_only": True,
-            "production_latency_established": False,
-            "production_reliability_established": False,
-            "memory_sla_established": False,
-            "end_to_end_runtime_advantage_measured": False,
-            "real_business_savings_established": False,
-            "benchmark_run": False,
-        },
-        "execution": {
-            "code_revision": _git_revision(repository),
-            "code_worktree_modified": _git_worktree_modified(repository),
-            "current_source_sha256": _source_code_hash(repository),
-            "python_version": sys.version,
-            "platform": platform.platform(),
-            "numpy_version": np.__version__,
-            "pandas_version": pd.__version__,
-            "statsmodels_version": statsmodels.__version__,
-            "lightgbm_version": lgb.__version__,
-            "pyarrow_version": pyarrow.__version__,
-            "project_package_version": importlib.metadata.version("rossmann-demand-forecasting"),
-            "uv_lock_sha256": sha256_file(lock_path) if lock_path.is_file() else None,
-            "seed": "not applicable; aggregation only, no fit or stochastic operation",
-        },
-        "outputs": outputs,
     }
-    _write_json(manifest_path, manifest)
-    return {
-        "output_directory": output_dir.relative_to(repository).as_posix(),
-        "status": decision["status"],
-        "selected_candidate_id": decision.get("selected_candidate_id"),
-        "comparison_rows": len(comparison),
-        "manifest": manifest_path.relative_to(repository).as_posix(),
-        "decision": decision,
-    }
+    try:
+        _write_json_atomically(manifest_path, marker)
+    except Exception as error:
+        return _unpublished_failure_result(
+            repository,
+            output_dir,
+            manifest_path,
+            selection_run_id,
+            f"Could not invalidate the previous publication manifest: {error}",
+        )
+
+    review_input: dict[str, Any] | None = None
+    evidence: dict[str, CandidateEvidence] = {}
+    comparison = _empty_comparison()
+    input_evidence_summary: dict[str, Any] = {}
+    artifact_integrity_status = "not_checked"
+    record_integrity_status = "not_checked"
+    decision: dict[str, Any]
+    normalized_records: dict[str, pd.DataFrame] = {}
+    result: dict[str, Any] | None = None
+
+    try:
+        with tempfile.TemporaryDirectory(prefix=".phase7-stage-", dir=output_dir) as stage_name:
+            stage = Path(stage_name)
+            marker["publication"]["staging_directory"] = stage.name
+            _write_json_atomically(manifest_path, marker)
+
+            try:
+                reviews = _read_operational_reviews(operational_review_path)
+                if operational_review_path is not None:
+                    review_input = {
+                        "path": str(Path(operational_review_path).resolve()),
+                        "sha256": sha256_file(Path(operational_review_path)),
+                    }
+                artifact_integrity_status = "checking"
+                evidence = verify_candidate_manifests(repository)
+                artifact_integrity_status = "passed"
+                record_integrity_status = "checking"
+                records = _load_saved_forecasts(repository, evidence)
+                result = evaluate_model_selection(records, operational_reviews=reviews)
+                comparison = result["model_comparison"]
+                normalized_records = result["normalized_records"]
+                decision = result["decision"]
+                record_integrity_status = "passed"
+                decision["artifact_integrity_status"] = artifact_integrity_status
+                decision["record_integrity_status"] = record_integrity_status
+                input_evidence_summary = {
+                    "forecast_rows_by_candidate": {
+                        candidate: int(len(normalized_records[candidate]))
+                        for candidate in CANDIDATE_IDS
+                    },
+                    "common_eligible_rows": int(
+                        _summary_lookup(
+                            comparison,
+                            "three_way_common",
+                            CANDIDATE_IDS[0],
+                            "pooled",
+                            metric="eligible_rows",
+                        )
+                        or 0
+                    ),
+                    "forecast_target_min": min(
+                        frame["Date"].min() for frame in normalized_records.values()
+                    )
+                    .date()
+                    .isoformat(),
+                    "forecast_target_max": max(
+                        frame["Date"].max() for frame in normalized_records.values()
+                    )
+                    .date()
+                    .isoformat(),
+                }
+                decision["operational_review_input"] = review_input
+                decision["source_manifest_sha256"] = {
+                    candidate: evidence[candidate].manifest_sha256 for candidate in CANDIDATE_IDS
+                }
+                decision["source_artifact_sha256"] = {
+                    candidate: evidence[candidate].artifact_hashes for candidate in CANDIDATE_IDS
+                }
+            except (EvidenceReviewRequired, OSError, ValueError, KeyError, TypeError) as error:
+                decision = _base_decision("evidence_review_required", str(error), review_input)
+                decision["artifact_integrity_status"] = (
+                    "failed"
+                    if artifact_integrity_status == "checking"
+                    else artifact_integrity_status
+                )
+                decision["record_integrity_status"] = (
+                    "failed" if record_integrity_status == "checking" else record_integrity_status
+                )
+                decision["evidence_review_required_reason"] = str(error)
+
+            selected_files: dict[str, Path] = {}
+            if decision["status"] == "selected":
+                try:
+                    selected = str(decision["selected_candidate_id"])
+                    selected_manifest = evidence[selected].manifest
+                    selected_configuration = evidence[selected].configuration
+                    if selected == CANDIDATE_IDS[0]:
+                        selected_configuration = {
+                            "methodology": selected_manifest.get("methodology"),
+                            "target": selected_manifest.get("target"),
+                        }
+                    recipe = build_refit_recipe(
+                        selected,
+                        selected_configuration,
+                        provenance_identity={
+                            "source_manifest_sha256": evidence[selected].manifest_sha256,
+                            "source_manifest_code_revision": selected_manifest.get("code_revision"),
+                            "source_manifest_worktree_modified": selected_manifest.get(
+                                "code_worktree_modified"
+                            ),
+                            "source_manifest_working_tree_sha256": selected_manifest.get(
+                                "working_tree_source_sha256"
+                            ),
+                            "configuration_sha256": selected_manifest.get("configuration_sha256"),
+                        },
+                    )
+                    recipe["selection_run_id"] = selection_run_id
+                    selected_artifacts = build_selected_artifacts(
+                        selected, normalized_records[selected], recipe
+                    )
+                    config_path = stage / "selected_model_config.json"
+                    recipe_path = stage / "refit_recipe.json"
+                    forecasts_path = stage / "selected_development_forecasts.parquet"
+                    residuals_path = stage / "development_residual_paths.parquet"
+                    _write_json(recipe_path, recipe)
+                    recipe_sha256 = sha256_file(recipe_path)
+                    _write_json(
+                        config_path,
+                        {
+                            "candidate_id": selected,
+                            "algorithm": recipe.get("algorithm"),
+                            "configuration": recipe["configuration"],
+                            "source_identity": recipe["provenance_identity"],
+                            "refit_recipe_sha256": recipe_sha256,
+                            "selection_run_id": selection_run_id,
+                            "fit_performed": False,
+                        },
+                    )
+                    selected_artifacts["selected_development_forecasts"].to_parquet(
+                        forecasts_path, engine="pyarrow", index=False, compression="zstd"
+                    )
+                    selected_artifacts["development_residual_paths"].to_parquet(
+                        residuals_path, engine="pyarrow", index=False, compression="zstd"
+                    )
+                    selected_files = {
+                        path.name: path
+                        for path in (config_path, recipe_path, forecasts_path, residuals_path)
+                    }
+                except Exception as error:
+                    decision = _mark_decision_failure(
+                        decision,
+                        "artifact_generation_failed",
+                        f"Selected-model artifact generation failed: {error}",
+                        selection_run_id,
+                    )
+                    for name in SELECTED_ARTIFACT_FILENAMES:
+                        (stage / name).unlink(missing_ok=True)
+                    selected_files = {}
+
+            selected_metadata = {
+                name: _output_metadata(path) for name, path in selected_files.items()
+            }
+            is_selected = decision["status"] == "selected"
+            if not is_selected:
+                selected_metadata = {}
+            decision["selection_run_id"] = selection_run_id
+            decision["artifact_publication_status"] = (
+                "failed" if decision["status"] == "artifact_generation_failed" else "complete"
+            )
+            decision["selected_candidate_id"] = (
+                decision.get("selected_candidate_id") if is_selected else None
+            )
+            decision["selected_model_artifacts"] = selected_metadata
+            decision["selected_artifact_names"] = (
+                list(SELECTED_ARTIFACT_FILENAMES) if is_selected else []
+            )
+
+            staged_comparison = stage / "model_comparison.csv"
+            staged_decision = stage / "selection_decision.json"
+            comparison.to_csv(staged_comparison, index=False, float_format="%.17g", na_rep="")
+            _write_json(staged_decision, decision)
+            output_names = CORE_ARTIFACT_FILENAMES + (
+                SELECTED_ARTIFACT_FILENAMES if is_selected else ()
+            )
+            outputs = {name: _output_metadata(stage / name) for name in output_names}
+            for name, metadata in outputs.items():
+                if metadata["sha256"] != sha256_file(stage / name):
+                    raise OSError(f"Staged output hash changed before publication: {name}.")
+
+            input_manifests = {
+                candidate: {
+                    "path": evidence[candidate].manifest_path.relative_to(repository).as_posix(),
+                    "sha256": evidence[candidate].manifest_sha256,
+                    "original_artifacts": evidence[candidate].artifact_hashes,
+                    "original_artifact_metadata": evidence[candidate].manifest.get(
+                        "outputs", evidence[candidate].manifest.get("artifacts")
+                    ),
+                    "original_identity_metadata": {
+                        key: evidence[candidate].manifest.get(key)
+                        for key in (
+                            "command",
+                            "code_revision",
+                            "code_worktree_modified",
+                            "working_tree_source_sha256",
+                            "configuration_sha256",
+                            "selected_trial",
+                            "selected_boosting_rounds",
+                            "selected_trial_parameters",
+                            "predictor_contract_identity",
+                            "input_provenance",
+                            "input_snapshot_identifiers",
+                            "censored_input_sha256",
+                        )
+                    },
+                }
+                for candidate in evidence
+            }
+            lock_path = repository / "uv.lock"
+            manifest = {
+                "command": RUNNER_COMMAND,
+                "policy_version": MODEL_SELECTION_POLICY_VERSION,
+                "selection_run_id": selection_run_id,
+                "publication_state": "complete",
+                "candidate_order": list(CANDIDATE_IDS),
+                "configuration": POLICY_CONFIGURATION,
+                "configuration_sha256": _canonical_sha256(POLICY_CONFIGURATION),
+                "status": decision["status"],
+                "input_integrity_status": decision.get("artifact_integrity_status", "failed"),
+                "record_integrity_status": decision.get("record_integrity_status", "not_checked"),
+                "selected_candidate_id": decision.get("selected_candidate_id"),
+                "selected_model_artifacts": selected_metadata,
+                "input_manifests": input_manifests,
+                "input_evidence_summary": input_evidence_summary,
+                "operational_review_input": review_input,
+                "date_bounds": {
+                    "first_development_target": min(
+                        window.target_start for window in APPROVED_DEVELOPMENT_WINDOWS
+                    )
+                    .date()
+                    .isoformat(),
+                    "last_development_target": LAST_DEVELOPMENT_DATE.date().isoformat(),
+                    "final_holdout_start": FINAL_HOLDOUT_START.date().isoformat(),
+                },
+                "final_holdout_forecast_or_evaluation": False,
+                "final_holdout_outcomes_read_or_hashed": False,
+                "phase_8_started": False,
+                "legacy_lineage_disclosure": (
+                    "SN/HW manifests have legacy provenance limits; LightGBM "
+                    "preserves the original dirty-worktree provenance. No old "
+                    "manifest was rewritten or treated as generated "
+                    "from the current revision."
+                ),
+                "operational_scope_disclosure": {
+                    "accepted_scope": OPERATIONAL_SCOPE,
+                    "qualitative_assessment_only": True,
+                    "production_latency_established": False,
+                    "production_reliability_established": False,
+                    "memory_sla_established": False,
+                    "end_to_end_runtime_advantage_measured": False,
+                    "real_business_savings_established": False,
+                    "benchmark_run": False,
+                },
+                "execution": {
+                    "code_revision": _git_revision(repository),
+                    "code_worktree_modified": _git_worktree_modified(repository),
+                    "current_source_sha256": _source_code_hash(repository),
+                    "python_version": sys.version,
+                    "platform": platform.platform(),
+                    "numpy_version": np.__version__,
+                    "pandas_version": pd.__version__,
+                    "statsmodels_version": statsmodels.__version__,
+                    "lightgbm_version": lgb.__version__,
+                    "pyarrow_version": pyarrow.__version__,
+                    "project_package_version": importlib.metadata.version(
+                        "rossmann-demand-forecasting"
+                    ),
+                    "uv_lock_sha256": sha256_file(lock_path) if lock_path.is_file() else None,
+                    "seed": "not applicable; aggregation only, no fit or stochastic operation",
+                },
+                "outputs": outputs,
+                "publication": {
+                    "state": "complete",
+                    "selection_run_id": selection_run_id,
+                    "retired_previous_selected_outputs": [],
+                },
+            }
+            _write_json(stage / "manifest.json", manifest)
+
+            marker["publication"]["pending_output_hashes"] = {
+                name: metadata["sha256"] for name, metadata in outputs.items()
+            }
+            marker["publication"]["pending_selected_output_hashes"] = {
+                name: metadata["sha256"] for name, metadata in selected_metadata.items()
+            }
+            marker["publication"]["requested_decision_status"] = decision["status"]
+            _write_json_atomically(manifest_path, marker)
+
+            conflicts = _output_conflicts(output_dir, RUNNER_ARTIFACT_FILENAMES, owned_hashes)
+            if conflicts:
+                return _publish_failure_state(
+                    repository=repository,
+                    output_dir=output_dir,
+                    manifest_path=manifest_path,
+                    selection_run_id=selection_run_id,
+                    status="artifact_publication_failed",
+                    reason="Existing runner output paths failed ownership/hash checks.",
+                    owned_hashes=owned_hashes,
+                    conflicts=conflicts,
+                )
+
+            retired: list[str] = []
+            if not is_selected:
+                retired, retirement_conflicts = _retire_owned_selected_outputs(
+                    output_dir, owned_hashes
+                )
+                if retirement_conflicts:
+                    return _publish_failure_state(
+                        repository=repository,
+                        output_dir=output_dir,
+                        manifest_path=manifest_path,
+                        selection_run_id=selection_run_id,
+                        status="artifact_publication_failed",
+                        reason="Could not safely retire previous selected-model outputs.",
+                        owned_hashes=owned_hashes,
+                        conflicts=retirement_conflicts,
+                    )
+            manifest["publication"]["retired_previous_selected_outputs"] = retired
+            _write_json(stage / "manifest.json", manifest)
+
+            try:
+                for name in output_names:
+                    destination = output_dir / name
+                    if destination.exists() and (
+                        not destination.is_file()
+                        or sha256_file(destination) not in owned_hashes.get(name, set())
+                    ):
+                        raise OSError(
+                            f"Runner output changed ownership before replacement: {name}."
+                        )
+                    os.replace(stage / name, destination)
+                os.replace(stage / "manifest.json", manifest_path)
+            except Exception as error:
+                cleanup_hashes = {name: set(hashes) for name, hashes in owned_hashes.items()}
+                for name, metadata in outputs.items():
+                    cleanup_hashes.setdefault(name, set()).add(metadata["sha256"])
+                return _publish_failure_state(
+                    repository=repository,
+                    output_dir=output_dir,
+                    manifest_path=manifest_path,
+                    selection_run_id=selection_run_id,
+                    status="artifact_publication_failed",
+                    reason=f"Atomic output publication failed: {error}",
+                    owned_hashes=cleanup_hashes,
+                )
+
+            return {
+                "output_directory": output_dir.relative_to(repository).as_posix(),
+                "status": decision["status"],
+                "selected_candidate_id": decision.get("selected_candidate_id"),
+                "comparison_rows": len(comparison),
+                "manifest": manifest_path.relative_to(repository).as_posix(),
+                "decision": decision,
+            }
+    except Exception as error:
+        pending_hashes = marker.get("publication", {}).get("pending_output_hashes", {})
+        cleanup_hashes = {name: set(hashes) for name, hashes in owned_hashes.items()}
+        if isinstance(pending_hashes, dict):
+            for name, value in pending_hashes.items():
+                cleanup_hashes.setdefault(name, set()).update(_hash_values(value))
+        return _publish_failure_state(
+            repository=repository,
+            output_dir=output_dir,
+            manifest_path=manifest_path,
+            selection_run_id=selection_run_id,
+            status="artifact_generation_failed",
+            reason=f"Could not stage a complete model-selection result: {error}",
+            owned_hashes=cleanup_hashes,
+        )
