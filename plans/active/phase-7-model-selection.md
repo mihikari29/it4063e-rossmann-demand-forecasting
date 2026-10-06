@@ -359,3 +359,32 @@ The approval sync changes only this plan, DECISIONS, PROGRESS, PROJECT_PLAN and 
 passed (152 tests on Python 3.14.5 and 152 on Python 3.12.15); Ruff lint/format, Markdown links,
 `uv lock --check` and `git diff --check` passed. No forecasting code, tests, dependencies, model
 selection, generated artifacts, new validation windows, holdout access or Phase 8 work were added.
+
+## 9. Implementation checkpoint — 2026-10-06
+
+Phase 7 is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-7-model-selection`, based on updated
+`main` after PR #12 integrated ADR-020. The package engine, thin CLI, synthetic fixture suite,
+README usage and this checkpoint are implemented. The saved-data run verified original manifest
+artifacts/configuration/source identities and recomputed the approved comparisons without fitting
+or tuning. All 34 manifest-listed candidate artifact hashes passed; candidate keys and labels
+matched across all 46,830 targets, and the common eligible population contains 38,553 rows.
+
+All candidates and the three-way population pass 100% open-label coverage in each window. The
+numeric ladder retains Seasonal Naive after Holt-Winters fails the pooled h8–14 regression cap;
+LightGBM passes the numerical gates against the retained Seasonal Naive. Candidate-level
+operational decisions remain unknown in the reviewed record, so the runner reports
+`operational_review_required` and emits no official selected identity, recipe, selected forecast or
+residual artifact. Detailed metrics, promotion results and the h2/h9/h10 disclosures are in
+[PROGRESS](../../docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06).
+
+Validation on 2026-10-06: full pytest passed (**179 tests**) on Python 3.14.5 and **179 tests** on
+Python 3.12.15; `ruff check .`, `ruff format --check .` (73 files), the documentation checker (111
+local destinations/anchors across 22 documents), `uv lock --check` (84 packages), Python 3.14
+`pip check`, Python 3.12 `uv pip check` (60 packages), and `git diff --check` passed. The diff check
+reported only expected Windows LF-to-CRLF notices for the three new Python files. The saved-data
+runner completed with both integrity statuses and coverage passing and returned
+`operational_review_required`; the Phase 7 evidence is in [PROGRESS](../../docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06).
+
+No methodology/ADR or proposal edits, dependency additions, candidate fits, holdout reads or Phase
+8 work were made. Phase 7 remains under review and this plan stays active until review, authorized
+integration and explicit closeout.

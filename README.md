@@ -15,7 +15,8 @@ LightGBM candidate was reviewed and merged by
 `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its [formal closeout plan](plans/completed/phase-6-global-lightgbm.md)
 preserves the development-only results and confirms no final-holdout evaluation.
 [PROGRESS](docs/PROGRESS.md) records development results. Phase 7 methodology is approved in ADR-020;
-implementation awaits integration of design PR #12. No final project model has been selected.
+its development-only implementation is under review on this branch. Candidate-level operational
+acceptance is still unresolved, so no final project model has been selected.
 
 ## Environment and quick start
 
@@ -60,6 +61,17 @@ and serialized models under `artifacts/lightgbm/`; it recomputes both reviewed b
 development rows. These commands do not forecast or score the final holdout or select the final
 project model.
 
+After the approved Phase 4–6 development forecast artifacts exist, run model selection separately:
+
+```powershell
+python scripts/run_model_selection.py
+```
+
+The Phase 7 runner validates and aggregates those cached forecasts; it does not call the model
+runners, rerun tuning, or fit candidates. Candidate-level offline operational reviews can be
+provided with `--operational-review path/to/review.json`. Without approved reviews, it writes the
+comparison and an `operational_review_required` decision without selected-model artifacts.
+
 `python scripts/run_eda.py` and the two notebooks reproduce the historical **full-source**
 descriptive audit, not a development-model gate. That earlier audit included July 4–31 labels;
 [EDA findings](docs/EDA_FINDINGS.md) disclose the exposure. Any new source-wide inspection needs an
@@ -69,14 +81,14 @@ The current modeling firewall still excludes July 4–31 from selection, tuning 
 ## Architecture and remaining work
 
 Implemented packages: `data/` (provenance/preparation), `analysis/` (descriptive EDA),
-`features/` (shared static/history contract), and `forecasting/` (baselines/evaluation/runners).
+`features/` (shared static/history contract), and `forecasting/` (baselines/evaluation/runners and
+development-only model selection).
 Thin command scripts expose reusable logic; notebooks are exploration/presentation.
 
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
 
-- Phases 6–7: Phase 6 global recursive LightGBM candidate is complete; Phase 7 owns later
-  development-only model selection under the approved ADR-020 policy. Implementation awaits
-  integration of design PR #12.
+- Phases 6–7: Phase 6 global recursive LightGBM candidate is complete; Phase 7 applies the
+  approved ADR-020 development-only selection policy. Phase 7 implementation remains under review.
 - Phases 8–10: out-of-sample uncertainty, separate synthetic scenarios and stateful inventory.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
@@ -86,7 +98,7 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 Later inventory/app modules are created when their work is approved; there is no speculative
 service framework. The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5 and 6 are integrated and
-formally closed; Phase 7's design is approved but remains unintegrated and unimplemented.
+formally closed. Phase 7 remains under review, and Phase 8 has not started.
 
 ## Quality and repository layout
 

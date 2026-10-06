@@ -537,3 +537,74 @@ Python 3.12.15; Ruff lint and format (70 files), Markdown checker (109 local des
 across 22 Markdown files), `uv lock --check` and `git diff --check`. No fixture tests or model
 pipelines were added or run; the requested existing fixture suites passed. Full documentation diff
 was inspected.
+
+## Phase 7 Implementation Checkpoint — 2026-10-06
+
+Phase 7 is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-7-model-selection`, based on `main`
+after approved design PR #12 merged at `64dbf2359c34cc06d81ee4fc1640ad7225db3973`. The reusable
+selection engine and thin CLI use only the three reviewed candidates and their cached development
+forecasts. The fixed ADR-020 policy is unchanged. No candidate-level operational decision was
+found, so all three reviews remain `unknown`; the result is `operational_review_required`, with no
+official selected model or selected-model artifacts.
+
+The runner verified all 34 original candidate artifact hashes (5 Seasonal Naive, 11 Holt-Winters,
+18 LightGBM), preserved all three source manifests and their original artifact metadata, checked
+the approved source snapshot and Phase 2 identity, and validated the saved candidate keys, labels,
+availability/eligibility masks, origins, windows, configurations and model identities. Each saved
+candidate contained 46,830 observed Store-origin-Date targets from 2015-05-23 through 2015-07-03.
+All 46,830 raw forecasts were available for each candidate, yielding 38,553 identical eligible
+Open=1 observed-Sales rows. All three standalone and the three-way common population had 100%
+open-label coverage in every window (11,678 / 11,678; 13,438 / 13,438; and 13,437 / 13,437).
+
+Pooled results use the same 38,553 common eligible rows; values are direct row-pooled metrics:
+
+| Candidate | MAE | RMSE | MAPE | WAPE |
+|---|---:|---:|---:|---:|
+| Seasonal Naive | 1,681.2703 | 2,416.9677 | 26.2671% | 0.232748 |
+| Holt-Winters | 1,281.7446 | 1,708.3073 | 18.3669% | 0.177439 |
+| LightGBM | 871.0612 | 1,350.9138 | 11.3531% | 0.120586 |
+
+Window MAE (all candidate comparison populations use identical rows):
+
+| Window | Seasonal Naive | Holt-Winters | LightGBM |
+|---|---:|---:|---:|
+| validation_1 | 1,101.5940 | 1,195.5661 | 1,051.4335 |
+| validation_2 | 2,269.7721 | 1,136.8306 | 790.9941 |
+| validation_3 | 1,596.5170 | 1,501.5664 | 794.3741 |
+
+The numeric ladder keeps Seasonal Naive after Holt-Winters improves pooled MAE by 23.7633% and
+wins 2/3 windows, because its pooled h8–14 MAE is 1,405.2746 versus 1,235.4154 for Seasonal
+Naive (+13.7492%, above the 10% cap). The h1–7 block improves 45.9052%, and every window remains
+within its 10% cap. LightGBM is then compared directly with the retained Seasonal Naive: pooled
+MAE improves 48.1903%, all three windows win, and both pooled horizon blocks pass their caps
+(h1–7 improves 69.8994%; h8–14 improves 11.4110%). LightGBM passes the numeric gates; operational
+review still prevents selection.
+
+| Horizon | Eligible rows | Seasonal Naive MAE | Holt-Winters MAE | LightGBM MAE | LightGBM change vs Seasonal Naive |
+|---:|---:|---:|---:|---:|---:|
+| 2 (Sunday) | 97 | 861.8763 | 879.1219 | 1,572.8966 | +82.50% |
+| 9 (Sunday) | 96 | 752.7188 | 903.0457 | 1,707.5285 | +126.85% |
+| 10 (Monday) | 3,344 | 1,025.8322 | 2,341.7674 | 2,280.9889 | +122.35% |
+
+These horizon rows are descriptive and do not add a veto. The comparison file includes MAE, RMSE,
+MAPE, WAPE, denominators, pairwise/common changes, horizon 1–14, pooled week blocks, Store-level
+diagnostics and unavailable-reason counts. The ignored output directory is
+`data/processed/model_selection/`: `model_comparison.csv` (190,680 rows),
+`selection_decision.json`, and `manifest.json`. No `selected_model_config.json`, refit recipe,
+selected forecasts or residual paths were emitted because operational approval is unresolved.
+
+SN/HW legacy lineage limits and LightGBM's original modified-worktree revision/hash remain
+disclosed in the new manifest; old manifests were not rewritten and no model was rerun. The
+qualitative operational scope is only the offline CPU course demonstration. No production latency,
+reliability, memory SLA, measured end-to-end runtime advantage or real business savings are
+established. The runner read no raw/interim data or final-holdout outcomes, emitted no July 4–31
+forecast or metric, performed no fit/tuning, and did not begin Phase 8. ADR-015 still blocks later
+July 3 and July 17 refits until separately authorized.
+
+The fixture-first suite has **179 passing tests** on Python 3.14.5 and **179 passing tests** on
+Python 3.12.15. `ruff check .` passed; `ruff format --check .` passed (73 files); the documentation
+checker passed (111 local destinations/anchors across 22 documents); `uv lock --check` resolved 84
+packages; `python -m pip check` passed on Python 3.14.5; and `uv pip check` passed on the locked
+Python 3.12 environment (60 packages). `git diff --check` passed with only expected Windows
+LF-to-CRLF notices on the three new Python files. The implementation PR records these checks.
+Phase 7 remains under review; this checkpoint is not a phase closeout.
