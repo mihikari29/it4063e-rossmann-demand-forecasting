@@ -119,7 +119,14 @@ class FittedLightGBM:
     def predict_features(self, features: pd.DataFrame) -> tuple[np.ndarray, AdaptedPredictionData]:
         """Predict from a copy-converted feature matrix, preserving caller data."""
 
-        adapted = adapt_prediction_features(features, self.category_vocabularies)
+        try:
+            adapted = adapt_prediction_features(features, self.category_vocabularies)
+        except (CategoricalAdapterIncompatibility, InvalidFeatureSchema):
+            raise
+        except Exception as error:
+            raise CategoricalAdapterIncompatibility(
+                "Prediction feature adaptation failed."
+            ) from error
         if self.booster is None:
             raise RuntimeError(self.failure_reason or "LightGBM booster is unavailable.")
         predictions = self.booster.predict(
@@ -484,24 +491,6 @@ def recursive_lightgbm_forecasts(
                         raise InvalidFeatureSchema(
                             "Recursive predictor order differs from contract."
                         )
-                    predictions, adapted = model.predict_features(
-                        feature_rows.loc[:, PREDICTOR_COLUMNS]
-                    )
-                    if len(predictions) != len(usable_covariates):
-                        raise CategoricalAdapterIncompatibility(
-                            "LightGBM prediction length differs from the feature rows."
-                        )
-                    unseen_category_columns = {
-                        column: np.asarray(
-                            feature_rows[column].notna()
-                            & ~feature_rows[column].isin(model.category_vocabularies[column])
-                        )
-                        for column in ("state_holiday", "store_type", "assortment")
-                    }
-                    for row_idx, is_unseen_store in enumerate(adapted.unseen_store):
-                        if is_unseen_store:
-                            step_reasons[usable_stores[row_idx]] = "unseen_store_category"
-                    prediction_values = predictions
                 except CategoricalAdapterIncompatibility:
                     for store in usable_stores:
                         step_reasons[store] = "categorical_adapter_incompatibility"
@@ -511,6 +500,36 @@ def recursive_lightgbm_forecasts(
                 except Exception:
                     for store in usable_stores:
                         step_reasons[store] = "recursive_state_construction_failure"
+                else:
+                    try:
+                        predictions, adapted = model.predict_features(
+                            feature_rows.loc[:, PREDICTOR_COLUMNS]
+                        )
+                        if len(predictions) != len(usable_covariates):
+                            raise CategoricalAdapterIncompatibility(
+                                "LightGBM prediction length differs from the feature rows."
+                            )
+                    except CategoricalAdapterIncompatibility:
+                        for store in usable_stores:
+                            step_reasons[store] = "categorical_adapter_incompatibility"
+                    except InvalidFeatureSchema:
+                        for store in usable_stores:
+                            step_reasons[store] = "invalid_feature_schema"
+                    except Exception:
+                        for store in usable_stores:
+                            step_reasons[store] = "model_fit_failure"
+                    else:
+                        unseen_category_columns = {
+                            column: np.asarray(
+                                feature_rows[column].notna()
+                                & ~feature_rows[column].isin(model.category_vocabularies[column])
+                            )
+                            for column in ("state_holiday", "store_type", "assortment")
+                        }
+                        for row_idx, is_unseen_store in enumerate(adapted.unseen_store):
+                            if is_unseen_store:
+                                step_reasons[usable_stores[row_idx]] = "unseen_store_category"
+                        prediction_values = predictions
 
         new_recursive_predictions: list[dict[str, Any]] = []
         for store in stores:

@@ -41,9 +41,6 @@ rossmann-lightgbm = "rossmann_forecasting.forecasting.lightgbm_runner:cli_main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.uv]
-constraint-dependencies = ["narwhals!=2.27.0"]
-
 [tool.pytest.ini_options]
 addopts = "-ra"
 testpaths = ["tests"]

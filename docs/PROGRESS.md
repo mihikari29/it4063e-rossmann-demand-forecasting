@@ -420,3 +420,21 @@ Final quality checks after the documentation update:
 The runner completed successfully and its manifest hashes the ignored development outputs and
 date-censored input projections. The plan remains active until external review, authorized
 integration, and explicit Phase 6 closeout.
+
+### External-review follow-up — 2026-10-06
+
+- Recursive feature/history construction now has its own failure boundary; prediction API errors
+  use the approved `model_fit_failure` reason, while explicit schema and categorical-adapter
+  failures keep their approved reasons. The fake-booster regression and feature-construction
+  failure fixture pass.
+- Removed the `narwhals!=2.27.0` resolver exclusion after the LightGBM fixtures passed with
+  LightGBM 4.7.0 and Narwhals 2.27.0 on Python 3.12.15 and 3.14.5 (46 passed in each
+  environment). PyPI marks 2.27.0 yanked for Pointblank breakage; no incompatibility relevant to
+  this repository or LightGBM was reproduced. The normal resolver therefore keeps the yanked
+  release out and `uv.lock` remains at Narwhals 2.26.0; the effective locked runtime is unchanged.
+- The review fixes do not alter the successful Phase 6 forecasts or recorded metrics. The
+  approved real-data development command was not rerun because the locked runtime did not change.
+  Phase 6 remains **IMPLEMENTED / UNDER REVIEW**; Phase 7 and the final holdout remain untouched.
+- Follow-up validation passed: full suite **152 passed** on Python 3.12.15 and **152 passed** on
+  Python 3.14.5; Ruff lint and formatting, documentation links, `uv lock --check`, dependency
+  consistency in both environments, and `git diff --check` passed.

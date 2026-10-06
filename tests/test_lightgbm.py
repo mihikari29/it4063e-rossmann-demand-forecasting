@@ -197,6 +197,12 @@ class _RecordingBooster:
         return np.asarray(values, dtype=np.float64)
 
 
+class _RaisingBooster:
+    def predict(self, features: pd.DataFrame, *, num_threads: int = 4) -> np.ndarray:
+        del features, num_threads
+        raise RuntimeError("simulated LightGBM prediction API failure")
+
+
 def _model(
     output: float | list[float] | Callable[[pd.DataFrame, int], np.ndarray] = 50.0,
     *,
@@ -833,6 +839,16 @@ def test_fit_and_adapter_failures_are_explicit_without_fallback(
         model.category_vocabularies = {"wrong": ("category",)}
     result = _forecast(model=model)
     assert result["unavailable_reason"].eq(expected_reason).all()
+    assert result[FORECAST_COLUMN].isna().all()
+
+
+def test_prediction_api_failure_uses_model_failure_reason_without_fallback() -> None:
+    model = _model()
+    model.booster = _RaisingBooster()
+
+    result = _forecast(model=model)
+
+    assert result["unavailable_reason"].eq("model_fit_failure").all()
     assert result[FORECAST_COLUMN].isna().all()
 
 
