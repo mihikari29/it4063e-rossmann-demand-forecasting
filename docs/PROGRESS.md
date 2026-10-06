@@ -607,5 +607,9 @@ checker passed (111 local destinations/anchors across 22 documents); `uv lock --
 packages; `python -m pip check` passed on Python 3.14.5; and `uv pip check` passed on the locked
 Python 3.12 environment (60 packages). `git diff --check` passed with only expected Windows
 LF-to-CRLF notices on the three new Python files. [Implementation PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13)
-is open for review and records these checks. Phase 7 remains under review; this checkpoint is not a
-phase closeout.
+is open for review and records these checks. Its [Quality workflow run #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37429992491)
+passed both Python 3.12 and Python 3.14 jobs, including dependency checks, fixture tests, lint,
+formatting and Markdown links, on implementation commit `f95fa9d`. Later PR-head commits only
+updated review documentation; the documentation checker and diff check passed locally, and no new
+workflow run was created for those doc-only updates. Phase 7 remains under review; this checkpoint
+is not a phase closeout.
