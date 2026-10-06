@@ -17,17 +17,18 @@ work into four manageable packages:
 | Delivery | 14 | Consolidated results, reproducible demo, report and slides |
 
 A package may share one concise execution plan, but each model/methodology approval and phase
-boundary stays explicit. Phase 9 can proceed alongside Phase 8 using development-only history.
+boundary stays explicit. Phase 9 may proceed alongside Phase 8 only under its separate approved
+scope; Phases 9–10 have not started and are outside the current Phase 8 closeout-preparation task.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
 PR #10. Phase 7 is complete on `main` through PR #13, preserving ADR-020's selected LightGBM
-trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021 and PR #14 is merged into
-`main` at `305ddc80a4e3399698f64762ec26da2fc79cfb10`. Its [active plan](../plans/active/phase-8-forecast-uncertainty.md)
-is **IMPLEMENTED / UNDER REVIEW**; implementation PR
-[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and
-unmerged for external review. Fitted uncertainty tables remain unfrozen pending that
-review.
+trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021; implementation PR
+[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) was squash-merged
+into `main` at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`. The external results review accepted
+the canonical run and its Fit B values are frozen for that artifact identity. Its
+[active plan](../plans/active/phase-8-forecast-uncertainty.md) is **REVIEWED / FORMAL CLOSEOUT
+PENDING**; retain it until this documentation integration and explicit closeout verification.
 
 ## Phase 0 — Repository Foundation
 
@@ -112,10 +113,10 @@ reviewed protocol used consistently for all candidates, not opportunistic window
 **Objective:** Quantify daily and cumulative uncertainty for the selected fixed method.
 **Dependencies:** Phase 7 development out-of-sample forecasts/residuals.
 **Design:** [Phase 8 uncertainty plan](../plans/active/phase-8-forecast-uncertainty.md),
-approved in ADR-021 and integrated by PR #14; the accepted quantile estimators, chronological fits,
-sparse-data policy and conditional development opening-schedule replay assumption are implemented
-under review. Implementation operates only on saved Phase 7 artifacts and leaves the selected
-point model unchanged.
+approved in ADR-021 and integrated by PR #14. PR #15 implemented the unchanged approved protocol
+from saved Phase 7 development artifacts and was merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`.
+External numerical review accepted the canonical results; Fit B values are frozen for that exact
+run, with identities in [PROGRESS](PROGRESS.md). The selected point model remains unchanged.
 **Deliverables:** Horizon-specific 95% intervals, cumulative lead/protection-period quantiles,
 chronological coverage diagnostics and explicit sample/availability counts.
 **Acceptance / boundary:** Calibrate on earlier development residuals and assess on later origins
@@ -123,14 +124,16 @@ not used for that calibration; fitting-set coverage is diagnostic only. Selectio
 development assessment is not an independent final test. Preserve complete Store-origin residual
 paths for cumulative errors, including the explicitly conditional saved-Open development replay;
 never sum marginal daily upper bounds or assume independent errors silently. Pooled empirical
-intervals promise neither per-store coverage nor conformal guarantees. Review Fit B implementation
-results externally before fitted-table freeze. Final-holdout actual Open cannot serve as a planned
-schedule before issuance; operational outputs requiring future Open remain unavailable without
-separately reviewed origin-known schedule provenance or a separately approved synthetic/conditional
-schedule not derived from protected actual Open. No final-holdout evaluation is authorized here.
-Fitted Fit B tables remain unfrozen until external implementation/results review. Phase 8 stays
-under review until its implementation PR is reviewed and integrated; Phases 9–10 and final-holdout
-evaluation remain outside this boundary.
+intervals promise neither per-store coverage nor conformal guarantees. The external implementation/
+results review is accepted and Fit B values are frozen only for the identified canonical run;
+PROGRESS records the hashes and observed coverage, including raw Fit B coverage below nominal 95%.
+Final-holdout actual Open cannot serve as a planned schedule before issuance; operational outputs
+requiring future Open remain unavailable without separately reviewed origin-known schedule
+provenance or a separately approved synthetic/conditional schedule not derived from protected
+actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
+calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 remains
+REVIEWED / FORMAL CLOSEOUT PENDING until this documentation integration and explicit closeout
+verification; Phases 9–10 remain outside this boundary.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 

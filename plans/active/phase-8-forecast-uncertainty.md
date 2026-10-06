@@ -1,11 +1,12 @@
 # Phase 8 — Forecast Uncertainty Methodology (Approved)
 
-**Status: IMPLEMENTED / UNDER REVIEW.** The accepted ADR-021 method is implemented on branch
-`feat/phase-8-uncertainty-implementation`, based on PR #14 merge commit
-`305ddc80a4e3399698f64762ec26da2fc79cfb10`. Implementation PR
-[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) is open and
-unmerged for external review. Fit B's fitted values remain unfrozen pending separate
-implementation/results review. The Open information boundary below remains mandatory.
+**Status: REVIEWED / FORMAL CLOSEOUT PENDING.** PR #15
+([implementation](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15)) was
+squash-merged into `main` at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; the external numerical
+results decision is ACCEPTED, and Fit B fitted quantile values are frozen for the exact canonical
+run recorded in Section 17. The method remains ADR-021. Keep this plan active until the present
+documentation/governance change is integrated and a separate explicit closeout verification is
+recorded. Phase 8 is not COMPLETE yet. The Open information boundary below remains mandatory.
 
 ## 1. Authority, base and boundary
 
@@ -590,3 +591,38 @@ Both prior immutable runs remain unchanged. The old canonical run's source hash 
 before this fix; it differs from the post-fix source hash recorded by the new run. ADR-021,
 Fit A/Fit B chronology, selected LightGBM identity, conditional saved-Open assumption and holdout
 firewall are unchanged. Fit B remains unfrozen pending external results review.
+
+## 17. External results acceptance and Fit B freeze — 2026-10-07
+
+PR #15 is integrated into `main` at squash-merge commit
+`c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`. The external reviewer decision supplied for the
+canonical numerical results is **ACCEPT**. Independent review covered all 56 daily quantiles, 84
+cumulative quantiles, 62,440 issued daily records, 93,660 cumulative records, and all 392
+diagnostics. The Fit B fitted quantile values are frozen for canonical run
+`phase8-impl-20261006-provenance-review` with this identity:
+
+| Identity | SHA-256 |
+|---|---|
+| Run manifest | `63a00fc8c50ccff99360cd8790498e977e08ec6a9846780a4e1a8ab3498d71c2` |
+| Daily quantile table | `5c985c912d14b502a5d370090353624907e7fddd6d0d8552c102ee3a1ad7eda8` |
+| Cumulative quantile table | `1a0bba7916b498f2048f080dcd3b24f6cd47472d2f71fca92b94f1b678cb70ff` |
+| Canonical policy/config identity | `49f4811bf7b01ffe6472ea76233eefa50e211207aa0b6246dada934cd4611d93` |
+| Config file SHA-256 (`calibration_config.json`) | `afe563632a2ebff937f1500f568d53cdb93be35d6dc299654464c2615ae64a08` |
+
+The last row is the serialized file hash; it is distinct from the canonical policy/config identity.
+The immutable run's manifest and config retain their publication-time pending-review and
+unfrozen flags. This dated acceptance record freezes the fitted values for the listed identities;
+the run directory, quantiles, source artifacts, manifest and current pointer were not changed or
+regenerated.
+
+The accepted assessment still has limitations: Fit B raw-primary daily coverage is
+12,263/13,437 (91.26%), below nominal 95%; conditional saved-Open operational pooled coverage is
+closure-inflated; h2/h9 use 65/64 calibration rows from only 33/32 distinct stores; and origins and
+stores are dependent. These are descriptive empirical results, not conformal, per-store, or
+production guarantees. Cumulative quantiles authorize origin-anchored prefixes only; they do not
+authorize Phase 10 daily-review suffix calibration. The ADR-015 final-holdout firewall remains in
+force, and no Phase 9/10 work has started.
+
+Phase 8 is **REVIEWED / FORMAL CLOSEOUT PENDING**, not COMPLETE. This governance documentation
+change must be reviewed and integrated before a separate explicit closeout verification. Keep
+this plan under `plans/active/` until that closeout is recorded.
