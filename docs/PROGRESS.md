@@ -11,7 +11,8 @@
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
-| Phase 10 and later | PLANNED / NOT STARTED / METHODOLOGY NOT APPROVED | Separate design and authorization required |
+| Phase 10 — inventory simulation | APPROVED; IMPLEMENTATION NOT STARTED | [Active approved design](../plans/active/phase-10-inventory-simulation.md), accepted ADR-023; implementation is the next authorized task |
+| Phase 11 and later | PLANNED / NOT STARTED | Separate authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -26,7 +27,14 @@ records, including the [completed Phase 5 plan](../plans/completed/phase-5-stati
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
 snapshots, not separate results to update. Phase 7's development-only selection is integrated and
 formally closed. Its result and closeout do not constitute final-holdout evaluation or production
-approval. Phase 8 methodology is approved in ADR-021; implementation PR #15 and results-acceptance PR #16 are integrated, and the external results review accepted the canonical development run. Fit B values are frozen for that run. Phase 8 is COMPLETE following the explicit closeout recorded below and in the completed plan. Phase 9 is COMPLETE after PR #19 integration, accepted independent implementation and numerical review, and this formal closeout. Its accepted canonical run and manifest are recorded below and were not regenerated. Phase 10 and later remain planned and not started; no Phase 10 methodology is approved.
+approval. Phase 8 methodology is approved in ADR-021; implementation PR #15 and results-acceptance
+PR #16 are integrated, and the external results review accepted the canonical development run.
+Fit B values are frozen for that run. Phase 8 is COMPLETE following the explicit closeout recorded
+below and in the completed plan. Phase 9 is COMPLETE after PR #19 integration, accepted independent
+implementation and numerical review, and formal closeout. Its accepted canonical run and manifest
+are recorded below and were not regenerated. Phase 10 methodology is approved under ADR-023;
+IMPLEMENTATION NOT STARTED. Phase 10 implementation is the next authorized task. Phase 11 and later
+have not started or been authorized.
 
 ## Immediate next boundary
 
@@ -58,6 +66,13 @@ The PR #19 branch was synchronized by merging `origin/main`, preserving the uppe
 proposal path and its unchanged content. Phase 10's later-review/suffix method, event order, queue,
 replenishment policies and comparisons remain separately unapproved. No final-holdout release or
 access is authorized.
+
+The [Phase 10 active design](../plans/active/phase-10-inventory-simulation.md) and accepted
+[ADR-023](DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
+are APPROVED; IMPLEMENTATION NOT STARTED. The design uses daily execution against origin-frozen
+targets, with no rolling calibrated suffix forecasts. Phase 10 implementation is the next
+authorized task. Phase 9 remains COMPLETE, Phase 11 has not started or been authorized, and the
+protected holdout remains unreleased.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -1567,3 +1582,72 @@ PLANNED and not started, and no Phase 10 methodology is approved.
 The approved link-maintenance change updates only ADR-022's plan pointer to the completed plan.
 Its accepted status, methodology and substantive content remain unchanged. The relocated plan's
 internal links and all repository-local Markdown destinations pass validation.
+
+## Phase 10 methodology approval and integration — 2026-10-07
+
+**State: APPROVED; IMPLEMENTATION NOT STARTED.** Human approval of the Phase 10 methodology and
+ADR-023 was given on 2026-10-07. The initial technical methodology review and fresh independent
+review both returned ACCEPT; the independent verdict is
+`INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, with no blocking findings or required methodology
+changes. This is model-assisted review evidence plus explicit human approval, not a claim of
+GitHub-native reviewer approval. Phase 10 implementation is authorized as the next separate task.
+This approval/integration task changes documentation only. Phase 9 remains COMPLETE; Phase 11 has
+not started and is not authorized. The protected holdout remains unreleased.
+
+The original design branch, `docs/phase-10-inventory-simulation-design`, was created from fetched
+`origin/main` at `8234ab2170b7c76b00623c0f4e11a82dd8f2d4b2`, the Phase 9 closeout PR #21 commit.
+
+The active `plans/active/phase-10-inventory-simulation.md` and accepted ADR-023 record the two
+approved origin/fit relationships, origin-frozen baseline/LightGBM-buffer targets, daily review,
+L full intervening demand days and EOD-t to BO-day t+L+1 receipts. They define lost-sales balances,
+ending-stock holding-plus-shortfall costs, exact KPI denominators, the project-specific completed
+positive-demand receipt-cycle service rate, finite-window terminal exposures and nine paired
+sensitivity overlays. Synthetic q transport is explicitly uncalibrated. Future interfaces,
+immutable artifact schemas/publication and fixture/numerical acceptance are design requirements,
+not implemented capabilities or simulated results.
+
+Self-review inspected the entire seven-file documentation diff. No source, scripts, tests,
+dependencies, lock, accepted Phase 0–9 method or approved proposal content changed. Current status
+and terminology agree across the active plan, ADR, roadmap, dictionary and READMEs. No contradiction
+requires editing `docs/PROPOSAL.md`. Upstream manifest identities were copied from existing
+governance records, not freshly verified by artifact access or hashing. No real-data pipeline,
+model/scenario regeneration or simulation was run. Protected July 4–31 outcomes were not accessed,
+inspected, hashed, summarized or evaluated.
+
+### Documentation proposal quality gates
+
+Commands use `.venv/Scripts/python.exe` (Python 3.14.5) and `.venv/Scripts/uv.exe` (uv 0.12.23).
+The locked sync used `--inexact` to retain installed environment tooling; project dependencies and
+`uv.lock` remain unchanged. These are existing fixtures/repository checks, not Phase 10 tests.
+
+| Check | Actual result |
+|---|---|
+| `uv lock --check` | PASS — 84 packages resolved; lock unchanged |
+| `uv sync --locked --extra dev --inexact --python C:\Users\Minh\AppData\Local\Programs\Python\Python314\python.exe` | PASS — 84 packages resolved; existing project package rebuilt; no dependency/lock change |
+| `uv pip check` | PASS — 62 packages checked; all installed packages compatible |
+| `python -m pytest` | PASS — 230 passed in 107.94s |
+| `python -m ruff check .` | PASS — all checks passed; nonfatal cache-write access warning |
+| `python -m ruff check --no-cache .` | PASS — all checks passed without the cache warning |
+| `python -m ruff format --check .` | PASS — 83 files already formatted |
+| `python scripts/check_docs.py` | PASS — 213 local destinations/anchors across 25 Markdown files |
+| `git diff --check` | PASS |
+
+The approval changes no method or accepted Phase 0–9 contract, starts no simulator, and produces
+no results or artifacts. The active plan remains in `plans/active/` during implementation and
+review. The next authorized boundary is Phase 10 implementation under the accepted plan; Phase 11
+and protected holdout access remain outside this approval.
+
+### Approval integration quality gates
+
+The following required checks ran after the approval documentation update using the locked
+`.venv` environment. No Phase 10 implementation test or model/scenario pipeline was run.
+
+| Check | Actual result |
+|---|---|
+| `uv lock --check` | PASS — 84 packages resolved; lock unchanged |
+| `uv pip check` | PASS — 62 packages checked; all installed packages compatible |
+| `python -m pytest` | PASS — 230 passed in 130.21s |
+| `python -m ruff check --no-cache .` | PASS — all checks passed |
+| `python -m ruff format --check .` | PASS — 83 files already formatted |
+| `python scripts/check_docs.py` | PASS — 214 local destinations/anchors across 25 Markdown files |
+| `git diff --check` | PASS |

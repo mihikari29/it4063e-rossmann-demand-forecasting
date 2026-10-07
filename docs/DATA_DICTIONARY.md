@@ -95,15 +95,15 @@ operating data or measured business costs. Phase 9 does not implement the invent
 
 | Name | Category | Source | Meaning | Unit | Known Range | Generation / Derivation Rule | Availability at Forecast Time | Notes |
 |---|---|---|---|---|---|---|---|---|
-| `SupplierLeadTime` | Supply-chain input | Synthetic / simulated | Store-specific replenishment lead time | Calendar days | Integer 2–7 | Fixed-seed scenario assumption | Yes, as simulated input | Receipt timing is frozen in Phase 10 design |
+| `SupplierLeadTime` | Supply-chain input | Synthetic / simulated | Store-specific replenishment lead time | Calendar days | Integer 2–7 | Fixed-seed scenario assumption | Yes, as simulated input | Approved Phase 10: L full intervening demand days; EOD-t order received BO-day t+L+1 |
 | `ReviewPeriod` | Policy input | Simulated policy | Time between replenishment reviews | Calendar days | 1 for initial simulator | Daily-review policy | Yes | Not a fitted Rossmann parameter |
 | `ProtectionPeriod` | Policy derivation | Simulated policy | Lead time plus review period | Calendar days | 3–8; must be $\le14$ | `SupplierLeadTime + ReviewPeriod` | Yes | Distinct from lead time alone |
 | `StockOnHandValue` | Inventory state | Synthetic / simulated | Available simulated stock | Retail-equivalent value | $\ge 0$ | Origin-safe recent Sales times initial coverage; then evolve with receipts and fulfilled proxy demand | Yes, as current simulated state | Not procurement cost or physical units |
 | `OnOrderValue` | Inventory state | Synthetic / simulated | Outstanding scheduled receipts | Retail-equivalent value | $\ge 0$ | Sum outstanding order queue; remove orders on receipt | Yes, as current simulated state | Cannot be assumed zero throughout replay |
 | `BackordersValue` | Inventory state | Simulated policy | Unfulfilled value carried forward | Retail-equivalent value | 0 in initial lost-sales policy | Record unmet value as lost sales instead of backlog | Yes | Alternative backorder policy requires reviewed design |
 | `InventoryPositionValue` | Inventory derivation | Simulated state | Stock plus orders less backorders | Retail-equivalent value | $\ge 0$ under initial policy | `StockOnHandValue + OnOrderValue - BackordersValue` | Yes | Timing consistent with event order |
-| `ServiceLevelTarget` | Policy input | Synthetic / simulated | Target probability of no shortfall over a protection period | Probability | 0.90–0.98; 0.95 base | Scenario's one-sided cumulative-residual quantile level | Yes | Cycle-service target, not achieved service or value fill rate |
-| `HoldingCostRate` | Cost input | Synthetic / simulated | Daily inventory carrying-cost proxy | Cost per inventory-value unit per day | Approved illustrative range in D.1 | Synthetic annual-rate conversion in D.1 | Yes | Apply at the Phase 10 daily stock measurement point |
+| `ServiceLevelTarget` | Policy input | Synthetic / simulated | Target probability of no shortfall over a protection period | Probability | 0.90–0.98; 0.95 base | Scenario's one-sided cumulative-residual quantile level | Yes | Approved Phase 10 uses p as nominal buffer parameter, not achieved cycle service/value fill or calibrated synthetic probability |
+| `HoldingCostRate` | Cost input | Synthetic / simulated | Daily inventory carrying-cost proxy | Cost per inventory-value unit per day | Approved illustrative range in D.1 | Synthetic annual-rate conversion in D.1 | Yes | Approved Phase 10 applies to ending on-hand stock, including closed days |
 | `StockoutPenalty` | Cost input | Synthetic / simulated | Cost proxy for unmet sales value | Cost per unmet-value unit | Approved illustrative [0.25, 1.20] | Approved total penalty in D.1 | Yes | Not actual Rossmann loss or margin |
 | `AverageUnitValue` | Conversion input | Synthetic / simulated | Value used to illustrate equivalent units | Retail-equivalent value per equivalent unit | Approved illustrative {5,10,20,50} | Store-level display assumption | Yes | Display only; no real products or SKUs |
 | `DiscountDepth` | Stress-scenario input | Synthetic / simulated | Simulated promotion intensity | Proportion | $0 \le x < 1$ | Zero when `Promo = 0`; positive when `Promo = 1` in the scenario | Yes, in synthetic scenarios only | Never a measured Rossmann predictor or reason to modify historical Sales |
@@ -139,7 +139,7 @@ values are illustrative assumptions, not Rossmann facts:
   later daily-review suffix method or protected holdout access is authorized.
 
 Phase 9 implements no policy, event order, queue, inventory KPI or cost aggregation under this
-approved design. Those need separate Phase 10 design and approval.
+approved design. Phase 10 methodology now defines those rules; its implementation has not started.
 
 ## E. Planned Inventory Decision and Evaluation Outputs
 
@@ -147,22 +147,54 @@ These are derived outputs of the future simulator. Their definitions do not impl
 inventory model. Operational forecasts require known source/planned Open; an unresolved required
 forecast makes the recommendation unavailable rather than silently supplying zero.
 
+The [approved Phase 10 plan](../plans/active/phase-10-inventory-simulation.md) and accepted ADR-023
+define the refinements below. Phase 10 implementation has not started.
+They retain Phase 9's accepted monetary inputs and Phase 8's origin-prefix definitions. V denotes
+retail-equivalent turnover value; K denotes synthetic cost-proxy units. Each H14 episode uses June
+5/Fit A or June 19/Fit B, with targets fixed before evaluation outcomes are loaded.
+
 | Output | Definition / unit | Interpretation |
 |---|---|---|
 | `LeadTimeDemandValue` / `ProtectionDemandValue` | Sum operational forecasts through $L$ / $P$; retail-equivalent value | Forecast sales proxy, not latent physical demand |
-| `CumulativeUpperValue` | $\max(0,D_P+q_p(E_P))$, using complete out-of-sample cumulative residual paths; $p=ServiceLevelTarget$ | Calibrate dependence-preserving paths; never sum daily interval bounds |
+| `CumulativeUpperValue` | $\max(0,D_P+q_p(E_P))$, using complete out-of-sample cumulative residual paths; $p=ServiceLevelTarget$ | Frozen Phase 8 origin-prefix quantile; never sum daily bounds; synthetic use is uncalibrated transport |
 | `SafetyStockValue` | $\max(0,U_P-D_P)$ for the simulator; retail-equivalent value | Non-negative simulated protection buffer |
 | `ReorderPointValue` | $\max(D_L,U_L)$; retail-equivalent value | Continuous-review illustration, not the daily-review order-up-to target |
-| `OrderUpToValue` | $\max(D_P,U_P)$; retail-equivalent value | Daily-review protection target |
+| `OrderUpToValue` | $\max(D_P,U_P)$; retail-equivalent value | Approved origin-frozen standing target from h1..P; reused at daily reviews without rolling calibration |
 | `ReplenishmentValue` | $\max(0,OrderUpToValue-InventoryPositionValue)$ | Simulated value order; arrival date enters the queue |
 | `EquivalentUnits` | $\lceil ReplenishmentValue/AverageUnitValue\rceil$ | Illustrative equivalent units, never real SKU quantity |
 | `UnmetValue` / `EstimatedLostSales` | Positive proxy demand that cannot be fulfilled from simulated available stock; retail-equivalent value | Not observed Rossmann lost sales; lost-sales default carries no backlog |
 | `StockoutRate` | Positive-demand days with unmet value / positive-demand days | Explicit denominator; unavailable when zero |
-| `CycleServiceLevel` | Completed replenishment cycles without unmet value / completed cycles | Achieved simulated service, distinct from target; define cycle boundaries before replay |
+| `CompletedPositiveDemandReceiptCycleServiceRate` | Completed positive-demand receipt cycles with zero unmet value / completed positive-demand receipt cycles | Approved label: completed positive-demand receipt-cycle service rate; project-specific simulated CSL proxy, policy-dependent denominator, not guaranteed industry-standard CSL; zero denominator => null |
 | `ValueFillRate` | $1-\sum UnmetValue/\sum DemandValue$ | Fraction of proxy value fulfilled; unavailable with zero demand denominator |
 | `AverageInventoryValue` / `EstimatedHoldingCost` | Fixed daily stock measurement; mean stock / sum daily rate times stock | State event order and measurement convention; conditional cost proxy |
 
-Phase 9 fixes scenario ranges, seed, and generation rules; Phase 10 fixes event order, cycle
+### E.1 Approved Phase 10 accounting and denominator definitions
+
+- Baseline target is m times the number of origin-known open days in h1..P; forecast target uses
+  the unchanged signed cumulative q at exact fit/P/p. R=1, L=2–7, P=L+1=3–8. L counts full
+  intervening calendar demand days: EOD-t order arrives BO-day t+L+1. Origin review precedes
+  outcomes, later reviews use the same standing target, and day-14 ordering is suppressed.
+- Receipt-cycle boundaries are two observed positive receipt dates a_i<a_(i+1), with demand
+  measured over [a_i,a_(i+1)-1]. Both boundaries must occur by T. Only positive-demand completed
+  cycles enter the service-rate denominator; report zero-demand cycles and initial/terminal
+  censored intervals separately. The denominator depends on the policy.
+- Record `fulfilled_total`, `demand_total`, `positive_demand_stockout_days`, `positive_demand_days`,
+  `ending_inventory_sum`, `calendar_days`, `zero_unmet_positive_demand_cycles` and
+  `completed_positive_demand_cycles`. Fill=fulfilled/demand; stockout=positive-demand stockout
+  days/positive-demand days; average inventory=ending-stock sum/14 for complete episodes.
+  Zero service denominators give null. Pool ratios from totals, not Store percentages.
+- `HoldingCost_t=HoldingCostRate*ending_on_hand_value` K and
+  `UnmetPenalty_t=StockoutPenalty*unmet_value` K, using the unchanged c*a/365 and (1-c)+g rates.
+  `SimulatedHoldingPlusShortfallCost` sums these over 14 days; no procurement expenditure,
+  duplicate margin or revenue subtraction. `TerminalStockCostValue=c*I_T` and
+  `OutstandingProcurementCommitment=c*O_T` are separate exposure diagnostics, not profit/savings
+  or objective components. Retain due-after-T orders without cancellation, refund or salvage.
+- Synthetic q use is an uncalibrated illustrative buffer: `calibration_transport_valid=false`.
+  No nominal synthetic coverage/service claim. Unknown inputs remain null; missing demand stops
+  dependent state evolution and prevents a complete-episode score. Known synthetic closures
+  consume zero only for available demand; stock, receipts, reviews and holding costs continue.
+
+Phase 9 fixes scenario ranges, seed, and generation rules; approved Phase 10 fixes event order, cycle
 boundaries, forecast-refresh cadence, supported review dates, terminal-state handling, policy
 comparisons, and KPI denominators. Both must be locked before the authorized
 final replay. Historical Sales is held unchanged across policies; synthetic stress paths remain

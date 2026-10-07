@@ -19,8 +19,9 @@ work into four manageable packages:
 A package may share one concise execution plan, but each model/methodology approval and phase
 boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
 Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/phase-9-synthetic-inventory.md)
-preserves the design, implementation and review record. Phase 10 remains PLANNED and not started;
-no Phase 10 methodology is approved, and separate design and authorization are required.
+preserves the design, implementation and review record. Phase 10's [active design](../plans/active/phase-10-inventory-simulation.md)
+and ADR-023 are APPROVED; implementation has not started. Phase 10 implementation is the next
+authorized task. Phase 11 has not started and is not authorized.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -138,8 +139,8 @@ provenance or a separately approved synthetic/conditional schedule not derived f
 actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
 calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 is COMPLETE
 for the accepted canonical development run. Phase 9 is formally closed as COMPLETE. Phase 10
-remains PLANNED and unstarted; no Phase 10 methodology is approved, and separate authorization
-is required before design or implementation.
+methodology is approved under ADR-023 and remains unimplemented; Phase 10 implementation is the
+next authorized task. Phase 11 remains separate and unauthorized.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
@@ -171,20 +172,28 @@ implement inventory policies or establish physical inventory, observed stockouts
 ## Phase 10 — Inventory Simulation & Sensitivity Analysis
 
 **Objective:** Compare simple replenishment policies under stated assumptions.
-**Status:** PLANNED / NOT STARTED / METHODOLOGY NOT APPROVED.
+**Status:** APPROVED; IMPLEMENTATION NOT STARTED.
+**Design:** [Active Phase 10 plan](../plans/active/phase-10-inventory-simulation.md) and accepted
+ADR-023. Human approval and review evidence are recorded in the plan and [PROGRESS](PROGRESS.md).
 **Dependencies:** Phases 8–9 and development-only forecasts.
 **Deliverables:** Stateful order/receipt/stock ledger, policy/KPI comparison, sensitivity report.
-**Acceptance / boundary:** Use retail-equivalent values consistently; distinguish lead-time ROP
-from the daily-review order-up-to target for protection period L+R <=14. Freeze receipt/demand/
-review timing, lost-sales treatment, order queue, terminal censoring and cost conventions before
-comparison. Use common demand paths, starting conditions and seeds across policies. Report cycle
-service, value fill rate, positive-demand stockout denominator, average inventory, simulated
-holding cost and unmet-turnover proxy. Unknown/incomplete forecast paths do not become zeros.
-Sensitivity varies lead time, service target, costs and starting inventory; conclusions remain
-conditional, with no actual Rossmann stockout/savings or mathematical-optimality claim.
+**Acceptance / boundary:** At June 5/Fit A or June 19/Fit B, freeze a historical-mean or
+LightGBM-plus-buffer standing target from the original h1..P prefix. R=1, L=2–7, P=L+1<=14;
+L means full intervening demand days, so EOD-t orders arrive BO-day t+L+1. Execute daily lost-sales
+queue/stock transitions against the unchanged target through day 13; suppress day-14 ordering.
+No forecast refresh, suffix bounds, q scaling, fit or recalibration. Synthetic q transport is
+explicitly uncalibrated. Compare common inputs and complete matched episodes using value fill,
+positive-demand stockout, ending-stock inventory and simulated holding-plus-shortfall cost.
+Use the project-specific completed positive-demand receipt-cycle service rate, with policy-dependent
+denominator/censoring; no guaranteed CSL. Retain terminal orders/exposure with identical treatment.
+Nine one-factor-at-a-time overlays supplement existing scenarios without changing Phase 9.
+Unknown inputs remain unavailable. Approval before code, fixtures/quality gates, development-only
+numerical validation and independent implementation/results review are required; negative findings
+are valid. No actual inventory, stockout, savings or optimality claim; holdout remains protected.
 
 ## Phase 11 — Application Services & Thin API
 
+**Status:** PLANNED / NOT STARTED; separate authorization required.
 **Objective:** Expose the frozen analytics through reusable Python services and a small HTTP adapter.
 **Dependencies:** Phases 7–10.
 **Deliverables:** Forecast/uncertainty/inventory service functions, thin FastAPI request/response
