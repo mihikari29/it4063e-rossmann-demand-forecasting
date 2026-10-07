@@ -64,7 +64,7 @@ keys, dtypes, determinism, and non-mutation; no holdout forecast metrics or feat
 performed. Earlier source validation and full-source EDA included descriptive holdout information,
 as disclosed in [EDA findings](EDA_FINDINGS.md). Later model/interval/policy selection cannot use
 holdout outcomes or reuse full-history Sales-based EDA cohorts. The final replay protocol is
-defined in the [proposal](proposal.md) and [decision log](DECISIONS.md).
+defined in the [proposal](PROPOSAL.md) and [decision log](DECISIONS.md).
 
 ## C. Phase 2 Diagnostic Derivations
 

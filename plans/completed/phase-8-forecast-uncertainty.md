@@ -36,7 +36,7 @@ Earlier full-source descriptive EDA exposure remains disclosed in ADR-015 and
 never-inspected dataset. That history permits no new protected outcome use in this task.
 
 Sources reviewed: [AGENTS](../../AGENTS.md), [WORKFLOW](../../docs/WORKFLOW.md),
-[proposal](../../docs/proposal.md), [DECISIONS](../../docs/DECISIONS.md) including ADR-015–017,
+[proposal](../../docs/PROPOSAL.md), [DECISIONS](../../docs/DECISIONS.md) including ADR-015–017,
 019–020, [PROJECT_PLAN](../../docs/PROJECT_PLAN.md), [PROGRESS](../../docs/PROGRESS.md),
 [FEATURE_CONTRACT](../../docs/FEATURE_CONTRACT.md), [DATA_DICTIONARY](../../docs/DATA_DICTIONARY.md),
 [README](../../README.md), completed

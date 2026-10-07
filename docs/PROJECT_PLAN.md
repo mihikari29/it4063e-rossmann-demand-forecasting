@@ -1,6 +1,6 @@
 # Project Plan
 
-This roadmap derives from the [proposal](proposal.md) and accepted [decisions](DECISIONS.md).
+This roadmap derives from the [proposal](PROPOSAL.md) and accepted [decisions](DECISIONS.md).
 [PROGRESS](PROGRESS.md) owns current implementation/review/integration state. Each phase below is
 a milestone, not a requirement for a separate plan, branch, PR, or closeout ceremony.
 

@@ -22,7 +22,7 @@ The design approval synchronization
 `feat/phase-9-synthetic-inventory` starts from that commit.
 
 Read together with [AGENTS](../../AGENTS.md), [workflow](../../docs/WORKFLOW.md),
-[proposal](../../docs/proposal.md), [roadmap](../../docs/PROJECT_PLAN.md),
+[proposal](../../docs/PROPOSAL.md), [roadmap](../../docs/PROJECT_PLAN.md),
 [decisions](../../docs/DECISIONS.md), [dictionary](../../docs/DATA_DICTIONARY.md),
 [PROGRESS](../../docs/PROGRESS.md) and the
 [completed Phase 8 plan](../completed/phase-8-forecast-uncertainty.md).

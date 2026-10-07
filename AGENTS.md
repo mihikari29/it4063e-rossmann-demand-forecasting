@@ -13,7 +13,7 @@ Start with `git status`, the current branch, and `docs/PROGRESS.md`; do not infe
 phase from a completed plan or chat history. For substantial work read the relevant sources in
 this order, and inspect their code interfaces:
 
-1. `docs/proposal.md`: business intent and scope.
+1. `docs/PROPOSAL.md`: business intent and scope.
 2. `docs/DECISIONS.md`: accepted architecture/methodology and superseding records.
 3. `docs/PROJECT_PLAN.md`: dependencies, acceptance criteria, and Phase 6 handoff.
 4. `docs/PROGRESS.md` plus Git/code: actual state and canonical result evidence.

@@ -226,7 +226,7 @@ values, costs, equivalent units, stockouts and policy benefits are simulated. Th
 windows do not establish year-round robustness; pooled empirical intervals do not guarantee each
 store's service level. Fair negative results or retaining the baseline are valid project outcomes.
 
-Start with the [proposal](docs/proposal.md), [roadmap](docs/PROJECT_PLAN.md),
+Start with the [proposal](docs/PROPOSAL.md), [roadmap](docs/PROJECT_PLAN.md),
 [decisions](docs/DECISIONS.md), [progress](docs/PROGRESS.md), [agent contract](AGENTS.md),
 [workflow](docs/WORKFLOW.md), [dictionary](docs/DATA_DICTIONARY.md),
 [feature contract](docs/FEATURE_CONTRACT.md), and [source validation](docs/DATA_VALIDATION.md).
