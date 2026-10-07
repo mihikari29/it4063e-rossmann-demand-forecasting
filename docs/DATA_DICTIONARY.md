@@ -81,13 +81,15 @@ They are not forecast features, and a candidate status is not guaranteed ground 
 
 ## D. Synthetic Operational Variables
 
-These are **planned simulation fields, not implemented Rossmann observations**. All random
-generation will use documented fixed seeds. Monetary demand, stock, orders, and recommendations
-share a retail-equivalent turnover-value basis; they are not procurement-cost inventory. Costs
+These are **synthetic or planned simulation fields, never Rossmann observations**. Phase 9's
+origin-safe scenario inputs are implemented and formally complete; Phase 10's stateful simulation
+remains unstarted. All random generation uses documented fixed seeds. Monetary demand, stock,
+orders, and recommendations share a retail-equivalent turnover-value basis; they are not
+procurement-cost inventory. Costs
 below are scenario proxies. Initial demand-dependent inputs use only history available at the
 simulation origin, and compared policies share inputs, demand paths, seeds, and starting stocks.
-The [Phase 9 design](../plans/active/phase-9-synthetic-inventory.md) is approved and its scenario
-generator is **IMPLEMENTED / UNDER REVIEW**. Section D.1 summarizes the accepted illustrative
+The [completed Phase 9 plan](../plans/completed/phase-9-synthetic-inventory.md) records the accepted
+design and completed scenario generator. Section D.1 summarizes the accepted illustrative
 assumptions. ADR-016's monetary basis remains in force; these assumptions are not observed Rossmann
 operating data or measured business costs. Phase 9 does not implement the inventory simulator.
 
@@ -109,7 +111,7 @@ operating data or measured business costs. Phase 9 does not implement the invent
 
 ### D.1 Approved Phase 9 design contract
 
-The [active plan](../plans/active/phase-9-synthetic-inventory.md) owns the complete schema,
+The [completed plan](../plans/completed/phase-9-synthetic-inventory.md) records the complete schema,
 seed/draw grammar, scenarios, artifact hashes, failure rules and planned tests. These accepted
 values are illustrative assumptions, not Rossmann facts:
 

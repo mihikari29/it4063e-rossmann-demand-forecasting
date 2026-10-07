@@ -581,7 +581,7 @@ separate frozen sequential protocol. Phase 9/10 implementation remains outside t
 **Extends:** ADR-016 with explicit synthetic initialization, conversion/cost and stress
 assumptions. ADR-015/016/020/021 remain unchanged. Full approved schema, deterministic algorithm,
 artifacts, fixtures and acceptance criteria:
-[active Phase 9 design](../plans/active/phase-9-synthetic-inventory.md).
+[completed Phase 9 plan](../plans/completed/phase-9-synthetic-inventory.md).
 The design is based on PR #17's merged Phase 8 closeout at
 `f08a62aa980d0670186ed25ae1f6e5a018ff3781`.
 

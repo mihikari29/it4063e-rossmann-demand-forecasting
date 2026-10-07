@@ -518,7 +518,7 @@ Status remains **PROPOSED / AWAITING APPROVAL**.
 This is the historical proposal checkpoint. The external acceptance and current status are
 recorded in the later Section 13.
 
-## 13. External methodology approval — 2026-10-07
+## 13. External methodology approval — 2026-10-07 (historical approval checkpoint)
 
 **Decision: ACCEPT.** The external methodology decision supplied for this synchronization accepts
 the design reviewed at PR #18 head `3820c2c34749b3baa4df954afc3daa0636cff271`. This approval
@@ -556,7 +556,7 @@ inventory KPI methodology remain separately unapproved. Phase 8 quantiles remain
 approved origin-anchored prefixes and do not transport to synthetic stress. The protected
 2015-07-04 through 2015-07-31 holdout remains unreleased.
 
-## 14. Implementation checkpoint — 2026-10-07
+## 14. Implementation checkpoint — 2026-10-07 (historical pre-closeout checkpoint)
 
 The fixed-seed origin-safe generator, validation and immutable publication are implemented on
 `feat/phase-9-synthetic-inventory` at source commit `8dae4e43e06d815746456a1786acfc264b77093b`.
@@ -589,7 +589,7 @@ Markdown checks. The phase boundary remains the scenario generator only: do not 
 merge this PR, or mark Phase 9 complete until review and integration closeout are explicitly
 handled.
 
-### External configuration-validation review fix — 2026-10-07
+### External configuration-validation review fix — 2026-10-07 (historical review checkpoint)
 
 PR #19's finding that nested semantic settings were not frozen is addressed at source commit
 `2ec2488adf065e692141eceb8e3f979df4679f45`. Validation now compares the complete configuration
@@ -602,7 +602,7 @@ Parquet logical hashes, row counts and byte hashes from the unchanged `canonical
 manifest and validation details are recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
 **IMPLEMENTED / UNDER REVIEW** on PR #19; no Phase 10 work or merge is authorized by this update.
 
-## 15. Independent implementation and numerical review acceptance — 2026-10-07
+## 15. Independent implementation and numerical review acceptance — 2026-10-07 (historical pre-integration checkpoint)
 
 **Decision: ACCEPTED.** The independent external code and numerical review accepted the final
 implementation at source revision `2ec2488adf065e692141eceb8e3f979df4679f45` and canonical run
@@ -620,3 +620,23 @@ The accepted run and manifest remain unchanged; this integration performs no run
 The final integration gate is recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
 **IMPLEMENTED / UNDER REVIEW** until PR #19 is merged and formally closed. The protected
 2015-07-04 through 2015-07-31 holdout was not accessed, and Phase 10 remains unstarted.
+
+## 16. Formal Phase 9 closeout — 2026-10-07
+
+**Decision: COMPLETE.** PR #19 was verified as merged into `main` by squash merge
+`7451c50ff685d92e8e74b5014d07b3bbfaca0a22`. The accepted methodology remains ADR-022. The external
+independent implementation and numerical review accepted source revision
+`2ec2488adf065e692141eceb8e3f979df4679f45` and canonical run
+`phase9-dev-20261007-config-validation-fix`, manifest SHA-256
+`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`. The reviewed integration
+head was `46788db3f5b81af37cda78bf44f054be2bc0098b`. The accepted run and manifest were not
+regenerated or rewritten for closeout; detailed results are maintained in [PROGRESS](../../docs/PROGRESS.md).
+
+PR #20's proposal rename remains integrated at `ff3c11554144e79ee84c627c2bcd3619d23072d0`, with
+`docs/PROPOSAL.md` as the canonical path. ADR-022 remains accepted. Historical proposal, approval,
+implementation and review checkpoints above retain their recorded decisions and evidence.
+
+Phase 9 is **COMPLETE**. The completed scope is the deterministic, origin-safe synthetic monetary
+scenario generator. This phase does not implement inventory policies or claim physical inventory,
+observed stockouts, or actual savings. The protected final holdout was not accessed during closeout.
+Phase 10 remains PLANNED and not started; no Phase 10 methodology is approved.
