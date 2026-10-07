@@ -1,8 +1,8 @@
 # Phase 9 — Synthetic Supply-Chain / Inventory Layer Design
 
-**Status: PROPOSED / AWAITING APPROVAL — 2026-10-07.** This is a design for external
-methodology review, not implementation authorization. Phase 9 code, generated scenarios and
-numerical results do not exist under this design. Phase 10 remains PLANNED and not started.
+**Status: APPROVED / IMPLEMENTATION NOT STARTED — 2026-10-07.** The external methodology
+review decision is ACCEPT. This synchronization records design approval only: no Phase 9 code,
+generated scenarios or numerical results exist. Phase 10 remains unapproved and not started.
 
 ## 1. Authority, integration and scope
 
@@ -18,16 +18,17 @@ Read together with [AGENTS](../../AGENTS.md), [workflow](../../docs/WORKFLOW.md)
 [decisions](../../docs/DECISIONS.md), [dictionary](../../docs/DATA_DICTIONARY.md),
 [PROGRESS](../../docs/PROGRESS.md) and the
 [completed Phase 8 plan](../completed/phase-8-forecast-uncertainty.md).
-Proposed [ADR-022](../../docs/DECISIONS.md#adr-022--synthetic-monetary-scenario-contract-proposed)
-adds explicit synthetic assumptions without superseding ADR-015, ADR-016, ADR-020 or ADR-021.
-The proposal itself and historical checkpoints remain unchanged.
+Accepted [ADR-022](../../docs/DECISIONS.md#adr-022--synthetic-monetary-scenario-contract)
+records the approved synthetic assumptions without superseding ADR-015, ADR-016, ADR-020 or
+ADR-021. Historical proposal checkpoints remain in this active plan and PROGRESS.
 
 **Phase 9 would deliver:** origin-censored initialization evidence, deterministic exogenous
 operational parameters, separately labelled synthetic turnover paths, validation reports and
 immutable manifests. It would neither fit a forecast nor run an inventory policy.
 No protected 2015-07-04 through 2015-07-31 Sales, Open or Customers may be accessed, hashed or
 used. No Phase 7/8 artifact, calibration, feature contract, model or dependency changes belong here.
-Review must accept or revise the explicit choices in Section 11 before implementation is authorized.
+The choices in this plan were accepted in the external methodology review recorded in Section 13.
+The current synchronization records design approval only; implementation remains unstarted.
 
 ## 2. Value semantics and information layers
 
@@ -187,8 +188,8 @@ forecast error, interval hits or eventual inventory performance.
 
 ## 5. Deterministic generation and parameter dependencies
 
-All choices below are illustrative course assumptions requiring ADR-022 approval; no range
-is estimated from actual inventory, margins, prices or holdout performance.
+All choices below are approved illustrative course assumptions; no range is estimated from
+actual inventory, margins, prices or holdout performance.
 
 ### Seed and sampling algorithm
 
@@ -228,7 +229,7 @@ This supplies reproducible artificial variation, not calibrated random uncertain
 |---|---|---|
 | `SupplierLeadTime` L | Uniform discrete {2,3,4,5,6,7} | Fixed over a Store-scenario's H14; stress may override to 7. No random receipt delay or queue scheduling here. |
 | `ReviewPeriod` R; `ProtectionPeriod` P | R=1; P=L+1, integer 3..8 <=14 | Context for later design, not permission to use unsupported suffixes. |
-| `InventoryCoverageDays` C | C=L+1+B; B uniform discrete {0,1,2,3} | Base range 3..11 open-day equivalents. Adversarial scenarios may set C=1; overall proposed range 1..11. Stock is m*C. |
+| `InventoryCoverageDays` C | C=L+1+B; B uniform discrete {0,1,2,3} | Base range 3..11 open-day equivalents. Adversarial scenarios may set C=1; overall approved range 1..11. Stock is m*C. |
 | `ProcurementCostRatio` c | U[0.55,0.85) K/V | `ProcurementCost(v)=c*v` for retail-equivalent v. It never changes stock or demand units. |
 | `AnnualHoldingRate` a | U[0.10,0.30) per year on procurement-value proxy | `HoldingCostRate=c*a/365` K/V/calendar day; positive and <=0.85*0.30/365. No compounding/leap-year adjustment. |
 | `GoodwillPenaltyRate` g | U[0.10,0.75) K/V unmet | Explicit extra illustrative penalty, not measured customer loss. |
@@ -238,7 +239,7 @@ This supplies reproducible artificial variation, not calibrated random uncertain
 | `PromotionResponseSlope` e | U[0.5,1.5) | Synthetic turnover-response coefficient; not estimated price/demand elasticity. |
 | `PlannedPromoBlock` | Bernoulli p=0.40, one store-level draw | If true, synthetic promo on h4..h6; otherwise all false. Stress may replace the block. |
 | `PlannedDiscountDepth` d | U[0.05,0.30) | DiscountDepth=d on synthetic promo days, otherwise exactly 0. Stress may use 0.40; allowed [0,0.40]. |
-| Weekday factors | Monday..Sunday = [0.95,0.98,1.00,1.02,1.10,1.15,0.80] | Configured weekly seasonality, mean 1 over seven days; not fitted Sunday effects. |
+| Weekday factors | Monday..Sunday = [0.95,0.98,1.00,1.02,1.10,1.15,0.80] | Illustrative synthetic multipliers: mean 1 over seven calendar days but mean 1.033333... over default Monday–Saturday open days. Not normalized to preserve the historical anchor's mean and not fitted Sunday effects. |
 | `CommonShock` z; `StoreDateNoise` v | z=U[-0.10,0.10), v=U[-0.15,0.15) | z is shared by all stores/families on a replicate-origin-date; v is Store-date-specific. `NoiseFactor=1+z+v` in [0.75,1.25]. |
 | `DemandStressFactor` w | 1 base; explicit overrides in Section 6, allowed [0,2] | Same-date stress pulses are shared across stores; no IID or empirical dependence claim. |
 
@@ -456,9 +457,12 @@ Report every unavailable store and zero anchor; no invented availability/coverag
 threshold or tuned scenario performance is an acceptance criterion.
 The design PR itself runs documentation/repository checks only, with no data/model build.
 
-## 11. Alternatives, risks and approval questions
+## 11. Alternatives, risks and proposal-stage review questions
 
-| Choice | Proposed decision / alternative and consequence |
+This section records the alternatives and review questions considered before external approval.
+Their disposition is in Section 13; they are no longer open Phase 9 approval blockers.
+
+| Choice | Approved decision / alternative and consequence |
 |---|---|
 | Turnover scale | 56-day Open=1 mean with >=28 eligible rows. Calendar-day mean including observed closures is an alternative but answers a different scale question; physical/latent-demand correction is prohibited. |
 | Initialization | m*(L+1+buffer) and empty initial pipeline. Fixed stock independent of Sales or warm-start synthetic queues are alternatives; queues would need Phase 10 timing design. Cold starts can dominate short-window outcomes and must be disclosed. |
@@ -470,7 +474,7 @@ The design PR itself runs documentation/repository checks only, with no data/mod
 | Lead-time stress | Fixed Store-scenario L within2..7. Variable/order-specific delays or L>7 would change protection support/event semantics; exclude them here. |
 | Quantile use | Compatible historical origin prefixes only. Synthetic q use can be a later labelled heuristic sensitivity experiment; daily-review suffix calibration is a separate unapproved method. |
 
-External review should explicitly accept/revise:
+The external reviewer was asked to explicitly accept/revise:
 
 1. The 56-day open-turnover anchor, 28-row threshold, open-day-equivalent coverage and empty
    initial pipeline, including handling of sparse and zero-history stores.
@@ -481,9 +485,9 @@ External review should explicitly accept/revise:
 4. The two development origins, Fit A/B compatibility, historical versus synthetic separation
    and exact evidence/publication/failure contracts.
 
-These four are **Phase 9 approval questions**, each with a concrete proposed answer above.
-Record the reviewer decision, reviewed commit and any changes in ADR-022/PROGRESS before
-implementation; an open design PR or passing CI does not supply acceptance.
+These four were the **Phase 9 approval questions**; their accepted disposition and reviewer
+decision are recorded in ADR-022 and Section 13. The defaults below remain approved constraints
+for implementation unless a superseding decision is recorded.
 Phase 10's suffix/review/event/cost-objective choices remain deliberately unresolved and require
 its own design approval, without delaying a separately approved Phase 9 exogenous generator.
 
@@ -503,3 +507,43 @@ frozen identities are inherited review evidence. No scenario generation, impleme
 holdout read or new artifact verification was performed. Actual local checks and the design
 PR/CI evidence are recorded in [PROGRESS](../../docs/PROGRESS.md) and the PR description.
 Status remains **PROPOSED / AWAITING APPROVAL**.
+
+This is the historical proposal checkpoint. The external acceptance and current status are
+recorded in the later Section 13.
+
+## 13. External methodology approval — 2026-10-07
+
+**Decision: ACCEPT.** The external methodology decision supplied for this synchronization accepts
+the design reviewed at PR #18 head `3820c2c34749b3baa4df954afc3daa0636cff271`. This approval
+record is dated 2026-10-07. The reviewer identity was not supplied with the decision.
+
+The reviewer accepted these four methodological choices:
+
+1. **Origin-safe initialization.** Use 56 calendar days through each scenario origin and require
+   at least 28 observed Open=1 records. Do not impute or use a fallback. Preserve valid zero
+   anchors. Start with no outstanding orders or backorders, and initialize retail-equivalent
+   monetary stock from the origin-safe turnover anchor and reference open-day coverage.
+2. **Illustrative costs.** Use c in [0.55,0.85), a in [0.10,0.30), and g in [0.10,0.75);
+   HoldingCostRate=c*a/365 and StockoutPenalty=(1-c)+g. Equivalent units are display-only.
+   These values are synthetic assumptions, not measured business costs or savings.
+3. **Deterministic scenarios.** Keep master seed 4209 and the exact SHA-256 keyed-draw grammar,
+   five paired replicates, eight synthetic families, and a separate historical reference.
+   Use the specified synthetic weekly schedules/promotions, shared shocks and declared coupled
+   stress. Replicates do not imply empirical likelihood or statistical power.
+4. **Chronology and artifacts.** Use origins 2015-06-05 and 2015-06-19 with H14 through
+   2015-07-03 and Fit A/B compatibility. Preserve the protected holdout. Use origin-safe projected
+   history and immutable, provenance-bound Phase 7/8 inputs; publication fails closed on
+   integrity errors without imputation or fallback.
+
+**Weekday-factor clarification required by the reviewer:** The factor values in Section 5 and the
+synthetic-demand formula are unchanged. The seven values average 1 over Monday–Sunday, but the
+six default open-day values sum to 6.20 and average 1.033333... . These are illustrative synthetic
+multipliers, not open-day-normalized factors preserving the historical anchor's mean. This
+clarification does not change any factor or the generation formula.
+
+Phase 9 design state is **APPROVED / IMPLEMENTATION NOT STARTED**. No scenario has been generated
+and no implementation is included in this synchronization. The approval does not start Phase 10.
+Its rolling suffix calibration, simulation event timing, order queue, replenishment policies and
+inventory KPI methodology remain separately unapproved. Phase 8 quantiles remain limited to
+approved origin-anchored prefixes and do not transport to synthetic stress. The protected
+2015-07-04 through 2015-07-31 holdout remains unreleased.

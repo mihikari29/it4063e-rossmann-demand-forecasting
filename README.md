@@ -39,12 +39,13 @@ suffix calibration is authorized. The final holdout, 2015-07-04 through 2015-07-
 protected and unreleased. Forecast Sales is monetary turnover, not SKU-level physical demand.
 
 Phase 9 has a [synthetic inventory design](plans/active/phase-9-synthetic-inventory.md)
-**PROPOSED / AWAITING APPROVAL**, based on PR #17's integrated Phase 8 closeout.
-It specifies origin-safe initialization, deterministic monetary scenarios and synthetic cost
-assumptions; no generator or inventory simulation is implemented. Proposed ADR-022 requires
-external methodology acceptance before implementation. Synthetic context stays outside the
-real forecast feature matrix. Phase 10 remains PLANNED and not started; its daily-review
-suffix method and simulation timing require a separate approved design.
+**APPROVED / IMPLEMENTATION NOT STARTED** after external methodology acceptance on 2026-10-07,
+recorded in the open/unmerged approval synchronization PR #18 and based on PR #17's integrated
+Phase 8 closeout. Accepted ADR-022 specifies origin-safe
+initialization, deterministic monetary scenarios and illustrative synthetic costs; no generator
+or inventory simulation is implemented. Synthetic context stays outside the real forecast
+feature matrix. Phase 10 remains PLANNED and not started; its daily-review suffix method and
+simulation timing require a separate approved design.
 
 ## Environment and quick start
 

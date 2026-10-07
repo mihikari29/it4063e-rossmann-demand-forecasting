@@ -10,7 +10,7 @@
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
-| Phase 9 — synthetic inventory layer | Design PROPOSED / AWAITING APPROVAL; implementation not started | [Active design](../plans/active/phase-9-synthetic-inventory.md), proposed ADR-022; based on merged PR #17 closeout |
+| Phase 9 — synthetic inventory layer | Design APPROVED / IMPLEMENTATION NOT STARTED | [Active design](../plans/active/phase-9-synthetic-inventory.md), accepted ADR-022 after external ACCEPT on 2026-10-07; approval sync in PR #18 remains open/unmerged |
 | Phase 10 and later | PLANNED; not started | Separate design and authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -26,7 +26,7 @@ records, including the [completed Phase 5 plan](../plans/completed/phase-5-stati
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
 snapshots, not separate results to update. Phase 7's development-only selection is integrated and
 formally closed. Its result and closeout do not constitute final-holdout evaluation or production
-approval. Phase 8 methodology is approved in ADR-021; implementation PR #15 and results-acceptance PR #16 are integrated, and the external results review accepted the canonical development run. Fit B values are frozen for that run. Phase 8 is COMPLETE following the explicit closeout recorded below and in the completed plan. Phase 9 design is PROPOSED / AWAITING APPROVAL, with implementation unstarted; Phase 10 and later remain planned and not started.
+approval. Phase 8 methodology is approved in ADR-021; implementation PR #15 and results-acceptance PR #16 are integrated, and the external results review accepted the canonical development run. Fit B values are frozen for that run. Phase 8 is COMPLETE following the explicit closeout recorded below and in the completed plan. The Phase 9 design is APPROVED after external methodology ACCEPT on 2026-10-07; its implementation has not started. Phase 10 and later remain planned and not started.
 
 ## Immediate next boundary
 
@@ -49,11 +49,10 @@ Final-holdout evaluation remains unreleased. The
 records the interfaces and boundary used.
 
 PR #17 integrated Phase 8's formal closeout at `f08a62aa980d0670186ed25ae1f6e5a018ff3781`.
-The current task prepares the [Phase 9 design](../plans/active/phase-9-synthetic-inventory.md)
-and proposed ADR-022 for independent methodology review. Implementation needs external
-acceptance and authorization. Phase 10's later-review/suffix method, event order, queue and
-comparisons remain separate future design choices. No phase implementation or holdout release
-is authorized by the design PR.
+The [Phase 9 design](../plans/active/phase-9-synthetic-inventory.md) and ADR-022 received
+external methodology ACCEPT on 2026-10-07; implementation has not started. Phase 10's
+later-review/suffix method, event order, queue, replenishment policies and comparisons remain
+separately unapproved. No final-holdout release or access is authorized.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -1218,7 +1217,7 @@ The project virtual environment was used for Python/Ruff checks. Pinned uv 0.12.
 a temporary directory because no uv executable was installed on PATH; `uv.lock` and project
 dependencies remain unchanged.
 
-## Phase 9 design proposal — 2026-10-07
+## Phase 9 design proposal — 2026-10-07 (historical proposal checkpoint)
 
 **State:** Design **PROPOSED / AWAITING APPROVAL**. Phase 9 implementation is not started;
 Phase 10 remains PLANNED and not started. External methodology acceptance and implementation
@@ -1231,7 +1230,7 @@ Fetched `origin/main` and verified
 Unrelated worktree changes were absent at branch creation.
 
 The [active design](../plans/active/phase-9-synthetic-inventory.md) and
-[proposed ADR-022](DECISIONS.md#adr-022--synthetic-monetary-scenario-contract-proposed) specify:
+[proposal-stage ADR-022, now accepted](DECISIONS.md#adr-022--synthetic-monetary-scenario-contract) specify:
 
 - Two development origins, June 5/June 19, H14 ending by July 3; 56-day Open=1 turnover anchors
   with a 28-row minimum, preserved missingness and cold-start retail-equivalent stock.
@@ -1258,7 +1257,37 @@ conditional saved-source-Open replay and closure-inflated pooled coverage remain
 No conformal, per-store, production or service-level guarantee is introduced.
 The protected 2015-07-04 through 2015-07-31 holdout remains unreleased.
 
-### Executed design-task validation
+## Phase 9 methodology approval — 2026-10-07
+
+**Decision:** External methodology review **ACCEPTED** the Phase 9 design at PR #18's reviewed
+head `3820c2c34749b3baa4df954afc3daa0636cff271`. The decision was supplied for this
+synchronization; the reviewer identity was not specified. The current design state is
+**APPROVED / IMPLEMENTATION NOT STARTED**. The historical proposal checkpoint above retains its
+original PROPOSED / AWAITING APPROVAL state.
+
+The approval covers the four choices recorded in [ADR-022](DECISIONS.md#adr-022--synthetic-monetary-scenario-contract)
+and the [active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md): origin-safe
+56-day/Open=1 initialization with a 28-record floor, no imputation/fallback, zero anchors and
+an empty initial order pipeline; illustrative c/a/g cost ranges and approved formulas; seed
+4209's exact SHA-256 draw contract and paired synthetic scenario families; and the two-origin
+development chronology, frozen Phase 7/8 bindings and immutable fail-closed artifacts.
+
+**Required weekday-factor clarification:** Monday–Sunday factors sum to 7 and average 1 over
+the calendar week. The default Monday–Saturday open-day factors sum to 6.20 and average
+1.033333... . They are illustrative synthetic multipliers, not open-day-normalized factors
+preserving the historical anchor's mean. The accepted factor values and generation formula
+were not changed.
+
+This is design approval only; no Phase 9 implementation or scenario generation occurred.
+Phase 10 remains PLANNED and unstarted. Its rolling suffix calibration, event timing, queue,
+replenishment policy and KPI methodology remain separately unapproved. Phase 8 q is restricted
+to approved origin-anchored prefixes and does not transport to synthetic stress. Fit B raw-primary
+coverage remains 12,263/13,437 (91.26%), below nominal 95%; Sunday h2/h9 evidence is sparse;
+stores/origins are dependent; saved-source-Open replay is conditional and closure-inflated; no
+conformal, per-store, production or service-level guarantee follows. The final holdout
+2015-07-04 through 2015-07-31 remains unreleased and was not accessed.
+
+### Executed design-proposal validation
 
 | Check | Result |
 |---|---|
@@ -1278,3 +1307,21 @@ calibration table, quantile or model artifact was changed or regenerated. No rea
 or final-holdout read was run. Accepted ADR-015 through ADR-021 methodology and completed
 Phase 8 historical checkpoints are preserved. Local checks validate repository consistency,
 not Phase 9's future numerical implementation or external methodology acceptance.
+
+### Approval synchronization validation — 2026-10-07
+
+| Check | Result |
+|---|---|
+| Full existing fixture suite, Python 3.14.5 | PASS — 200 tests in 97.11s |
+| Ruff lint | PASS |
+| Ruff format check | PASS — 78 files already formatted |
+| Documentation link checker | PASS — 181 local destinations/anchors across 24 Markdown files |
+| `uv lock --check`, uv 0.12.23 | PASS — 84 packages; lock unchanged |
+| Python 3.14 `pip check` | PASS — no broken requirements |
+| `git diff --check` | PASS |
+
+Self-review confirms only the seven listed Markdown files changed; the approved weekday-factor
+values and demand formula are unchanged. ADR-015/016/020/021, Phase 7/8 plans, code, tests,
+dependencies, model and quantile artifacts remain unchanged. No scenario was generated and the
+protected final holdout was not accessed. These checks validate documentation and repository
+consistency; they do not implement or numerically validate Phase 9.
