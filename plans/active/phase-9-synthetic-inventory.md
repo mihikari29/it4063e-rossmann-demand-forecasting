@@ -601,3 +601,22 @@ A new canonical development run, `phase9-dev-20261007-config-validation-fix`, pr
 Parquet logical hashes, row counts and byte hashes from the unchanged `canonical2` run. Its
 manifest and validation details are recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
 **IMPLEMENTED / UNDER REVIEW** on PR #19; no Phase 10 work or merge is authorized by this update.
+
+## 15. Independent implementation and numerical review acceptance — 2026-10-07
+
+**Decision: ACCEPTED.** The independent external code and numerical review accepted the final
+implementation at source revision `2ec2488adf065e692141eceb8e3f979df4679f45` and canonical run
+`phase9-dev-20261007-config-validation-fix`, with manifest SHA-256
+`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`. The reviewer identity was
+not supplied. This accepts the implementation and numerical evidence; it does not close Phase 9.
+
+The review confirmed 82 scenario catalog rows, 2,230 origin anchors, 91,430 store-parameter rows,
+and 1,280,020 scenario-daily rows. All four Parquet output byte hashes exactly match the accepted
+`canonical2` outputs. It also confirmed monetary initialization and cost arithmetic, deterministic
+sampling and stress overrides, synthetic turnover calculations, and preserved historical-reference
+missingness. This evidence does not imply inventory policy performance or business savings.
+
+The accepted run and manifest remain unchanged; this integration performs no run regeneration.
+The final integration gate is recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
+**IMPLEMENTED / UNDER REVIEW** until PR #19 is merged and formally closed. The protected
+2015-07-04 through 2015-07-31 holdout was not accessed, and Phase 10 remains unstarted.

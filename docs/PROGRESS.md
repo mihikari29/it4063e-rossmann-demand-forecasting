@@ -10,7 +10,7 @@
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
-| Phase 9 — synthetic inventory layer | APPROVED / IMPLEMENTED — UNDER REVIEW | [Active plan](../plans/active/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19), source commit `8dae4e43e06d815746456a1786acfc264b77093b` |
+| Phase 9 — synthetic inventory layer | APPROVED / IMPLEMENTED — UNDER REVIEW | [Active plan](../plans/active/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19), final source commit `2ec2488adf065e692141eceb8e3f979df4679f45` |
 | Phase 10 and later | PLANNED; not started | Separate design and authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -51,9 +51,12 @@ records the interfaces and boundary used.
 PR #17 integrated Phase 8's formal closeout at `f08a62aa980d0670186ed25ae1f6e5a018ff3781`.
 PR #18 integrated the accepted Phase 9 design and ADR-022 at
 `97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`. The Phase 9 generator is implemented on the focused
-branch above, with review and integration pending. Phase 10's later-review/suffix method, event
-order, queue, replenishment policies and comparisons remain separately unapproved. No
-final-holdout release or access is authorized.
+branch above, with review and integration pending. PR #20 subsequently merged into `main` at
+`ff3c11554144e79ee84c627c2bcd3619d23072d0`; that commit is integrated into the current `origin/main`.
+The PR #19 branch was synchronized by merging `origin/main`, preserving the uppercase canonical
+proposal path and its unchanged content. Phase 10's later-review/suffix method, event order, queue,
+replenishment policies and comparisons remain separately unapproved. No final-holdout release or
+access is authorized.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -1480,3 +1483,42 @@ remain untouched; its manifest SHA-256 is still
 The review fix is committed on the existing PR #19 branch. Phase 9 remains
 **IMPLEMENTED / UNDER REVIEW**. The protected holdout remains unreleased, Phase 10 remains
 unstarted, and this checkpoint does not authorize merge or closeout.
+
+## Phase 9 independent implementation and numerical review — 2026-10-07
+
+**Decision: ACCEPTED.** The independent external code and numerical review accepted the final
+Phase 9 implementation at source revision `2ec2488adf065e692141eceb8e3f979df4679f45` and the
+canonical run `phase9-dev-20261007-config-validation-fix`, manifest SHA-256
+`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`. The reviewer identity was
+not supplied. This acceptance is implementation and numerical evidence; Phase 9 remains
+**IMPLEMENTED / UNDER REVIEW** until PR #19 is merged and formally closed.
+
+The audit accepted 82 scenario catalog rows, 2,230 origin anchors, 91,430 store-parameter rows,
+and 1,280,020 scenario-daily rows. All four Parquet output byte hashes exactly match `canonical2`.
+The review confirmed monetary initialization and cost arithmetic, deterministic keyed sampling and
+stress overrides, synthetic turnover calculations, and preservation of historical-reference
+missingness. These results do not introduce any policy simulation or inventory-performance claim.
+
+The accepted run and manifest were not regenerated or rewritten for this documentation-only
+integration. It remains development-only: origin H14 ends on 2015-07-03, protected
+2015-07-04 through 2015-07-31 outcomes were not accessed, and Phase 10 has not started. PR #19
+remains open and unmerged pending this synchronized head's external integration review and CI.
+
+### PR #19 integration quality gates — 2026-10-07
+
+These checks were run after merging PR #20's `origin/main` into the existing PR #19 branch. They
+are new integration evidence, separate from the earlier 230-test checkpoint above.
+
+| Check | Result |
+|---|---|
+| Full `python -m pytest` (Python 3.14.5) | PASS — 230 tests in 144.03s |
+| Ruff lint | PASS — `ruff check .` |
+| Ruff format | PASS — 82 files already formatted |
+| Markdown link checker | PASS — 184 local destinations/anchors across 24 Markdown files |
+| `uv lock --check` (uv 0.12.23) | PASS — 84 packages resolved; lock unchanged |
+| Python 3.14.5 `pip check` | PASS — no broken requirements |
+| `git diff --check` | PASS |
+
+These fixture and repository checks do not read final-holdout outcomes or regenerate the accepted
+Phase 9 run. The updated PR head must still pass its own GitHub Actions Python 3.12/3.14 matrix;
+prior-head CI is not evidence for the synchronized head.
