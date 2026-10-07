@@ -17,7 +17,7 @@ Phases 0–6 are COMPLETE; Phase 6 implementation PR #10 is integrated and its p
 The starting worktree was clean. There is no Phase 7 implementation or official final selection.
 
 Read completely: AGENTS, [WORKFLOW](../../docs/WORKFLOW.md),
-[proposal](../../docs/proposal.md), [DECISIONS](../../docs/DECISIONS.md),
+[proposal](../../docs/PROPOSAL.md), [DECISIONS](../../docs/DECISIONS.md),
 [PROJECT_PLAN](../../docs/PROJECT_PLAN.md), [PROGRESS](../../docs/PROGRESS.md),
 [FEATURE_CONTRACT](../../docs/FEATURE_CONTRACT.md), README, and the completed
 [Phase 3](../completed/phase-3-feature-engineering.md),

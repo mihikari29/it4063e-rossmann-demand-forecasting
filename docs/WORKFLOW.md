@@ -10,7 +10,7 @@ Read AGENTS first for operating constraints, then resolve substantive conflicts 
 
 | Level / document | Responsibility | Do not duplicate |
 |---|---|---|
-| 1. [Proposal](proposal.md) | Business questions, scope, limitations, planned system | Current phase status or run tables |
+| 1. [Proposal](PROPOSAL.md) | Business questions, scope, limitations, planned system | Current phase status or run tables |
 | 2. [Decisions](DECISIONS.md) | Accepted choices and traceable supersession | Every routine task/fix |
 | 3. [Project plan](PROJECT_PLAN.md) | Phase dependencies, boundaries, acceptance and handoff | Current results |
 | 4. [Progress](PROGRESS.md) + Git/code | Actual implementation/review/integration state; canonical result evidence | Entire execution plans |

@@ -14,7 +14,7 @@ PR #15 and accepted-results PR #16 at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`
 `4dd7717fed57ff3b1f14789b980772c1968f3cba`.
 
 Read together with [AGENTS](../../AGENTS.md), [workflow](../../docs/WORKFLOW.md),
-[proposal](../../docs/proposal.md), [roadmap](../../docs/PROJECT_PLAN.md),
+[proposal](../../docs/PROPOSAL.md), [roadmap](../../docs/PROJECT_PLAN.md),
 [decisions](../../docs/DECISIONS.md), [dictionary](../../docs/DATA_DICTIONARY.md),
 [PROGRESS](../../docs/PROGRESS.md) and the
 [completed Phase 8 plan](../completed/phase-8-forecast-uncertainty.md).
