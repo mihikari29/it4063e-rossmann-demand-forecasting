@@ -583,8 +583,8 @@ hashes are in [PROGRESS](../../docs/PROGRESS.md).
 
 Local validation passed: 218 pytest fixtures; Ruff lint and format across the repository; Markdown
 link checks; `uv lock --check` with uv 0.12.23 (84 packages, unchanged); Python 3.14.5
-`pip check`; and `git diff --check`. GitHub Actions quality checks are running on
-[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19); see its live
-check status for the result. The phase boundary remains the scenario generator only: do not begin
-Phase 10, merge this PR, or mark Phase 9 complete until review and integration closeout are
-explicitly handled.
+`pip check`; and `git diff --check`. GitHub Actions run [#44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37555712873)
+passed both Python 3.12 and 3.14 jobs on head `7b0c486`, including fixture tests, lint, format and
+Markdown checks. The phase boundary remains the scenario generator only: do not begin Phase 10,
+merge this PR, or mark Phase 9 complete until review and integration closeout are explicitly
+handled.
