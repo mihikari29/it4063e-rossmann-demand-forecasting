@@ -139,10 +139,11 @@ production model, or authorize Phases 9–13.
 
 ## Phase 9 synthetic supply-chain scenarios
 
-After the prepared development data and frozen Phase 7/8 artifacts exist, run with a new run ID:
+After the prepared development data and frozen Phase 7/8 artifacts exist, run with a new, unused
+run ID (this example can be run once):
 
 ```powershell
-python scripts/generate_inventory_scenarios.py --run-id phase9-dev-<unique-id>
+python scripts/generate_inventory_scenarios.py --run-id phase9-dev-20261007-example
 ```
 
 The generator reads only the projected Store/Date/Sales/Open fields in the 56-day windows ending

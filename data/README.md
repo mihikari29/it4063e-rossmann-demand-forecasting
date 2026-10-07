@@ -40,7 +40,8 @@ does not replace that pointer or modify earlier runs. The uncertainty command co
 Phase 7 development outputs only; it never reads raw/interim source data or the protected holdout.
 
 Phase 9's [approved design](../plans/active/phase-9-synthetic-inventory.md) is implemented under
-review. Run `python scripts/generate_inventory_scenarios.py --run-id <unique-id>` to publish
+review. Run `python scripts/generate_inventory_scenarios.py --run-id phase9-dev-20261007-example`
+with a new unused run ID to publish
 immutable scenario/config/anchor/parameter/context/binding/validation/manifest artifacts under
 `data/processed/synthetic_inventory/<run_id>/`; a successful run updates its ignored
 `current.json` pointer. The generator projects and censors the 56-day history at each scenario

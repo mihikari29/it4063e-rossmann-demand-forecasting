@@ -1427,7 +1427,7 @@ claim about lost demand. Historical reference rows have future outcome fields un
 | `uv lock --check`, pinned uv 0.12.23 | PASS — 84 packages resolved; lock unchanged |
 | Python 3.14.5 `pip check` | PASS — no broken requirements |
 | `git diff --check` | PASS |
-| GitHub Actions PR matrix | PASS — run [#44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37555712873) on head `7b0c486`; Python 3.12 and 3.14 jobs succeeded |
+| GitHub Actions PR matrix | PASS — run [#45](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37555928596) on head `f9c41f0`; Python 3.12 and 3.14 jobs succeeded |
 
 The real-data artifacts are ignored local outputs, not part of the PR. Sales, demand, inventory,
 costs and equivalent units retain the approved monetary proxy semantics; no physical quantity,
