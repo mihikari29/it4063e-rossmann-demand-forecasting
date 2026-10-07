@@ -508,7 +508,7 @@ def build_policy_targets(target_inputs: pd.DataFrame) -> pa.Table:
             "Store": int(first.Store),
             "forecast_origin": origin,
             "family": str(first.family),
-            "mode": str(first.mode),
+            "mode": str(first["mode"]),
             "replicate": int(first.replicate),
             "sensitivity_variant": str(first.sensitivity_variant),
             "SupplierLeadTime": lead,

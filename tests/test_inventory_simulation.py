@@ -138,6 +138,8 @@ def test_target_arithmetic_preserves_signed_quantile_and_open_day_baseline():
     targets, table = _targets()
     baseline = targets[simulation.POLICY_IDS[0]]
     forecast = targets[simulation.POLICY_IDS[1]]
+    assert baseline["mode"] == "synthetic_stress"
+    assert forecast["mode"] == "synthetic_stress"
     assert baseline["open_days_in_protection_period"] == 3
     assert baseline["target_value"] == 300.0
     assert forecast["forecast_protection_demand_value"] == 80.0
