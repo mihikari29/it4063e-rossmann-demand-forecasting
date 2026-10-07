@@ -6,7 +6,7 @@ Complete the repository governance foundation without starting data acquisition,
 
 ## Scope
 
-- Preserve the approved contents and inline-math formatting of `docs/proposal.md`.
+- Preserve the approved contents and inline-math formatting of `docs/PROPOSAL.md`.
 - Refine the root operating and user-facing files.
 - Create the project roadmap, progress tracker, workflow, decision log, and initial data dictionary.
 - Verify that every document agrees with the proposal and accurately distinguishes current work from planned work.

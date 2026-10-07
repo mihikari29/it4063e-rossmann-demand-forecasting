@@ -210,7 +210,7 @@ operational forecast after raw generation.
   appear in the generated artifact directory.
 - Raw Rossmann inputs and Phase 2 `train.parquet` hashes matched their recorded provenance before
   and after the run. The runner wrote only Git-ignored generated files; no raw, interim, or Phase 3
-  files were modified, and generated results remain ignored and untracked. `docs/proposal.md` is
+  files were modified, and generated results remain ignored and untracked. `docs/PROPOSAL.md` is
   unchanged.
 - Validation at Phase 4 completion: full pytest suite **73 passed**; `ruff check .`,
   `ruff format --check .`, and `git diff --check` passed. The Seasonal Naive CLI completed
@@ -299,7 +299,7 @@ operational forecast after raw generation.
   `ruff check src tests scripts` and `ruff format --check src tests scripts` passed. Artifact paths
   were verified Git-ignored;
   provenance checks passed before and after evaluation. At this implementation checkpoint, Phase 5
-  was **IMPLEMENTED / UNDER REVIEW**, not formally closed. `docs/proposal.md`, reviewed Phase 4 model code/artifacts, raw data,
+  was **IMPLEMENTED / UNDER REVIEW**, not formally closed. `docs/PROPOSAL.md`, reviewed Phase 4 model code/artifacts, raw data,
   and Phase 2 prepared data were not modified.
 - External review found that the reusable Holt-Winters API validated horizons from 1–14 but still
   generated a fixed 14-step path. The forecaster now consistently uses the validated
