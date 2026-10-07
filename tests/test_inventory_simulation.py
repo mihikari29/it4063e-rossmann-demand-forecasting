@@ -780,6 +780,25 @@ def test_atomic_pointer_failure_removes_new_run_and_preserves_old_pointer(monkey
     assert not list(output_root.glob(".current-*.tmp"))
 
 
+def test_atomic_publish_moves_closed_parquet_stage_and_updates_pointer(tmp_path):
+    output_root = tmp_path / "inventory_simulation"
+    output_root.mkdir()
+    stage = output_root / ".stage"
+    stage.mkdir()
+    target = _target(simulation.POLICY_IDS[0])
+    pq.write_table(
+        pa.Table.from_pylist([target], schema=simulation.POLICY_TARGET_SCHEMA),
+        stage / "policy_targets.parquet",
+    )
+    reader = pq.ParquetFile(stage / "policy_targets.parquet")
+    assert reader.metadata.num_rows == 1
+    reader.close()
+    final = output_root / "run-a"
+    simulation._atomic_publish(stage, final, output_root, {"run_id": "run-a"})
+    assert (final / "policy_targets.parquet").is_file()
+    assert simulation._read_json(output_root / "current.json")["run_id"] == "run-a"
+
+
 def test_historical_loader_projection_is_safe_and_cutoff_bounded(monkeypatch, tmp_path):
     calls = {}
     schema = pa.schema(

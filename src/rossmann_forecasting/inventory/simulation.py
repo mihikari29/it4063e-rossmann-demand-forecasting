@@ -2835,6 +2835,9 @@ def run_inventory_simulation(
             raise SimulationIntegrityError(
                 "Frozen target count differs from approved grid expectation."
             )
+        # PyArrow keeps the file handle open on Windows; it must be released before
+        # the staged directory can be atomically renamed into its immutable run path.
+        target_parquet.close()
         target_validation = _validate_target_stream(targets_path, expected_tracks=383_560)
 
         scenario_rows = pq.read_table(
