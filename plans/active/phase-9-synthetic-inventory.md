@@ -588,3 +588,16 @@ passed both Python 3.12 and 3.14 jobs on head `f9c41f0`, including fixture tests
 Markdown checks. The phase boundary remains the scenario generator only: do not begin Phase 10,
 merge this PR, or mark Phase 9 complete until review and integration closeout are explicitly
 handled.
+
+### External configuration-validation review fix — 2026-10-07
+
+PR #19's finding that nested semantic settings were not frozen is addressed at source commit
+`2ec2488adf065e692141eceb8e3f979df4679f45`. Validation now compares the complete configuration
+against the accepted `default_config()` contract while retaining normalized fixture subsets and
+run-specific publication metadata. Regression tests cover nested settings and early failure before
+history processing. No methodology, ADR-022, RNG, equations, schemas or scenario outputs changed.
+
+A new canonical development run, `phase9-dev-20261007-config-validation-fix`, preserves all four
+Parquet logical hashes, row counts and byte hashes from the unchanged `canonical2` run. Its
+manifest and validation details are recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
+**IMPLEMENTED / UNDER REVIEW** on PR #19; no Phase 10 work or merge is authorized by this update.

@@ -1433,3 +1433,50 @@ The real-data artifacts are ignored local outputs, not part of the PR. Sales, de
 costs and equivalent units retain the approved monetary proxy semantics; no physical quantity,
 actual inventory, true lost demand, policy winner, service result or savings is inferred. Do not
 merge this implementation PR, start Phase 10, or mark Phase 9 complete at this checkpoint.
+
+## Phase 9 external review fix — 2026-10-07
+
+The approved-configuration validation finding from PR #19 was fixed in source commit
+`2ec2488adf065e692141eceb8e3f979df4679f45`. `_validate_config()` now reconstructs the accepted
+contract through `default_config()` for the supplied normalized fixture store subset, preserves
+run-specific upstream bindings and publication fields, and compares the full JSON-compatible
+configuration. Changes to nested assumptions, omitted settings or unexpected configuration fields
+fail before generation. No ADR, RNG, equation, schema or scenario-generation formula changed.
+
+Because the source digest changed, a new immutable canonical development run
+`phase9-dev-20261007-config-validation-fix` completed at `2026-10-07T01:26:56+00:00`. Its manifest
+SHA-256 is `573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`. It records source
+revision `2ec2488adf065e692141eceb8e3f979df4679f45`, source digest
+`9b753cae8efdaca718f1f93dce6f4eb22c426abef24f48953b9b6f5eadbbcc0f`,
+`worktree_modified=false`, and the unchanged lock digest
+`584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. The approved semantic
+config hash remains `8ded15545911738c9b6551a8af00627e65a231a2d89fea8687cd8c4d6e6b52d7`; the new
+serialized config byte hash is `40a150dfa8e8aa734bf3a7a1ca9b917b7eca7b3b8386721ea4b35fcd66d86421`.
+
+| Parquet output | Rows in both runs | Logical SHA-256 in both runs | Byte SHA-256 in both runs | Comparison |
+|---|---:|---|---|---|
+| `scenario_catalog.parquet` | 82 | `502c03238a1bf0f8932160199ab4e9c76d0583dd9b70516ee1d98d993e762b04` | `7c521c8b2956e2f4de30c70a903216b4a0e2727aee3f5b29947ac25876548e83` | Identical |
+| `origin_anchors.parquet` | 2,230 | `6daee5caeaf50d33c7472a4bbf49e9daf72f62834743fe7409537942561d1bd3` | `e9bec421447771cae277b437e9e15eff14b0ac4e3c7b009120de70f9be69b131` | Identical |
+| `store_parameters.parquet` | 91,430 | `73d4e57d0792e0df529908db52bda242d19a8fabd3a7664db9aa835169bdd315` | `c75aab0c9e54eb3ffe8519c53569ec68db9a2199df0674fd75e4bfc777400427` | Identical |
+| `scenario_daily.parquet` | 1,280,020 | `967b091a28887326c9024fe191722a3a95f887c7da5a873dd1200a28589a642d` | `f43920eed64fb83ebeb7d82effd345f54744994949e637735622d927dfb2203b` | Identical |
+
+The run validation status is `complete` with no structural failures. It reconfirmed 1,115 stores at
+each of the two approved origins, the H14 development cutoff of 2015-07-03, and that protected
+holdout values were neither read nor hashed. The previous `canonical2` directory and manifest
+remain untouched; its manifest SHA-256 is still
+`cc148d3670c0b20c769f245488ddd7f535f4333e6b0cf759c60e544e9c6c8a82`.
+
+| Check | Result |
+|---|---|
+| Inventory scenario fixtures | PASS — 30 tests |
+| Full fixture suite, Python 3.14.5 | PASS — 230 tests in 96.11s |
+| Ruff lint, whole repository | PASS |
+| Ruff format, whole repository | PASS — 82 files already formatted |
+| Documentation link checker | PASS — 183 destinations/anchors across 24 Markdown files |
+| `uv lock --check`, uv 0.12.23 | PASS — 84 packages resolved; lock unchanged |
+| Python 3.14.5 `pip check` | PASS — no broken requirements |
+| `git diff --check` | PASS |
+
+The review fix is committed on the existing PR #19 branch. Phase 9 remains
+**IMPLEMENTED / UNDER REVIEW**. The protected holdout remains unreleased, Phase 10 remains
+unstarted, and this checkpoint does not authorize merge or closeout.
