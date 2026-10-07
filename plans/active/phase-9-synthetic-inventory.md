@@ -3,7 +3,9 @@
 **Status: APPROVED / IMPLEMENTED — UNDER REVIEW (2026-10-07).** The external methodology
 decision is ACCEPT. The generator, fixture suite and canonical development scenario run are
 implemented on `feat/phase-9-synthetic-inventory`; this active plan records the implementation
-checkpoint and pending review. Phase 10 remains unapproved and not started.
+checkpoint and pending review in
+[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19). Phase 10
+remains unapproved and not started.
 
 ## 1. Authority, integration and scope
 
@@ -581,6 +583,8 @@ hashes are in [PROGRESS](../../docs/PROGRESS.md).
 
 Local validation passed: 218 pytest fixtures; Ruff lint and format across the repository; Markdown
 link checks; `uv lock --check` with uv 0.12.23 (84 packages, unchanged); Python 3.14.5
-`pip check`; and `git diff --check`. CI review is pending on the implementation PR. The phase
-boundary remains the scenario generator only: do not begin Phase 10, merge this PR, or mark Phase 9
-complete until review and integration closeout are explicitly handled.
+`pip check`; and `git diff --check`. GitHub Actions quality checks are running on
+[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19); see its live
+check status for the result. The phase boundary remains the scenario generator only: do not begin
+Phase 10, merge this PR, or mark Phase 9 complete until review and integration closeout are
+explicitly handled.

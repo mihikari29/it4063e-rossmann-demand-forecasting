@@ -10,7 +10,7 @@
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
-| Phase 9 — synthetic inventory layer | APPROVED / IMPLEMENTED — UNDER REVIEW | [Active plan](../plans/active/phase-9-synthetic-inventory.md); commit `8dae4e43e06d815746456a1786acfc264b77093b` on `feat/phase-9-synthetic-inventory`; PR pending |
+| Phase 9 — synthetic inventory layer | APPROVED / IMPLEMENTED — UNDER REVIEW | [Active plan](../plans/active/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19), source commit `8dae4e43e06d815746456a1786acfc264b77093b` |
 | Phase 10 and later | PLANNED; not started | Separate design and authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -1331,7 +1331,8 @@ consistency; they do not implement or numerically validate Phase 9.
 
 **State:** Design APPROVED by ADR-022; implementation **IMPLEMENTED / UNDER REVIEW** on
 `feat/phase-9-synthetic-inventory`. Source commit is
-`8dae4e43e06d815746456a1786acfc264b77093b`. PR #18 is the merged design synchronization at
+`8dae4e43e06d815746456a1786acfc264b77093b`. [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19)
+is open for implementation review. PR #18 is the merged design synchronization at
 `97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`; the implementation PR is pending. Phase 9 is not
 closed, no Phase 10 work is authorized, and the final holdout remains protected.
 
@@ -1426,7 +1427,7 @@ claim about lost demand. Historical reference rows have future outcome fields un
 | `uv lock --check`, pinned uv 0.12.23 | PASS — 84 packages resolved; lock unchanged |
 | Python 3.14.5 `pip check` | PASS — no broken requirements |
 | `git diff --check` | PASS |
-| GitHub Actions PR matrix | Pending — run after implementation PR is opened |
+| GitHub Actions PR matrix | Running on [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19); see live check status there |
 
 The real-data artifacts are ignored local outputs, not part of the PR. Sales, demand, inventory,
 costs and equivalent units retain the approved monetary proxy semantics; no physical quantity,

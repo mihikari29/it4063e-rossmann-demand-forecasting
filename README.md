@@ -41,7 +41,8 @@ protected and unreleased. Forecast Sales is monetary turnover, not SKU-level phy
 Phase 9 has an [approved synthetic inventory design](plans/active/phase-9-synthetic-inventory.md)
 under ADR-022. The methodology synchronization PR #18 was merged into `main` at
 `97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`. This branch implements the deterministic, origin-safe
-scenario generator and is **IMPLEMENTED / UNDER REVIEW**. It binds the frozen Phase 7/8 artifacts,
+scenario generator and is **IMPLEMENTED / UNDER REVIEW** in
+[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19). It binds the frozen Phase 7/8 artifacts,
 generates synthetic monetary context, and publishes ignored immutable artifacts; it does not fit
 forecasts or simulate inventory policies. Synthetic context stays outside the real forecast feature
 matrix. Phase 10 remains PLANNED and not started; its daily-review suffix method and simulation

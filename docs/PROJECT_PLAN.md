@@ -143,7 +143,8 @@ for the accepted canonical development run. Phase 9's approved generator is unde
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
 **Objective:** Provide reproducible operational scenarios absent from Rossmann.
-**Status:** Design APPROVED; implementation **IMPLEMENTED / UNDER REVIEW** on
+**Status:** Design APPROVED; implementation **IMPLEMENTED / UNDER REVIEW** in
+[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) on
 `feat/phase-9-synthetic-inventory`. The methodology synchronization PR #18 merged into `main` at
 `97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`; implementation review is the current phase boundary.
 See the [active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md), ADR-022 and the
