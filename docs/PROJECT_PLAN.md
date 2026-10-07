@@ -20,8 +20,8 @@ A package may share one concise execution plan, but each model/methodology appro
 boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
 Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/phase-9-synthetic-inventory.md)
 preserves the design, implementation and review record. Phase 10's [active design](../plans/active/phase-10-inventory-simulation.md)
-and ADR-023 are APPROVED; implementation has not started. Phase 10 implementation is the next
-authorized task. Phase 11 has not started and is not authorized.
+and ADR-023 are APPROVED; Phase 10 is IMPLEMENTED / UNDER REVIEW on the branch and run recorded in
+[PROGRESS](PROGRESS.md). Phase 11 has not started and is not authorized.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -139,8 +139,8 @@ provenance or a separately approved synthetic/conditional schedule not derived f
 actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
 calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 is COMPLETE
 for the accepted canonical development run. Phase 9 is formally closed as COMPLETE. Phase 10
-methodology is approved under ADR-023 and remains unimplemented; Phase 10 implementation is the
-next authorized task. Phase 11 remains separate and unauthorized.
+methodology is approved under ADR-023; its implementation and corrected development run are under
+external review as recorded in [PROGRESS](PROGRESS.md). Phase 11 remains separate and unauthorized.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
@@ -172,11 +172,13 @@ implement inventory policies or establish physical inventory, observed stockouts
 ## Phase 10 — Inventory Simulation & Sensitivity Analysis
 
 **Objective:** Compare simple replenishment policies under stated assumptions.
-**Status:** APPROVED; IMPLEMENTATION NOT STARTED.
+**Status:** IMPLEMENTED / UNDER REVIEW; NOT COMPLETE.
 **Design:** [Active Phase 10 plan](../plans/active/phase-10-inventory-simulation.md) and accepted
 ADR-023. Human approval and review evidence are recorded in the plan and [PROGRESS](PROGRESS.md).
 **Dependencies:** Phases 8–9 and development-only forecasts.
-**Deliverables:** Stateful order/receipt/stock ledger, policy/KPI comparison, sensitivity report.
+**Deliverables:** Implemented stateful order/receipt/stock ledger, policy/KPI comparison and
+sensitivity report. The corrected canonical development run and artifact identities are recorded
+in [PROGRESS](PROGRESS.md).
 **Acceptance / boundary:** At June 5/Fit A or June 19/Fit B, freeze a historical-mean or
 LightGBM-plus-buffer standing target from the original h1..P prefix. R=1, L=2–7, P=L+1<=14;
 L means full intervening demand days, so EOD-t orders arrive BO-day t+L+1. Execute daily lost-sales
@@ -187,9 +189,11 @@ positive-demand stockout, ending-stock inventory and simulated holding-plus-shor
 Use the project-specific completed positive-demand receipt-cycle service rate, with policy-dependent
 denominator/censoring; no guaranteed CSL. Retain terminal orders/exposure with identical treatment.
 Nine one-factor-at-a-time overlays supplement existing scenarios without changing Phase 9.
-Unknown inputs remain unavailable. Approval before code, fixtures/quality gates, development-only
-numerical validation and independent implementation/results review are required; negative findings
-are valid. No actual inventory, stockout, savings or optimality claim; holdout remains protected.
+Unknown inputs remain unavailable. Approved methodology, fixtures and quality gates pass, and the
+corrected development run has complete matched tracks with staged ledger checks. Independent
+implementation/results review remains pending before authorized integration and explicit closeout;
+negative findings are valid. No actual inventory, stockout, savings or optimality claim; holdout
+remains protected.
 
 ## Phase 11 — Application Services & Thin API
 

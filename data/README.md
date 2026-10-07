@@ -54,20 +54,24 @@ boundaries before hashing upstream files. Existing run IDs cannot be overwritten
 remain ignored local artifacts. Phase 9 introduces no model artifact, inventory ledger, order queue
 or policy comparison.
 
-Phase 10's [active approved design](../plans/active/phase-10-inventory-simulation.md) authorizes a
-separate implementation task; implementation has not started. Future ignored immutable runs would
-use `data/processed/inventory_simulation/<run_id>/` with `simulation_config.json`,
-`policy_targets.parquet`, `simulation_ledger.parquet`, `policy_summary.parquet`,
-`comparison_summary.csv`, `validation_summary.json` and `manifest.json`. No such artifact or
-simulator command is generated/implemented by this documentation proposal.
+Phase 10's [active plan](../plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
+the simulator is implemented and under review. Run it with a new unused ID using
+`python scripts/run_inventory_simulation.py --run-id phase10-dev-example`. Corrected canonical run
+`phase10-dev-20261007-implementation-v2` has manifest SHA-256
+`889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`; its seven ignored files are
+`simulation_config.json`, `policy_targets.parquet`, `simulation_ledger.parquet`, `policy_summary.parquet`,
+`comparison_summary.csv`, `validation_summary.json` and `manifest.json`. The run has 383,560 target
+and summary rows, 5,753,400 ledger rows, 172 cases and 1,720 comparison rows. All requested tracks
+are complete, with zero unavailable/incomplete episodes or exclusions. These are simulated
+monetary-turnover results, not observed inventory, physical demand or savings.
 
-The future contract requires explicit ordered schemas/keys/nulls, byte and logical hashes, pinned
+The implementation records explicit ordered schemas/keys/nulls, byte and logical hashes, pinned
 Phase 7/8/9 identities, staged reread/validation, upstream recheck, manifest-last and atomic
-publication. Existing run IDs remain immutable; current.json advances only on complete success.
-Failure preserves prior runs/pointer. Verify development date boundaries before whole-file
-hashing; never hash full protected source data. Targets exclude evaluation outcomes, and the
-approved upstream scenario/forecast artifacts are not modified or regenerated. Full schema,
-availability and terminal-exposure requirements are in the approved plan, not an implemented output.
+publication. Existing run IDs are immutable; `current.json` advances only on complete success.
+Failure preserves prior runs/pointer. Development date boundaries are checked before outcome
+hashing; protected dates and the full raw source file are not accessed/hashed. Targets exclude
+evaluation outcomes, and approved upstream scenario/forecast artifacts are not modified or
+regenerated. Phase 10 remains under external review; Phase 11 is not started or authorized.
 
 For later models, use `data/processed/<model>/` for generated tabular evidence and
 `artifacts/<model>/` for model binaries; both conventions are ignored. These are directory
