@@ -688,3 +688,61 @@ def test_config_rejects_unapproved_origins_and_rng_isolation_has_no_feature_alia
     assert "ScenarioOpen" not in PREDICTOR_COLUMNS
     assert "SyntheticPromo" not in PREDICTOR_COLUMNS
     assert "SyntheticDemandValue" not in PREDICTOR_COLUMNS
+
+
+@pytest.mark.parametrize(
+    ("path", "replacement"),
+    [
+        (("parameter_ranges", "SupplierLeadTime"), [1, 8]),
+        (("scenario_overrides", "demand_slump", "stress"), 1.0),
+        (("cost_conventions", "holding_cost_rate"), "changed convention"),
+        (("schedule_conventions", "synthetic_default"), "all days open"),
+        (("discrete_values", "AverageUnitValue"), [5, 10, 25, 50]),
+        (("promotion_block", "probability"), 0.41),
+        (("initialization", "missing_dates"), "impute zero"),
+        (("common_random_numbers",), "family names are included in keys"),
+        (("weekday_factor_note",), "normalized to open days"),
+        (("uncertainty_reference", "reference_p"), "0.98"),
+    ],
+)
+def test_config_rejects_unauthorized_nested_semantic_changes(path, replacement):
+    config = scenarios.default_config(stores=[3, 1, 2, 2])
+    assert config["stores"] == [1, 2, 3]
+    scenarios._validate_config(config)
+
+    parent = config
+    for key in path[:-1]:
+        parent = parent[key]
+    parent[path[-1]] = replacement
+
+    with pytest.raises(
+        scenarios.ScenarioIntegrityError,
+        match="approved semantic configuration|approved default contract",
+    ):
+        scenarios._validate_config(config)
+
+
+def test_config_validation_preserves_publication_fields_and_fixture_subsets():
+    config = scenarios.default_config(stores=[4, 2, 3, 2])
+    config.update(
+        {
+            "run_id": "fixture-publication",
+            "created_at_utc": "2026-10-07T00:00:00+00:00",
+            "config_canonical_sha256": "a" * 64,
+        }
+    )
+
+    scenarios._validate_config(config)
+    assert config["stores"] == [2, 3, 4]
+
+
+def test_generation_rejects_nested_config_change_before_reading_histories(monkeypatch):
+    config = scenarios.default_config(stores=[1])
+    config["scenario_overrides"]["demand_slump"]["stress"] = 1.0
+
+    def unexpected_history_validation(*args, **kwargs):
+        pytest.fail("history processing must not start for an unapproved configuration")
+
+    monkeypatch.setattr(scenarios, "validate_history_frame", unexpected_history_validation)
+    with pytest.raises(scenarios.ScenarioIntegrityError, match="approved default contract"):
+        scenarios.generate_scenario_tables(config, {})

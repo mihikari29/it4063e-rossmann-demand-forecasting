@@ -426,6 +426,30 @@ def _validate_config(config: Mapping[str, Any], *, canonical_run: bool = False) 
             "Canonical development run requires configured Stores 1..1115."
         )
 
+    upstream_bindings = config.get("upstream_bindings")
+    if not isinstance(upstream_bindings, Mapping):
+        raise ScenarioIntegrityError("Upstream bindings must be a mapping.")
+    expected = default_config(stores=stores, upstream_bindings=upstream_bindings)
+    if set(config) != set(expected):
+        raise ScenarioIntegrityError(
+            "Configuration fields differ from the approved semantic contract."
+        )
+
+    # These values are assigned during immutable publication and do not control generation.
+    for field_name in ("run_id", "created_at_utc", "config_canonical_sha256"):
+        expected[field_name] = config[field_name]
+    try:
+        actual_bytes = _canonical_json_bytes(dict(config))
+        expected_bytes = _canonical_json_bytes(expected)
+    except (TypeError, ValueError) as exc:
+        raise ScenarioIntegrityError(
+            "Configuration must contain JSON-compatible approved values."
+        ) from exc
+    if actual_bytes != expected_bytes:
+        raise ScenarioIntegrityError(
+            "Configuration semantic values differ from the approved default contract."
+        )
+
 
 def keyed_digest(
     replicate: int,
