@@ -18,8 +18,9 @@ work into four manageable packages:
 
 A package may share one concise execution plan, but each model/methodology approval and phase
 boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
-Phase 9 remains PLANNED and not started; Phases 9–10 require their separate design and
-authorization and are outside this Phase 8 closeout.
+Phase 9 design is **APPROVED / IMPLEMENTATION NOT STARTED** after external methodology acceptance
+recorded in ADR-022 and the active plan. Phase 10 remains PLANNED and not started, requiring
+separate design and authorization.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -136,21 +137,37 @@ requiring future Open remain unavailable without separately reviewed origin-know
 provenance or a separately approved synthetic/conditional schedule not derived from protected
 actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
 calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 is COMPLETE
-for the accepted canonical development run; Phases 9–10 remain PLANNED and not started, outside
-this boundary and requiring separate authorization.
+for the accepted canonical development run. Phase 9's approved design and Phase 10's future
+design have separate boundaries; neither implementation is started.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
 **Objective:** Provide reproducible operational scenarios absent from Rossmann.
-**Dependencies:** Phase 2 development history, dictionary and ADR-016 units.
+**Status:** Design APPROVED / IMPLEMENTATION NOT STARTED after external methodology ACCEPT on
+2026-10-07; see the approval record in the [active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md)
+and ADR-022. The approval synchronization remains open/unmerged in PR #18.
+**Design:** [Active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md) and accepted
+ADR-022. The design branch starts from PR #17's integrated Phase 8 closeout at
+`f08a62aa980d0670186ed25ae1f6e5a018ff3781`; ADR-022 records external design acceptance.
+**Dependencies:** Phase 2 origin-censored development history, dictionary, ADR-016 units and
+read-only Phase 7/8 lineage.
 **Deliverables:** Fixed-seed scenario generator, assumptions/range/relationship checks, stress data.
-**Acceptance / boundary:** Initialization statistics use history available at the scenario origin.
+The approved contract specifies 56-day open-turnover anchors, synthetic stock/cost/lead-time
+parameters, separately labelled historical references and artificial stress paths, immutable
+artifacts and fixture/numerical criteria. They are not generated results or implemented code.
+**Acceptance / boundary:** Initialization uses only history at the June 5/June 19 development
+origins; no protected final-holdout read, new forecast, calibration or frozen-artifact mutation.
 Synthetic discount/lead-time/stock/costs stay outside the real Rossmann model feature matrix;
 synthetic demand stress tests are separate from forecasting accuracy on real Sales.
+No physical units, observed inventory, latent-demand correction or real-stockout inference.
+Phase 9 supplies exogenous inputs and provenance to Phase 10; event order, queue, policy
+comparisons and inventory KPIs are excluded. Phase 8 quantiles remain origin-prefix-only;
+synthetic-regime transport and later daily-review suffix calibration are not approved here.
 
 ## Phase 10 — Inventory Simulation & Sensitivity Analysis
 
 **Objective:** Compare simple replenishment policies under stated assumptions.
+**Status:** PLANNED; not started or approved by the Phase 9 design.
 **Dependencies:** Phases 8–9 and development-only forecasts.
 **Deliverables:** Stateful order/receipt/stock ledger, policy/KPI comparison, sensitivity report.
 **Acceptance / boundary:** Use retail-equivalent values consistently; distinguish lead-time ROP
