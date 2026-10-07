@@ -471,7 +471,7 @@ def build_policy_targets(target_inputs: pd.DataFrame) -> pa.Table:
         expected_fit = scenarios.FIT_BY_ORIGIN[origin]
         if fit_id != expected_fit:
             raise SimulationIntegrityError("Origin and Phase 8 fit identity are incompatible.")
-        if str(first.model_id) != "global_lightgbm_gbdt_regression_l1":
+        if str(first["model_id"]) != "global_lightgbm_gbdt_regression_l1":
             raise SimulationIntegrityError(
                 "Target inputs use an unapproved Phase 7 model identity."
             )
@@ -764,6 +764,16 @@ def simulate_case(
                     "pipeline_after_review_value": None,
                     "review_status": "demand_unavailable",
                     "state_unavailable_reason": broken_reason,
+                    "demand_value": None,
+                    "fulfilled_value": None,
+                    "unmet_value": None,
+                    "ending_inventory_value": None,
+                    "inventory_position_value": None,
+                    "order_value": None,
+                    "order_id": None,
+                    "order_due_date": None,
+                    "holding_cost": None,
+                    "unmet_penalty": None,
                 }
             )
             rows.append(ledger)
@@ -947,7 +957,9 @@ def summarize_simulation(
     first_day = target["forecast_origin"] + timedelta(days=1)
     last_day = target["forecast_origin"] + timedelta(days=HORIZON_DAYS)
     initial_left = int(not receipt_dates or receipt_dates[0] > first_day)
-    terminal_right = int(not receipt_dates or receipt_dates[-1] < last_day)
+    # The interval beginning at the last positive receipt has no following receipt
+    # boundary.  It remains right-censored even when that receipt occurs on T.
+    terminal_right = int(not receipt_dates or receipt_dates[-1] <= last_day)
     terminal = valid[-1]
     on_hand = float(terminal["ending_inventory_value"])
     on_order = float(terminal["pipeline_after_review_value"])
@@ -1220,7 +1232,10 @@ def _repo_file(root: Path, relative: str) -> Path:
 
 
 def _preflight_phase9_parquet(path: Path, name: str) -> dict[str, Any]:
-    """Read only Parquet footer metadata and reject dates after the dev cutoff."""
+    """Validate the pinned schema and safe date bounds before any artifact byte hash."""
+    expected_schema = scenarios.TABLE_SCHEMAS.get(name)
+    if expected_schema is None:
+        raise SimulationIntegrityError(f"Phase 9 Parquet is not allowlisted: {name}.")
     try:
         parquet = pq.ParquetFile(path)
     except (OSError, pa.ArrowException) as error:
@@ -1231,7 +1246,23 @@ def _preflight_phase9_parquet(path: Path, name: str) -> dict[str, Any]:
     if metadata is None or metadata.num_rows <= 0:
         raise SimulationIntegrityError(f"Phase 9 Parquet lacks auditable row metadata: {name}.")
     schema = parquet.schema_arrow
-    date_fields = [field.name for field in schema if pa.types.is_date(field.type)]
+    if not schema.remove_metadata().equals(expected_schema, check_metadata=False):
+        parquet.close()
+        raise SimulationIntegrityError(f"Phase 9 schema differs from the frozen contract: {name}.")
+    semantic_date_fields = [
+        field_name
+        for field_name in ("Date", "forecast_origin")
+        if field_name in expected_schema.names
+    ]
+    if name == "scenario_daily.parquet" and "Date" not in semantic_date_fields:
+        parquet.close()
+        raise SimulationIntegrityError("Phase 9 daily artifact is missing semantic Date.")
+    if name in {"scenario_catalog.parquet", "origin_anchors.parquet"} and (
+        "forecast_origin" not in semantic_date_fields
+    ):
+        parquet.close()
+        raise SimulationIntegrityError(f"Phase 9 artifact is missing forecast_origin: {name}.")
+    date_fields = [field.name for field in expected_schema if pa.types.is_date(field.type)]
     bounds: dict[str, dict[str, str]] = {}
     for field_name in date_fields:
         index = schema.names.index(field_name)
@@ -1241,21 +1272,58 @@ def _preflight_phase9_parquet(path: Path, name: str) -> dict[str, Any]:
             stats = metadata.row_group(group_index).column(index).statistics
             if stats is None or stats.min is None or stats.max is None:
                 raise SimulationIntegrityError(f"Phase 9 date statistics are insufficient: {name}.")
-            group_low = pd.Timestamp(stats.min).date()
-            group_high = pd.Timestamp(stats.max).date()
+            try:
+                group_low = pd.Timestamp(stats.min).date()
+                group_high = pd.Timestamp(stats.max).date()
+            except (TypeError, ValueError, OverflowError) as error:
+                parquet.close()
+                raise SimulationIntegrityError(
+                    f"Phase 9 date statistics are malformed: {name}/{field_name}."
+                ) from error
             low = group_low if low is None else min(low, group_low)
             high = group_high if high is None else max(high, group_high)
         if low is None or high is None:
             raise SimulationIntegrityError(f"Phase 9 date bounds are absent: {name}.")
-        if field_name == "Date" and high > scenarios.DEVELOPMENT_CUTOFF:
-            raise SimulationIntegrityError(f"Phase 9 daily metadata crosses July 3: {name}.")
+        if high > scenarios.DEVELOPMENT_CUTOFF:
+            parquet.close()
+            raise SimulationIntegrityError(f"Phase 9 date metadata crosses July 3: {name}.")
         if field_name == "forecast_origin" and (
             low not in scenarios.ALLOWED_ORIGINS or high not in scenarios.ALLOWED_ORIGINS
         ):
+            parquet.close()
             raise SimulationIntegrityError(
                 f"Phase 9 origin metadata contains an unsupported origin: {name}."
             )
         bounds[field_name] = {"minimum": low.isoformat(), "maximum": high.isoformat()}
+    # Footer extrema bound the safe projection before any data pages are read.  Check
+    # every origin value (origins are not outcomes) so an interior unsupported origin
+    # cannot hide between otherwise permitted footer extrema.
+    if semantic_date_fields:
+        parquet.close()
+        try:
+            dates = pq.read_table(path, columns=semantic_date_fields, use_threads=False)
+        except (OSError, pa.ArrowException) as error:
+            raise SimulationIntegrityError(
+                f"Cannot inspect Phase 9 semantic date columns: {name}."
+            ) from error
+        for field_name in semantic_date_fields:
+            values = dates[field_name].to_pylist()
+            if any(value is None for value in values):
+                raise SimulationIntegrityError(
+                    f"Phase 9 semantic date field contains nulls: {name}/{field_name}."
+                )
+            if field_name == "Date" and any(
+                value > scenarios.DEVELOPMENT_CUTOFF for value in values
+            ):
+                raise SimulationIntegrityError(f"Phase 9 daily values cross July 3: {name}.")
+            if field_name == "forecast_origin" and any(
+                value not in scenarios.ALLOWED_ORIGINS for value in values
+            ):
+                raise SimulationIntegrityError(
+                    f"Phase 9 values contain an unsupported origin: {name}."
+                )
+    else:
+        parquet.close()
     return {
         "rows": int(metadata.num_rows),
         "columns": schema.names,
@@ -2406,6 +2474,7 @@ def _validate_ledger_stream(
     current_key: tuple[str, int, str] | None = None
     current: list[dict[str, Any]] = []
     tracks = rows = complete = unavailable = protected = reference_tracks = 0
+    incomplete_prefix_tracks = unavailable_null_tracks = 0
     summary_rows = (
         (
             record
@@ -2425,8 +2494,207 @@ def _validate_ledger_stream(
         else None
     )
 
+    def validate_unavailable_values(row: Mapping[str, Any], key: Any, horizon: int) -> None:
+        dependent = (
+            "starting_inventory_value",
+            "receipts_today_value",
+            "available_stock_value",
+            "demand_value",
+            "fulfilled_value",
+            "unmet_value",
+            "ending_inventory_value",
+            "pipeline_before_receipt_value",
+            "pipeline_after_receipt_value",
+            "pipeline_after_review_value",
+            "inventory_position_value",
+            "order_value",
+            "order_id",
+            "order_due_date",
+            "holding_cost",
+            "unmet_penalty",
+        )
+        for field in dependent:
+            if not _is_null(row[field]):
+                raise SimulationIntegrityError(
+                    f"Unavailable dependent field {field} is non-null at h{horizon} for {key}."
+                )
+        if row["state_available"] or not row["state_unavailable_reason"]:
+            raise SimulationIntegrityError(f"Unavailable state metadata is inconsistent for {key}.")
+
+    def validate_incomplete_track(track: list[dict[str, Any]], key: Any) -> tuple[bool, bool]:
+        """Validate every available prefix transition and the unavailable boundary."""
+        first_unavailable = next(
+            (index for index, row in enumerate(track) if not bool(row["state_available"])), None
+        )
+        if first_unavailable is None:
+            raise SimulationIntegrityError(f"Incomplete track has no unavailable row: {key}.")
+        if any(bool(row["state_available"]) for row in track[first_unavailable:]):
+            raise SimulationIntegrityError(f"State resumes after it became unavailable for {key}.")
+        if first_unavailable == 0:
+            # A target/initialization-unavailable track has no simulated prefix.
+            for row in track[1:]:
+                if row["review_status"] != "track_unavailable":
+                    raise SimulationIntegrityError(f"Unavailable track status changed for {key}.")
+                validate_unavailable_values(row, key, int(row["horizon"]))
+            return False, True
+
+        prefix = track[:first_unavailable]
+        origin_row = prefix[0]
+        if int(origin_row["horizon"]) != 0 or not origin_row["target_available"]:
+            raise SimulationIntegrityError(
+                f"Incomplete track has an invalid available origin: {key}."
+            )
+        lead = int(origin_row["SupplierLeadTime"])
+        target_value = _number(origin_row["target_value"], "target_value", nonnegative=True)
+        stock = _number(origin_row["starting_inventory_value"], "initial stock", nonnegative=True)
+        if not _close(float(origin_row["inventory_position_value"]), stock):
+            raise SimulationIntegrityError(f"Origin inventory position failed for {key}.")
+        queue: dict[str, tuple[date, float]] = {}
+
+        def place_order(row: Mapping[str, Any], horizon: int, expected: float) -> None:
+            value = float(row["order_value"])
+            if not _close(value, expected):
+                raise SimulationIntegrityError(
+                    f"Order-up-to amount failed at h{horizon} for {key}."
+                )
+            if value > 0:
+                due_date = row["Date"] + timedelta(days=lead + 1)
+                order_id = row["order_id"]
+                if order_id is None or row["order_due_date"] != due_date or order_id in queue:
+                    raise SimulationIntegrityError(f"Order identity/due date failed for {key}.")
+                queue[str(order_id)] = (due_date, value)
+            elif row["order_id"] is not None or row["order_due_date"] is not None:
+                raise SimulationIntegrityError(f"Zero order has order metadata for {key}.")
+            if not _close(
+                float(row["pipeline_after_review_value"]),
+                sum(value for _, value in queue.values()),
+            ):
+                raise SimulationIntegrityError(f"Pipeline-after-review identity failed for {key}.")
+
+        origin_order = max(0.0, target_value - stock)
+        if not _close(float(origin_row["pipeline_before_receipt_value"]), 0.0) or not _close(
+            float(origin_row["pipeline_after_receipt_value"]), 0.0
+        ):
+            raise SimulationIntegrityError(f"Origin pipeline must start empty for {key}.")
+        place_order(origin_row, 0, origin_order)
+
+        def consume_receipts(row: Mapping[str, Any], horizon: int) -> float:
+            before = sum(value for _, value in queue.values())
+            if not _close(float(row["pipeline_before_receipt_value"]), before):
+                raise SimulationIntegrityError(
+                    f"Pipeline-before-receipt identity failed for {key}."
+                )
+            current = row["Date"]
+            due_ids = [order_id for order_id, (due, _) in queue.items() if due == current]
+            if any(due < current for due, _ in queue.values()):
+                raise SimulationIntegrityError(f"An order passed its due date for {key}.")
+            received_ids = row["received_order_ids"].split(",") if row["received_order_ids"] else []
+            if received_ids != due_ids:
+                raise SimulationIntegrityError(f"Receipt order IDs differ at h{horizon} for {key}.")
+            receipt = sum(queue[order_id][1] for order_id in due_ids)
+            for order_id in due_ids:
+                del queue[order_id]
+            after = sum(value for _, value in queue.values())
+            if not _close(float(row["receipts_today_value"]), receipt) or not _close(
+                float(row["pipeline_after_receipt_value"]), after
+            ):
+                raise SimulationIntegrityError(
+                    f"Receipt/pipeline identity failed at h{horizon} for {key}."
+                )
+            return receipt
+
+        for row in prefix[1:]:
+            horizon = int(row["horizon"])
+            if horizon <= 0:
+                raise SimulationIntegrityError(f"Invalid prefix horizon for {key}.")
+            if not _close(float(row["starting_inventory_value"]), stock):
+                raise SimulationIntegrityError(f"Starting inventory continuity failed for {key}.")
+            receipt = consume_receipts(row, horizon)
+            available_stock = stock + receipt
+            demand = _number(row["demand_value"], "demand_value", nonnegative=True)
+            fulfilled = min(available_stock, demand)
+            unmet = demand - fulfilled
+            ending = available_stock - fulfilled
+            position = ending + sum(value for _, value in queue.values())
+            for field, expected in (
+                ("available_stock_value", available_stock),
+                ("fulfilled_value", fulfilled),
+                ("unmet_value", unmet),
+                ("ending_inventory_value", ending),
+                ("inventory_position_value", position),
+            ):
+                if not _close(float(row[field]), expected):
+                    raise SimulationIntegrityError(f"{field} failed at h{horizon} for {key}.")
+            holding_rate = (
+                float(row["ProcurementCostRatio"]) * float(row["AnnualHoldingRate"]) / 365.0
+            )
+            unmet_rate = (1.0 - float(row["ProcurementCostRatio"])) + float(
+                row["GoodwillPenaltyRate"]
+            )
+            if not _close(float(row["holding_cost"]), holding_rate * ending) or not _close(
+                float(row["unmet_penalty"]), unmet_rate * unmet
+            ):
+                raise SimulationIntegrityError(
+                    f"Prefix cost arithmetic failed at h{horizon} for {key}."
+                )
+            expected_order = max(0.0, target_value - position) if horizon < HORIZON_DAYS else 0.0
+            place_order(row, horizon, expected_order)
+            if row["review_status"] != (
+                "terminal_boundary" if horizon == HORIZON_DAYS else "reviewed"
+            ):
+                raise SimulationIntegrityError(
+                    f"Prefix review status failed at h{horizon} for {key}."
+                )
+            stock = ending
+
+        boundary = track[first_unavailable]
+        boundary_horizon = int(boundary["horizon"])
+        if boundary_horizon <= 0 or boundary["review_status"] != "demand_unavailable":
+            raise SimulationIntegrityError(
+                f"Incomplete track lacks a missing-demand boundary: {key}."
+            )
+        if not _close(float(boundary["starting_inventory_value"]), stock):
+            raise SimulationIntegrityError(f"Missing-demand starting inventory failed for {key}.")
+        receipt = consume_receipts(boundary, boundary_horizon)
+        for field, expected in (
+            ("available_stock_value", stock + receipt),
+            ("demand_value", None),
+            ("fulfilled_value", None),
+            ("unmet_value", None),
+            ("ending_inventory_value", None),
+            ("inventory_position_value", None),
+            ("order_value", None),
+            ("order_id", None),
+            ("order_due_date", None),
+            ("pipeline_after_review_value", None),
+            ("holding_cost", None),
+            ("unmet_penalty", None),
+        ):
+            actual = boundary[field]
+            if expected is None:
+                if not _is_null(actual):
+                    raise SimulationIntegrityError(
+                        f"Missing-demand dependent field {field} is non-null for {key}."
+                    )
+            elif not _close(float(actual), expected):
+                raise SimulationIntegrityError(
+                    f"Missing-demand pre-state {field} failed for {key}."
+                )
+        if boundary["state_unavailable_reason"] is None:
+            raise SimulationIntegrityError(f"Missing-demand reason is absent for {key}.")
+        for row in track[first_unavailable + 1 :]:
+            if row["review_status"] != "state_unavailable_after_missing_demand":
+                raise SimulationIntegrityError(f"State resumed after missing demand for {key}.")
+            validate_unavailable_values(row, key, int(row["horizon"]))
+            if row["state_unavailable_reason"] != boundary["state_unavailable_reason"]:
+                raise SimulationIntegrityError(
+                    f"Missing-demand reason changed after boundary for {key}."
+                )
+        return True, True
+
     def validate_track(track: list[dict[str, Any]]) -> None:
         nonlocal tracks, complete, unavailable, protected, reference_tracks
+        nonlocal incomplete_prefix_tracks, unavailable_null_tracks
         if not track:
             return
         tracks += 1
@@ -2460,6 +2728,9 @@ def _validate_ledger_stream(
                 )
         if not all(bool(row["state_available"]) for row in ordered):
             unavailable += 1
+            has_prefix, nulls_valid = validate_incomplete_track(ordered, key)
+            incomplete_prefix_tracks += int(has_prefix)
+            unavailable_null_tracks += int(nulls_valid)
             if summary is not None:
                 if summary["episode_complete"] or summary["episode_status"] == "complete":
                     raise SimulationIntegrityError(
@@ -2618,7 +2889,7 @@ def _validate_ledger_stream(
             first_day = ordered[0]["forecast_origin"] + timedelta(days=1)
             last_day = ordered[0]["forecast_origin"] + timedelta(days=HORIZON_DAYS)
             initial_left = int(not receipt_dates or receipt_dates[0] > first_day)
-            terminal_right = int(not receipt_dates or receipt_dates[-1] < last_day)
+            terminal_right = int(not receipt_dates or receipt_dates[-1] <= last_day)
             terminal = ordered[-1]
             terminal_stock = float(terminal["ending_inventory_value"])
             terminal_pipeline = float(terminal["pipeline_after_review_value"])
@@ -2728,10 +2999,19 @@ def _validate_ledger_stream(
         "reference_rows": reference_tracks * 15,
         "complete_tracks": complete,
         "unavailable_or_incomplete_tracks": unavailable,
+        "validated_incomplete_prefix_tracks": incomplete_prefix_tracks,
+        "validated_unavailable_dependent_null_tracks": unavailable_null_tracks,
         "invalid_foreign_keys": 0,
         "post_cutoff_date_rows": protected,
         "queue_identity": "passed",
-        "daily_and_terminal_balances": "passed",
+        "daily_and_terminal_balances": "passed" if complete else "not_applicable",
+        "complete_track_balance_validation": "passed" if complete else "not_applicable",
+        "incomplete_prefix_balance_validation": (
+            "passed" if incomplete_prefix_tracks else "not_applicable"
+        ),
+        "unavailable_dependent_null_validation": (
+            "passed" if unavailable_null_tracks else "not_applicable"
+        ),
     }
 
 

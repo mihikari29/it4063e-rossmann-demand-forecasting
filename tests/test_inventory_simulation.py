@@ -246,6 +246,141 @@ def test_unsupported_origin_is_rejected_before_any_artifact_access(monkeypatch, 
         simulation.verify_simulation_inputs(tmp_path, origin="2015-07-04")
 
 
+def _phase9_fixture_row(schema, *, origin=date(2015, 6, 5), day=date(2015, 7, 3)):
+    values = {}
+    for field in schema:
+        if field.name == "forecast_origin":
+            value = origin
+        elif field.name in {"Date", "history_start", "history_end"}:
+            value = day
+        elif pa.types.is_date(field.type):
+            value = day
+        elif field.nullable:
+            value = None
+        elif pa.types.is_string(field.type):
+            value = "fixture"
+        elif pa.types.is_boolean(field.type):
+            value = False
+        elif pa.types.is_integer(field.type):
+            value = 1
+        elif pa.types.is_floating(field.type):
+            value = 1.0
+        else:
+            raise AssertionError(f"No Phase 9 fixture default for {field}.")
+        values[field.name] = value
+    return values
+
+
+def _phase9_preflight_repository(tmp_path, *, replace_daily=None, omit_daily_date=False):
+    directory = tmp_path / "data/processed/synthetic_inventory" / simulation.PHASE9_RUN_ID
+    directory.mkdir(parents=True)
+    outputs = {
+        "scenario_config.json",
+        "upstream_bindings.json",
+        "validation_summary.json",
+        *scenarios.TABLE_SCHEMAS.keys(),
+    }
+    manifest = {
+        "run_id": simulation.PHASE9_RUN_ID,
+        "status": "complete",
+        "outputs": {name: {"path": name} for name in outputs},
+    }
+    for name, schema in scenarios.TABLE_SCHEMAS.items():
+        current_schema = schema
+        row = _phase9_fixture_row(schema)
+        path = directory / name
+        write_statistics = True
+        if name == "scenario_daily.parquet":
+            if replace_daily is not None:
+                current_schema, row, write_statistics = replace_daily(schema, row)
+            if omit_daily_date:
+                current_schema = pa.schema([field for field in schema if field.name != "Date"])
+                row.pop("Date")
+        table = pa.Table.from_pylist([row], schema=current_schema)
+        pq.write_table(table, path, write_statistics=write_statistics)
+    return directory, manifest
+
+
+def _verify_phase9_preflight_fixture(monkeypatch, tmp_path, directory, manifest):
+    monkeypatch.setattr(
+        scenarios,
+        "verify_frozen_bindings",
+        lambda _: {
+            "identity_snapshot": {
+                "phase7_selection_manifest_sha256": simulation.PHASE7_MANIFEST_SHA256,
+                "phase8_manifest_sha256": simulation.PHASE8_MANIFEST_SHA256,
+            }
+        },
+    )
+    monkeypatch.setattr(simulation, "_read_json", lambda _: manifest)
+    artifact_hashes = []
+
+    def hash_spy(path):
+        candidate = Path(path)
+        if candidate.name != "manifest.json":
+            artifact_hashes.append(candidate)
+            return "fixture-hash"
+        return simulation.PHASE9_MANIFEST_SHA256
+
+    monkeypatch.setattr(simulation, "_sha256_file", hash_spy)
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.verify_simulation_inputs(tmp_path, origin=date(2015, 6, 5))
+    assert artifact_hashes == []
+
+
+def test_phase9_preflight_accepts_each_pinned_schema_and_date_footer(tmp_path):
+    directory, _ = _phase9_preflight_repository(tmp_path)
+    for name in scenarios.TABLE_SCHEMAS:
+        result = simulation._preflight_phase9_parquet(directory / name, name)
+        assert result["rows"] == 1
+        assert result["schema"] == scenarios._schema_descriptor(scenarios.TABLE_SCHEMAS[name])
+
+
+@pytest.mark.parametrize(
+    "defect", ["date_timestamp", "origin_timestamp", "july4", "no_stats", "missing_date"]
+)
+def test_phase9_date_schema_rejections_precede_all_parquet_hashes(monkeypatch, tmp_path, defect):
+    def substitute(schema, row):
+        if defect == "date_timestamp":
+            schema = schema.set(
+                schema.get_field_index("Date"), pa.field("Date", pa.timestamp("ns"), nullable=False)
+            )
+            row["Date"] = pd.Timestamp("2015-07-03")
+        elif defect == "july4":
+            row["Date"] = date(2015, 7, 4)
+        elif defect == "no_stats":
+            return schema, row, False
+        return schema, row, True
+
+    if defect == "origin_timestamp":
+        directory, manifest = _phase9_preflight_repository(tmp_path)
+        path = directory / "scenario_catalog.parquet"
+        schema = scenarios.TABLE_SCHEMAS["scenario_catalog.parquet"]
+        row = _phase9_fixture_row(schema)
+        schema = schema.set(
+            schema.get_field_index("forecast_origin"),
+            pa.field("forecast_origin", pa.timestamp("ns"), nullable=False),
+        )
+        row["forecast_origin"] = pd.Timestamp("2015-06-05")
+        pq.write_table(pa.Table.from_pylist([row], schema=schema), path)
+    elif defect == "missing_date":
+        directory, manifest = _phase9_preflight_repository(tmp_path, omit_daily_date=True)
+    else:
+        directory, manifest = _phase9_preflight_repository(tmp_path, replace_daily=substitute)
+    _verify_phase9_preflight_fixture(monkeypatch, tmp_path, directory, manifest)
+
+
+def test_phase9_preflight_rejects_unsupported_interior_origin_before_hash(tmp_path, monkeypatch):
+    directory, manifest = _phase9_preflight_repository(tmp_path)
+    path = directory / "scenario_catalog.parquet"
+    schema = scenarios.TABLE_SCHEMAS["scenario_catalog.parquet"]
+    first = _phase9_fixture_row(schema, origin=date(2015, 6, 5))
+    middle = _phase9_fixture_row(schema, origin=date(2015, 6, 12))
+    last = _phase9_fixture_row(schema, origin=date(2015, 6, 19))
+    pq.write_table(pa.Table.from_pylist([first, middle, last], schema=schema), path)
+    _verify_phase9_preflight_fixture(monkeypatch, tmp_path, directory, manifest)
+
+
 def test_wrong_phase7_identity_fails_before_phase9_inputs(monkeypatch, tmp_path):
     monkeypatch.setattr(
         scenarios,
@@ -367,10 +502,85 @@ def test_missing_demand_stops_state_but_retains_earlier_rows():
     assert ledger[2]["state_available"] is True
     assert ledger[3]["review_status"] == "demand_unavailable"
     assert ledger[3]["demand_value"] is None
+    for field in (
+        "fulfilled_value",
+        "unmet_value",
+        "ending_inventory_value",
+        "inventory_position_value",
+        "order_value",
+        "order_id",
+        "order_due_date",
+        "pipeline_after_review_value",
+        "holding_cost",
+        "unmet_penalty",
+    ):
+        assert ledger[3][field] is None
+        assert all(row[field] is None for row in ledger[4:])
     assert all(not row["state_available"] for row in ledger[3:])
     assert summary["episode_status"] == "incomplete_episode"
     assert summary["availability_reason"] == "fixture_missing"
     assert summary["SimulatedHoldingPlusShortfallCost"] is None
+
+
+@pytest.mark.parametrize("missing_horizon", [1, 3])
+def test_incomplete_stream_validates_prefix_boundary_and_unavailable_nulls(
+    tmp_path, missing_horizon
+):
+    target = _target(simulation.POLICY_IDS[0])
+    values = [10.0] * 14
+    values[missing_horizon - 1] = None
+    demand = _demand(values, missing_horizons=(missing_horizon,))
+    ledger, summary = simulation.simulate_case(
+        target, demand, common_input_identity="incomplete-prefix"
+    )
+    assert summary["episode_complete"] is False
+    assert ledger[missing_horizon]["review_status"] == "demand_unavailable"
+    if missing_horizon == 3:
+        assert ledger[missing_horizon]["receipts_today_value"] == 50.0
+        assert ledger[missing_horizon]["received_order_ids"] == ledger[0]["order_id"]
+
+    ledger_path = tmp_path / "incomplete-ledger.parquet"
+    target_path = tmp_path / "incomplete-targets.parquet"
+    summary_path = tmp_path / "incomplete-summary.parquet"
+    pq.write_table(
+        pa.Table.from_pylist(ledger, schema=simulation.SIMULATION_LEDGER_SCHEMA), ledger_path
+    )
+    pq.write_table(
+        pa.Table.from_pylist([target], schema=simulation.POLICY_TARGET_SCHEMA), target_path
+    )
+    pq.write_table(
+        pa.Table.from_pylist([summary], schema=simulation.POLICY_SUMMARY_SCHEMA), summary_path
+    )
+    result = simulation._validate_ledger_stream(
+        ledger_path,
+        expected_tracks=1,
+        expected_rows=15,
+        summary_path=summary_path,
+        target_path=target_path,
+    )
+    assert result["validated_incomplete_prefix_tracks"] == 1
+    assert result["validated_unavailable_dependent_null_tracks"] == 1
+    assert result["incomplete_prefix_balance_validation"] == "passed"
+    assert result["unavailable_dependent_null_validation"] == "passed"
+
+    if missing_horizon > 1:
+        corrupted_prefix = [dict(row) for row in ledger]
+        corrupted_prefix[1]["fulfilled_value"] += 1.0
+        pq.write_table(
+            pa.Table.from_pylist(corrupted_prefix, schema=simulation.SIMULATION_LEDGER_SCHEMA),
+            ledger_path,
+        )
+        with pytest.raises(simulation.SimulationIntegrityError, match="fulfilled_value failed"):
+            simulation._validate_ledger_stream(ledger_path, expected_tracks=1, expected_rows=15)
+
+    corrupted_suffix = [dict(row) for row in ledger]
+    corrupted_suffix[missing_horizon + 1]["ending_inventory_value"] = 0.0
+    pq.write_table(
+        pa.Table.from_pylist(corrupted_suffix, schema=simulation.SIMULATION_LEDGER_SCHEMA),
+        ledger_path,
+    )
+    with pytest.raises(simulation.SimulationIntegrityError, match="Unavailable dependent field"):
+        simulation._validate_ledger_stream(ledger_path, expected_tracks=1, expected_rows=15)
 
 
 def test_closed_day_demand_zero_but_stock_receipts_review_and_holding_continue():
@@ -439,6 +649,7 @@ def test_day14_receipt_and_after_window_order_are_both_retained():
     # two positive-demand days before that boundary are both fulfilled.
     assert summary["zero_unmet_positive_demand_cycles"] == 1
     assert summary["CompletedPositiveDemandReceiptCycleServiceRate"] == 1.0
+    assert summary["terminal_right_censored_intervals"] == 1
 
 
 def test_zero_demand_ratios_are_null_and_receipt_cycle_censoring_is_explicit():
@@ -454,6 +665,95 @@ def test_zero_demand_ratios_are_null_and_receipt_cycle_censoring_is_explicit():
     assert summary["terminal_right_censored_intervals"] == 1
     assert summary["AverageInventoryValue"] is not None
     assert ledger[-1]["pipeline_after_review_value"] == summary["terminal_on_order_value"]
+
+
+@pytest.mark.parametrize("terminal_demand", [0.0, 20.0])
+def test_receipt_on_terminal_day_starts_a_right_censored_cycle(terminal_demand):
+    target = _target(simulation.POLICY_IDS[1], target_value=100.0, stock=50.0, lead=2)
+    demand = [0.0] * 14
+    demand[10] = 50.0
+    demand[13] = terminal_demand
+    ledger, summary = simulation.simulate_case(
+        target, _demand(demand), common_input_identity="terminal-receipt"
+    )
+    positive_receipt_dates = [
+        row["Date"] for row in ledger if row["horizon"] > 0 and row["receipts_today_value"] > 0
+    ]
+    assert positive_receipt_dates == [date(2015, 6, 8), date(2015, 6, 19)]
+    assert summary["completed_cycles_total"] == 1
+    assert summary["completed_positive_demand_cycles"] == 1
+    assert summary["zero_unmet_positive_demand_cycles"] == 1
+    assert summary["CompletedPositiveDemandReceiptCycleServiceRate"] == 1.0
+    assert summary["terminal_right_censored_intervals"] == 1
+    assert ledger[14]["demand_value"] == terminal_demand
+
+
+def test_final_receipt_before_terminal_day_remains_right_censored():
+    target = _target(simulation.POLICY_IDS[1], target_value=100.0, stock=50.0, lead=2)
+    ledger, summary = simulation.simulate_case(
+        target, _demand([0.0] * 14), common_input_identity="early-final-receipt"
+    )
+    assert [
+        row["Date"] for row in ledger if row["horizon"] > 0 and row["receipts_today_value"] > 0
+    ] == [date(2015, 6, 8)]
+    assert summary["completed_cycles_total"] == 0
+    assert summary["terminal_right_censored_intervals"] == 1
+
+
+def test_no_receipts_has_no_completed_cycle_and_is_right_censored():
+    target = _target(simulation.POLICY_IDS[1], target_value=100.0, stock=120.0, lead=2)
+    ledger, summary = simulation.simulate_case(
+        target, _demand([0.0] * 14), common_input_identity="no-receipt"
+    )
+    assert not any(row["receipts_today_value"] > 0 for row in ledger)
+    assert summary["completed_cycles_total"] == 0
+    assert summary["completed_positive_demand_cycles"] == 0
+    assert summary["terminal_right_censored_intervals"] == 1
+
+
+def test_stream_validator_rejects_wrong_terminal_censor_count(tmp_path):
+    target = _target(simulation.POLICY_IDS[1], target_value=100.0, stock=50.0, lead=2)
+    demand = [0.0] * 14
+    demand[10] = 50.0
+    ledger, summary = simulation.simulate_case(
+        target, _demand(demand), common_input_identity="censor-validator"
+    )
+    ledger_path = tmp_path / "censor-ledger.parquet"
+    target_path = tmp_path / "censor-targets.parquet"
+    summary_path = tmp_path / "censor-summary.parquet"
+    pq.write_table(
+        pa.Table.from_pylist(ledger, schema=simulation.SIMULATION_LEDGER_SCHEMA), ledger_path
+    )
+    pq.write_table(
+        pa.Table.from_pylist([target], schema=simulation.POLICY_TARGET_SCHEMA), target_path
+    )
+    pq.write_table(
+        pa.Table.from_pylist([summary], schema=simulation.POLICY_SUMMARY_SCHEMA), summary_path
+    )
+    simulation._validate_ledger_stream(
+        ledger_path,
+        expected_tracks=1,
+        expected_rows=15,
+        summary_path=summary_path,
+        target_path=target_path,
+    )
+
+    corrupted_summary = dict(summary, terminal_right_censored_intervals=0)
+    pq.write_table(
+        pa.Table.from_pylist([corrupted_summary], schema=simulation.POLICY_SUMMARY_SCHEMA),
+        summary_path,
+    )
+    with pytest.raises(
+        simulation.SimulationIntegrityError,
+        match="Summary count terminal_right_censored_intervals differs from ledger",
+    ):
+        simulation._validate_ledger_stream(
+            ledger_path,
+            expected_tracks=1,
+            expected_rows=15,
+            summary_path=summary_path,
+            target_path=target_path,
+        )
 
 
 def test_cost_only_parameter_changes_leave_physical_trajectory_identical():

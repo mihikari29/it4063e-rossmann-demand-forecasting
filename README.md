@@ -188,18 +188,16 @@ Methodology and ADR-023 were approved on 2026-10-07. The implementation is in
 python scripts/run_inventory_simulation.py --run-id phase10-dev-example
 ```
 
-The canonical run is `phase10-dev-20261007-implementation-v2` (manifest SHA-256
-`889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`). It contains 383,560 target
-and summary tracks, 5,753,400 ledger rows, 172 cases and 1,720 comparison rows. All requested tracks
-are complete, with zero unavailable/incomplete episodes, exclusions or historical Open-assumption
-violations. Staged validation confirms the approved grids, balances, queue identities, cost
-arithmetic, paired inputs and holdout firewall. Results are conditional simulations in monetary
+The pre-review canonical run `phase10-dev-20261007-implementation-v2` is retained as immutable
+historical evidence. External implementation review returned REQUEST CHANGES after PR #23 had
+already merged into `main`; B1–B3 corrections are underway on the follow-up branch, and a fresh
+canonical Phase 10 run is pending. See [PROGRESS](docs/PROGRESS.md) for the review chronology and
+the authoritative numerical results. Published results are conditional simulations in monetary
 turnover-value units; they do not establish actual Rossmann inventory, physical demand or savings.
-See [PROGRESS](docs/PROGRESS.md) for comparison, sensitivity and terminal-exposure results.
 
-Phase 10 remains under review and is not COMPLETE. External implementation/numerical review is
-pending. Phase 11 has not started or been authorized; the protected final holdout remains
-unreleased.
+Phase 10 remains IMPLEMENTED / UNDER REVIEW and is not REVIEWED or COMPLETE. Focused external
+re-review is pending. Phase 11 has not started or been authorized; the protected final holdout
+remains unreleased.
 
 ## Architecture and remaining work
 
