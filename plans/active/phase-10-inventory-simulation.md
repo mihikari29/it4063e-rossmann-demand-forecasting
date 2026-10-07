@@ -10,7 +10,8 @@ required changes. That approval authorized implementation as a separate task. Th
 and corrected canonical development run are recorded in Sections 19–20. Phase 9 remains COMPLETE;
 Phase 11 has not started and is not authorized. The protected final holdout remains unreleased. PR
 #23 was merged into `main` before external implementation review resolution; its B1–B3 corrective
-follow-up is pending focused external re-review. The plan remains active through independent
+follow-up is in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24),
+open and pending focused external re-review. The plan remains active through independent
 implementation/results review, authorized integration and explicit closeout.
 
 ## 1. Authority, base and execution boundary
@@ -506,4 +507,5 @@ independent censor-count reconstruction, unchanged headline costs, sensitivity v
 exposures, invariants, and deterministic replay evidence are maintained in [PROGRESS](../../docs/PROGRESS.md),
 the authoritative numerical-results record. The new run is current; v1 and v2 remain immutable, and
 v2 is superseded as current evidence. Phase 10 remains **IMPLEMENTED / UNDER REVIEW**, not REVIEWED
-or COMPLETE, pending focused external re-review. Phase 11 remains **NOT STARTED / NOT AUTHORIZED**.
+or COMPLETE, pending focused external re-review in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
+Phase 11 remains **NOT STARTED / NOT AUTHORIZED**.

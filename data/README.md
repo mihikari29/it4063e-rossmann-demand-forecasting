@@ -74,8 +74,9 @@ Failure preserves prior runs/pointer. Development date boundaries are checked be
 hashing; protected dates and the full raw source file are not accessed/hashed. Targets exclude
 evaluation outcomes, and approved upstream scenario/forecast artifacts are not modified or
 regenerated. External review returned REQUEST CHANGES after PR #23 merged; B1–B3 corrective
-changes are in a new follow-up review. Phase 10 remains IMPLEMENTED / UNDER REVIEW, not REVIEWED or
-COMPLETE; Phase 11 is not started or authorized.
+changes are in [follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
+Phase 10 remains IMPLEMENTED / UNDER REVIEW, not REVIEWED or COMPLETE; Phase 11 is not started or
+authorized.
 
 For later models, use `data/processed/<model>/` for generated tabular evidence and
 `artifacts/<model>/` for model binaries; both conventions are ignored. These are directory

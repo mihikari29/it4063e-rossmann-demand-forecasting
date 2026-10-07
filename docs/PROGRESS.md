@@ -11,7 +11,7 @@
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
-| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | PR #23 merged before external review resolution; B1–B3 corrective follow-up and corrected canonical run are recorded in the [active plan and current results](../plans/active/phase-10-inventory-simulation.md) |
+| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | PR #23 merged before external review resolution; B1–B3 follow-up [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24) and corrected canonical run are recorded in the [active plan and current results](../plans/active/phase-10-inventory-simulation.md) |
 | Phase 11 and later | PLANNED / NOT STARTED | Separate authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -35,8 +35,8 @@ implementation and numerical review, and formal closeout. Its accepted canonical
 are recorded below and were not regenerated. Phase 10 methodology is approved under ADR-023, and
 implementation plus the corrected canonical development run are recorded below. Phase 10 is
 IMPLEMENTED / UNDER REVIEW, not complete. Phase 11 and later have not started or been authorized.
-PR #23 was merged into `main` before the external implementation review resolved; the B1–B3
-follow-up is tracked in the final section below.
+PR #23 was merged into `main` before the external implementation review resolved; B1–B3 follow-up
+is tracked in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
 
 ## Immediate next boundary
 
@@ -1798,6 +1798,7 @@ has logical SHA-256 `7db6fe4f292dda065bc384cfe574819d3be8364111a2bd04ad33b1033c1
 
 The external backup remains at
 `C:\Users\Minh\Desktop\hust\introba\project\phase10-review-fixes-local-backup.patch`; stash
-`stash@{0}` remains applied and retained through safe push. The new focused external re-review is
-pending. Phase 10 remains IMPLEMENTED / UNDER REVIEW, not REVIEWED or COMPLETE. Phase 11 remains
-NOT STARTED / NOT AUTHORIZED, and the protected holdout remains unreleased.
+`stash@{0}` remains applied and retained through safe push. The new [follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24)
+is open and unmerged; focused external re-review is pending. Phase 10 remains IMPLEMENTED / UNDER
+REVIEW, not REVIEWED or COMPLETE. Phase 11 remains NOT STARTED / NOT AUTHORIZED, and the protected
+holdout remains unreleased.

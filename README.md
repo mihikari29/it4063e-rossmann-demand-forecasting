@@ -47,9 +47,10 @@ acceptance. The canonical accepted development run is
 monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10's
 [active design](plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
 implementation is **IMPLEMENTED / UNDER REVIEW**. PR #23 was merged before the external
-implementation review resolved; the B1–B3 fixes are on `fix/phase-10-review-findings` for a new
-follow-up review. The current corrected canonical development run is recorded below and in
-[PROGRESS](docs/PROGRESS.md). Phase 11 has not started or been authorized.
+implementation review resolved; the B1–B3 fixes are on `fix/phase-10-review-findings` in the new
+[follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
+The current corrected canonical development run is recorded below and in [PROGRESS](docs/PROGRESS.md).
+Phase 11 has not started or been authorized.
 
 ## Environment and quick start
 
