@@ -19,10 +19,9 @@ work into four manageable packages:
 A package may share one concise execution plan, but each model/methodology approval and phase
 boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
 Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/phase-9-synthetic-inventory.md)
-preserves the design, implementation and review record. Phase 10's
-[active design proposal](../plans/active/phase-10-inventory-simulation.md) is PROPOSED / AWAITING
-APPROVAL; implementation has not started. No Phase 10 methodology is approved; authorization is
-required before implementation. Phase 11 has not started.
+preserves the design, implementation and review record. Phase 10's [active design](../plans/active/phase-10-inventory-simulation.md)
+and ADR-023 are APPROVED; implementation has not started. Phase 10 implementation is the next
+authorized task. Phase 11 has not started and is not authorized.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -140,8 +139,8 @@ provenance or a separately approved synthetic/conditional schedule not derived f
 actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
 calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 is COMPLETE
 for the accepted canonical development run. Phase 9 is formally closed as COMPLETE. Phase 10
-has a PROPOSED / AWAITING APPROVAL design and remains unimplemented; no Phase 10 methodology is
-approved, and separate authorization is required before implementation.
+methodology is approved under ADR-023 and remains unimplemented; Phase 10 implementation is the
+next authorized task. Phase 11 remains separate and unauthorized.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
@@ -173,12 +172,12 @@ implement inventory policies or establish physical inventory, observed stockouts
 ## Phase 10 — Inventory Simulation & Sensitivity Analysis
 
 **Objective:** Compare simple replenishment policies under stated assumptions.
-**Status:** PROPOSED / AWAITING APPROVAL; IMPLEMENTATION NOT STARTED / METHODOLOGY NOT APPROVED.
-**Design:** [Active Phase 10 proposal](../plans/active/phase-10-inventory-simulation.md) and proposed
-ADR-023; technical review is not human methodology approval.
+**Status:** APPROVED; IMPLEMENTATION NOT STARTED.
+**Design:** [Active Phase 10 plan](../plans/active/phase-10-inventory-simulation.md) and accepted
+ADR-023. Human approval and review evidence are recorded in the plan and [PROGRESS](PROGRESS.md).
 **Dependencies:** Phases 8–9 and development-only forecasts.
 **Deliverables:** Stateful order/receipt/stock ledger, policy/KPI comparison, sensitivity report.
-**Proposed acceptance / boundary:** At June 5/Fit A or June 19/Fit B, freeze a historical-mean or
+**Acceptance / boundary:** At June 5/Fit A or June 19/Fit B, freeze a historical-mean or
 LightGBM-plus-buffer standing target from the original h1..P prefix. R=1, L=2–7, P=L+1<=14;
 L means full intervening demand days, so EOD-t orders arrive BO-day t+L+1. Execute daily lost-sales
 queue/stock transitions against the unchanged target through day 13; suppress day-14 ordering.

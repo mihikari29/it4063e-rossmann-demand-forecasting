@@ -54,8 +54,8 @@ boundaries before hashing upstream files. Existing run IDs cannot be overwritten
 remain ignored local artifacts. Phase 9 introduces no model artifact, inventory ledger, order queue
 or policy comparison.
 
-Phase 10's [active design proposal](../plans/active/phase-10-inventory-simulation.md) is
-**PROPOSED / AWAITING APPROVAL; IMPLEMENTATION NOT STARTED**. Future ignored immutable runs would
+Phase 10's [active approved design](../plans/active/phase-10-inventory-simulation.md) authorizes a
+separate implementation task; implementation has not started. Future ignored immutable runs would
 use `data/processed/inventory_simulation/<run_id>/` with `simulation_config.json`,
 `policy_targets.parquet`, `simulation_ledger.parquet`, `policy_summary.parquet`,
 `comparison_summary.csv`, `validation_summary.json` and `manifest.json`. No such artifact or
@@ -67,7 +67,7 @@ publication. Existing run IDs remain immutable; current.json advances only on co
 Failure preserves prior runs/pointer. Verify development date boundaries before whole-file
 hashing; never hash full protected source data. Targets exclude evaluation outcomes, and the
 approved upstream scenario/forecast artifacts are not modified or regenerated. Full schema,
-availability and terminal-exposure requirements are in the proposed plan, not an implemented output.
+availability and terminal-exposure requirements are in the approved plan, not an implemented output.
 
 For later models, use `data/processed/<model>/` for generated tabular evidence and
 `artifacts/<model>/` for model binaries; both conventions are ignored. These are directory

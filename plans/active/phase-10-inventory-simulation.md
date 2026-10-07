@@ -1,12 +1,15 @@
 # Phase 10 — Inventory Simulation & Sensitivity Analysis
 
-**Status: PROPOSED / AWAITING APPROVAL. IMPLEMENTATION NOT STARTED.**
+**Status: APPROVED. IMPLEMENTATION NOT STARTED.**
 
-This is a documentation-only methodology proposal. Technical review makes it ready for human
-approval; it is not an accepted method or authorization to implement. Proposed
-[ADR-023](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
-records the decision. Phase 9 remains COMPLETE; Phase 11 has not started. The plan remains active
-through any later approval, implementation, independent review, authorized integration and closeout.
+Human methodology approval was given on 2026-10-07, accepting
+[ADR-023](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting).
+The initial technical review and a fresh independent methodology review both returned ACCEPT; the
+independent verdict was `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, with no blocking findings or
+required changes. This approval authorizes Phase 10 implementation as a separate next task. This
+approval/integration change does not implement Phase 10. Phase 9 remains COMPLETE; Phase 11 has not
+started and is not authorized. The protected final holdout remains unreleased. The plan remains
+active through implementation, independent results review, authorized integration and closeout.
 
 ## 1. Authority, base and execution boundary
 
@@ -26,12 +29,13 @@ Read with the [proposal](../../docs/PROPOSAL.md), [decisions](../../docs/DECISIO
 `forecasting/model_selection.py`, `forecasting/uncertainty.py`, `inventory/scenarios.py` and their
 existing fixture tests. ADR-015/016/020/021/022 and the selected model remain unchanged.
 
-This task permits documentation, existing fixture/quality checks, commit, push and a review PR.
-It permits no simulator, Python source, script, new test, dependency/lock change, model/scenario
-run, generated analytics artifact, merge or Phase 11 work. No protected 2015-07-04 through
-2015-07-31 Sales, Open or Customers may be read, inspected, hashed, summarized or evaluated.
-The proposal leaves timing, supported recommendations and cycle definitions to Phase 10;
-this refinement needs no change to `docs/PROPOSAL.md`.
+The original proposal task permitted documentation, existing fixture/quality checks, commit, push
+and a review PR, but not a merge. The later human approval explicitly authorizes this documentation-
+only approval update, repository checks, commit, push and integration of PR #22. Neither task
+authorizes a simulator, Python source, script, Phase 10 test, dependency/lock change, model/scenario
+run, generated analytics artifact or Phase 11 work. No protected 2015-07-04 through 2015-07-31
+Sales, Open or Customers may be read, inspected, hashed, summarized or evaluated. This methodology
+refinement needs no change to `docs/PROPOSAL.md`.
 
 ## 2. Objective, units and episode
 
@@ -62,7 +66,7 @@ ProtectionPeriod P=L+R=L+1 is in {3,...,8} and must be <=14.
 **SupplierLeadTime L means the number of full intervening calendar demand days between an
 end-of-day order and its receipt. An order placed at END OF DAY t arrives at START OF DAY
 t+L+1.** With L=2, days 1 and 2 pass after the origin review; receipt precedes day-3 demand.
-This proposed convention resolves Phase 9's undecided receipt timing without changing its L draws.
+This convention resolves Phase 9's undecided receipt timing without changing its L draws.
 The next daily review's order arrives on day L+2, giving the original h1..L+1 protection prefix.
 
 At origin o, before loading evaluation outcomes:
@@ -295,7 +299,7 @@ Keep origin/family/replicate/variant results separate; report cost, fill, stocko
 terminal differences. Five replicate ranges are descriptive, not confidence intervals or empirical
 probability weights. Cost-only variants must leave state/order trajectories exactly unchanged.
 
-## 12. Proposed software interfaces — not implemented
+## 12. Planned software interfaces — not implemented
 
 Use one future `src/rossmann_forecasting/inventory/simulation.py`; leave existing scenarios.py
 unchanged. Split policy/metric modules only if implementation review demonstrates a need.
@@ -303,7 +307,7 @@ Use existing pandas, NumPy, PyArrow and standard library; no new dependency is e
 
 | Future public interface | Responsibility |
 |---|---|
-| `default_simulation_config()` | Proposed policies, timing, overlays, KPI and artifact specification |
+| `default_simulation_config()` | Approved policies, timing, overlays, KPI and artifact specification |
 | `verify_simulation_inputs(...)` | Safe Phase 9/7/8 verification, projected views and identity snapshot |
 | `build_policy_targets(...)` | Origin-only targets without evaluation outcomes or realized stress |
 | `simulate_case(...)` | One case/policy; sequential daily outcomes, queue and ledger |
@@ -429,7 +433,7 @@ authorized merge verified; explicit closeout and frozen configuration/result ide
 plan archived. Tests or a successful run alone do not close the phase. Phase 11 requires separate
 authorization; Phase 13 release remains governed by ADR-015.
 
-## 16. Critical limitations and approval questions
+## 16. Critical limitations
 
 The static target can become stale; origin cumulative turnover coverage does not imply later
 suffix coverage or absence of within-cycle shortage. Synthetic q transport is uncalibrated.
@@ -446,18 +450,28 @@ realized savings, guaranteed service, calibrated synthetic uncertainty, statisti
 production readiness or optimal replenishment. p is a nominal buffer parameter, not the achieved
 receipt-cycle proxy or value fill rate. Report adverse comparisons and terminal exposure honestly.
 
-Human approval is requested for the standing-target daily execution, uncalibrated synthetic buffer
-use, explicit receipt/cost/KPI/terminal definitions and nine sensitivity overlays. None is accepted
-by this PR. There is no request to change accepted Phase 0–9 methods or access the holdout.
+Human approval accepts the standing-target daily execution, uncalibrated synthetic buffer use,
+explicit receipt/cost/KPI/terminal definitions and nine sensitivity overlays recorded here. It
+does not change accepted Phase 0–9 methods or authorize holdout access.
 
-## 17. Documentation proposal execution and handoff
+## 17. Documentation proposal execution and historical handoff
 
-This documentation task records the active plan and proposed ADR, aligns PROGRESS/PROJECT_PLAN,
-README, dictionary and artifact conventions, then runs existing workflow quality checks, inspects
-the entire diff and verifies the documentation-only file allowlist before commit/push/review PR.
-Actual executed checks and review checkpoint belong in PROGRESS; no invented simulation results.
-Do not merge. This plan remains PROPOSED / AWAITING APPROVAL, IMPLEMENTATION NOT STARTED.
+The original documentation task recorded the active plan and proposed ADR, aligned current-state
+documentation and artifact conventions, ran existing workflow checks, inspected the diff and
+opened a review PR. Its no-merge and awaiting-approval statements describe that historical
+pre-approval checkpoint; human approval and later integration are recorded below and in PROGRESS.
+No simulation results are claimed.
 
-After approval, the implementer follows Sections 2–15 without changing upstream recipes or
-scenario artifacts. The next authorized boundary is human methodology review and a separate
-explicit approval update, not simulator implementation or Phase 11.
+## 18. Methodology approval checkpoint — 2026-10-07
+
+**Decision: APPROVED; IMPLEMENTATION NOT STARTED.** Human approval accepted this Phase 10
+methodology and ADR-023 on 2026-10-07. The initial technical methodology review and fresh
+independent methodology review returned ACCEPT. The independent review recorded
+`INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, no blocking findings and no required methodology
+changes. This is model-assisted methodology review evidence plus explicit human approval; it does
+not claim a GitHub-native reviewer approval.
+
+Phase 10 implementation is authorized as the next separate task and must follow Sections 2–15
+without changing accepted upstream recipes or scenario artifacts. This approval commit and PR
+integration do not implement Phase 10. Phase 9 remains COMPLETE; Phase 11 remains NOT STARTED and
+unauthorized. The protected final holdout remains protected under ADR-015.

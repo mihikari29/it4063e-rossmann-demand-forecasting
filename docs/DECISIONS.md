@@ -638,18 +638,24 @@ service-level guarantee is introduced. The protected holdout remains unreleased.
 
 ## ADR-023 — Origin-Frozen Daily Inventory Policy Simulation and Finite-Window Accounting
 
-**Status:** PROPOSED / AWAITING APPROVAL, 2026-10-07. IMPLEMENTATION NOT STARTED.
+**Status:** ACCEPTED after explicit human methodology approval, 2026-10-07. IMPLEMENTATION NOT STARTED.
 
-**Proposed extension:** ADR-016/021/022's Phase 10 handoff only. Accepted Phases 0–9 methodology,
+**Review evidence:** Initial technical methodology review ACCEPT; fresh independent methodology
+review `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`. No blocking findings or required methodology
+changes. Human approval is recorded in the active Phase 10 plan and PROGRESS; this is not a claim of
+GitHub-native reviewer approval.
+
+**Scope extension:** ADR-016/021/022's Phase 10 handoff only. Accepted Phases 0–9 methodology,
 selected LightGBM recipe and Phase 8 fitted tables remain unchanged. Full proposal:
 [active Phase 10 plan](../plans/active/phase-10-inventory-simulation.md).
 
 **Context:** Phase 9 is COMPLETE and supplies exogenous monetary scenarios, not inventory policies.
 Phase 8 supplies cumulative uncertainty for approved origin-anchored prefixes only; it provides
 no calibrated later-review suffix. A daily forecast-refresh simulator would exceed that handoff.
-Technical review supports this proposal for human approval, not implementation authorization.
+Technical and independent reviews supported the proposal; explicit human approval now authorizes
+implementation only as a separate next task.
 
-**Proposed decision:** Use separate H14 development episodes at end-of-day June 5/Fit A and
+**Accepted decision:** Use separate H14 development episodes at end-of-day June 5/Fit A and
 June 19/Fit B, ending by July 3. Set exactly two standing targets once at origin: baseline
 `S=m*sum(origin-known open indicators over h1..P)` from the Phase 9 turnover anchor, and selected
 LightGBM `D_P=sum(operational points)`, `U_P=max(0,D_P+q_(p,P))`,
@@ -707,9 +713,9 @@ The proposed standing target may be stale. Two origins, dependent Stores, cold s
 truncation, artificial costs, uncalibrated stress transport and endogenous cycles limit inference.
 This is policy simulation/comparison, not industrial optimization or proof of superiority.
 
-**Consequences if approved:** Implement only the active plan after explicit approval. Require
+**Consequences:** Implement only the active plan under this accepted ADR. Require
 fixtures, repository quality gates, reproducible canonical development validation, independent
-implementation/numerical review, authorized integration and explicit closeout. Approval is not
-recorded by this PR; Phase 10 remains PROPOSED / AWAITING APPROVAL, IMPLEMENTATION NOT STARTED.
-Phase 9 remains COMPLETE; Phase 11 has not started. No code, tests, scripts, dependencies,
-simulation artifacts, holdout access or merge is authorized by this documentation proposal.
+implementation/numerical review, authorized integration and explicit closeout. Phase 10 is approved
+but IMPLEMENTATION NOT STARTED. Phase 9 remains COMPLETE; Phase 11 has not started and is not
+authorized. This documentation approval/integration changes no code, tests, scripts, dependencies
+or simulation artifacts and does not authorize holdout access.
