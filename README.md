@@ -6,7 +6,7 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` contains completed Phases 0–8. Phase 5 additive Holt-Winters was integrated with the
+`main` contains completed Phases 0–9. Phase 5 additive Holt-Winters was integrated with the
 architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
@@ -38,15 +38,14 @@ Cumulative uncertainty supports approved origin-anchored prefixes only; no later
 suffix calibration is authorized. The final holdout, 2015-07-04 through 2015-07-31, remains
 protected and unreleased. Forecast Sales is monetary turnover, not SKU-level physical demand.
 
-Phase 9 has an [approved synthetic inventory design](plans/active/phase-9-synthetic-inventory.md)
-under ADR-022. The methodology synchronization PR #18 was merged into `main` at
-`97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`. This branch implements the deterministic, origin-safe
-scenario generator and is **IMPLEMENTED / UNDER REVIEW** in
-[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19). It binds the frozen Phase 7/8 artifacts,
-generates synthetic monetary context, and publishes ignored immutable artifacts; it does not fit
-forecasts or simulate inventory policies. Synthetic context stays outside the real forecast feature
-matrix. Phase 10 remains PLANNED and not started; its daily-review suffix method and simulation
-timing require a separate approved design.
+Phase 9 is **COMPLETE** under accepted ADR-022. Its [completed plan](plans/completed/phase-9-synthetic-inventory.md)
+preserves the design, implementation and review record. PR #19 was squash-merged into `main` at
+`7451c50ff685d92e8e74b5014d07b3bbfaca0a22` after external implementation and numerical review
+acceptance. The canonical accepted development run is
+`phase9-dev-20261007-config-validation-fix` (manifest SHA-256
+`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`). It produces synthetic
+monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10 remains
+PLANNED and not started; no Phase 10 methodology is approved.
 
 ## Environment and quick start
 
@@ -151,12 +150,13 @@ The generator reads only the projected Store/Date/Sales/Open fields in the 56-da
 hashing, then writes origin anchors, store parameters, a historical reference, eight synthetic
 families, validation evidence and a manifest under
 `data/processed/synthetic_inventory/<run_id>/`. Successful runs update the ignored `current.json`;
-existing run IDs are immutable. The canonical development run is
-`phase9-dev-20261007-canonical2` (manifest SHA-256
-`cc148d3670c0b20c769f245488ddd7f535f4333e6b0cf759c60e544e9c6c8a82`). These outputs are local
-artifacts and are not committed. All operational values are illustrative monetary assumptions;
-this command does not create an inventory ledger, evaluate a policy, estimate realized savings,
-or access the protected final holdout.
+existing run IDs are immutable. The accepted canonical development run is
+`phase9-dev-20261007-config-validation-fix` (manifest SHA-256
+`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`). It contains 82 catalog
+rows, 2,230 origin anchors, 91,430 store-parameter rows and 1,280,020 daily-context rows. These
+outputs are local artifacts and are not committed. All operational values are illustrative monetary
+assumptions. This command does not create an inventory ledger, evaluate a policy, estimate realized
+savings, or access the protected final holdout.
 
 ## Architecture and remaining work
 
@@ -172,15 +172,16 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 - Phase 8: **COMPLETE** after PR #15/#16 integration, independent results acceptance and explicit
   closeout. Fit B values are frozen for the canonical run; cumulative tables support approved
   origin-anchored prefixes only.
-- Phase 9: implementation is under review on `feat/phase-9-synthetic-inventory`; it generates
-  exogenous synthetic scenario inputs only. Phase 10 remains planned and has not started.
+- Phase 9: **COMPLETE**; the accepted generator creates exogenous synthetic scenario inputs only.
+  See the [completed plan](plans/completed/phase-9-synthetic-inventory.md). Phase 10 remains
+  PLANNED and not started; no Phase 10 methodology is approved.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
 - Phase 14: recorded results, report, slides and demonstration.
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
-records the inputs, origins, metrics, artifacts and tests used. Phases 5–8 are integrated and
+records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and
 formally closed. Phase 9 implements only the approved scenario generator; the stateful inventory
 simulator remains future work. Phase 10 and later require separate design and authorization. The
 final holdout remains protected.

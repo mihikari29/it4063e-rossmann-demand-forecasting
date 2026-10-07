@@ -18,9 +18,9 @@ work into four manageable packages:
 
 A package may share one concise execution plan, but each model/methodology approval and phase
 boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
-Phase 9 design is **APPROVED** under ADR-022 and its generator is **IMPLEMENTED / UNDER REVIEW**
-as recorded in the active plan and PROGRESS. Phase 10 remains PLANNED and not started, requiring
-separate design and authorization.
+Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/phase-9-synthetic-inventory.md)
+preserves the design, implementation and review record. Phase 10 remains PLANNED and not started;
+no Phase 10 methodology is approved, and separate design and authorization are required.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -137,20 +137,19 @@ requiring future Open remain unavailable without separately reviewed origin-know
 provenance or a separately approved synthetic/conditional schedule not derived from protected
 actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
 calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 is COMPLETE
-for the accepted canonical development run. Phase 9's approved generator is under review; Phase
-10's future design remains unstarted and requires separate authorization.
+for the accepted canonical development run. Phase 9 is formally closed as COMPLETE. Phase 10
+remains PLANNED and unstarted; no Phase 10 methodology is approved, and separate authorization
+is required before design or implementation.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
 **Objective:** Provide reproducible operational scenarios absent from Rossmann.
-**Status:** Design APPROVED; implementation **IMPLEMENTED / UNDER REVIEW** in
-[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) on
-`feat/phase-9-synthetic-inventory`. The methodology synchronization PR #18 merged into `main` at
-`97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`; implementation review is the current phase boundary.
-See the [active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md), ADR-022 and the
-implementation checkpoint in [PROGRESS](PROGRESS.md).
-**Design:** [Active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md) and accepted
-ADR-022. The implementation branch is based on PR #18's integrated approval at
+**Status:** **COMPLETE.** PR #19 was squash-merged into `main` at
+`7451c50ff685d92e8e74b5014d07b3bbfaca0a22` after independent implementation and numerical review
+acceptance. See the [completed Phase 9 plan](../plans/completed/phase-9-synthetic-inventory.md),
+accepted ADR-022 and formal closeout in [PROGRESS](PROGRESS.md).
+**Design:** [Completed Phase 9 plan](../plans/completed/phase-9-synthetic-inventory.md) and
+accepted ADR-022. PR #18's methodology synchronization remains integrated at
 `97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`.
 **Dependencies:** Phase 2 origin-censored development history, dictionary, ADR-016 units and
 read-only Phase 7/8 lineage.
@@ -166,11 +165,13 @@ No physical units, observed inventory, latent-demand correction or real-stockout
 Phase 9 supplies exogenous inputs and provenance to Phase 10; event order, queue, policy
 comparisons and inventory KPIs are excluded. Phase 8 quantiles remain origin-prefix-only;
 synthetic-regime transport and later daily-review suffix calibration are not approved here.
+The accepted canonical run and manifest are recorded in [PROGRESS](PROGRESS.md); Phase 9 does not
+implement inventory policies or establish physical inventory, observed stockouts or savings.
 
 ## Phase 10 — Inventory Simulation & Sensitivity Analysis
 
 **Objective:** Compare simple replenishment policies under stated assumptions.
-**Status:** PLANNED; not started or approved by the Phase 9 design.
+**Status:** PLANNED / NOT STARTED / METHODOLOGY NOT APPROVED.
 **Dependencies:** Phases 8–9 and development-only forecasts.
 **Deliverables:** Stateful order/receipt/stock ledger, policy/KPI comparison, sensitivity report.
 **Acceptance / boundary:** Use retail-equivalent values consistently; distinguish lead-time ROP

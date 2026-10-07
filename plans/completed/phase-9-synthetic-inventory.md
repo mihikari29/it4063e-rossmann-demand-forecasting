@@ -1,11 +1,11 @@
 # Phase 9 — Synthetic Supply-Chain / Inventory Layer Design
 
-**Status: APPROVED / IMPLEMENTED — UNDER REVIEW (2026-10-07).** The external methodology
-decision is ACCEPT. The generator, fixture suite and canonical development scenario run are
-implemented on `feat/phase-9-synthetic-inventory`; this active plan records the implementation
-checkpoint and pending review in
-[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19). Phase 10
-remains unapproved and not started.
+**Status: COMPLETE (2026-10-07).** ADR-022's methodology is ACCEPTED, and the external
+implementation and numerical review are ACCEPTED. PR #19 was merged into `main` at squash SHA
+`7451c50ff685d92e8e74b5014d07b3bbfaca0a22`. See [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19)
+and Section 16 for the formal closeout. Sections 13–15 preserve the historical approval,
+implementation and review checkpoints. Phase 10 remains PLANNED / NOT STARTED / METHODOLOGY NOT
+APPROVED.
 
 ## 1. Authority, integration and scope
 
@@ -28,15 +28,16 @@ Read together with [AGENTS](../../AGENTS.md), [workflow](../../docs/WORKFLOW.md)
 [completed Phase 8 plan](../completed/phase-8-forecast-uncertainty.md).
 Accepted [ADR-022](../../docs/DECISIONS.md#adr-022--synthetic-monetary-scenario-contract)
 records the approved synthetic assumptions without superseding ADR-015, ADR-016, ADR-020 or
-ADR-021. Historical proposal checkpoints remain in this active plan and PROGRESS.
+ADR-021. Historical proposal checkpoints remain in this completed plan and PROGRESS.
 
 **Phase 9 delivers:** origin-censored initialization evidence, deterministic exogenous
 operational parameters, separately labelled synthetic turnover paths, validation reports and
 immutable manifests. It would neither fit a forecast nor run an inventory policy.
 No protected 2015-07-04 through 2015-07-31 Sales, Open or Customers may be accessed, hashed or
 used. No Phase 7/8 artifact, calibration, feature contract, model or dependency changes belong here.
-The choices in this plan were accepted in the external methodology review recorded in Section 13.
-The implementation state and numerical evidence are recorded in Section 14.
+The choices in this completed plan were accepted in the external methodology review recorded in
+Section 13. Section 14 preserves the historical implementation state and evidence; Section 16
+records the formal closeout.
 
 ## 2. Value semantics and information layers
 
@@ -389,7 +390,8 @@ returns Section 3 evidence only. No forecast service receives synthetic columns,
 Do not add state transition, order placement/receipt, queue, inventory target, equivalent-unit
 rounding, cycle, KPI, cost-aggregation or policy-comparison functions in Phase 9.
 The implementation ran the full fixture suite and canonical development scenario build; results
-and exclusions are recorded in PROGRESS. Independent implementation review remains pending.
+and exclusions are recorded in PROGRESS. Independent implementation and numerical review were
+ACCEPTED; see Section 15.
 
 ## 9. Exact Phase 10 handoff and remaining authority
 
@@ -518,7 +520,7 @@ Status remains **PROPOSED / AWAITING APPROVAL**.
 This is the historical proposal checkpoint. The external acceptance and current status are
 recorded in the later Section 13.
 
-## 13. External methodology approval — 2026-10-07
+## 13. External methodology approval — 2026-10-07 (historical approval checkpoint)
 
 **Decision: ACCEPT.** The external methodology decision supplied for this synchronization accepts
 the design reviewed at PR #18 head `3820c2c34749b3baa4df954afc3daa0636cff271`. This approval
@@ -556,7 +558,7 @@ inventory KPI methodology remain separately unapproved. Phase 8 quantiles remain
 approved origin-anchored prefixes and do not transport to synthetic stress. The protected
 2015-07-04 through 2015-07-31 holdout remains unreleased.
 
-## 14. Implementation checkpoint — 2026-10-07
+## 14. Implementation checkpoint — 2026-10-07 (historical pre-closeout checkpoint)
 
 The fixed-seed origin-safe generator, validation and immutable publication are implemented on
 `feat/phase-9-synthetic-inventory` at source commit `8dae4e43e06d815746456a1786acfc264b77093b`.
@@ -589,7 +591,7 @@ Markdown checks. The phase boundary remains the scenario generator only: do not 
 merge this PR, or mark Phase 9 complete until review and integration closeout are explicitly
 handled.
 
-### External configuration-validation review fix — 2026-10-07
+### External configuration-validation review fix — 2026-10-07 (historical review checkpoint)
 
 PR #19's finding that nested semantic settings were not frozen is addressed at source commit
 `2ec2488adf065e692141eceb8e3f979df4679f45`. Validation now compares the complete configuration
@@ -602,7 +604,7 @@ Parquet logical hashes, row counts and byte hashes from the unchanged `canonical
 manifest and validation details are recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
 **IMPLEMENTED / UNDER REVIEW** on PR #19; no Phase 10 work or merge is authorized by this update.
 
-## 15. Independent implementation and numerical review acceptance — 2026-10-07
+## 15. Independent implementation and numerical review acceptance — 2026-10-07 (historical pre-integration checkpoint)
 
 **Decision: ACCEPTED.** The independent external code and numerical review accepted the final
 implementation at source revision `2ec2488adf065e692141eceb8e3f979df4679f45` and canonical run
@@ -620,3 +622,23 @@ The accepted run and manifest remain unchanged; this integration performs no run
 The final integration gate is recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
 **IMPLEMENTED / UNDER REVIEW** until PR #19 is merged and formally closed. The protected
 2015-07-04 through 2015-07-31 holdout was not accessed, and Phase 10 remains unstarted.
+
+## 16. Formal Phase 9 closeout — 2026-10-07
+
+**Decision: COMPLETE.** PR #19 was verified as merged into `main` by squash merge
+`7451c50ff685d92e8e74b5014d07b3bbfaca0a22`. The accepted methodology remains ADR-022. The external
+independent implementation and numerical review accepted source revision
+`2ec2488adf065e692141eceb8e3f979df4679f45` and canonical run
+`phase9-dev-20261007-config-validation-fix`, manifest SHA-256
+`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`. The reviewed integration
+head was `46788db3f5b81af37cda78bf44f054be2bc0098b`. The accepted run and manifest were not
+regenerated or rewritten for closeout; detailed results are maintained in [PROGRESS](../../docs/PROGRESS.md).
+
+PR #20's proposal rename remains integrated at `ff3c11554144e79ee84c627c2bcd3619d23072d0`, with
+`docs/PROPOSAL.md` as the canonical path. ADR-022 remains accepted. Historical proposal, approval,
+implementation and review checkpoints above retain their recorded decisions and evidence.
+
+Phase 9 is **COMPLETE**. The completed scope is the deterministic, origin-safe synthetic monetary
+scenario generator. This phase does not implement inventory policies or claim physical inventory,
+observed stockouts, or actual savings. The protected final holdout was not accessed during closeout.
+Phase 10 remains PLANNED and not started; no Phase 10 methodology is approved.
