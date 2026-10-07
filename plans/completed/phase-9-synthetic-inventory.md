@@ -1,11 +1,11 @@
 # Phase 9 — Synthetic Supply-Chain / Inventory Layer Design
 
-**Status: APPROVED / IMPLEMENTED — UNDER REVIEW (2026-10-07).** The external methodology
-decision is ACCEPT. The generator, fixture suite and canonical development scenario run are
-implemented on `feat/phase-9-synthetic-inventory`; this active plan records the implementation
-checkpoint and pending review in
-[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19). Phase 10
-remains unapproved and not started.
+**Status: COMPLETE (2026-10-07).** ADR-022's methodology is ACCEPTED, and the external
+implementation and numerical review are ACCEPTED. PR #19 was merged into `main` at squash SHA
+`7451c50ff685d92e8e74b5014d07b3bbfaca0a22`. See [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19)
+and Section 16 for the formal closeout. Sections 13–15 preserve the historical approval,
+implementation and review checkpoints. Phase 10 remains PLANNED / NOT STARTED / METHODOLOGY NOT
+APPROVED.
 
 ## 1. Authority, integration and scope
 
@@ -28,15 +28,16 @@ Read together with [AGENTS](../../AGENTS.md), [workflow](../../docs/WORKFLOW.md)
 [completed Phase 8 plan](../completed/phase-8-forecast-uncertainty.md).
 Accepted [ADR-022](../../docs/DECISIONS.md#adr-022--synthetic-monetary-scenario-contract)
 records the approved synthetic assumptions without superseding ADR-015, ADR-016, ADR-020 or
-ADR-021. Historical proposal checkpoints remain in this active plan and PROGRESS.
+ADR-021. Historical proposal checkpoints remain in this completed plan and PROGRESS.
 
 **Phase 9 delivers:** origin-censored initialization evidence, deterministic exogenous
 operational parameters, separately labelled synthetic turnover paths, validation reports and
 immutable manifests. It would neither fit a forecast nor run an inventory policy.
 No protected 2015-07-04 through 2015-07-31 Sales, Open or Customers may be accessed, hashed or
 used. No Phase 7/8 artifact, calibration, feature contract, model or dependency changes belong here.
-The choices in this plan were accepted in the external methodology review recorded in Section 13.
-The implementation state and numerical evidence are recorded in Section 14.
+The choices in this completed plan were accepted in the external methodology review recorded in
+Section 13. Section 14 preserves the historical implementation state and evidence; Section 16
+records the formal closeout.
 
 ## 2. Value semantics and information layers
 
@@ -389,7 +390,8 @@ returns Section 3 evidence only. No forecast service receives synthetic columns,
 Do not add state transition, order placement/receipt, queue, inventory target, equivalent-unit
 rounding, cycle, KPI, cost-aggregation or policy-comparison functions in Phase 9.
 The implementation ran the full fixture suite and canonical development scenario build; results
-and exclusions are recorded in PROGRESS. Independent implementation review remains pending.
+and exclusions are recorded in PROGRESS. Independent implementation and numerical review were
+ACCEPTED; see Section 15.
 
 ## 9. Exact Phase 10 handoff and remaining authority
 
