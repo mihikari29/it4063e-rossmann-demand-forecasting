@@ -1271,7 +1271,8 @@ The protected 2015-07-04 through 2015-07-31 holdout remains unreleased.
 | `git diff --check` | PASS |
 
 Self-review checked the full documentation diff, schema/factor/count arithmetic, unavailable
-anchor precedence, Monday reopening pulse, conditional quantile transport and phase boundaries.
+anchor precedence, Monday reopening pulse, frozen-input metadata-before-hash ordering,
+conditional quantile transport and phase boundaries.
 Only Markdown files are changed; no Python implementation/test, dependency, real-data scenario,
 calibration table, quantile or model artifact was changed or regenerated. No real-data pipeline
 or final-holdout read was run. Accepted ADR-015 through ADR-021 methodology and completed

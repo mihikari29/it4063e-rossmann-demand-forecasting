@@ -331,9 +331,15 @@ Run-specific timestamps/run IDs stay out of semantic payload hashes.
 `manifest.json` cannot include its own final byte hash: record that hash in the external
 pointer/review evidence after writing it. Never rewrite upstream publication flags.
 
-Future binding reads must allowlist the exact frozen Phase 7/8 files, verify their identities
-and development date bounds, then project forecast keys/raw point/availability/provenance
-without outcome/residual columns. The generator does not call an uncertainty calculation API.
+Future binding reads first validate resolved allowlisted paths. For development Parquet,
+inspect footer Date bounds/row counts before whole-file hashing; reject post-July-3 bounds
+or missing/insufficient date statistics without loading outcome columns as a fallback.
+Then verify byte identities and project forecast keys/raw point/availability/provenance
+without outcome/residual columns. Pin Phase 7 identities to the canonical Phase 8 manifest's
+accepted input lineage and Phase 7 handoff, rather than trusting a mutable latest pointer.
+Missing statistics are an integrity failure for these frozen development exports, not a
+restriction on the separately censored history reader. The generator does not call an
+uncertainty calculation API.
 Do not hash raw/interim full-source files for binding. A development-only upstream byte hash
 can verify immutable lineage, but no later-origin outcome value influences anchors or draw keys.
 Snapshot inputs before computation; repeat input identity checks before publishing.
