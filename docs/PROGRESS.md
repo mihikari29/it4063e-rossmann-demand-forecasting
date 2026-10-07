@@ -1518,7 +1518,8 @@ are new integration evidence, separate from the earlier 230-test checkpoint abov
 | `uv lock --check` (uv 0.12.23) | PASS — 84 packages resolved; lock unchanged |
 | Python 3.14.5 `pip check` | PASS — no broken requirements |
 | `git diff --check` | PASS |
+| GitHub Actions Quality matrix | PASS — [run #50](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37562153977) on integration head `a82d080`; Python 3.12 and 3.14 jobs succeeded |
 
 These fixture and repository checks do not read final-holdout outcomes or regenerate the accepted
-Phase 9 run. The updated PR head must still pass its own GitHub Actions Python 3.12/3.14 matrix;
-prior-head CI is not evidence for the synchronized head.
+Phase 9 run. Run #50's result is recorded here; the latest PR-head CI status is recorded in the
+PR #19 description for final external integration review.
