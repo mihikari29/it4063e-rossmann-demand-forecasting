@@ -44,8 +44,10 @@ preserves the design, implementation and review record. PR #19 was squash-merged
 acceptance. The canonical accepted development run is
 `phase9-dev-20261007-config-validation-fix` (manifest SHA-256
 `573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`). It produces synthetic
-monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10 remains
-PLANNED and not started; no Phase 10 methodology is approved.
+monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10's
+[active design proposal](plans/active/phase-10-inventory-simulation.md) is **PROPOSED / AWAITING
+APPROVAL; IMPLEMENTATION NOT STARTED** under proposed ADR-023. No Phase 10 methodology is approved;
+Phase 11 has not started.
 
 ## Environment and quick start
 
@@ -158,6 +160,29 @@ outputs are local artifacts and are not committed. All operational values are il
 assumptions. This command does not create an inventory ledger, evaluate a policy, estimate realized
 savings, or access the protected final holdout.
 
+## Phase 10 methodology proposal — awaiting approval
+
+The [active plan](plans/active/phase-10-inventory-simulation.md) proposes **Simulated inventory-value
+policy comparison and sensitivity analysis**. It compares a historical-mean standing target with
+a frozen LightGBM point-prefix plus cumulative buffer at June 5/Fit A or June 19/Fit B. Targets
+are set once before evaluation outcomes, then reused for daily inventory reviews. There is no
+forecast refresh or calibrated later-review suffix uncertainty; the standing target can become stale.
+
+Proposed R=1, L=2–7 and P=L+1<=14. L means full intervening calendar demand days: an end-of-day
+order is received at the start of t+L+1. L=2 means receipt before day-3 demand. Lost-sales queue
+accounting uses continuous retail-equivalent monetary values, identical scenario inputs and
+day-14 order suppression. Historical q used in synthetic scenarios is an uncalibrated illustrative
+buffer, with `calibration_transport_valid=false`, not a synthetic service probability.
+
+The proposed cost measure is simulated holding-plus-shortfall cost; terminal stock/pipeline
+exposure stays separate. The completed positive-demand receipt-cycle service rate is a
+project-specific simulated CSL proxy with a policy-dependent denominator. No actual inventory,
+stockouts, physical quantities, realized savings, guaranteed service or optimality is established.
+
+Methodology is **PROPOSED / AWAITING APPROVAL; IMPLEMENTATION NOT STARTED**. No Phase 10 command,
+module or artifact has been implemented. The next boundary is human methodology approval;
+Phase 11 has not started and the protected final holdout remains unreleased.
+
 ## Architecture and remaining work
 
 Implemented packages: `data/` (provenance/preparation), `analysis/` (descriptive EDA),
@@ -173,8 +198,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   closeout. Fit B values are frozen for the canonical run; cumulative tables support approved
   origin-anchored prefixes only.
 - Phase 9: **COMPLETE**; the accepted generator creates exogenous synthetic scenario inputs only.
-  See the [completed plan](plans/completed/phase-9-synthetic-inventory.md). Phase 10 remains
-  PLANNED and not started; no Phase 10 methodology is approved.
+  See the [completed plan](plans/completed/phase-9-synthetic-inventory.md).
+- Phase 10: [design proposal](plans/active/phase-10-inventory-simulation.md) awaiting approval;
+  implementation has not started and methodology is not approved.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
@@ -183,8 +209,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and
 formally closed. Phase 9 implements only the approved scenario generator; the stateful inventory
-simulator remains future work. Phase 10 and later require separate design and authorization. The
-final holdout remains protected.
+simulator remains future work. Phase 10's proposed design awaits approval before implementation;
+later phases require separate authorization. The final holdout remains protected.
 
 ## Quality and repository layout
 

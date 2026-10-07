@@ -635,3 +635,81 @@ Preserve Phase 8's origin-anchored prefix-only use and conditional historical re
 does not transport to synthetic stress. Fit B raw-primary coverage remains below nominal 95%;
 sparse Sunday support and store/origin dependence remain. No conformal, per-store, production or
 service-level guarantee is introduced. The protected holdout remains unreleased.
+
+## ADR-023 — Origin-Frozen Daily Inventory Policy Simulation and Finite-Window Accounting
+
+**Status:** PROPOSED / AWAITING APPROVAL, 2026-10-07. IMPLEMENTATION NOT STARTED.
+
+**Proposed extension:** ADR-016/021/022's Phase 10 handoff only. Accepted Phases 0–9 methodology,
+selected LightGBM recipe and Phase 8 fitted tables remain unchanged. Full proposal:
+[active Phase 10 plan](../plans/active/phase-10-inventory-simulation.md).
+
+**Context:** Phase 9 is COMPLETE and supplies exogenous monetary scenarios, not inventory policies.
+Phase 8 supplies cumulative uncertainty for approved origin-anchored prefixes only; it provides
+no calibrated later-review suffix. A daily forecast-refresh simulator would exceed that handoff.
+Technical review supports this proposal for human approval, not implementation authorization.
+
+**Proposed decision:** Use separate H14 development episodes at end-of-day June 5/Fit A and
+June 19/Fit B, ending by July 3. Set exactly two standing targets once at origin: baseline
+`S=m*sum(origin-known open indicators over h1..P)` from the Phase 9 turnover anchor, and selected
+LightGBM `D_P=sum(operational points)`, `U_P=max(0,D_P+q_(p,P))`,
+`Safety=max(0,U_P-D_P)`, `S=max(D_P,U_P)`. Preserve signed q. Reference p=0.95;
+additional sensitivity p is 0.90/0.98 only. Later daily reviews execute that unchanged target;
+no forecast refresh, suffix generation, quantile scaling, rolling uncertainty, recalibration or fit.
+The target can become stale; standing inventory decisions claim no later-review calibration.
+
+Use R=1, L integer 2–7 and P=L+1=3–8 <=14. L counts full intervening calendar demand days:
+EOD-t orders arrive at BO-day t+L+1 (L=2 => receipt before day-3 demand). At origin verify
+identities/schedule and freeze targets before loading outcomes, then initialize stock/empty
+pipeline and order. Days 1–13 receive, reveal consumption, fulfil, record lost sales, charge ending-
+stock holding/shortfall costs, calculate position and order. Day 14 processes outcomes/state/costs
+but suppresses the final order review. Maintain an explicit simulated order queue; no backlog.
+`IP=ending on-hand+outstanding before new order`, `Q=max(0,S-IP)` in continuous monetary V.
+
+Require exact model/recipe/origin/fit/P/p, complete operational prefix, compatible schedule and
+finite inputs. Unavailable targets remain null with reasons, never zero/baseline/point-only or
+another stratum. Historical replay preserves the accepted conditional saved-source-Open assumption
+and unchanged development Sales, not realized inventory truth. Synthetic schedules route the
+unchanged raw points; frozen historical q is only an illustrative uncalibrated stress-test buffer,
+with `calibration_transport_valid=false`. No nominal synthetic coverage/service claim.
+
+Share demand, starting stocks, lead time, schedule, costs, family, replicate, variant and upstream
+identity between policies. Use Phase 9 `h=c*a/365`, `b=(1-c)+g` and primary
+**simulated holding-plus-shortfall cost** `sum(h*ending_stock+b*unmet)` over H14. Do not add
+procurement expenditure/lost margin again, subtract Sales or call it profit. Report c*terminal
+stock and c*outstanding orders as separate exposure diagnostics, outside the objective.
+
+Freeze value fill/positive-demand stockout denominators, ending-stock inventory mean and additive
+cost/unmet fields. The cycle output is **completed positive-demand receipt-cycle service rate**,
+a project-specific simulated CSL proxy: no-unmet positive-demand cycles / completed positive-demand
+cycles bounded by two observed positive receipt dates. Report policy-dependent denominators,
+zero-demand cycles and censored intervals; zero denominators give null. Pool ratios from totals.
+Missing consumption stops dependent state; incomplete tracks are not complete comparison evidence.
+Closed synthetic days consume zero when available; receipts/reviews/carrying continue.
+
+Retain all orders placed through day 13, including those due after T=origin+14; due-on-T receipts
+precede consumption. No cancellation, refund, acceleration, extension or salvage. Apply identical
+terminal treatment, report inventory/pipeline/late orders/commitments and do not call exposure
+savings. Use all Phase 9 scenarios at p=0.95 plus nine one-factor-at-a-time synthetic_base overlays
+for L, p, a, g and starting coverage; do not modify/regenerate Phase 9 or infer replicate likelihood.
+
+Future outputs are ignored immutable, schema/key/null/hash-validated runs with pinned Phase 7/8/9
+lineage, staged reread, input recheck, manifest-last and atomic publication. Fail closed and preserve
+earlier runs/pointer. No protected outcomes may be read or hashed; ADR-015 release remains separate.
+
+**Reason:** A simple standing-target comparison preserves daily inventory mechanics without
+inventing forecast availability or calibrated suffix uncertainty. Explicit valuation, chronology,
+finite-window exposure and denominators make a defensible course demonstration possible.
+
+**Alternatives and limitations:** Supported-origin-only ordering would provide a narrower mechanics
+demonstration; rolling issuance/suffix calibration would need separate evidence and approval.
+The proposed standing target may be stale. Two origins, dependent Stores, cold starts, H14
+truncation, artificial costs, uncalibrated stress transport and endogenous cycles limit inference.
+This is policy simulation/comparison, not industrial optimization or proof of superiority.
+
+**Consequences if approved:** Implement only the active plan after explicit approval. Require
+fixtures, repository quality gates, reproducible canonical development validation, independent
+implementation/numerical review, authorized integration and explicit closeout. Approval is not
+recorded by this PR; Phase 10 remains PROPOSED / AWAITING APPROVAL, IMPLEMENTATION NOT STARTED.
+Phase 9 remains COMPLETE; Phase 11 has not started. No code, tests, scripts, dependencies,
+simulation artifacts, holdout access or merge is authorized by this documentation proposal.
