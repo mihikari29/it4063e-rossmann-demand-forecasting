@@ -7,11 +7,11 @@ Human methodology approval was given on 2026-10-07, accepting
 The initial technical review and a fresh independent methodology review both returned ACCEPT; the
 independent verdict was `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, with no blocking findings or
 required changes. That approval authorized implementation as a separate task. The implementation
-and corrected canonical development run are recorded in Section 19. Phase 9 remains COMPLETE;
-Phase 11 has not started and is not authorized. The protected final holdout remains unreleased. The
-implementation PR [#23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23)
-is open and unmerged. The plan remains active through independent implementation/results review,
-authorized integration and explicit closeout.
+and corrected canonical development run are recorded in Sections 19–20. Phase 9 remains COMPLETE;
+Phase 11 has not started and is not authorized. The protected final holdout remains unreleased. PR
+#23 was merged into `main` before external implementation review resolution; its B1–B3 corrective
+follow-up is pending focused external re-review. The plan remains active through independent
+implementation/results review, authorized integration and explicit closeout.
 
 ## 1. Authority, base and execution boundary
 
@@ -329,9 +329,9 @@ Phase 9's `scenarios.py` and dependencies/lock are unchanged.
 
 ## 13. Implemented artifacts and publication
 
-Ignored immutable root: `data/processed/inventory_simulation/<run_id>/`. The corrected canonical
-run is `phase10-dev-20261007-implementation-v2`; its manifest SHA-256 is
-`889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`.
+Ignored immutable root: `data/processed/inventory_simulation/<run_id>/`. The pre-review canonical
+run `phase10-dev-20261007-implementation-v2` remains immutable historical evidence; the current
+canonical review-fix run and its manifest are recorded in [PROGRESS](../../docs/PROGRESS.md).
 `case_id=<scenario_id>--<variant_id>`; the reference variant is `reference`. Retain explicit origin,
 mode, family, replicate and variant columns. The seven required files below were published and
 validated. All 383,560 requested tracks are complete; no track is unavailable or excluded.
@@ -493,10 +493,17 @@ pre-review evidence. Detailed original and current canonical results are maintai
 
 ## 20. External implementation review fixes — 2026-10-08
 
-The external implementation review returned **REQUEST CHANGES** with blockers B1–B3: Phase 9 schema
-and date rejection ordering before byte hashing, missing-demand dependent-state/null validation,
-and terminal receipt-cycle right censoring. The fixes preserve ADR-023 and add focused regression
-coverage. Focused and full tests and repository gates pass. A fresh canonical run is pending; its
-manifest identity, independently reconstructed censor count, numerical results, and validation
-evidence will be recorded in PROGRESS. Phase 10 remains **IMPLEMENTED / UNDER REVIEW** pending
-focused re-review; it is not REVIEWED or COMPLETE. Phase 11 remains **NOT STARTED / NOT AUTHORIZED**.
+The external implementation review returned **REQUEST CHANGES** after PR #23 merged, with blockers
+B1–B3: Phase 9 schema and date rejection ordering before byte hashing, missing-demand dependent-state
+and incomplete-prefix validation, and terminal receipt-cycle right censoring. The fixes preserve
+ADR-023 and add regression coverage. The source/test commit passed 48 focused tests and the full
+suite passed 278 tests. Ruff lint/format, documentation validation, `uv lock --check`, `uv pip check`,
+and `git diff --check` passed.
+
+The corrected canonical run `phase10-dev-20261008-review-fixes` completed from pinned Phase 7/8/9
+inputs without holdout access, refit, recalibration, or Phase 9 regeneration. Its manifest SHA-256,
+independent censor-count reconstruction, unchanged headline costs, sensitivity values, terminal
+exposures, invariants, and deterministic replay evidence are maintained in [PROGRESS](../../docs/PROGRESS.md),
+the authoritative numerical-results record. The new run is current; v1 and v2 remain immutable, and
+v2 is superseded as current evidence. Phase 10 remains **IMPLEMENTED / UNDER REVIEW**, not REVIEWED
+or COMPLETE, pending focused external re-review. Phase 11 remains **NOT STARTED / NOT AUTHORIZED**.

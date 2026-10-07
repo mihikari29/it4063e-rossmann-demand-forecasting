@@ -46,9 +46,9 @@ acceptance. The canonical accepted development run is
 `573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`). It produces synthetic
 monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10's
 [active design](plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
-implementation is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-10-inventory-simulation`. The
-implementation is in [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23),
-which is open and unmerged. The corrected canonical development run is recorded below and in
+implementation is **IMPLEMENTED / UNDER REVIEW**. PR #23 was merged before the external
+implementation review resolved; the B1–B3 fixes are on `fix/phase-10-review-findings` for a new
+follow-up review. The current corrected canonical development run is recorded below and in
 [PROGRESS](docs/PROGRESS.md). Phase 11 has not started or been authorized.
 
 ## Environment and quick start
@@ -188,16 +188,18 @@ Methodology and ADR-023 were approved on 2026-10-07. The implementation is in
 python scripts/run_inventory_simulation.py --run-id phase10-dev-example
 ```
 
-The pre-review canonical run `phase10-dev-20261007-implementation-v2` is retained as immutable
-historical evidence. External implementation review returned REQUEST CHANGES after PR #23 had
-already merged into `main`; B1–B3 corrections are underway on the follow-up branch, and a fresh
-canonical Phase 10 run is pending. See [PROGRESS](docs/PROGRESS.md) for the review chronology and
-the authoritative numerical results. Published results are conditional simulations in monetary
-turnover-value units; they do not establish actual Rossmann inventory, physical demand or savings.
+The pre-review run `phase10-dev-20261007-implementation-v2` is retained as immutable historical
+evidence and is superseded as current canonical evidence by
+`phase10-dev-20261008-review-fixes` (manifest SHA-256
+`0716fc92623b66f4d8a6024eecb608aa992596809458fa1b7c40595b66cbdd91`). External implementation
+review returned REQUEST CHANGES after PR #23 had already merged into `main`; the follow-up fixes
+address B1–B3. See [PROGRESS](docs/PROGRESS.md) for the review chronology and authoritative
+numerical results. Published results are conditional simulations in monetary turnover-value units;
+they do not establish actual Rossmann inventory, physical demand or savings.
 
 Phase 10 remains IMPLEMENTED / UNDER REVIEW and is not REVIEWED or COMPLETE. Focused external
-re-review is pending. Phase 11 has not started or been authorized; the protected final holdout
-remains unreleased.
+re-review of the corrective follow-up is pending. Phase 11 has not started or been authorized; the
+protected final holdout remains unreleased.
 
 ## Architecture and remaining work
 
