@@ -9,8 +9,9 @@ independent verdict was `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, with no bloc
 required changes. That approval authorized implementation as a separate task. The implementation
 and corrected canonical development run are recorded in Section 19. Phase 9 remains COMPLETE;
 Phase 11 has not started and is not authorized. The protected final holdout remains unreleased. The
-plan remains active through independent implementation/results review, authorized integration and
-explicit closeout.
+implementation PR [#23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23)
+is open and unmerged. The plan remains active through independent implementation/results review,
+authorized integration and explicit closeout.
 
 ## 1. Authority, base and execution boundary
 
@@ -496,8 +497,9 @@ ADR-015.
 
 **State: IMPLEMENTED / UNDER REVIEW.** Implementation branch: `feat/phase-10-inventory-simulation`.
 The implementation is committed through `4aefc8c1f21a392270150d46aae610a5dea428e0` at this
-checkpoint. Phase 10 is not COMPLETE; independent external implementation/numerical review and
-authorized integration remain pending. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+checkpoint. [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23)
+is open and unmerged. Phase 10 is not COMPLETE; independent external implementation/numerical review
+and authorized integration remain pending. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
 
 The corrected canonical run is `phase10-dev-20261007-implementation-v2`, manifest SHA-256
 `889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`. It records source revision

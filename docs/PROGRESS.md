@@ -11,7 +11,7 @@
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
-| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | [Active plan and implementation evidence](../plans/active/phase-10-inventory-simulation.md), accepted ADR-023; external implementation/numerical review pending |
+| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23) open/unmerged; [active plan and results](../plans/active/phase-10-inventory-simulation.md); external implementation/numerical review pending |
 | Phase 11 and later | PLANNED / NOT STARTED | Separate authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -35,6 +35,8 @@ implementation and numerical review, and formal closeout. Its accepted canonical
 are recorded below and were not regenerated. Phase 10 methodology is approved under ADR-023, and
 implementation plus the corrected canonical development run are recorded below. Phase 10 is
 IMPLEMENTED / UNDER REVIEW, not complete. Phase 11 and later have not started or been authorized.
+The implementation is open for review in [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23);
+it remains unmerged.
 
 ## Immediate next boundary
 
@@ -1658,9 +1660,10 @@ The following required checks ran after the approval documentation update using 
 ## Phase 10 implementation and development validation — 2026-10-07
 
 **State: IMPLEMENTED / UNDER REVIEW.** Implementation branch: `feat/phase-10-inventory-simulation`;
-source/test correction commit: `4aefc8c1f21a392270150d46aae610a5dea428e0`. External implementation
-and numerical review remain pending. Phase 10 is not COMPLETE. Phase 11 remains NOT STARTED / NOT
-AUTHORIZED, and the protected holdout remains unreleased.
+source/test correction commit: `4aefc8c1f21a392270150d46aae610a5dea428e0`. [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23)
+is open and unmerged; external implementation and numerical review remain pending. Phase 10 is not
+COMPLETE. Phase 11 remains NOT STARTED / NOT AUTHORIZED, and the protected holdout remains
+unreleased.
 
 The corrected canonical development run is
 `phase10-dev-20261007-implementation-v2`, with manifest SHA-256
