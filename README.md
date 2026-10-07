@@ -46,8 +46,9 @@ acceptance. The canonical accepted development run is
 `573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`). It produces synthetic
 monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10's
 [active design](plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
-implementation has not started. Phase 10 implementation is the next authorized task. Phase 11 has
-not started or been authorized.
+implementation is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-10-inventory-simulation`. The
+corrected canonical development run is recorded below and in [PROGRESS](docs/PROGRESS.md). Phase 11
+has not started or been authorized.
 
 ## Environment and quick start
 
@@ -160,7 +161,7 @@ outputs are local artifacts and are not committed. All operational values are il
 assumptions. This command does not create an inventory ledger, evaluate a policy, estimate realized
 savings, or access the protected final holdout.
 
-## Phase 10 methodology — approved; implementation not started
+## Phase 10 — implemented / under review
 
 The [active plan](plans/active/phase-10-inventory-simulation.md) defines **Simulated inventory-value
 policy comparison and sensitivity analysis**. It compares a historical-mean standing target with
@@ -179,16 +180,32 @@ exposure stays separate. The completed positive-demand receipt-cycle service rat
 project-specific simulated CSL proxy with a policy-dependent denominator. No actual inventory,
 stockouts, physical quantities, realized savings, guaranteed service or optimality is established.
 
-Methodology and ADR-023 were approved on 2026-10-07. Phase 10 implementation has not started and
-no command, module or artifact exists. Implementation under the approved plan is the next
-authorized task. Phase 11 has not started or been authorized; the protected final holdout remains
+Methodology and ADR-023 were approved on 2026-10-07. The implementation is in
+`src/rossmann_forecasting/inventory/simulation.py`; run it with a new unused ID:
+
+```powershell
+python scripts/run_inventory_simulation.py --run-id phase10-dev-example
+```
+
+The canonical run is `phase10-dev-20261007-implementation-v2` (manifest SHA-256
+`889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`). It contains 383,560 target
+and summary tracks, 5,753,400 ledger rows, 172 cases and 1,720 comparison rows. All requested tracks
+are complete, with zero unavailable/incomplete episodes, exclusions or historical Open-assumption
+violations. Staged validation confirms the approved grids, balances, queue identities, cost
+arithmetic, paired inputs and holdout firewall. Results are conditional simulations in monetary
+turnover-value units; they do not establish actual Rossmann inventory, physical demand or savings.
+See [PROGRESS](docs/PROGRESS.md) for comparison, sensitivity and terminal-exposure results.
+
+Phase 10 remains under review and is not COMPLETE. External implementation/numerical review is
+pending. Phase 11 has not started or been authorized; the protected final holdout remains
 unreleased.
 
 ## Architecture and remaining work
 
 Implemented packages: `data/` (provenance/preparation), `analysis/` (descriptive EDA),
 `features/` (shared static/history contract), `forecasting/` (baselines/evaluation/runners and
-development-only model selection), and `inventory/` (Phase 9 origin-safe synthetic scenarios).
+development-only model selection), and `inventory/` (Phase 9 origin-safe scenarios and the Phase 10
+policy simulator under review).
 Thin command scripts expose reusable logic; notebooks are exploration/presentation.
 
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
@@ -200,8 +217,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   origin-anchored prefixes only.
 - Phase 9: **COMPLETE**; the accepted generator creates exogenous synthetic scenario inputs only.
   See the [completed plan](plans/completed/phase-9-synthetic-inventory.md).
-- Phase 10: [approved design](plans/active/phase-10-inventory-simulation.md); implementation is
-  the next authorized task and has not started.
+- Phase 10: [approved design and implementation record](plans/active/phase-10-inventory-simulation.md);
+  implementation and canonical development results are under external review, not complete.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
@@ -209,9 +226,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and
-formally closed. Phase 9 implements only the approved scenario generator; the stateful inventory
-simulator remains future work. Phase 10 methodology is approved and implementation remains future
-work; later phases require separate authorization. The final holdout remains protected.
+formally closed. Phase 9 implements only the approved scenario generator; Phase 10 implements the
+separate stateful simulator and remains under review. Later phases require separate authorization.
+The final holdout remains protected.
 
 ## Quality and repository layout
 
