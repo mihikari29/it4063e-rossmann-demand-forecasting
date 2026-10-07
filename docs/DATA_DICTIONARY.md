@@ -86,6 +86,9 @@ generation will use documented fixed seeds. Monetary demand, stock, orders, and 
 share a retail-equivalent turnover-value basis; they are not procurement-cost inventory. Costs
 below are scenario proxies. Initial demand-dependent inputs use only history available at the
 simulation origin, and compared policies share inputs, demand paths, seeds, and starting stocks.
+The [Phase 9 design](../plans/active/phase-9-synthetic-inventory.md) is **PROPOSED / AWAITING
+APPROVAL**; Section D.1 states its concrete assumptions. ADR-016's accepted monetary basis
+remains in force, and the proposed magnitudes do not become accepted through this dictionary.
 
 | Name | Category | Source | Meaning | Unit | Known Range | Generation / Derivation Rule | Availability at Forecast Time | Notes |
 |---|---|---|---|---|---|---|---|---|
@@ -97,11 +100,39 @@ simulation origin, and compared policies share inputs, demand paths, seeds, and 
 | `BackordersValue` | Inventory state | Simulated policy | Unfulfilled value carried forward | Retail-equivalent value | 0 in initial lost-sales policy | Record unmet value as lost sales instead of backlog | Yes | Alternative backorder policy requires reviewed design |
 | `InventoryPositionValue` | Inventory derivation | Simulated state | Stock plus orders less backorders | Retail-equivalent value | $\ge 0$ under initial policy | `StockOnHandValue + OnOrderValue - BackordersValue` | Yes | Timing consistent with event order |
 | `ServiceLevelTarget` | Policy input | Synthetic / simulated | Target probability of no shortfall over a protection period | Probability | 0.90–0.98; 0.95 base | Scenario's one-sided cumulative-residual quantile level | Yes | Cycle-service target, not achieved service or value fill rate |
-| `HoldingCostRate` | Cost input | Synthetic / simulated | Daily inventory carrying-cost proxy | Cost per inventory-value unit per day | Non-negative; magnitude TBD in Phase 9 design | Daily scenario rate; any annual conversion documented | Yes | Apply at the frozen daily stock measurement point |
-| `StockoutPenalty` | Cost input | Synthetic / simulated | Cost proxy for unmet sales value | Cost per unmet-value unit | Non-negative; magnitude TBD in Phase 9 design | Scenario multiplier times unmet value | Yes | Not actual Rossmann loss or margin |
-| `AverageUnitValue` | Conversion input | Synthetic / simulated | Value used to illustrate equivalent units | Retail-equivalent value per equivalent unit | Positive; magnitude TBD | Store-level scenario assumption | Yes | Does not identify real products or SKUs |
+| `HoldingCostRate` | Cost input | Synthetic / simulated | Daily inventory carrying-cost proxy | Cost per inventory-value unit per day | Non-negative; proposed magnitude in D.1 | Daily scenario rate; any annual conversion documented | Yes | Apply at the Phase 10 daily stock measurement point |
+| `StockoutPenalty` | Cost input | Synthetic / simulated | Cost proxy for unmet sales value | Cost per unmet-value unit | Proposed [0.25, 1.20]; awaiting approval | Proposed total penalty in D.1 | Yes | Not actual Rossmann loss or margin |
+| `AverageUnitValue` | Conversion input | Synthetic / simulated | Value used to illustrate equivalent units | Retail-equivalent value per equivalent unit | Proposed {5,10,20,50}; awaiting approval | Store-level scenario assumption | Yes | Display only; no real products or SKUs |
 | `DiscountDepth` | Stress-scenario input | Synthetic / simulated | Simulated promotion intensity | Proportion | $0 \le x < 1$ | Zero when `Promo = 0`; positive when `Promo = 1` in the scenario | Yes, in synthetic scenarios only | Never a measured Rossmann predictor or reason to modify historical Sales |
-| `InventoryCoverageDays` | Inventory-policy input | Synthetic / simulated | Initial inventory coverage assumption | Days | TBD | Generated within a documented reasonable business range | Yes, as simulated input | Not Rossmann data |
+| `InventoryCoverageDays` | Inventory-policy input | Synthetic / simulated | Initial stock coverage assumption | Reference open-day equivalents in proposed design | Proposed 1–11; awaiting approval | Multiply origin-safe recent open-day average Sales | Yes | Not calendar service duration; seed/ranges require review |
+
+### D.1 Proposed Phase 9 contract — awaiting approval
+
+The active design owns the complete schema, seed/draw grammar, scenarios, artifact hashes,
+failure rules and planned tests. The following are illustrative assumptions, not Rossmann facts:
+
+- Origins are 2015-06-05 and 2015-06-19 only, with H14 ending by 2015-07-03.
+  The anchor is the mean of observed Open=1 Sales in [origin-55, origin], requiring 28 valid
+  open rows. Sparse/absent dates are not filled; zero turnover is valid.
+- Base coverage is L+1+B, B uniform discrete {0,1,2,3}, giving 3–11 reference open-day
+  equivalents; adverse thin-stock cases use 1. Initial stock is anchor*coverage. Initial
+  on-order/backorders are zero only at cold start; Phase 10 owns later queue/state evolution.
+- `ProcurementCostRatio` c is synthetic cost value per retail-equivalent value, proposed
+  uniform [0.55,0.85); `AnnualHoldingRate` a is [0.10,0.30).
+  `HoldingCostRate=c*a/365` per calendar day. `GoodwillPenaltyRate` g is [0.10,0.75);
+  `StockoutPenalty=(1-c)+g` includes the hypothetical margin component once.
+  Cost proxies neither revalue stock nor establish actual margin or savings.
+- `ScenarioOpen`, `SyntheticPromo`, discount, trend, weekly seasonality, common shocks,
+  individual noise and `SyntheticDemandValue` are artificial context/path fields, never
+  LightGBM predictors or observed Sales. Synthetic promotion response is not estimated
+  price elasticity; synthetic closure implies zero turnover only for an available path.
+- Historical observed Sales, frozen point forecasts, frozen Phase 8 uncertainty and fully
+  synthetic operational values remain separate. The Phase 8 Fit A/B chronology and
+  origin-anchored prefix restriction persist. No calibrated synthetic-stress transport,
+  later daily-review suffix method or protected holdout access is authorized.
+
+Phase 9 implements no policy, event order, queue, inventory KPI or cost aggregation under this
+proposal. Those need Phase 10 design. The proposed defaults require external ADR-022 acceptance.
 
 ## E. Planned Inventory Decision and Evaluation Outputs
 

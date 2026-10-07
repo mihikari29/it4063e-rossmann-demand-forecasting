@@ -2,6 +2,7 @@
 
 Only durable decisions supported by the authoritative proposal or explicitly approved phase design
 belong here. Changes require a new or superseding decision record rather than a silent rewrite.
+Explicitly labelled proposed ADRs record reviewable changes and have no authority until accepted.
 
 ## ADR-001 — Forecast Granularity
 
@@ -572,3 +573,72 @@ sync does not implement an uncertainty runner, calculate intervals or quantile t
 fitted values. External review of implementation results is required before fitted-table freeze.
 No final-holdout outcome access or Phase 13 evaluation is authorized; ADR-015 still requires a
 separate frozen sequential protocol. Phase 9/10 implementation remains outside this decision.
+
+## ADR-022 — Synthetic Monetary Scenario Contract (Proposed)
+
+**Status:** PROPOSED / AWAITING APPROVAL, 2026-10-07. No implementation authorization.
+
+**Extends:** ADR-016 with explicit synthetic initialization, conversion/cost and stress
+assumptions. ADR-015/020/021 remain unchanged. Full proposed schema, deterministic algorithm,
+artifacts, fixtures and acceptance criteria:
+[active Phase 9 design](../plans/active/phase-9-synthetic-inventory.md).
+The design is based on PR #17's merged Phase 8 closeout at
+`f08a62aa980d0670186ed25ae1f6e5a018ff3781`.
+
+**Proposed decision:**
+
+1. Keep all operational demand/stock/replenishment in retail-equivalent monetary Sales values.
+   No physical SKU quantity, observed inventory, real stockout, uncensored latent demand,
+   actual margin or verified savings can be inferred.
+2. Limit scenarios to June 5 and June 19, 2015 development origins and H14, ending no later than
+   July 3. Project/censor history before it reaches initialization. Use the prior 56 calendar
+   dates' observed Open=1 turnover mean with at least 28 eligible rows; preserve missing dates
+   and unavailable/zero anchors. Multiply by a synthetic reference open-day coverage assumption.
+   Do not inspect/hash protected holdout data or use full-period EDA cohorts.
+3. Set base L uniformly in integer 2..7, R=1, P=L+1, and coverage L+1+B with uniform integer
+   B=0..3. Adverse cases may set coverage=1 and L=7. Initial on-order/backorders are zero
+   only at cold start; Phase 9 builds no queue or state evolution.
+4. Use synthetic procurement ratio c in [0.55,0.85), annual carrying rate a in [0.10,0.30)
+   and goodwill rate g in [0.10,0.75), each from specified uniform draws. Procurement conversion
+   is c*v; daily holding rate is c*a/365; the total unmet-value penalty is (1-c)+g.
+   The latter includes hypothetical margin once. Costs are artificial assumptions, and
+   equivalent units from {5,10,20,50} value denominators are display-only.
+5. Generate deterministic paired scenarios with seed 4209, the plan's exact SHA-256 keyed
+   uniform-draw grammar, five replicates and eight synthetic families plus one historical
+   reference. Trend/weekly seasonality, synthetic promotion/discount, common-date shocks,
+   individual noise and coupled high-turnover/long-lead/thin-stock stress are predeclared.
+   Synthetic schedules are configured assumptions, separate from conditional saved-source-Open
+   historical replay. Never treat forecasts or interval bounds as artificial outcome truth.
+6. Distinguish observed historical Sales, read-only selected forecasts, read-only Phase 8
+   uncertainty and fully synthetic operational quantities in schemas and provenance.
+   Synthetic context never enters the 29-predictor real Rossmann matrix. No recalibration,
+   model fitting or frozen artifact rewriting is permitted.
+7. Publish ignored immutable runs with config/manifest byte and logical hashes, safe-history
+   digests, seed/algorithm, code/environment/lock identity, availability reports and upstream
+   identity checks before and after generation. Fail on integrity violations; retain
+   unavailable rows rather than silently repairing them or changing seeds.
+8. Phase 9 hands exogenous inputs and evidence to Phase 10. It implements no event order,
+   order queue, policy comparison, KPI, cost aggregation or inventory target. Phase 8 cumulative
+   quantiles remain approved origin-prefix-only with Fit A/B chronology; no suffix method is
+   authorized. Calibration does not automatically transport to synthetic stress regimes.
+
+**Reason:** Rossmann supplies turnover, not supply/stock/cost records. Explicit synthetic
+assumptions make a reproducible course demonstration possible while preventing fabricated
+operations from becoming observations, predictors or guaranteed inventory recommendations.
+Bounded paired stresses expose shared-shock and cold-start risks without tuning to later outcomes.
+
+**Alternatives / review questions:** Open-day versus calendar-day turnover initialization;
+empty versus synthetic warm-start pipeline; direct retail-value costs versus explicit
+procurement conversion; independent versus shared/coupled stress; empirical/heavy-tail versus
+bounded illustrative draws; synthetic versus conditional historical schedules. The plan gives
+concrete recommended choices and their risks. External review must accept/revise the anchor/
+initial state, cost basis/ranges, draw/scenario/schedule specification and lineage contract.
+Later rolling-review/suffix calibration and simulation conventions belong to a separate
+Phase 10 approval, not an implicit resolution here.
+
+**Consequences if accepted:** Record the reviewer decision and reviewed commit before authorized
+Phase 9 implementation. The design PR/CI alone is not approval. Run fixture and development-only
+scenario validation later; no final-holdout access or Phase 10 start follows from accepting this
+ADR. Preserve Phase 8's sparse Sunday support, dependent stores/origins, below-nominal Fit B
+raw coverage and closure-inflated conditional replay disclosure; no conformal, per-store,
+production or service-level guarantee is introduced.

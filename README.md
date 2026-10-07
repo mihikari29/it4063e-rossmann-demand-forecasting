@@ -38,6 +38,14 @@ Cumulative uncertainty supports approved origin-anchored prefixes only; no later
 suffix calibration is authorized. The final holdout, 2015-07-04 through 2015-07-31, remains
 protected and unreleased. Forecast Sales is monetary turnover, not SKU-level physical demand.
 
+Phase 9 has a [synthetic inventory design](plans/active/phase-9-synthetic-inventory.md)
+**PROPOSED / AWAITING APPROVAL**, based on PR #17's integrated Phase 8 closeout.
+It specifies origin-safe initialization, deterministic monetary scenarios and synthetic cost
+assumptions; no generator or inventory simulation is implemented. Proposed ADR-022 requires
+external methodology acceptance before implementation. Synthetic context stays outside the
+real forecast feature matrix. Phase 10 remains PLANNED and not started; its daily-review
+suffix method and simulation timing require a separate approved design.
+
 ## Environment and quick start
 
 Python **3.12–3.14** is supported; **3.14** is the reference environment. Install pinned
