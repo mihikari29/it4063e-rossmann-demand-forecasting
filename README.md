@@ -38,14 +38,15 @@ Cumulative uncertainty supports approved origin-anchored prefixes only; no later
 suffix calibration is authorized. The final holdout, 2015-07-04 through 2015-07-31, remains
 protected and unreleased. Forecast Sales is monetary turnover, not SKU-level physical demand.
 
-Phase 9 has a [synthetic inventory design](plans/active/phase-9-synthetic-inventory.md)
-**APPROVED / IMPLEMENTATION NOT STARTED** after external methodology acceptance on 2026-10-07,
-recorded in the open/unmerged approval synchronization PR #18 and based on PR #17's integrated
-Phase 8 closeout. Accepted ADR-022 specifies origin-safe
-initialization, deterministic monetary scenarios and illustrative synthetic costs; no generator
-or inventory simulation is implemented. Synthetic context stays outside the real forecast
-feature matrix. Phase 10 remains PLANNED and not started; its daily-review suffix method and
-simulation timing require a separate approved design.
+Phase 9 has an [approved synthetic inventory design](plans/active/phase-9-synthetic-inventory.md)
+under ADR-022. The methodology synchronization PR #18 was merged into `main` at
+`97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`. This branch implements the deterministic, origin-safe
+scenario generator and is **IMPLEMENTED / UNDER REVIEW** in
+[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19). It binds the frozen Phase 7/8 artifacts,
+generates synthetic monetary context, and publishes ignored immutable artifacts; it does not fit
+forecasts or simulate inventory policies. Synthetic context stays outside the real forecast feature
+matrix. Phase 10 remains PLANNED and not started; its daily-review suffix method and simulation
+timing require a separate approved design.
 
 ## Environment and quick start
 
@@ -136,11 +137,32 @@ Fit B h2/h9 calibration has 65/64 rows from only 33/32 distinct stores. No confo
 guarantee is implied. This command does not access the protected final holdout, evaluate a
 production model, or authorize Phases 9–13.
 
+## Phase 9 synthetic supply-chain scenarios
+
+After the prepared development data and frozen Phase 7/8 artifacts exist, run with a new, unused
+run ID (this example can be run once):
+
+```powershell
+python scripts/generate_inventory_scenarios.py --run-id phase9-dev-20261007-example
+```
+
+The generator reads only the projected Store/Date/Sales/Open fields in the 56-day windows ending
+2015-06-05 and 2015-06-19. It verifies frozen upstream identities and date boundaries before
+hashing, then writes origin anchors, store parameters, a historical reference, eight synthetic
+families, validation evidence and a manifest under
+`data/processed/synthetic_inventory/<run_id>/`. Successful runs update the ignored `current.json`;
+existing run IDs are immutable. The canonical development run is
+`phase9-dev-20261007-canonical2` (manifest SHA-256
+`cc148d3670c0b20c769f245488ddd7f535f4333e6b0cf759c60e544e9c6c8a82`). These outputs are local
+artifacts and are not committed. All operational values are illustrative monetary assumptions;
+this command does not create an inventory ledger, evaluate a policy, estimate realized savings,
+or access the protected final holdout.
+
 ## Architecture and remaining work
 
 Implemented packages: `data/` (provenance/preparation), `analysis/` (descriptive EDA),
-`features/` (shared static/history contract), and `forecasting/` (baselines/evaluation/runners and
-development-only model selection).
+`features/` (shared static/history contract), `forecasting/` (baselines/evaluation/runners and
+development-only model selection), and `inventory/` (Phase 9 origin-safe synthetic scenarios).
 Thin command scripts expose reusable logic; notebooks are exploration/presentation.
 
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
@@ -149,18 +171,19 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   for the offline CPU course demonstration.
 - Phase 8: **COMPLETE** after PR #15/#16 integration, independent results acceptance and explicit
   closeout. Fit B values are frozen for the canonical run; cumulative tables support approved
-  origin-anchored prefixes only. Phases 9–10 remain planned and have not started.
+  origin-anchored prefixes only.
+- Phase 9: implementation is under review on `feat/phase-9-synthetic-inventory`; it generates
+  exogenous synthetic scenario inputs only. Phase 10 remains planned and has not started.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
 - Phase 14: recorded results, report, slides and demonstration.
 
-Later inventory/app modules are created when their work is approved; there is no speculative
-service framework. The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
+The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5–8 are integrated and
-formally closed. Phase 8 methodology remains as approved in ADR-021; its implementation/results
-review is accepted and Fit B is frozen for the identified development run. Phase 9 and later work
-requires separate design and authorization. The final holdout remains protected.
+formally closed. Phase 9 implements only the approved scenario generator; the stateful inventory
+simulator remains future work. Phase 10 and later require separate design and authorization. The
+final holdout remains protected.
 
 ## Quality and repository layout
 
@@ -184,7 +207,7 @@ docs/               business intent, contracts, decisions and evidence
 plans/active/       current scoped plans awaiting their completion boundary
 plans/completed/    preserved historical execution records
 scripts/            pipeline entry points and repository checks
-src/rossmann_forecasting/{data,analysis,features,forecasting}/
+src/rossmann_forecasting/{data,analysis,features,forecasting,inventory}/
 notebooks/          thin descriptive presentation
 tests/              constructed-fixture behavioral tests
 pyproject.toml      package/tool configuration

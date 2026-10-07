@@ -1,17 +1,25 @@
 # Phase 9 — Synthetic Supply-Chain / Inventory Layer Design
 
-**Status: APPROVED / IMPLEMENTATION NOT STARTED — 2026-10-07.** The external methodology
-review decision is ACCEPT. This synchronization records design approval only: no Phase 9 code,
-generated scenarios or numerical results exist. Phase 10 remains unapproved and not started.
+**Status: APPROVED / IMPLEMENTED — UNDER REVIEW (2026-10-07).** The external methodology
+decision is ACCEPT. The generator, fixture suite and canonical development scenario run are
+implemented on `feat/phase-9-synthetic-inventory`; this active plan records the implementation
+checkpoint and pending review in
+[PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19). Phase 10
+remains unapproved and not started.
 
 ## 1. Authority, integration and scope
 
-The clean branch `docs/phase-9-inventory-design` starts from fetched `origin/main` at
-`f08a62aa980d0670186ed25ae1f6e5a018ff3781`. GitHub reports
+The historical design branch `docs/phase-9-inventory-design` started from fetched `origin/main`
+at `f08a62aa980d0670186ed25ae1f6e5a018ff3781`. GitHub reports
 [PR #17](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/17) merged at that
 squash commit, integrating the formal Phase 8 closeout. The base also contains implementation
 PR #15 and accepted-results PR #16 at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821` and
 `4dd7717fed57ff3b1f14789b980772c1968f3cba`.
+
+The design approval synchronization
+[PR #18](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/18) merged into
+`main` at `97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`. The implementation branch
+`feat/phase-9-synthetic-inventory` starts from that commit.
 
 Read together with [AGENTS](../../AGENTS.md), [workflow](../../docs/WORKFLOW.md),
 [proposal](../../docs/PROPOSAL.md), [roadmap](../../docs/PROJECT_PLAN.md),
@@ -22,13 +30,13 @@ Accepted [ADR-022](../../docs/DECISIONS.md#adr-022--synthetic-monetary-scenario-
 records the approved synthetic assumptions without superseding ADR-015, ADR-016, ADR-020 or
 ADR-021. Historical proposal checkpoints remain in this active plan and PROGRESS.
 
-**Phase 9 would deliver:** origin-censored initialization evidence, deterministic exogenous
+**Phase 9 delivers:** origin-censored initialization evidence, deterministic exogenous
 operational parameters, separately labelled synthetic turnover paths, validation reports and
 immutable manifests. It would neither fit a forecast nor run an inventory policy.
 No protected 2015-07-04 through 2015-07-31 Sales, Open or Customers may be accessed, hashed or
 used. No Phase 7/8 artifact, calibration, feature contract, model or dependency changes belong here.
 The choices in this plan were accepted in the external methodology review recorded in Section 13.
-The current synchronization records design approval only; implementation remains unstarted.
+The implementation state and numerical evidence are recorded in Section 14.
 
 ## 2. Value semantics and information layers
 
@@ -47,7 +55,7 @@ declared K-per-V conversion. They cannot establish realized margins or business 
 | Synthetic operational context | Configured at scenario origin | Lead time, starting stock, conversion, costs, synthetic schedules and stress factors are assumptions. They remain outside all real Rossmann predictors. |
 | Synthetic turnover path | Deterministic artificial future conditional on origin anchor and configured factors | Separate from observed Sales and point-forecast accuracy. It is an artificial simulator input, not estimated lost or latent demand. |
 
-Only these development issuances are proposed:
+The implemented generator accepts only these development issuances:
 
 | Origin (end of day) | H14 target dates | Compatible Phase 8 assessment fit |
 |---|---|---|
@@ -72,10 +80,10 @@ Reference canonical run `phase8-impl-20261006-provenance-review`:
 | Canonical policy/config | `49f4811bf7b01ffe6472ea76233eefa50e211207aa0b6246dada934cd4611d93` |
 | Serialized config file | `afe563632a2ebff937f1500f568d53cdb93be35d6dc299654464c2615ae64a08` |
 
-These identities are copied from the accepted closeout record, not newly revalidated artifacts
-in this design task. Future implementation must check them before binding. Original publication
-flags remain unchanged; the later governance freeze is separate evidence. Fit A is the accepted
-historical June 5 assessment fit, not the Fit B freeze applied to an earlier issuance.
+These identities were copied from the accepted closeout record and checked by the implementation
+before binding. Original publication flags remain unchanged; the later governance freeze is
+separate evidence. Fit A is the accepted historical June 5 assessment fit, not the Fit B freeze
+applied to an earlier issuance.
 
 Fit B raw-primary coverage is **12,263/13,437 = 91.26%, below nominal 95%**. Sunday h2/h9 have
 only 65/64 calibration rows from 33/32 stores across two origins. Stores and origins are
@@ -89,7 +97,7 @@ independent final test of the selected system.
 
 ## 3. Entities, keys and schema
 
-Schema version: proposed `phase-9-synthetic-v1`. Dates are timezone-free calendar dates
+Schema version: `phase-9-synthetic-v1`. Dates are timezone-free calendar dates
 (Arrow `date32`); origin means the end of that date. Monetary values/rates/factors are float64;
 Store/counts/Sales sums are int64; lead/review/protection/coverage days, replicate and horizon
 are int8; flags Boolean and categories/digests UTF-8 strings. Keys/counts are never nullable;
@@ -296,10 +304,9 @@ No optimization against forecast assessment or policy performance selects these 
 
 ## 7. Artifact, provenance and failure contract
 
-Proposed location: `data/processed/synthetic_inventory/<run_id>/`, entirely Git-ignored;
-optional `current.json` identifies a completed run. No generated output is tracked and no
-directory/script is added by this design PR. The four Parquet tables and four JSON files in
-Section 3 form a self-contained handoff; retain upstream
+Implemented location: `data/processed/synthetic_inventory/<run_id>/`, entirely Git-ignored;
+optional `current.json` identifies a completed run. No generated output is tracked. The four
+Parquet tables and four JSON files in Section 3 form a self-contained handoff; retain upstream
 references rather than copying/reformatting model or quantile tables.
 
 Config canonical identity: SHA-256 of UTF-8 JSON with sorted object keys, compact separators,
@@ -369,11 +376,10 @@ and is not evidence that all inventory scenarios can be simulated.
 
 ## 8. Implementation boundary after approval
 
-Proposed reusable module: `src/rossmann_forecasting/inventory/scenarios.py`, with separate
-interfaces for config validation, censored history loading, anchor computation, keyed draws,
-parameter/context generation, validation and immutable publication. Proposed entry point:
-`scripts/generate_inventory_scenarios.py`. Proposed tests:
-`tests/test_inventory_scenarios.py`. These are future paths; this PR creates none of them.
+Implemented reusable module: `src/rossmann_forecasting/inventory/scenarios.py`, with interfaces
+for config validation, censored history loading, anchor computation, keyed draws, parameter/context
+generation, validation and immutable publication. Entry point:
+`scripts/generate_inventory_scenarios.py`; fixtures: `tests/test_inventory_scenarios.py`.
 Use existing pandas/NumPy/PyArrow/standard-library dependencies and the locked environment;
 no new package, feature column or forecasting adapter is needed.
 
@@ -382,9 +388,8 @@ returns Section 3 evidence only. No forecast service receives synthetic columns,
 29-column [feature contract](../../docs/FEATURE_CONTRACT.md) remains byte/schema unchanged.
 Do not add state transition, order placement/receipt, queue, inventory target, equivalent-unit
 rounding, cycle, KPI, cost-aggregation or policy-comparison functions in Phase 9.
-An authorized implementation must run fixtures and a development-only scenario build, record
-actual results/exclusions in PROGRESS and obtain independent implementation review; none is
-performed or claimed by this design.
+The implementation ran the full fixture suite and canonical development scenario build; results
+and exclusions are recorded in PROGRESS. Independent implementation review remains pending.
 
 ## 9. Exact Phase 10 handoff and remaining authority
 
@@ -410,7 +415,8 @@ Inventory consumers are limited to L=2..7 and P=L+1=3..8. Preserve signed q and 
 `D_k=sum operational point prefix; U_k=max(0,D_k+q_p); Safety=max(0,U_k-D_k);
 Target=max(D_k,U_k)`. Do not sum marginal daily bounds, scale q to a store or stress multiplier,
 clip negative q, or use a prefix q for `h(t+1)..h(t+P)` at a later daily review.
-This plan specifies references and restrictions, not a Phase 9 target implementation.
+This handoff specifies references and restrictions only; Phase 9 implements no policy target or
+inventory-state calculation.
 
 **Phase 10 design must separately resolve:** supported review dates/forecast refresh, prefix-only
 demonstration versus independently approved suffix calibration; event ordering and lead-time
@@ -425,7 +431,8 @@ No Phase 10 code or comparison begins under Phase 9 approval.
 
 ## 10. Fixtures, numerical acceptance and reproducibility gates
 
-These are planned checks, not test results:
+These are the implementation acceptance criteria. Results from the canonical run and local
+quality gates are recorded in Section 14 and PROGRESS:
 
 | Fixture / gate | Numerical or exact acceptance criterion |
 |---|---|
@@ -449,13 +456,13 @@ Verify logical determinism across supported environments in fixture CI; do not r
 byte identity across writer versions. Do not interpret approximate uniform draw histograms as
 empirical Rossmann distributions or fail a small deterministic fixture for sampling imbalance.
 
-Before implementation acceptance, run the workflow's full pytest, Ruff lint/format,
+Implementation review uses the workflow's full pytest, Ruff lint/format,
 documentation link checker and git diff check, plus lock/package consistency. A real
 development scenario build must meet **zero structural/integrity violations**, exact default
 row counts, 100% declared range/relationship validity and identical repeat logical hashes.
 Report every unavailable store and zero anchor; no invented availability/coverage/service-rate
 threshold or tuned scenario performance is an acceptance criterion.
-The design PR itself runs documentation/repository checks only, with no data/model build.
+The historical design PR ran documentation/repository checks only, with no data/model build.
 
 ## 11. Alternatives, risks and proposal-stage review questions
 
@@ -541,9 +548,75 @@ six default open-day values sum to 6.20 and average 1.033333... . These are illu
 multipliers, not open-day-normalized factors preserving the historical anchor's mean. This
 clarification does not change any factor or the generation formula.
 
-Phase 9 design state is **APPROVED / IMPLEMENTATION NOT STARTED**. No scenario has been generated
-and no implementation is included in this synchronization. The approval does not start Phase 10.
+At the approval checkpoint, Phase 9 state was **APPROVED / IMPLEMENTATION NOT STARTED**; this
+historical decision record does not describe the current implementation state. The approval does
+not start Phase 10.
 Its rolling suffix calibration, simulation event timing, order queue, replenishment policies and
 inventory KPI methodology remain separately unapproved. Phase 8 quantiles remain limited to
 approved origin-anchored prefixes and do not transport to synthetic stress. The protected
 2015-07-04 through 2015-07-31 holdout remains unreleased.
+
+## 14. Implementation checkpoint — 2026-10-07
+
+The fixed-seed origin-safe generator, validation and immutable publication are implemented on
+`feat/phase-9-synthetic-inventory` at source commit `8dae4e43e06d815746456a1786acfc264b77093b`.
+The active review state is **IMPLEMENTED / UNDER REVIEW**; this does not close Phase 9. Frozen
+Phase 7 and Phase 8 identities, date boundaries, availability and permitted projection passed
+before any upstream file hashing. The implementation does not refit the model, recompute Phase 8
+residuals, use forecasts or uncertainty as synthetic truth, or evaluate inventory policies.
+
+Canonical local development run `phase9-dev-20261007-canonical2` completed with manifest SHA-256
+`cc148d3670c0b20c769f245488ddd7f535f4333e6b0cf759c60e544e9c6c8a82`. It records source revision
+`8dae4e43e06d815746456a1786acfc264b77093b`, `worktree_modified=false`, and verifies the frozen
+Phase 7/8 manifest identities. Output counts are 82 catalog rows, 2,230 origin-anchor rows,
+91,430 store-parameter rows and 1,280,020 daily-context rows. Both origins include all 1,115
+configured stores with available anchors; unavailable anchors, zero anchors, missing dates and
+closed-positive-sales history are each zero. All output byte hashes matched after publication;
+four Parquet logical hashes matched a reversed-input reproducibility check.
+
+The validation report records zero structural failures, zero cost-arithmetic error and maximum
+combined factor 4.9650810021 (below the approved ceiling 6). Holdout values were neither read nor
+hashed. Historical-reference rows contain no loaded future outcomes; synthetic turnover and
+operational values remain artificial retail-equivalent monetary assumptions, not observed demand,
+physical inventory, realized loss, service performance or savings. Detailed ranges, checks and
+hashes are in [PROGRESS](../../docs/PROGRESS.md).
+
+Local validation passed: 218 pytest fixtures; Ruff lint and format across the repository; Markdown
+link checks; `uv lock --check` with uv 0.12.23 (84 packages, unchanged); Python 3.14.5
+`pip check`; and `git diff --check`. GitHub Actions run [#45](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37555928596)
+passed both Python 3.12 and 3.14 jobs on head `f9c41f0`, including fixture tests, lint, format and
+Markdown checks. The phase boundary remains the scenario generator only: do not begin Phase 10,
+merge this PR, or mark Phase 9 complete until review and integration closeout are explicitly
+handled.
+
+### External configuration-validation review fix — 2026-10-07
+
+PR #19's finding that nested semantic settings were not frozen is addressed at source commit
+`2ec2488adf065e692141eceb8e3f979df4679f45`. Validation now compares the complete configuration
+against the accepted `default_config()` contract while retaining normalized fixture subsets and
+run-specific publication metadata. Regression tests cover nested settings and early failure before
+history processing. No methodology, ADR-022, RNG, equations, schemas or scenario outputs changed.
+
+A new canonical development run, `phase9-dev-20261007-config-validation-fix`, preserves all four
+Parquet logical hashes, row counts and byte hashes from the unchanged `canonical2` run. Its
+manifest and validation details are recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
+**IMPLEMENTED / UNDER REVIEW** on PR #19; no Phase 10 work or merge is authorized by this update.
+
+## 15. Independent implementation and numerical review acceptance — 2026-10-07
+
+**Decision: ACCEPTED.** The independent external code and numerical review accepted the final
+implementation at source revision `2ec2488adf065e692141eceb8e3f979df4679f45` and canonical run
+`phase9-dev-20261007-config-validation-fix`, with manifest SHA-256
+`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`. The reviewer identity was
+not supplied. This accepts the implementation and numerical evidence; it does not close Phase 9.
+
+The review confirmed 82 scenario catalog rows, 2,230 origin anchors, 91,430 store-parameter rows,
+and 1,280,020 scenario-daily rows. All four Parquet output byte hashes exactly match the accepted
+`canonical2` outputs. It also confirmed monetary initialization and cost arithmetic, deterministic
+sampling and stress overrides, synthetic turnover calculations, and preserved historical-reference
+missingness. This evidence does not imply inventory policy performance or business savings.
+
+The accepted run and manifest remain unchanged; this integration performs no run regeneration.
+The final integration gate is recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
+**IMPLEMENTED / UNDER REVIEW** until PR #19 is merged and formally closed. The protected
+2015-07-04 through 2015-07-31 holdout was not accessed, and Phase 10 remains unstarted.
