@@ -126,6 +126,12 @@ def test_approved_config_has_exact_domains_and_nine_one_factor_overlays():
         "historical_mean_standing_target",
         "lightgbm_buffer_standing_target",
     )
+    variants = simulation._case_variants(
+        {"family": "synthetic_base", "mode": "synthetic_stress"}, {}, {}
+    )
+    variant_ids = [item["id"] for item in variants]
+    assert variant_ids == sorted(variant_ids)
+    assert len(variant_ids) == 10
 
 
 def test_target_arithmetic_preserves_signed_quantile_and_open_day_baseline():
@@ -197,6 +203,15 @@ def test_target_building_is_deterministic_and_invariant_to_case_store_and_row_or
     actual = simulation.build_policy_targets(combined.sample(frac=1, random_state=17))
     assert expected.equals(actual)
     assert expected.equals(simulation.build_policy_targets(combined))
+    keys = list(
+        zip(
+            expected.column("case_id").to_pylist(),
+            expected.column("Store").to_pylist(),
+            expected.column("policy_id").to_pylist(),
+            strict=True,
+        )
+    )
+    assert keys == sorted(keys)
 
 
 @pytest.mark.parametrize(

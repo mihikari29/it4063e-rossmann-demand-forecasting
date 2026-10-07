@@ -1515,7 +1515,7 @@ def _case_variants(
         ("coverage_1", {"InventoryCoverageDays": 1}),
     )
     variants.extend({"id": name, **change} for name, change in additions)
-    return variants
+    return sorted(variants, key=lambda item: item["id"])
 
 
 def _build_case_target_inputs(
