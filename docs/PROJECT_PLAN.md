@@ -18,8 +18,8 @@ work into four manageable packages:
 
 A package may share one concise execution plan, but each model/methodology approval and phase
 boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
-Phase 9 design is **APPROVED / IMPLEMENTATION NOT STARTED** after external methodology acceptance
-recorded in ADR-022 and the active plan. Phase 10 remains PLANNED and not started, requiring
+Phase 9 design is **APPROVED** under ADR-022 and its generator is **IMPLEMENTED / UNDER REVIEW**
+as recorded in the active plan and PROGRESS. Phase 10 remains PLANNED and not started, requiring
 separate design and authorization.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
@@ -137,24 +137,26 @@ requiring future Open remain unavailable without separately reviewed origin-know
 provenance or a separately approved synthetic/conditional schedule not derived from protected
 actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
 calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 is COMPLETE
-for the accepted canonical development run. Phase 9's approved design and Phase 10's future
-design have separate boundaries; neither implementation is started.
+for the accepted canonical development run. Phase 9's approved generator is under review; Phase
+10's future design remains unstarted and requires separate authorization.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
 **Objective:** Provide reproducible operational scenarios absent from Rossmann.
-**Status:** Design APPROVED / IMPLEMENTATION NOT STARTED after external methodology ACCEPT on
-2026-10-07; see the approval record in the [active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md)
-and ADR-022. The approval synchronization remains open/unmerged in PR #18.
+**Status:** Design APPROVED; implementation **IMPLEMENTED / UNDER REVIEW** on
+`feat/phase-9-synthetic-inventory`. The methodology synchronization PR #18 merged into `main` at
+`97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`; implementation review is the current phase boundary.
+See the [active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md), ADR-022 and the
+implementation checkpoint in [PROGRESS](PROGRESS.md).
 **Design:** [Active Phase 9 plan](../plans/active/phase-9-synthetic-inventory.md) and accepted
-ADR-022. The design branch starts from PR #17's integrated Phase 8 closeout at
-`f08a62aa980d0670186ed25ae1f6e5a018ff3781`; ADR-022 records external design acceptance.
+ADR-022. The implementation branch is based on PR #18's integrated approval at
+`97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`.
 **Dependencies:** Phase 2 origin-censored development history, dictionary, ADR-016 units and
 read-only Phase 7/8 lineage.
 **Deliverables:** Fixed-seed scenario generator, assumptions/range/relationship checks, stress data.
-The approved contract specifies 56-day open-turnover anchors, synthetic stock/cost/lead-time
-parameters, separately labelled historical references and artificial stress paths, immutable
-artifacts and fixture/numerical criteria. They are not generated results or implemented code.
+The implementation writes 56-day open-turnover anchors, synthetic stock/cost/lead-time parameters,
+separately labelled historical references and artificial stress paths, plus immutable artifacts and
+validation evidence. The canonical development counts and hashes are recorded in PROGRESS.
 **Acceptance / boundary:** Initialization uses only history at the June 5/June 19 development
 origins; no protected final-holdout read, new forecast, calibration or frozen-artifact mutation.
 Synthetic discount/lead-time/stock/costs stay outside the real Rossmann model feature matrix;

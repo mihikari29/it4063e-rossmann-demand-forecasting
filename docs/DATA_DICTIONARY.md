@@ -86,10 +86,10 @@ generation will use documented fixed seeds. Monetary demand, stock, orders, and 
 share a retail-equivalent turnover-value basis; they are not procurement-cost inventory. Costs
 below are scenario proxies. Initial demand-dependent inputs use only history available at the
 simulation origin, and compared policies share inputs, demand paths, seeds, and starting stocks.
-The [Phase 9 design](../plans/active/phase-9-synthetic-inventory.md) is **APPROVED /
-IMPLEMENTATION NOT STARTED** by external methodology review on 2026-10-07. Section D.1
-summarizes its accepted illustrative assumptions. ADR-016's monetary basis remains in force;
-these assumptions are not observed Rossmann operating data or measured business costs.
+The [Phase 9 design](../plans/active/phase-9-synthetic-inventory.md) is approved and its scenario
+generator is **IMPLEMENTED / UNDER REVIEW**. Section D.1 summarizes the accepted illustrative
+assumptions. ADR-016's monetary basis remains in force; these assumptions are not observed Rossmann
+operating data or measured business costs. Phase 9 does not implement the inventory simulator.
 
 | Name | Category | Source | Meaning | Unit | Known Range | Generation / Derivation Rule | Availability at Forecast Time | Notes |
 |---|---|---|---|---|---|---|---|---|

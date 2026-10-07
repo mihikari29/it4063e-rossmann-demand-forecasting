@@ -10,7 +10,7 @@
 | Phase 6 — Global LightGBM | COMPLETE | [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10) merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; [completed plan](../plans/completed/phase-6-global-lightgbm.md) |
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
-| Phase 9 — synthetic inventory layer | Design APPROVED / IMPLEMENTATION NOT STARTED | [Active design](../plans/active/phase-9-synthetic-inventory.md), accepted ADR-022 after external ACCEPT on 2026-10-07; approval sync in PR #18 remains open/unmerged |
+| Phase 9 — synthetic inventory layer | APPROVED / IMPLEMENTED — UNDER REVIEW | [Active plan](../plans/active/phase-9-synthetic-inventory.md); commit `8dae4e43e06d815746456a1786acfc264b77093b` on `feat/phase-9-synthetic-inventory`; PR pending |
 | Phase 10 and later | PLANNED; not started | Separate design and authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -26,7 +26,7 @@ records, including the [completed Phase 5 plan](../plans/completed/phase-5-stati
 PROGRESS is the canonical maintained numerical-results record; duplicated plan tables are dated
 snapshots, not separate results to update. Phase 7's development-only selection is integrated and
 formally closed. Its result and closeout do not constitute final-holdout evaluation or production
-approval. Phase 8 methodology is approved in ADR-021; implementation PR #15 and results-acceptance PR #16 are integrated, and the external results review accepted the canonical development run. Fit B values are frozen for that run. Phase 8 is COMPLETE following the explicit closeout recorded below and in the completed plan. The Phase 9 design is APPROVED after external methodology ACCEPT on 2026-10-07; its implementation has not started. Phase 10 and later remain planned and not started.
+approval. Phase 8 methodology is approved in ADR-021; implementation PR #15 and results-acceptance PR #16 are integrated, and the external results review accepted the canonical development run. Fit B values are frozen for that run. Phase 8 is COMPLETE following the explicit closeout recorded below and in the completed plan. The Phase 9 design is APPROVED under ADR-022; its scenario generator is IMPLEMENTED / UNDER REVIEW on the focused branch above. Phase 10 and later remain planned and not started.
 
 ## Immediate next boundary
 
@@ -49,10 +49,11 @@ Final-holdout evaluation remains unreleased. The
 records the interfaces and boundary used.
 
 PR #17 integrated Phase 8's formal closeout at `f08a62aa980d0670186ed25ae1f6e5a018ff3781`.
-The [Phase 9 design](../plans/active/phase-9-synthetic-inventory.md) and ADR-022 received
-external methodology ACCEPT on 2026-10-07; implementation has not started. Phase 10's
-later-review/suffix method, event order, queue, replenishment policies and comparisons remain
-separately unapproved. No final-holdout release or access is authorized.
+PR #18 integrated the accepted Phase 9 design and ADR-022 at
+`97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`. The Phase 9 generator is implemented on the focused
+branch above, with review and integration pending. Phase 10's later-review/suffix method, event
+order, queue, replenishment policies and comparisons remain separately unapproved. No
+final-holdout release or access is authorized.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -1325,3 +1326,109 @@ values and demand formula are unchanged. ADR-015/016/020/021, Phase 7/8 plans, c
 dependencies, model and quantile artifacts remain unchanged. No scenario was generated and the
 protected final holdout was not accessed. These checks validate documentation and repository
 consistency; they do not implement or numerically validate Phase 9.
+
+## Phase 9 implementation checkpoint — 2026-10-07
+
+**State:** Design APPROVED by ADR-022; implementation **IMPLEMENTED / UNDER REVIEW** on
+`feat/phase-9-synthetic-inventory`. Source commit is
+`8dae4e43e06d815746456a1786acfc264b77093b`. PR #18 is the merged design synchronization at
+`97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`; the implementation PR is pending. Phase 9 is not
+closed, no Phase 10 work is authorized, and the final holdout remains protected.
+
+### Canonical development run
+
+Run `phase9-dev-20261007-canonical2` completed at `2026-10-07T00:59:31Z` with manifest
+SHA-256 `cc148d3670c0b20c769f245488ddd7f535f4333e6b0cf759c60e544e9c6c8a82`. The manifest records
+source revision `8dae4e43e06d815746456a1786acfc264b77093b`, source-file digest
+`fbeaaea4623360ea41e631346e770090b3875cc40b20e9d07b4353e1e6eee49b`, `worktree_modified=false`,
+and lock digest `584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. It binds
+Phase 7 selection manifest `03a1f26ba5855fd0576667bf280df938664c196a802de0a71e696a600b281cdc`
+and Phase 8 manifest `63a00fc8c50ccff99360cd8790498e977e08ec6a9846780a4e1a8ab3498d71c2`.
+The canonical config hash is `8ded15545911738c9b6551a8af00627e65a231a2d89fea8687cd8c4d6e6b52d7`;
+its serialized byte hash is `08fe01cf94866913388312ad30be81b2a831c0abc2524f50185b31980417820b`.
+
+| Output | Rows | Bytes | Byte SHA-256 | Logical SHA-256 |
+|---|---:|---:|---|---|
+| `scenario_catalog.parquet` | 82 | 4,236 | `7c521c8b2956e2f4de30c70a903216b4a0e2727aee3f5b29947ac25876548e83` | `502c03238a1bf0f8932160199ab4e9c76d0583dd9b70516ee1d98d993e762b04` |
+| `origin_anchors.parquet` | 2,230 | 112,699 | `e9bec421447771cae277b437e9e15eff14b0ac4e3c7b009120de70f9be69b131` | `6daee5caeaf50d33c7472a4bbf49e9daf72f62834743fe7409537942561d1bd3` |
+| `store_parameters.parquet` | 91,430 | 2,498,919 | `c75aab0c9e54eb3ffe8519c53569ec68db9a2199df0674fd75e4bfc777400427` | `73d4e57d0792e0df529908db52bda242d19a8fabd3a7664db9aa835169bdd315` |
+| `scenario_daily.parquet` | 1,280,020 | 41,921,287 | `f43920eed64fb83ebeb7d82effd345f54744994949e637735622d927dfb2203b` | `967b091a28887326c9024fe191722a3a95f887c7da5a873dd1200a28589a642d` |
+| `scenario_config.json` | — | 32,991 | `08fe01cf94866913388312ad30be81b2a831c0abc2524f50185b31980417820b` | canonical hash above |
+| `upstream_bindings.json` | — | 16,184 | `f1312ef684ab4b2335d8a3b194764f7aac81d6d35b21700e43b602644e1da357` | canonical hash recorded in the manifest |
+| `validation_summary.json` | — | 26,521 | `09378b79139dd508ee911dc2a9d442165ec577e362ba15e4ca60bf553b69d0ce` | canonical hash recorded in the manifest |
+
+The four output Parquet byte hashes were independently recomputed after publication. The output
+logical hashes all match a reversed-input-order determinism run. The manifest records status
+`complete`, all expected row counts, empty structural failures, and output reread/hash validation.
+Scenario grid is 2 origins × (1 historical reference + 8 synthetic families × 5 replicates), with
+all 1,115 configured stores and 14 target dates per scenario-store.
+
+### Availability, ranges and arithmetic
+
+| Origin | Stores | Available anchors | Unavailable | Zero anchors | Missing calendar dates | Closed-positive Sales rows |
+|---|---:|---:|---:|---:|---:|---:|
+| 2015-06-05 | 1,115 | 1,115 | 0 | 0 | 0 | 0 |
+| 2015-06-19 | 1,115 | 1,115 | 0 | 0 | 0 | 0 |
+
+The initializer read only `Store, Date, Sales, Open` from `data/interim/train.parquet` under
+`origin-55 <= Date <= origin` and configured Store membership, then rechecked the input snapshot
+before publication. It did not rehash the full prepared train file. Protected 2015-07-04 through
+2015-07-31 values were neither read nor hashed. The run records `model_refit_or_tuning=false`,
+`phase8_residuals_recomputed=false`, `forecast_or_uncertainty_used_as_synthetic_truth=false` and
+`inventory_simulation_performed=false`.
+
+Observed parameter ranges across the synthetic scenarios:
+
+| Field | Minimum | Maximum |
+|---|---:|---:|
+| Supplier lead time (days) | 2 | 7 |
+| Review period (days) | 1 | 1 |
+| Protection period (days) | 3 | 8 |
+| Initial coverage (open-day equivalents) | 1 | 11 |
+| Initial stock value | 2,717.911111 | 254,647.8 |
+| Procurement cost ratio | 0.5500066 | 0.8499613 |
+| Annual holding rate | 0.1000006 | 0.2999871 |
+| Holding-cost rate per calendar day | 0.00015436 | 0.00069392 |
+| Goodwill penalty rate | 0.1000259 | 0.7499823 |
+| Total stockout penalty | 0.2577159 | 1.1938692 |
+| Average equivalent-unit value | 5 | 50 |
+| Trend end change | -0.0999815 | 0.30 |
+| Promotion response slope | 0.5000557 | 1.4996728 |
+| Planned discount depth | 0.0500242 | 0.2999961 |
+
+Observed daily factor ranges:
+
+| Field | Minimum | Maximum |
+|---|---:|---:|
+| Weekday factor | 0.80 | 1.15 |
+| Trend factor | 0.9000185 | 1.30 |
+| Promotion factor | 1.0 | 1.5998691 |
+| Common shock | -0.0984010 | 0.0995949 |
+| Store-date noise | -0.1499999 | 0.1499960 |
+| Combined noise factor | 0.7517842 | 1.2482753 |
+| Demand stress factor | 0 | 2.0 |
+| Discount depth | 0 | 0.40 |
+| Synthetic turnover proxy | 0 | 106,054.2063 |
+
+Holding-cost and stockout-penalty arithmetic maximum absolute error is 0. Combined-factor maximum
+is 4.9650810021, below the approved 6.0 ceiling. No unavailable store or zero anchor was excluded;
+zero synthetic turnover includes the declared zero-turnover scenario and closure routing, not a
+claim about lost demand. Historical reference rows have future outcome fields unloaded.
+
+### Checks and boundary
+
+| Check | Result |
+|---|---|
+| Full fixture suite, Python 3.14.5 | PASS — 218 tests in 113.01s |
+| Ruff lint, whole repository | PASS |
+| Ruff format, whole repository | PASS — 82 files already formatted |
+| Markdown checker | PASS — 182 destinations/anchors across 24 Markdown files |
+| `uv lock --check`, pinned uv 0.12.23 | PASS — 84 packages resolved; lock unchanged |
+| Python 3.14.5 `pip check` | PASS — no broken requirements |
+| `git diff --check` | PASS |
+| GitHub Actions PR matrix | Pending — run after implementation PR is opened |
+
+The real-data artifacts are ignored local outputs, not part of the PR. Sales, demand, inventory,
+costs and equivalent units retain the approved monetary proxy semantics; no physical quantity,
+actual inventory, true lost demand, policy winner, service result or savings is inferred. Do not
+merge this implementation PR, start Phase 10, or mark Phase 9 complete at this checkpoint.

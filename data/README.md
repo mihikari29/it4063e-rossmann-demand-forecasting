@@ -39,15 +39,15 @@ Phase 8 writes a new run directory and its `manifest.json` last. On success, the
 does not replace that pointer or modify earlier runs. The uncertainty command consumes verified
 Phase 7 development outputs only; it never reads raw/interim source data or the protected holdout.
 
-Phase 9's [approved design](../plans/active/phase-9-synthetic-inventory.md) reserves
-`data/processed/synthetic_inventory/<run_id>/` for future immutable scenario/config/anchor/
-parameter/context/binding/validation/manifest artifacts and an optional `current.json` pointer.
-The design is **APPROVED / IMPLEMENTATION NOT STARTED**; this is not yet an implemented
-directory or command.
-The future initializer must project and censor history at the scenario origin, and hash only
-that safe projection; the complete prepared train file contains protected labels.
-Frozen Phase 7/8 artifacts remain read-only references. Phase 9 introduces no model artifact,
-inventory ledger, order queue or policy comparison.
+Phase 9's [approved design](../plans/active/phase-9-synthetic-inventory.md) is implemented under
+review. Run `python scripts/generate_inventory_scenarios.py --run-id <unique-id>` to publish
+immutable scenario/config/anchor/parameter/context/binding/validation/manifest artifacts under
+`data/processed/synthetic_inventory/<run_id>/`; a successful run updates its ignored
+`current.json` pointer. The generator projects and censors the 56-day history at each scenario
+origin and hashes only that safe projection; it verifies frozen Phase 7/8 identities and date
+boundaries before hashing upstream files. Existing run IDs cannot be overwritten. These outputs
+remain ignored local artifacts. Phase 9 introduces no model artifact, inventory ledger, order queue
+or policy comparison.
 
 For later models, use `data/processed/<model>/` for generated tabular evidence and
 `artifacts/<model>/` for model binaries; both conventions are ignored. These are directory

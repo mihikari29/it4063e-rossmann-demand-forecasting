@@ -656,6 +656,29 @@ def test_atomic_pointer_failure_preserves_previous_run_and_current_pointer(tmp_p
     assert (old_run / "sentinel.txt").read_bytes() == original_sentinel
 
 
+def test_existing_run_id_is_immutable_and_preserves_current_pointer(tmp_path):
+    output_root = tmp_path / "data/processed/synthetic_inventory"
+    output_root.mkdir(parents=True)
+    existing = output_root / "existing-run"
+    existing.mkdir()
+    sentinel = existing / "sentinel.txt"
+    sentinel.write_text("original", encoding="utf-8")
+    original_sentinel = sentinel.read_bytes()
+    current = output_root / "current.json"
+    current.write_text('{"run_id":"existing-run"}\n', encoding="utf-8")
+    original_pointer = current.read_bytes()
+    stage = output_root / ".stage-existing"
+    stage.mkdir()
+    (stage / "sentinel.txt").write_text("replacement", encoding="utf-8")
+
+    with pytest.raises(FileExistsError, match="run ID already exists"):
+        scenarios._atomic_publish(stage, existing, output_root, {"run_id": "existing-run"})
+
+    assert sentinel.read_bytes() == original_sentinel
+    assert current.read_bytes() == original_pointer
+    assert stage.exists()
+
+
 def test_config_rejects_unapproved_origins_and_rng_isolation_has_no_feature_aliases():
     config = scenarios.default_config(stores=[1])
     config["forecast_origins"] = ["2015-07-03", "2015-06-19"]
