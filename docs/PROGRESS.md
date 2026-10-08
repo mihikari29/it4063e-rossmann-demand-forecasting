@@ -77,8 +77,9 @@ record the methodology and lifecycle. The current canonical development run is
 `phase10-dev-20261008-validator-fix`, manifest SHA-256
 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. PR #23 and corrective PR #24
 are integrated at the SHAs in the current-state table. Phase 10's final closeout is recorded in the
-completed plan and becomes COMPLETE when this closeout PR integrates. Phase 11 remains NOT STARTED /
-NOT AUTHORIZED; the protected holdout remains unreleased.
+completed plan; Phase 10 is COMPLETE after closeout PR #25 merged into `main` at
+`d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1 is IMPLEMENTED / UNDER REVIEW on its
+feature branch; M2–M4 are not authorized. The protected holdout remains unreleased.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -87,28 +88,35 @@ did include those labels; [EDA_FINDINGS](EDA_FINDINGS.md) records that exposure.
 entirely never-inspected test set or reuse those full-period cohorts for modeling. ADR-015 defers
 the single authorized sequential final evaluation until model, intervals and policies are frozen.
 
-### Phase 11 M1 implementation checkpoint — 2026-10-08
+### Phase 11 M1 implementation and review-fix checkpoint — 2026-10-08
 
-M1 adds typed contracts and fixed, read-only readers for the accepted Phase 7–10 canonical outputs,
-plus a synthetic-fixture-tested historical Sales reader. Exact pinned manifest bytes, run IDs,
-upstream lineage, output hashes, producer schemas and primary keys are checked. CSV/JSON and Parquet
-reads are bounded and projected; output hash memoization is process-local and invalidated by a change
-to the file's device, inode, size or nanosecond modification time. There is no selector for the
-Phase 10 ledger and no `current.json` fallback.
+M1 provides typed contracts and fixed, read-only readers for the accepted Phase 7–10 canonical
+outputs, plus a bounded historical Sales reader. Phase 7/8 projected Parquet fields are checked
+against their accepted Arrow types; Phase 9/10 artifacts are checked against producer schemas and
+mandatory manifest descriptors, including field nullability. CSV fields are read with nullable
+string, integer, float and boolean types; malformed numeric/boolean values and missing required
+identifiers are rejected while documented unavailable values remain null. Model-comparison nulls
+are allowed only in optional grouping-key fields. Output hash memoization remains process-local under
+the immutable, locally trusted artifact assumption: fingerprint changes trigger rehashing, while
+matching metadata does not prove byte immutability. There is no selector for the Phase 10 ledger and
+no `current.json` fallback.
 
-The history reader accepts one Store and at most 366 days through 2015-07-03. It validates requests
-before opening the dataset, then uses an Arrow `Store`/`Date` predicate and the fixed `Store`, `Date`,
-`Sales`, `Open` projection. Synthetic fixtures prove a crossing-cutoff request does not open the
-dataset and that protected rows and `Customers` are not returned. Canonical artifact smoke reads
-verified all ten registered outputs; no forecast or inventory artifact was regenerated or changed.
-No protected July 4–31 outcome rows were read or materialized. The M1 reader path invokes no
-fitting, forecasting, simulation or publication function.
+The history reader accepts one Store and at most 366 days from 2013-01-01 through 2015-07-03. It
+rejects unsupported query dates before opening the dataset and accepts only the prepared source's
+timezone-naive `timestamp[ns]` Date schema. The fixed `Store`, `Date`, `Sales`, `Open` projection and
+Store/date predicate are applied in Arrow before materialization. Fixtures cover extreme dates,
+timezone-aware schemas/requests, sanitized conversion errors, and the protected cutoff. Selection-
+driven case/Store reads from Phase 10 summaries remain an M2 prerequisite; M1 retains fixed
+projections. A read-only smoke read passed for all ten registered outputs (including Phase 10 summary
+and target tables); the simulation ledger was not read. No forecast or inventory output was
+regenerated, and no protected July 4–31 outcome rows were inspected.
 
-Validation on the existing Python 3.14.5 environment: 308 pytest tests passed; Ruff check and format
-passed; the documentation link checker passed; `uv lock --check` resolved 84 packages without a
-lock change; `uv pip check` found all 62 installed packages compatible. M1 is **IMPLEMENTED / UNDER
-REVIEW**. Phase 11 is not complete; M2–M4, final-holdout access and merge remain outside this
-authorization.
+Validation on the existing Python 3.14.5 environment: the full pytest suite passed (332 tests),
+including the focused app-reader suite; Ruff lint and format, documentation links, `git diff --check`,
+`uv lock --check` (84 resolved packages), and `uv pip check` (62 compatible installed packages)
+passed. No dependency or lockfile changed. M1 remains **IMPLEMENTED / UNDER REVIEW** pending
+independent acceptance; Phase 11 is not complete, and M2–M4, final-holdout access and merge remain
+outside this authorization.
 
 ## Branch cleanup inventory
 

@@ -29,16 +29,16 @@ The technical lead explicitly authorizes **M1 only**. This authorization does no
 - Internal repository-root resolution and a fixed artifact allowlist; no request-controlled paths, run IDs, filenames, column expressions or fallback selection.
 - Typed contracts and sanitized, stable errors for unavailable, malformed, unsafe or integrity-failing resources.
 - Exact manifest SHA-256 and schema/run/lineage checks for the pinned Phase 7–10 runs, plus required output hash/schema checks only for files actually read.
-- Safe symlink/path-traversal rejection, bounded CSV/JSON parsing, projected/selectively filtered Parquet reads, and primary-key uniqueness checks where the producer contract defines keys.
+- Safe symlink/path-traversal rejection, bounded CSV/JSON parsing, fixed-projection Parquet reads, Arrow-filtered historical reads, and primary-key uniqueness checks where the producer contract defines keys.
 - Explicit null preservation; a historical reader that rejects invalid/cross-cutoff dates before opening data and proves storage-side filtering with synthetic fixtures.
 - Fixture coverage for integrity, lineage, schemas, keys, unavailable resources, selectors, path safety, nulls, history firewall, projections, no fallback, and canonical immutability. No Rossmann downloads or holdout fixtures.
 - Standard repository checks pass in the existing locked environment; no dependency/lock update and no canonical output mutation. Self-review confirms Phase 7–10 producer code/methods remain unchanged and Phase 11 is not complete.
 
 ## Pending decisions for later authorized milestones
 
-- M2/M3 must freeze the supported view selectors, query bounds and which historical/simulated views are exposed before implementing services or routes.
+- M2/M3 must freeze the supported view selectors, query bounds and which historical/simulated views are exposed before implementing services or routes. Case/Store selection-driven reads from large Phase 10 summaries remain an M2 prerequisite; M1 retains its fixed projections.
 - Decide whether conditional historical replay is shown in the application and how its assumptions and adverse cost comparisons appear to users.
 - Resolve how ignored local artifacts are distributed to any future hosted demo; cloud deployment is not implied by this plan.
-- Define whether a service-level cache is needed and its full canonical identity key before adding one; M1 validation memoization, if any, is process-local and invalidated by file identity changes.
+- Define whether a service-level cache is needed and its full canonical identity key before adding one. M1 output-hash memoization is process-local: device/inode/size/mtime changes trigger rehashing, but matching metadata does not prove the bytes are unchanged. The accepted trust model assumes immutable, locally trusted canonical outputs.
 
 Detailed canonical result evidence remains in [PROGRESS](../../docs/PROGRESS.md); this plan does not duplicate numerical results.

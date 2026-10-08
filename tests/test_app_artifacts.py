@@ -7,7 +7,7 @@ import hashlib
 import json
 import stat
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -36,142 +36,413 @@ from rossmann_forecasting.app.contracts import (
     UnsafeArtifactPathError,
     UnsupportedArtifactSelectorError,
 )
+from rossmann_forecasting.inventory.scenarios import CATALOG_SCHEMA
+from rossmann_forecasting.inventory.simulation import (
+    COMPARISON_SCHEMA,
+    POLICY_SUMMARY_SCHEMA,
+    POLICY_TARGET_SCHEMA,
+)
 
 
 def _canonical_json(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
 
 
-def _sample_value(name: str, selector: ArtifactSelector) -> object:
-    if name in {"Store", "horizon", "k", "replicate", "n", "distinct_stores", "distinct_origins"}:
+_PHASE7_FIXTURE_SCHEMA = pa.schema(
+    [
+        pa.field("Store", pa.int64()),
+        pa.field("forecast_origin", pa.timestamp("ns")),
+        pa.field("Date", pa.timestamp("ns")),
+        pa.field("horizon", pa.int8()),
+        pa.field("raw_forecast", pa.float64()),
+        pa.field("operational_forecast", pa.float64()),
+        pa.field("actual_sales", pa.float64()),
+        pa.field("source_open", pa.float64()),
+        pa.field("forecast_available", pa.bool_()),
+        pa.field("operational_forecast_available", pa.bool_()),
+        pa.field("primary_evaluation_eligible", pa.bool_()),
+        pa.field("candidate_id", pa.large_string()),
+        pa.field("model_selection_run_id", pa.large_string()),
+    ]
+)
+_PHASE8_DAILY_FIXTURE_SCHEMA = pa.schema(
+    [
+        pa.field("fit_id", pa.large_string()),
+        pa.field("Store", pa.int64()),
+        pa.field("forecast_origin", pa.timestamp("ns")),
+        pa.field("Date", pa.timestamp("ns")),
+        pa.field("horizon", pa.int64()),
+        pa.field("interval_kind", pa.large_string()),
+        pa.field("point_forecast", pa.float64()),
+        pa.field("lower", pa.float64()),
+        pa.field("upper", pa.float64()),
+        pa.field("width", pa.float64()),
+        pa.field("available", pa.bool_()),
+        pa.field("unavailable_reason", pa.string()),
+        pa.field("actual_sales", pa.float64()),
+        pa.field("assessment_source_open", pa.float64()),
+        pa.field("selected_candidate_id", pa.large_string()),
+        pa.field("model_selection_run_id", pa.large_string()),
+        pa.field("units", pa.large_string()),
+        pa.field("schedule_assumption_flag", pa.bool_()),
+    ]
+)
+_PHASE8_CUMULATIVE_FIXTURE_SCHEMA = pa.schema(
+    [
+        pa.field("fit_id", pa.large_string()),
+        pa.field("Store", pa.int64()),
+        pa.field("forecast_origin", pa.timestamp("ns")),
+        pa.field("k", pa.int64()),
+        pa.field("p", pa.float64()),
+        pa.field("selected_candidate_id", pa.large_string()),
+        pa.field("model_selection_run_id", pa.large_string()),
+        pa.field("units", pa.large_string()),
+        pa.field("schedule_assumption_flag", pa.bool_()),
+        pa.field("issued_prefix_complete", pa.bool_()),
+        pa.field("issued_prefix_unavailable_reason", pa.null()),
+        pa.field("D_k", pa.float64()),
+        pa.field("q_p_signed", pa.float64()),
+        pa.field("U_k", pa.float64()),
+        pa.field("SafetyStock_k", pa.float64()),
+        pa.field("Target_k", pa.float64()),
+    ]
+)
+_PRODUCER_FIXTURE_SCHEMAS = {
+    ArtifactSelector.PHASE9_SCENARIO_CATALOG: CATALOG_SCHEMA,
+    ArtifactSelector.PHASE10_COMPARISON: COMPARISON_SCHEMA,
+    ArtifactSelector.PHASE10_POLICY_SUMMARY: POLICY_SUMMARY_SCHEMA,
+    ArtifactSelector.PHASE10_POLICY_TARGETS: POLICY_TARGET_SCHEMA,
+}
+_FIXTURE_SCHEMAS = {
+    ArtifactSelector.PHASE7_FORECASTS: _PHASE7_FIXTURE_SCHEMA,
+    ArtifactSelector.PHASE8_DAILY_INTERVALS: _PHASE8_DAILY_FIXTURE_SCHEMA,
+    ArtifactSelector.PHASE8_CUMULATIVE_UNCERTAINTY: _PHASE8_CUMULATIVE_FIXTURE_SCHEMA,
+    **_PRODUCER_FIXTURE_SCHEMAS,
+}
+_DOMAIN_STRINGS = {
+    "scenario_id": "fixture-scenario",
+    "family": "synthetic_base",
+    "mode": "synthetic",
+    "schedule_mode": "planned_open",
+    "demand_basis": "synthetic_turnover_value",
+    "stress_spec_id": "base",
+    "case_id": "fixture-case",
+    "metric": "mae",
+    "relative_difference_null_reason": None,
+    "null_reason": None,
+    "interpretation": "fixture comparison",
+    "sensitivity_variant": "reference",
+    "policy_id": "historical_mean_standing_target",
+    "episode_status": "complete",
+    "availability_reason": None,
+    "common_input_identity": "fixture-input-identity",
+    "fit_id": "A",
+    "selected_candidate_id": "global_lightgbm_gbdt_regression_l1",
+    "candidate_id": "global_lightgbm_gbdt_regression_l1",
+    "model_selection_run_id": "365f22d4c3f94722a594ab934a22c4f6",
+    "interval_kind": "raw",
+    "units": "sales_value",
+    "tail": "lower",
+    "error_population": "raw_primary_source_open_1_signed_sales_error",
+    "unavailable_component_reasons": "{}",
+    "last_calibration_label": None,
+    "unavailable_reason": None,
+    "policy_version": "phase-10-adr-023-v1",
+    "calibration_windows": "fixture-window",
+    "excluded_reason_counts": "{}",
+    "prefix_definition": "origin-anchored-prefix",
+    "schedule_assumption": "saved_source_open_assumed_known_at_origin",
+    "paired_with": None,
+    "population": "standalone",
+    "scope": "pooled",
+    "validation_window": None,
+    "buffer_interpretation": "reference probability",
+    "upstream_identity": "fixture-upstream-identity",
+    "model_id": "global_lightgbm_gbdt_regression_l1",
+}
+_CSV_TEST_TYPES = {
+    ArtifactSelector.PHASE7_MODEL_COMPARISON: {
+        **dict.fromkeys(
+            (
+                "candidate_id",
+                "population",
+                "paired_with",
+                "scope",
+                "validation_window",
+                "metric",
+                "unavailable_reason",
+            ),
+            "string",
+        ),
+        **dict.fromkeys(
+            ("horizon", "week_block_start_horizon", "week_block_end_horizon", "Store"),
+            "integer",
+        ),
+        **dict.fromkeys(
+            ("value", "numerator", "denominator", "paired_mae_delta", "paired_mae_change_fraction"),
+            "float",
+        ),
+    },
+    ArtifactSelector.PHASE8_DAILY_QUANTILES: {
+        **dict.fromkeys(
+            (
+                "fit_id",
+                "tail",
+                "error_population",
+                "unavailable_component_reasons",
+                "last_calibration_label",
+                "unavailable_reason",
+                "policy_version",
+                "selected_candidate_id",
+                "calibration_windows",
+            ),
+            "string",
+        ),
+        **dict.fromkeys(
+            (
+                "horizon",
+                "n",
+                "distinct_stores",
+                "distinct_origins",
+                "observed_open_0",
+                "observed_open_1",
+                "observed_open_unknown",
+                "candidate_rows",
+                "forecast_available_count",
+                "rank_1_indexed",
+            ),
+            "integer",
+        ),
+        **dict.fromkeys(("tail_level", "signed_quantile"), "float"),
+        "available": "boolean",
+    },
+    ArtifactSelector.PHASE8_CUMULATIVE_QUANTILES: {
+        **dict.fromkeys(
+            (
+                "fit_id",
+                "error_population",
+                "excluded_reason_counts",
+                "last_calibration_label",
+                "unavailable_reason",
+                "prefix_definition",
+                "schedule_assumption",
+                "policy_version",
+                "selected_candidate_id",
+                "calibration_windows",
+            ),
+            "string",
+        ),
+        **dict.fromkeys(
+            (
+                "k",
+                "total_store_origin_paths",
+                "complete_prefixes",
+                "excluded_prefixes",
+                "distinct_stores",
+                "distinct_origins",
+                "rank_1_indexed",
+            ),
+            "integer",
+        ),
+        **dict.fromkeys(("p", "signed_quantile"), "float"),
+        "available": "boolean",
+    },
+    ArtifactSelector.PHASE10_COMPARISON: {
+        **dict.fromkeys(
+            (
+                "case_id",
+                "metric",
+                "relative_difference_null_reason",
+                "null_reason",
+                "interpretation",
+            ),
+            "string",
+        ),
+        **dict.fromkeys(
+            (
+                "requested_store_count",
+                "baseline_standalone_store_count",
+                "forecast_standalone_store_count",
+                "matched_store_count",
+            ),
+            "integer",
+        ),
+        **dict.fromkeys(
+            (
+                "baseline_numerator",
+                "baseline_denominator",
+                "forecast_numerator",
+                "forecast_denominator",
+                "baseline_value",
+                "forecast_value",
+                "forecast_minus_baseline",
+                "forecast_minus_baseline_relative",
+            ),
+            "float",
+        ),
+    },
+}
+_CSV_TEST_VALUES = {
+    "candidate_id": "global_lightgbm_gbdt_regression_l1",
+    "population": "standalone",
+    "paired_with": None,
+    "scope": "pooled",
+    "validation_window": None,
+    "metric": "mae",
+    "unavailable_reason": None,
+    "horizon": None,
+    "week_block_start_horizon": None,
+    "week_block_end_horizon": None,
+    "Store": None,
+    "value": 12.5,
+    "numerator": 12.5,
+    "denominator": 1.0,
+    "paired_mae_delta": None,
+    "paired_mae_change_fraction": None,
+    "fit_id": "A",
+    "tail": "lower",
+    "tail_level": 0.025,
+    "error_population": "raw_primary_source_open_1_signed_sales_error",
+    "n": 40,
+    "distinct_stores": 10,
+    "distinct_origins": 5,
+    "observed_open_0": 0,
+    "observed_open_1": 50,
+    "observed_open_unknown": 0,
+    "candidate_rows": 60,
+    "forecast_available_count": 50,
+    "unavailable_component_reasons": "{}",
+    "last_calibration_label": "2015-06-19",
+    "rank_1_indexed": 1,
+    "signed_quantile": -2.5,
+    "available": True,
+    "policy_version": "phase-10-adr-023-v1",
+    "selected_candidate_id": "global_lightgbm_gbdt_regression_l1",
+    "calibration_windows": "fixture-window",
+    "k": 1,
+    "p": 0.95,
+    "total_store_origin_paths": 60,
+    "complete_prefixes": 50,
+    "excluded_prefixes": 10,
+    "excluded_reason_counts": "{}",
+    "prefix_definition": "origin-anchored-prefix",
+    "schedule_assumption": "saved_source_open_assumed_known_at_origin",
+    "case_id": "fixture-case",
+    "requested_store_count": 1,
+    "baseline_standalone_store_count": 1,
+    "forecast_standalone_store_count": 1,
+    "matched_store_count": 1,
+    "baseline_numerator": 10.0,
+    "baseline_denominator": 1.0,
+    "forecast_numerator": 9.0,
+    "forecast_denominator": 1.0,
+    "baseline_value": None,
+    "forecast_value": 9.0,
+    "forecast_minus_baseline": None,
+    "forecast_minus_baseline_relative": None,
+    "relative_difference_null_reason": None,
+    "null_reason": None,
+    "interpretation": "fixture comparison",
+}
+
+
+def _sample_arrow_value(field: pa.Field) -> object:
+    name, dtype = field.name, field.type
+    if pa.types.is_null(dtype):
+        return None
+    if pa.types.is_boolean(dtype):
+        return True
+    if pa.types.is_integer(dtype):
         return 1
-    if name == "p":
-        return 0.95
-    if name == "Date":
-        return datetime(2015, 6, 20)
-    if name == "forecast_origin":
-        return (
-            datetime(2015, 6, 19)
-            if selector
-            in {
-                ArtifactSelector.PHASE7_FORECASTS,
-                ArtifactSelector.PHASE8_DAILY_INTERVALS,
-                ArtifactSelector.PHASE8_CUMULATIVE_UNCERTAINTY,
-            }
-            else date(2015, 6, 19)
-        )
-    if name == "fit_id":
-        return "A"
-    if name == "candidate_id":
-        return "global_lightgbm_gbdt_regression_l1"
-    if name == "selected_candidate_id":
-        return "global_lightgbm_gbdt_regression_l1"
-    if name == "model_selection_run_id":
-        return "365f22d4c3f94722a594ab934a22c4f6"
-    if name == "scenario_id":
-        return "fixture-scenario"
-    if name == "case_id":
-        return "fixture-case"
-    if name == "policy_id":
-        return "forecast"
-    if name == "interval_kind":
-        return "raw"
-    if name == "tail":
-        return "lower"
-    if name in {
-        "available",
-        "forecast_available",
-        "operational_forecast_available",
-        "primary_evaluation_eligible",
-        "schedule_assumption_flag",
-        "issued_prefix_complete",
-        "calibration_transport_valid",
-        "synthetic",
-    }:
-        return name != "available" or selector in {
-            ArtifactSelector.PHASE8_DAILY_INTERVALS,
-            ArtifactSelector.PHASE8_CUMULATIVE_UNCERTAINTY,
-        }
-    if name in {
-        "actual_sales",
-        "assessment_source_open",
-        "unavailable_reason",
-        "issued_prefix_unavailable_reason",
-        "baseline_value",
-        "forecast_value",
-    }:
-        return None
-    if name in {
-        "Store",
-        "raw_forecast",
-        "operational_forecast",
-        "point_forecast",
-        "lower",
-        "upper",
-        "width",
-        "D_k",
-        "q_p_signed",
-        "U_k",
-        "SafetyStock_k",
-        "Target_k",
-        "tail_level",
-        "signed_quantile",
-        "forecast_protection_demand_value",
-        "cumulative_signed_quantile",
-        "upper_turnover_value",
-        "safety_stock_value",
-        "target_value",
-        "initial_stock_value",
-        "baseline_numerator",
-        "baseline_denominator",
-        "forecast_numerator",
-        "forecast_denominator",
-        "forecast_minus_baseline",
-        "forecast_minus_baseline_relative",
-        "value",
-        "numerator",
-        "denominator",
-        "paired_mae_delta",
-        "paired_mae_change_fraction",
-    }:
-        return 12.5
-    if name in {"Store"}:
-        return 1
-    if name == "population":
-        return "standalone"
-    if name == "scope":
-        return "pooled"
-    if name == "metric":
-        return "mae"
-    if name == "unavailable_reason":
-        return "fixture_unavailable"
-    if name == "paired_with":
-        return None
-    if name == "availability_reason":
-        return None
-    if name == "forecast_origin":
+    if pa.types.is_floating(dtype):
+        if name in {"source_open", "assessment_source_open"}:
+            return 1.0
+        return 0.95 if name in {"p", "buffer_probability"} else 12.5
+    if pa.types.is_date(dtype):
         return date(2015, 6, 19)
-    return "fixture"
+    if pa.types.is_timestamp(dtype):
+        return datetime(2015, 6, 20) if name == "Date" else datetime(2015, 6, 19)
+    if pa.types.is_string(dtype) or pa.types.is_large_string(dtype):
+        if name not in _DOMAIN_STRINGS:
+            raise AssertionError(f"Missing typed fixture value for string field {name}.")
+        return _DOMAIN_STRINGS[name]
+    if field.nullable:
+        return None
+    raise AssertionError(f"Unsupported producer fixture type for {name}: {dtype}.")
 
 
-def _write_table(path: Path, selector: ArtifactSelector, columns: tuple[str, ...]) -> None:
-    arrays = {}
-    for name in columns:
-        value = _sample_value(name, selector)
-        if name in {"Date", "forecast_origin"} and isinstance(value, datetime):
-            arrays[name] = pa.array([value], type=pa.timestamp("ns"))
-        else:
-            arrays[name] = pa.array([value])
-    pq.write_table(pa.table(arrays), path)
+def _schema_for(selector: ArtifactSelector, columns: tuple[str, ...] | None = None) -> pa.Schema:
+    schema = _FIXTURE_SCHEMAS[selector]
+    return schema if columns is None else pa.schema([schema.field(name) for name in columns])
 
 
-def _write_csv(path: Path, selector: ArtifactSelector, columns: tuple[str, ...]) -> None:
+def _write_table(
+    path: Path,
+    selector: ArtifactSelector,
+    columns: tuple[str, ...] | None = None,
+    *,
+    values: dict[str, object] | None = None,
+    type_overrides: dict[str, pa.DataType] | None = None,
+    nullable_overrides: dict[str, bool] | None = None,
+    row_count: int = 1,
+) -> None:
+    selected = _schema_for(selector, columns)
+    overrides = {} if values is None else values
+    type_changes = {} if type_overrides is None else type_overrides
+    nullability_changes = {} if nullable_overrides is None else nullable_overrides
+    schema = pa.schema(
+        [
+            pa.field(
+                field.name,
+                type_changes.get(field.name, field.type),
+                nullable=nullability_changes.get(field.name, field.nullable),
+            )
+            for field in selected
+        ]
+    )
+    row = {
+        field.name: overrides[field.name] if field.name in overrides else _sample_arrow_value(field)
+        for field in schema
+    }
+    row.update(overrides)
+    pq.write_table(
+        pa.Table.from_pylist([row.copy() for _ in range(row_count)], schema=schema), path
+    )
+
+
+def _csv_value(selector: ArtifactSelector, name: str) -> object:
+    if name not in _CSV_TEST_TYPES[selector]:
+        raise AssertionError(f"Missing independent CSV fixture type for {name}.")
+    if name not in _CSV_TEST_VALUES:
+        raise AssertionError(f"Missing independent CSV fixture value for {name}.")
+    if selector is ArtifactSelector.PHASE8_DAILY_QUANTILES and name == "horizon":
+        return 1
+    return _CSV_TEST_VALUES[name]
+
+
+def _artifact_path(fixture_store: FixtureStore, selector: ArtifactSelector) -> Path:
+    spec = _ARTIFACTS[selector]
+    return (
+        fixture_store.root
+        / CANONICAL_RUNS[spec.phase].manifest_relative_path.parent
+        / spec.filename
+    )
+
+
+def _write_csv(
+    path: Path,
+    selector: ArtifactSelector,
+    columns: tuple[str, ...],
+    *,
+    values: dict[str, object] | None = None,
+) -> None:
+    row_values = {name: _csv_value(selector, name) for name in columns}
+    if values is not None:
+        row_values.update(values)
     with path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.writer(stream)
         writer.writerow(columns)
-        writer.writerow(
-            ["" if (value := _sample_value(name, selector)) is None else value for name in columns]
-        )
+        writer.writerow(["" if row_values[name] is None else row_values[name] for name in columns])
 
 
 class FixtureStore:
@@ -191,13 +462,25 @@ class FixtureStore:
                 assert spec.csv_header is not None
                 _write_csv(output, selector, spec.csv_header)
             else:
-                _write_table(output, selector, spec.projection)
+                columns = (
+                    tuple(_PRODUCER_FIXTURE_SCHEMAS[selector].names)
+                    if selector in _PRODUCER_FIXTURE_SCHEMAS
+                    else spec.projection
+                )
+                _write_table(output, selector, columns)
             metadata: dict[str, object] = {
                 "rows": 1,
                 "sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
             }
-            if spec.file_format == "parquet":
-                metadata["columns"] = list(spec.projection)
+            if selector in _PRODUCER_FIXTURE_SCHEMAS:
+                schema = _PRODUCER_FIXTURE_SCHEMAS[selector]
+                metadata["schema"] = [
+                    {"name": field.name, "type": str(field.type), "nullable": field.nullable}
+                    for field in schema
+                ]
+                metadata["byte_length"] = output.stat().st_size
+            elif spec.file_format == "parquet":
+                metadata["columns"] = list(_schema_for(selector, spec.projection).names)
             else:
                 metadata["bytes"] = output.stat().st_size
             if spec.phase in {Phase.PHASE9, Phase.PHASE10}:
@@ -338,9 +621,11 @@ class FixtureStore:
             pq.ParquetFile(path).metadata.num_rows if spec.file_format == "parquet" else 1
         )
         metadata["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
-        if spec.file_format == "parquet":
+        if "columns" in metadata:
             metadata["columns"] = pq.ParquetFile(path).schema_arrow.names
-        else:
+        if "byte_length" in metadata:
+            metadata["byte_length"] = path.stat().st_size
+        elif "bytes" in metadata:
             metadata["bytes"] = path.stat().st_size
         self.refresh_manifest(spec.phase)
 
@@ -441,6 +726,201 @@ def test_rejects_missing_required_schema_column(fixture_store: FixtureStore) -> 
         fixture_store.reader().read(selector)
 
 
+@pytest.mark.parametrize(
+    ("selector", "field", "replacement_type", "replacement_value"),
+    [
+        (ArtifactSelector.PHASE7_FORECASTS, "raw_forecast", pa.string(), "12.5"),
+        (ArtifactSelector.PHASE8_DAILY_INTERVALS, "available", pa.string(), "True"),
+    ],
+)
+def test_rejects_wrong_projected_parquet_types(
+    fixture_store: FixtureStore,
+    selector: ArtifactSelector,
+    field: str,
+    replacement_type: pa.DataType,
+    replacement_value: object,
+) -> None:
+    _write_table(
+        _artifact_path(fixture_store, selector),
+        selector,
+        values={field: replacement_value},
+        type_overrides={field: replacement_type},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_rejects_nonnumeric_csv_metric_value(fixture_store: FixtureStore) -> None:
+    selector = ArtifactSelector.PHASE10_COMPARISON
+    spec = _ARTIFACTS[selector]
+    _write_csv(
+        _artifact_path(fixture_store, selector),
+        selector,
+        spec.csv_header or (),
+        values={"baseline_value": "not-a-number"},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_rejects_malformed_csv_boolean(fixture_store: FixtureStore) -> None:
+    selector = ArtifactSelector.PHASE8_DAILY_QUANTILES
+    spec = _ARTIFACTS[selector]
+    _write_csv(
+        _artifact_path(fixture_store, selector),
+        selector,
+        spec.csv_header or (),
+        values={"available": "yes"},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_rejects_fractional_value_in_csv_integer_field(fixture_store: FixtureStore) -> None:
+    selector = ArtifactSelector.PHASE8_DAILY_QUANTILES
+    spec = _ARTIFACTS[selector]
+    _write_csv(
+        _artifact_path(fixture_store, selector),
+        selector,
+        spec.csv_header or (),
+        values={"n": "2.5"},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_csv_values_use_nullable_semantic_dtypes(fixture_store: FixtureStore) -> None:
+    daily = fixture_store.reader().read(ArtifactSelector.PHASE8_DAILY_QUANTILES).frame
+    comparison = fixture_store.reader().read(ArtifactSelector.PHASE10_COMPARISON).frame
+
+    assert str(daily["horizon"].dtype) == "Int64"
+    assert str(daily["available"].dtype) == "boolean"
+    assert str(daily["fit_id"].dtype) == "string"
+    assert str(comparison["baseline_value"].dtype) == "Float64"
+
+
+def test_rejects_null_mandatory_candidate_identifier(fixture_store: FixtureStore) -> None:
+    selector = ArtifactSelector.PHASE7_MODEL_COMPARISON
+    spec = _ARTIFACTS[selector]
+    _write_csv(
+        _artifact_path(fixture_store, selector),
+        selector,
+        spec.csv_header or (),
+        values={"candidate_id": None},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_allows_null_model_comparison_grouping_fields(fixture_store: FixtureStore) -> None:
+    result = fixture_store.reader().read(ArtifactSelector.PHASE7_MODEL_COMPARISON)
+
+    assert pd.isna(result.frame.loc[0, "paired_with"])
+    assert pd.isna(result.frame.loc[0, "Store"])
+    assert result.frame.loc[0, "candidate_id"] == "global_lightgbm_gbdt_regression_l1"
+
+
+def test_rejects_null_required_family_in_phase9_catalog(fixture_store: FixtureStore) -> None:
+    selector = ArtifactSelector.PHASE9_SCENARIO_CATALOG
+    _write_table(
+        _artifact_path(fixture_store, selector),
+        selector,
+        values={"family": None},
+        nullable_overrides={"family": True},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_rejects_null_required_policy_identifier(fixture_store: FixtureStore) -> None:
+    selector = ArtifactSelector.PHASE10_POLICY_SUMMARY
+    _write_table(
+        _artifact_path(fixture_store, selector),
+        selector,
+        values={"policy_id": None},
+        nullable_overrides={"policy_id": True},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_required_null_rejected_and_unavailable_value_null_preserved(
+    fixture_store: FixtureStore,
+) -> None:
+    comparison = fixture_store.reader().read(ArtifactSelector.PHASE10_COMPARISON)
+    assert pd.isna(comparison.frame.loc[0, "baseline_value"])
+
+    selector = ArtifactSelector.PHASE10_POLICY_SUMMARY
+    _write_table(
+        _artifact_path(fixture_store, selector),
+        selector,
+        values={"episode_complete": None},
+        nullable_overrides={"episode_complete": True},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_required_non_null_guard_rejects_null_values_directly() -> None:
+    frame = pd.DataFrame({"family": pd.Series([pd.NA], dtype="string")})
+
+    with pytest.raises(ArtifactSchemaError):
+        _ArtifactReader._assert_required_non_null(
+            frame, ArtifactSelector.PHASE9_SCENARIO_CATALOG, ("family",)
+        )
+
+
+def test_rejects_phase9_descriptor_nullability_mismatch(fixture_store: FixtureStore) -> None:
+    selector = ArtifactSelector.PHASE9_SCENARIO_CATALOG
+    metadata = fixture_store.manifests[Phase.PHASE9]["outputs"]["scenario_catalog.parquet"]
+    assert isinstance(metadata, dict)
+    descriptors = metadata["schema"]
+    assert isinstance(descriptors, list)
+    descriptors[1]["nullable"] = True
+    fixture_store.refresh_manifest(Phase.PHASE9)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+@pytest.mark.parametrize(
+    "selector",
+    [
+        ArtifactSelector.PHASE9_SCENARIO_CATALOG,
+        ArtifactSelector.PHASE10_COMPARISON,
+        ArtifactSelector.PHASE10_POLICY_SUMMARY,
+        ArtifactSelector.PHASE10_POLICY_TARGETS,
+    ],
+)
+def test_requires_phase9_and_phase10_schema_descriptors(
+    fixture_store: FixtureStore, selector: ArtifactSelector
+) -> None:
+    phase = _ARTIFACTS[selector].phase
+    metadata = fixture_store.manifests[phase]["outputs"][_ARTIFACTS[selector].filename]
+    assert isinstance(metadata, dict)
+    del metadata["schema"]
+    fixture_store.refresh_manifest(phase)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
 def test_rejects_unbounded_manifest_row_count_before_read(fixture_store: FixtureStore) -> None:
     selector = ArtifactSelector.PHASE7_MODEL_COMPARISON
     spec = _ARTIFACTS[selector]
@@ -455,17 +935,8 @@ def test_rejects_unbounded_manifest_row_count_before_read(fixture_store: Fixture
 
 def test_rejects_duplicate_primary_keys(fixture_store: FixtureStore) -> None:
     selector = ArtifactSelector.PHASE9_SCENARIO_CATALOG
-    spec = _ARTIFACTS[selector]
-    output = (
-        fixture_store.root
-        / CANONICAL_RUNS[Phase.PHASE9].manifest_relative_path.parent
-        / spec.filename
-    )
-    arrays = {
-        name: pa.array([_sample_value(name, selector), _sample_value(name, selector)])
-        for name in spec.projection
-    }
-    pq.write_table(pa.table(arrays), output)
+    output = _artifact_path(fixture_store, selector)
+    _write_table(output, selector, row_count=2)
     fixture_store.refresh_output(selector)
 
     with pytest.raises(DuplicateArtifactKeyError):
@@ -542,7 +1013,9 @@ def test_output_hash_cache_rechecks_when_file_identity_changes(
         / CANONICAL_RUNS[Phase.PHASE9].manifest_relative_path.parent
         / "scenario_catalog.parquet"
     )
-    output.write_bytes(output.read_bytes() + b"x")
+    payload = output.read_bytes()
+    output.write_bytes(payload[:-1] + bytes([payload[-1] ^ 1]))
+    output.touch()
     with pytest.raises(ArtifactIntegrityError):
         reader.read(selector)
     assert len(checked) == 2
@@ -640,6 +1113,133 @@ def test_history_rejects_invalid_store_and_oversized_range_before_dataset_open(
         reader.read_history_sales(HistoryQuery(0, date(2015, 6, 1), date(2015, 6, 2)))
     with pytest.raises(InvalidArtifactRequestError):
         reader.read_history_sales(HistoryQuery(1, date(2014, 5, 31), date(2015, 6, 1)))
+
+
+@pytest.mark.parametrize(
+    ("start", "end"),
+    [
+        (date(1, 1, 1), date(1, 1, 1)),
+        (date(2012, 12, 31), date(2012, 12, 31)),
+        (date(2015, 7, 4), date(2015, 7, 4)),
+    ],
+)
+def test_history_rejects_dates_outside_supported_bounds_before_open(
+    fixture_store: FixtureStore,
+    monkeypatch: pytest.MonkeyPatch,
+    start: date,
+    end: date,
+) -> None:
+    monkeypatch.setattr(
+        artifact_module.ds,
+        "dataset",
+        lambda *args, **kwargs: pytest.fail("dataset opened for an unsupported date range"),
+    )
+
+    with pytest.raises(InvalidArtifactRequestError):
+        fixture_store.reader().read_history_sales(HistoryQuery(1, start, end))
+
+
+def test_history_rejects_timezone_aware_query_before_open(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        artifact_module.ds,
+        "dataset",
+        lambda *args, **kwargs: pytest.fail("dataset opened for a timezone-aware query"),
+    )
+
+    with pytest.raises(InvalidArtifactRequestError):
+        fixture_store.reader().read_history_sales(
+            HistoryQuery(
+                1,
+                datetime(2015, 6, 1, tzinfo=UTC),  # type: ignore[arg-type]
+                date(2015, 6, 1),
+            )
+        )
+
+
+def test_history_rejects_timezone_aware_date_schema_sanitized(
+    fixture_store: FixtureStore,
+) -> None:
+    source = fixture_store.root / "data/interim/train.parquet"
+    source.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(
+        pa.table(
+            {
+                "Store": pa.array([1], type=pa.int64()),
+                "Date": pa.array(
+                    [datetime(2015, 6, 1, tzinfo=UTC)],
+                    type=pa.timestamp("ns", tz="UTC"),
+                ),
+                "Sales": pa.array([100], type=pa.int64()),
+                "Open": pa.array([1], type=pa.int64()),
+            }
+        ),
+        source,
+    )
+
+    with pytest.raises(ArtifactSchemaError) as error:
+        fixture_store.reader().read_history_sales(
+            HistoryQuery(1, date(2015, 6, 1), date(2015, 6, 1))
+        )
+    assert "UTC" not in str(error.value)
+    assert "timestamp" not in str(error.value)
+
+
+def test_history_converts_pandas_date_errors_to_sanitized_reader_error(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = fixture_store.root / "data/interim/train.parquet"
+    source.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(
+        pa.table(
+            {
+                "Store": pa.array([1], type=pa.int64()),
+                "Date": pa.array([datetime(2015, 6, 1)], type=pa.timestamp("ns")),
+                "Sales": pa.array([100], type=pa.int64()),
+                "Open": pa.array([1], type=pa.int64()),
+            }
+        ),
+        source,
+    )
+
+    def conversion_failure(*args: object, **kwargs: object) -> None:
+        raise TypeError("C:\\private\\dataset\\unsafe-date")
+
+    monkeypatch.setattr(artifact_module.pd, "to_datetime", conversion_failure)
+    with pytest.raises(ArtifactSchemaError) as error:
+        fixture_store.reader().read_history_sales(
+            HistoryQuery(1, date(2015, 6, 1), date(2015, 6, 1))
+        )
+    assert "private" not in str(error.value)
+    assert "unsafe-date" not in str(error.value)
+
+
+def test_history_accepts_supported_lower_and_upper_date_bounds(
+    fixture_store: FixtureStore,
+) -> None:
+    source = fixture_store.root / "data/interim/train.parquet"
+    source.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(
+        pa.table(
+            {
+                "Store": pa.array([1, 1], type=pa.int64()),
+                "Date": pa.array(
+                    [datetime(2013, 1, 1), datetime(2015, 7, 3)], type=pa.timestamp("ns")
+                ),
+                "Sales": pa.array([100, 200], type=pa.int64()),
+                "Open": pa.array([1, 1], type=pa.int64()),
+            }
+        ),
+        source,
+    )
+
+    reader = fixture_store.reader()
+    first = reader.read_history_sales(HistoryQuery(1, date(2013, 1, 1), date(2013, 1, 1)))
+    last = reader.read_history_sales(HistoryQuery(1, date(2015, 7, 3), date(2015, 7, 3)))
+
+    assert first["Date"].tolist() == [pd.Timestamp("2013-01-01")]
+    assert last["Date"].tolist() == [pd.Timestamp("2015-07-03")]
 
 
 def test_missing_historical_dataset_is_explicit(fixture_store: FixtureStore) -> None:

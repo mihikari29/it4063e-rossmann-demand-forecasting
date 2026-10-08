@@ -5,8 +5,9 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import stat
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from pathlib import Path, PurePosixPath
@@ -34,8 +35,15 @@ from rossmann_forecasting.app.contracts import (
     UnsupportedArtifactSelectorError,
 )
 from rossmann_forecasting.data.paths import repository_root
+from rossmann_forecasting.inventory.scenarios import CATALOG_SCHEMA
+from rossmann_forecasting.inventory.simulation import (
+    COMPARISON_SCHEMA,
+    POLICY_SUMMARY_SCHEMA,
+    POLICY_TARGET_SCHEMA,
+)
 
 DEVELOPMENT_CUTOFF = date(2015, 7, 3)
+MIN_HISTORY_DATE = date(2013, 1, 1)
 HISTORY_PROJECTION = ("Store", "Date", "Sales", "Open")
 MAX_HISTORY_DAYS = 366
 MAX_HISTORY_ROWS = 366
@@ -57,7 +65,6 @@ class _ArtifactSpec:
     max_bytes: int
     development_date_filter: bool = False
     csv_header: tuple[str, ...] | None = None
-    allow_null_key: bool = False
 
 
 _MODEL_COMPARISON_COLUMNS = (
@@ -194,6 +201,339 @@ _POLICY_TARGETS_PROJECTION = (
     "schedule_assumption",
 )
 
+_PHASE7_FORECAST_TYPES = {
+    "Store": ("int64",),
+    "forecast_origin": ("timestamp[ns]",),
+    "Date": ("timestamp[ns]",),
+    "horizon": ("int8",),
+    "raw_forecast": ("double",),
+    "operational_forecast": ("double",),
+    "actual_sales": ("double",),
+    "source_open": ("double",),
+    "forecast_available": ("bool",),
+    "operational_forecast_available": ("bool",),
+    "primary_evaluation_eligible": ("bool",),
+    "candidate_id": ("large_string",),
+    "model_selection_run_id": ("large_string",),
+}
+_PHASE8_DAILY_TYPES = {
+    "fit_id": ("large_string",),
+    "Store": ("int64",),
+    "forecast_origin": ("timestamp[ns]",),
+    "Date": ("timestamp[ns]",),
+    "horizon": ("int64",),
+    "interval_kind": ("large_string",),
+    "point_forecast": ("double",),
+    "lower": ("double",),
+    "upper": ("double",),
+    "width": ("double",),
+    "available": ("bool",),
+    "unavailable_reason": ("string",),
+    "actual_sales": ("double",),
+    "assessment_source_open": ("double",),
+    "selected_candidate_id": ("large_string",),
+    "model_selection_run_id": ("large_string",),
+    "units": ("large_string",),
+    "schedule_assumption_flag": ("bool",),
+}
+_PHASE8_CUMULATIVE_TYPES = {
+    "fit_id": ("large_string",),
+    "Store": ("int64",),
+    "forecast_origin": ("timestamp[ns]",),
+    "k": ("int64",),
+    "p": ("double",),
+    "selected_candidate_id": ("large_string",),
+    "model_selection_run_id": ("large_string",),
+    "units": ("large_string",),
+    "schedule_assumption_flag": ("bool",),
+    "issued_prefix_complete": ("bool",),
+    "issued_prefix_unavailable_reason": ("null",),
+    "D_k": ("double",),
+    "q_p_signed": ("double",),
+    "U_k": ("double",),
+    "SafetyStock_k": ("double",),
+    "Target_k": ("double",),
+}
+
+
+def _csv_dtypes(
+    *,
+    strings: tuple[str, ...],
+    integers: tuple[str, ...],
+    floats: tuple[str, ...],
+    booleans: tuple[str, ...],
+) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for columns, dtype in (
+        (strings, "string"),
+        (integers, "Int64"),
+        (floats, "Float64"),
+        (booleans, "boolean"),
+    ):
+        for column in columns:
+            if column in result:
+                raise ValueError(f"Duplicate CSV schema field: {column}.")
+            result[column] = dtype
+    return result
+
+
+_CSV_DTYPES: dict[ArtifactSelector, dict[str, str]] = {
+    ArtifactSelector.PHASE7_MODEL_COMPARISON: _csv_dtypes(
+        strings=(
+            "candidate_id",
+            "population",
+            "paired_with",
+            "scope",
+            "validation_window",
+            "metric",
+            "unavailable_reason",
+        ),
+        integers=("horizon", "week_block_start_horizon", "week_block_end_horizon", "Store"),
+        floats=(
+            "value",
+            "numerator",
+            "denominator",
+            "paired_mae_delta",
+            "paired_mae_change_fraction",
+        ),
+        booleans=(),
+    ),
+    ArtifactSelector.PHASE8_DAILY_QUANTILES: _csv_dtypes(
+        strings=(
+            "fit_id",
+            "tail",
+            "error_population",
+            "unavailable_component_reasons",
+            "last_calibration_label",
+            "unavailable_reason",
+            "policy_version",
+            "selected_candidate_id",
+            "calibration_windows",
+        ),
+        integers=(
+            "horizon",
+            "n",
+            "distinct_stores",
+            "distinct_origins",
+            "observed_open_0",
+            "observed_open_1",
+            "observed_open_unknown",
+            "candidate_rows",
+            "forecast_available_count",
+            "rank_1_indexed",
+        ),
+        floats=("tail_level", "signed_quantile"),
+        booleans=("available",),
+    ),
+    ArtifactSelector.PHASE8_CUMULATIVE_QUANTILES: _csv_dtypes(
+        strings=(
+            "fit_id",
+            "error_population",
+            "excluded_reason_counts",
+            "last_calibration_label",
+            "unavailable_reason",
+            "prefix_definition",
+            "schedule_assumption",
+            "policy_version",
+            "selected_candidate_id",
+            "calibration_windows",
+        ),
+        integers=(
+            "k",
+            "total_store_origin_paths",
+            "complete_prefixes",
+            "excluded_prefixes",
+            "distinct_stores",
+            "distinct_origins",
+            "rank_1_indexed",
+        ),
+        floats=("p", "signed_quantile"),
+        booleans=("available",),
+    ),
+    ArtifactSelector.PHASE10_COMPARISON: _csv_dtypes(
+        strings=(
+            "case_id",
+            "metric",
+            "relative_difference_null_reason",
+            "null_reason",
+            "interpretation",
+        ),
+        integers=(
+            "requested_store_count",
+            "baseline_standalone_store_count",
+            "forecast_standalone_store_count",
+            "matched_store_count",
+        ),
+        floats=(
+            "baseline_numerator",
+            "baseline_denominator",
+            "forecast_numerator",
+            "forecast_denominator",
+            "baseline_value",
+            "forecast_value",
+            "forecast_minus_baseline",
+            "forecast_minus_baseline_relative",
+        ),
+        booleans=(),
+    ),
+}
+
+_PARQUET_TYPES: dict[ArtifactSelector, dict[str, tuple[str, ...]]] = {
+    ArtifactSelector.PHASE7_FORECASTS: _PHASE7_FORECAST_TYPES,
+    ArtifactSelector.PHASE8_DAILY_INTERVALS: _PHASE8_DAILY_TYPES,
+    ArtifactSelector.PHASE8_CUMULATIVE_UNCERTAINTY: _PHASE8_CUMULATIVE_TYPES,
+}
+_PRODUCER_SCHEMAS: dict[ArtifactSelector, pa.Schema] = {
+    ArtifactSelector.PHASE9_SCENARIO_CATALOG: CATALOG_SCHEMA,
+    ArtifactSelector.PHASE10_COMPARISON: COMPARISON_SCHEMA,
+    ArtifactSelector.PHASE10_POLICY_SUMMARY: POLICY_SUMMARY_SCHEMA,
+    ArtifactSelector.PHASE10_POLICY_TARGETS: POLICY_TARGET_SCHEMA,
+}
+_REQUIRED_NON_NULL: dict[ArtifactSelector, tuple[str, ...]] = {
+    ArtifactSelector.PHASE7_FORECASTS: (
+        "Store",
+        "forecast_origin",
+        "Date",
+        "horizon",
+        "forecast_available",
+        "operational_forecast_available",
+        "primary_evaluation_eligible",
+        "candidate_id",
+        "model_selection_run_id",
+    ),
+    ArtifactSelector.PHASE7_MODEL_COMPARISON: ("candidate_id", "population", "scope", "metric"),
+    ArtifactSelector.PHASE8_DAILY_INTERVALS: (
+        "fit_id",
+        "Store",
+        "forecast_origin",
+        "Date",
+        "horizon",
+        "interval_kind",
+        "available",
+        "selected_candidate_id",
+        "model_selection_run_id",
+        "units",
+        "schedule_assumption_flag",
+    ),
+    ArtifactSelector.PHASE8_CUMULATIVE_UNCERTAINTY: (
+        "fit_id",
+        "Store",
+        "forecast_origin",
+        "k",
+        "p",
+        "selected_candidate_id",
+        "model_selection_run_id",
+        "units",
+        "schedule_assumption_flag",
+        "issued_prefix_complete",
+    ),
+    ArtifactSelector.PHASE8_DAILY_QUANTILES: (
+        "fit_id",
+        "horizon",
+        "tail",
+        "tail_level",
+        "error_population",
+        "n",
+        "available",
+        "policy_version",
+        "selected_candidate_id",
+        "calibration_windows",
+    ),
+    ArtifactSelector.PHASE8_CUMULATIVE_QUANTILES: (
+        "fit_id",
+        "k",
+        "p",
+        "error_population",
+        "total_store_origin_paths",
+        "complete_prefixes",
+        "excluded_prefixes",
+        "available",
+        "prefix_definition",
+        "schedule_assumption",
+        "policy_version",
+        "selected_candidate_id",
+        "calibration_windows",
+    ),
+    ArtifactSelector.PHASE10_COMPARISON: (
+        "case_id",
+        "metric",
+        "requested_store_count",
+        "baseline_standalone_store_count",
+        "forecast_standalone_store_count",
+        "matched_store_count",
+        "interpretation",
+    ),
+}
+_NULLABLE_KEY_FIELDS = {
+    ArtifactSelector.PHASE7_MODEL_COMPARISON: frozenset(
+        {
+            "paired_with",
+            "validation_window",
+            "horizon",
+            "week_block_start_horizon",
+            "week_block_end_horizon",
+            "Store",
+            "unavailable_reason",
+        }
+    )
+}
+
+_CSV_REQUIRED_NON_NULL: dict[ArtifactSelector, tuple[str, ...]] = {
+    ArtifactSelector.PHASE7_MODEL_COMPARISON: (
+        "candidate_id",
+        "population",
+        "scope",
+        "metric",
+    ),
+    ArtifactSelector.PHASE8_DAILY_QUANTILES: (
+        "fit_id",
+        "horizon",
+        "tail",
+        "tail_level",
+        "error_population",
+        "n",
+        "distinct_stores",
+        "distinct_origins",
+        "observed_open_0",
+        "observed_open_1",
+        "observed_open_unknown",
+        "candidate_rows",
+        "forecast_available_count",
+        "unavailable_component_reasons",
+        "available",
+        "policy_version",
+        "selected_candidate_id",
+        "calibration_windows",
+    ),
+    ArtifactSelector.PHASE8_CUMULATIVE_QUANTILES: (
+        "fit_id",
+        "k",
+        "p",
+        "error_population",
+        "total_store_origin_paths",
+        "complete_prefixes",
+        "excluded_prefixes",
+        "excluded_reason_counts",
+        "distinct_stores",
+        "distinct_origins",
+        "available",
+        "prefix_definition",
+        "schedule_assumption",
+        "policy_version",
+        "selected_candidate_id",
+        "calibration_windows",
+    ),
+    ArtifactSelector.PHASE10_COMPARISON: (
+        "case_id",
+        "metric",
+        "requested_store_count",
+        "baseline_standalone_store_count",
+        "forecast_standalone_store_count",
+        "matched_store_count",
+        "interpretation",
+    ),
+}
+
 CANONICAL_RUNS: dict[Phase, CanonicalRunIdentity] = {
     Phase.PHASE7: CanonicalRunIdentity(
         phase=Phase.PHASE7,
@@ -295,7 +635,6 @@ _ARTIFACTS: dict[ArtifactSelector, _ArtifactSpec] = {
         max_rows=200_000,
         max_bytes=32_000_000,
         csv_header=_MODEL_COMPARISON_COLUMNS,
-        allow_null_key=True,
     ),
     ArtifactSelector.PHASE8_DAILY_INTERVALS: _ArtifactSpec(
         selector=ArtifactSelector.PHASE8_DAILY_INTERVALS,
@@ -488,37 +827,6 @@ _ARTIFACTS: dict[ArtifactSelector, _ArtifactSpec] = {
 _PHASE7_EXPECTED_CANDIDATE = "global_lightgbm_gbdt_regression_l1"
 _UPSTREAM_BINDINGS_FILENAME = "upstream_bindings.json"
 _HISTORY_RELATIVE_PATH = Path("data/interim/train.parquet")
-_KEY_ARROW_TYPES: dict[ArtifactSelector, dict[str, tuple[str, ...]]] = {
-    ArtifactSelector.PHASE7_FORECASTS: {
-        "Store": ("int64",),
-        "forecast_origin": ("timestamp[ns]",),
-        "Date": ("timestamp[ns]",),
-    },
-    ArtifactSelector.PHASE8_DAILY_INTERVALS: {
-        "Store": ("int64",),
-        "forecast_origin": ("timestamp[ns]",),
-        "Date": ("timestamp[ns]",),
-    },
-    ArtifactSelector.PHASE8_CUMULATIVE_UNCERTAINTY: {
-        "Store": ("int64",),
-        "forecast_origin": ("timestamp[ns]",),
-        "k": ("int64",),
-        "p": ("double",),
-    },
-    ArtifactSelector.PHASE9_SCENARIO_CATALOG: {
-        "scenario_id": ("string", "large_string"),
-    },
-    ArtifactSelector.PHASE10_POLICY_SUMMARY: {
-        "case_id": ("string", "large_string"),
-        "Store": ("int64",),
-        "policy_id": ("string", "large_string"),
-    },
-    ArtifactSelector.PHASE10_POLICY_TARGETS: {
-        "case_id": ("string", "large_string"),
-        "Store": ("int64",),
-        "policy_id": ("string", "large_string"),
-    },
-}
 
 
 def _sha256_file(path: Path) -> str:
@@ -539,6 +847,33 @@ def _is_sha256(value: Any) -> bool:
 
 def _reject_json_constant(value: str) -> None:
     raise ValueError(f"Non-standard JSON constant: {value}.")
+
+
+def _descriptor_matches_schema(metadata: Mapping[str, Any], selector: ArtifactSelector) -> bool:
+    expected = _PRODUCER_SCHEMAS.get(selector)
+    if expected is None:
+        return True
+    descriptors = metadata.get("schema")
+    if not isinstance(descriptors, list) or len(descriptors) != len(expected):
+        return False
+    for field, descriptor in zip(expected, descriptors, strict=True):
+        if (
+            not isinstance(descriptor, dict)
+            or descriptor.get("name") != field.name
+            or descriptor.get("type") != str(field.type)
+            or descriptor.get("nullable") is not field.nullable
+        ):
+            return False
+    return True
+
+
+def _schema_matches(actual: pa.Schema, expected: pa.Schema) -> bool:
+    return len(actual) == len(expected) and all(
+        actual_field.name == expected_field.name
+        and actual_field.type == expected_field.type
+        and actual_field.nullable is expected_field.nullable
+        for actual_field, expected_field in zip(actual, expected, strict=True)
+    )
 
 
 class _ArtifactReader:
@@ -604,6 +939,8 @@ class _ArtifactReader:
         )
         try:
             dataset = ds.dataset(path, format="parquet")
+        except ArtifactReadError:
+            raise
         except Exception:
             raise ArtifactSchemaError(selector) from None
 
@@ -626,15 +963,13 @@ class _ArtifactReader:
         ):
             raise ArtifactSchemaError(selector)
 
-        lower = self._date_scalar(query.start_date, date_type)
-        if pa.types.is_timestamp(date_type) or pa.types.is_date64(date_type):
+        try:
+            lower = self._date_scalar(query.start_date, date_type)
             upper = self._date_scalar(query.end_date + timedelta(days=1), date_type)
             date_filter = (ds.field("Date") >= lower) & (ds.field("Date") < upper)
-        else:
-            upper = self._date_scalar(query.end_date, date_type)
-            date_filter = (ds.field("Date") >= lower) & (ds.field("Date") <= upper)
-        predicate = (ds.field("Store") == pa.scalar(query.store_id, type=store_type)) & date_filter
-        try:
+            predicate = (
+                ds.field("Store") == pa.scalar(query.store_id, type=store_type)
+            ) & date_filter
             table = dataset.scanner(
                 columns=list(HISTORY_PROJECTION),
                 filter=predicate,
@@ -646,12 +981,18 @@ class _ArtifactReader:
 
         if table.num_rows > MAX_HISTORY_ROWS:
             raise InvalidArtifactRequestError(selector)
-        frame = table.to_pandas()
-        if tuple(frame.columns) != HISTORY_PROJECTION:
-            raise ArtifactSchemaError(selector)
+        try:
+            frame = table.to_pandas()
+            if tuple(frame.columns) != HISTORY_PROJECTION:
+                raise ArtifactSchemaError(selector)
+            if not frame.empty:
+                frame["Date"] = pd.to_datetime(frame["Date"], errors="raise")
+        except ArtifactReadError:
+            raise
+        except Exception:
+            raise ArtifactSchemaError(selector) from None
         if frame.empty:
             return frame
-        frame["Date"] = pd.to_datetime(frame["Date"], errors="raise")
         if (
             frame["Date"]
             .gt(
@@ -681,6 +1022,7 @@ class _ArtifactReader:
         if (
             type(query.start_date) is not date
             or type(query.end_date) is not date
+            or query.start_date < MIN_HISTORY_DATE
             or query.start_date > query.end_date
             or query.end_date > DEVELOPMENT_CUTOFF
             or (query.end_date - query.start_date).days + 1 > MAX_HISTORY_DAYS
@@ -689,14 +1031,11 @@ class _ArtifactReader:
 
     @staticmethod
     def _supported_date_type(dtype: pa.DataType) -> bool:
-        return pa.types.is_date(dtype) or pa.types.is_timestamp(dtype)
+        return pa.types.is_timestamp(dtype) and dtype.unit == "ns" and dtype.tz is None
 
     @staticmethod
     def _date_scalar(value: date, dtype: pa.DataType) -> pa.Scalar:
-        if pa.types.is_timestamp(dtype) or pa.types.is_date64(dtype):
-            value_for_type: date | datetime = datetime.combine(value, time.min)
-        else:
-            value_for_type = value
+        value_for_type = datetime.combine(value, time.min)
         return pa.scalar(value_for_type, type=dtype)
 
     def _read_manifest(
@@ -958,8 +1297,8 @@ class _ArtifactReader:
             raise ArtifactUnavailableError(selector, UnavailableReason.MISSING_ARTIFACT) from None
         if before != after or actual_hash != metadata["sha256"]:
             raise ArtifactIntegrityError(selector)
-        # Immutable local outputs are memoized per reader. Device, inode, size and nanosecond
-        # mtime changes invalidate the digest and force verification again.
+        # The trust model treats local canonical outputs as immutable. Fingerprint changes force
+        # rehashing; matching device/inode/size/mtime_ns does not prove unchanged bytes.
         self._verified_output_fingerprints[path] = after
 
     def _read_csv(
@@ -979,22 +1318,58 @@ class _ArtifactReader:
             or len(header) != len(set(header))
             or not set(spec.required_columns).issubset(header)
             or (spec.csv_header is not None and tuple(header) != spec.csv_header)
+            or not _descriptor_matches_schema(metadata, selector)
         ):
             raise ArtifactSchemaError(selector)
+        dtypes = _CSV_DTYPES.get(selector)
+        if dtypes is None or set(dtypes) != set(spec.projection):
+            raise ArtifactSchemaError(selector)
         try:
-            frame = pd.read_csv(
+            raw = pd.read_csv(
                 path,
                 usecols=list(spec.projection),
                 nrows=metadata["rows"] + 1,
                 encoding="utf-8-sig",
-                keep_default_na=True,
+                dtype="string",
+                keep_default_na=False,
+                na_filter=False,
                 low_memory=False,
             )
+            if len(raw) != metadata["rows"]:
+                raise ArtifactIntegrityError(selector)
+            frame = raw.loc[:, list(spec.projection)].copy()
+            for name, dtype in dtypes.items():
+                values = frame[name].where(frame[name].ne(""), pd.NA).astype("string")
+                if dtype == "string":
+                    frame[name] = values
+                elif dtype == "Int64":
+                    numeric = pd.to_numeric(values, errors="coerce")
+                    if (
+                        (values.notna() & numeric.isna()).any()
+                        or not numeric.dropna().map(math.isfinite).all()
+                        or numeric.dropna().mod(1).ne(0).any()
+                    ):
+                        raise ArtifactSchemaError(selector)
+                    frame[name] = numeric.astype("Int64")
+                elif dtype == "Float64":
+                    numeric = pd.to_numeric(values, errors="coerce")
+                    if (values.notna() & numeric.isna()).any() or not numeric.dropna().map(
+                        math.isfinite
+                    ).all():
+                        raise ArtifactSchemaError(selector)
+                    frame[name] = numeric.astype("Float64")
+                elif dtype == "boolean":
+                    if not (values.isna() | values.isin(["True", "False"])).all():
+                        raise ArtifactSchemaError(selector)
+                    frame[name] = values.map({"True": True, "False": False}).astype("boolean")
+                else:
+                    raise ArtifactSchemaError(selector)
+        except ArtifactReadError:
+            raise
         except Exception:
             raise ArtifactSchemaError(selector) from None
-        if len(frame) != metadata["rows"]:
-            raise ArtifactIntegrityError(selector)
-        return frame.loc[:, list(spec.projection)]
+        self._assert_required_non_null(frame, selector, _CSV_REQUIRED_NON_NULL.get(selector, ()))
+        return frame
 
     def _read_parquet(
         self,
@@ -1013,6 +1388,20 @@ class _ArtifactReader:
             raise ArtifactIntegrityError(selector)
         if not set(spec.required_columns).issubset(schema.names):
             raise ArtifactSchemaError(selector)
+        if not _descriptor_matches_schema(metadata, selector):
+            raise ArtifactSchemaError(selector)
+
+        producer_schema = _PRODUCER_SCHEMAS.get(selector)
+        if producer_schema is not None and not _schema_matches(schema, producer_schema):
+            raise ArtifactSchemaError(selector)
+
+        expected_types = _PARQUET_TYPES.get(selector)
+        if expected_types is not None:
+            if not set(spec.projection).issubset(expected_types):
+                raise ArtifactSchemaError(selector)
+            for name in spec.projection:
+                if str(schema.field(name).type) not in expected_types[name]:
+                    raise ArtifactSchemaError(selector)
 
         output_schema = metadata.get("columns")
         if output_schema is None and isinstance(metadata.get("schema"), list):
@@ -1027,20 +1416,22 @@ class _ArtifactReader:
             or schema.names != output_schema
         ):
             raise ArtifactSchemaError(selector)
-        if isinstance(metadata.get("schema"), list):
-            for field in metadata["schema"]:
-                if not isinstance(field, dict) or not isinstance(field.get("name"), str):
-                    raise ArtifactSchemaError(selector)
-                if not isinstance(field.get("type"), str):
-                    raise ArtifactSchemaError(selector)
+        if isinstance(metadata.get("schema"), list) and producer_schema is None:
+            for descriptor in metadata["schema"]:
                 if (
-                    field["name"] not in schema.names
-                    or str(schema.field(field["name"]).type) != field["type"]
+                    not isinstance(descriptor, dict)
+                    or not isinstance(descriptor.get("name"), str)
+                    or not isinstance(descriptor.get("type"), str)
+                    or not isinstance(descriptor.get("nullable"), bool)
                 ):
                     raise ArtifactSchemaError(selector)
-        for name, expected_types in _KEY_ARROW_TYPES.get(selector, {}).items():
-            if name not in schema.names or str(schema.field(name).type) not in expected_types:
-                raise ArtifactSchemaError(selector)
+                name = descriptor["name"]
+                if (
+                    name not in schema.names
+                    or str(schema.field(name).type) != descriptor["type"]
+                    or schema.field(name).nullable is not descriptor["nullable"]
+                ):
+                    raise ArtifactSchemaError(selector)
 
         try:
             dataset = ds.dataset(path, format="parquet")
@@ -1070,16 +1461,34 @@ class _ArtifactReader:
             raise ArtifactSchemaError(selector) from None
         if tuple(frame.columns) != spec.projection:
             raise ArtifactSchemaError(selector)
+        required = set(_REQUIRED_NON_NULL.get(selector, ()))
+        if producer_schema is not None:
+            required.update(
+                field.name
+                for field in producer_schema
+                if not field.nullable and field.name in spec.projection
+            )
+        self._assert_required_non_null(frame, selector, required)
         return frame
+
+    @staticmethod
+    def _assert_required_non_null(
+        frame: pd.DataFrame, selector: ArtifactSelector, columns: Iterable[str]
+    ) -> None:
+        selected = tuple(columns)
+        if selected and frame.loc[:, list(selected)].isna().any(axis=None):
+            raise ArtifactSchemaError(selector)
 
     @staticmethod
     def _assert_unique_key(
         frame: pd.DataFrame, spec: _ArtifactSpec, selector: ArtifactSelector
     ) -> None:
         keys = list(spec.primary_key)
-        if (not spec.allow_null_key and frame[keys].isna().any(axis=None)) or frame.duplicated(
-            keys
-        ).any():
+        nullable = _NULLABLE_KEY_FIELDS.get(selector, frozenset())
+        required = [name for name in keys if name not in nullable]
+        if frame[required].isna().any(axis=None):
+            raise ArtifactSchemaError(selector)
+        if frame.duplicated(keys).any():
             raise DuplicateArtifactKeyError(selector)
 
 

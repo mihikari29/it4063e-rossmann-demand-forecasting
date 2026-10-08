@@ -207,8 +207,9 @@ This simulated inventory-value policy comparison reports higher simulated holdin
 cost under these assumptions for the synthetic-base and historical reference cases. It does not
 establish real inventory, physical demand, real stockouts, savings, universal forecast performance,
 statistical superiority, optimality, calibrated synthetic service guarantees or production readiness.
-Phase 10 is COMPLETE when this closeout PR is integrated into `main`; no final holdout evaluation
-occurred. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+Phase 10 is **COMPLETE** after closeout PR #25 merged into `main` at
+`d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 M1 is
+implemented and under review on its feature branch. M2–M4 remain planned and are not authorized.
 
 ## Architecture and remaining work
 
