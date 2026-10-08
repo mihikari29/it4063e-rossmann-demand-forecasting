@@ -46,11 +46,11 @@ acceptance. The canonical accepted development run is
 `573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`). It produces synthetic
 monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10's
 [active design](plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
-implementation is **IMPLEMENTED / UNDER REVIEW**. PR #23 was merged before the external
-implementation review resolved; the B1–B3 fixes are on `fix/phase-10-review-findings` in the new
-[follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
-The current corrected canonical development run is recorded below and in [PROGRESS](docs/PROGRESS.md).
-Phase 11 has not started or been authorized.
+Phase 10 is **REVIEWED**, with corrected implementation and numerical evidence accepted; PR #24
+integration and formal closeout remain pending. The B1-B3 corrective follow-up is on
+`fix/phase-10-review-findings` in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
+The current canonical development run is recorded below and in [PROGRESS](docs/PROGRESS.md).
+Phase 10 is not COMPLETE. Phase 11 is NOT STARTED / NOT AUTHORIZED.
 
 ## Environment and quick start
 
@@ -163,7 +163,7 @@ outputs are local artifacts and are not committed. All operational values are il
 assumptions. This command does not create an inventory ledger, evaluate a policy, estimate realized
 savings, or access the protected final holdout.
 
-## Phase 10 — implemented / under review
+## Phase 10 - reviewed; integration pending
 
 The [active plan](plans/active/phase-10-inventory-simulation.md) defines **Simulated inventory-value
 policy comparison and sensitivity analysis**. It compares a historical-mean standing target with
@@ -189,19 +189,22 @@ Methodology and ADR-023 were approved on 2026-10-07. The implementation is in
 python scripts/run_inventory_simulation.py --run-id phase10-dev-example
 ```
 
-The pre-review `phase10-dev-20261007-implementation-v2` and first corrected
-`phase10-dev-20261008-review-fixes` runs remain immutable historical evidence. The current canonical
-run is `phase10-dev-20261008-validator-fix` (manifest SHA-256
-`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Focused re-review #1 of PR #24
-returned REQUEST CHANGES after confirming B1, B3, and B2 simulation semantics; its sole B2 incomplete
-validator blocker is corrected on the same branch, with another focused re-review pending. See
-[PROGRESS](docs/PROGRESS.md) for the review chronology and authoritative numerical results. Published
-results are conditional simulations in monetary turnover-value units; they do not establish actual
-Rossmann inventory, physical demand or savings.
+The pre-review `phase10-dev-20261007-implementation-v2` and `phase10-dev-20261008-review-fixes`
+runs remain immutable historical evidence. The current canonical run is
+`phase10-dev-20261008-validator-fix` (manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). The external review chronology
+is `PHASE10_IMPLEMENTATION_REVIEW=REQUEST_CHANGES`,
+`PHASE10_FOCUSED_REREVIEW=REQUEST_CHANGES`, and
+`PHASE10_FINAL_FOCUSED_REREVIEW=ACCEPT_WITH_MINOR_CHANGES`. B1, B2 and B3 pass; no blocking findings
+remain. The sole minor finding was stale PR description metadata, now corrected. The accepted run
+records 50 focused and 280 full tests; GitHub Quality run [#64](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37718032966)
+passed on Python 3.12 and 3.14. See [PROGRESS](docs/PROGRESS.md) for review evidence and numerical
+results. This simulated inventory-value policy comparison reports lower or higher simulated
+holding-plus-shortfall cost under these assumptions; it does not establish realized savings or
+actual Rossmann inventory.
 
-Phase 10 remains IMPLEMENTED / UNDER REVIEW and is not REVIEWED or COMPLETE. A second focused external
-re-review of the corrective follow-up is pending. Phase 11 has not started or been authorized; the
-protected final holdout remains unreleased.
+Phase 10 is REVIEWED, with PR #24 integration and formal closeout pending; it is NOT COMPLETE. Phase 11
+is NOT STARTED / NOT AUTHORIZED. The protected final holdout remains unreleased.
 
 ## Architecture and remaining work
 

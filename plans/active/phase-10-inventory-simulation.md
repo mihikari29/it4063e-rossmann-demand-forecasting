@@ -1,19 +1,20 @@
 # Phase 10 — Inventory Simulation & Sensitivity Analysis
 
-**Status: IMPLEMENTED / UNDER REVIEW.**
+**Status: REVIEWED - awaiting corrective PR integration / closeout. NOT COMPLETE.**
 
 Human methodology approval was given on 2026-10-07, accepting
 [ADR-023](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting).
 The initial technical review and a fresh independent methodology review both returned ACCEPT; the
 independent verdict was `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, with no blocking findings or
-required changes. That approval authorized implementation as a separate task. The implementation
-and current canonical development run are recorded in Sections 19–21. Phase 9 remains COMPLETE;
-Phase 11 has not started and is not authorized. The protected final holdout remains unreleased. PR
-#23 was merged into `main` before external implementation review resolution; its B1–B3 corrective
-follow-up is in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24),
-open after focused re-review #1 returned REQUEST CHANGES; its only B2 validator blocker is fixed,
-and a second focused re-review is pending. The plan remains active through independent
-implementation/results review, authorized integration and explicit closeout.
+required changes. That approval authorized implementation as a separate task. The implementation,
+canonical run and final review are recorded in Sections 19-22. Phase 9 remains COMPLETE. Phase 10 is
+REVIEWED, with PR #24 integration and formal closeout pending; it is NOT COMPLETE. Phase 11 is
+NOT STARTED / NOT AUTHORIZED. The protected final holdout remains unreleased. PR #23 was merged into
+`main` before external implementation review resolution; the corrective follow-up is in
+[PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24). The final
+focused external review accepted the corrected implementation and numerical evidence; the minor stale
+PR metadata finding has been corrected. This plan remains active through authorized integration and
+explicit closeout.
 
 ## 1. Authority, base and execution boundary
 
@@ -520,6 +521,32 @@ the required quality checks passed. A new canonical run,
 `phase10-dev-20261008-validator-fix`, is current and logically matches the previous review-fix run in
 targets, ledger, policy summary, and comparison. Its manifest, validation fields, hash comparisons,
 censor reconstruction, and preserved numerical results are recorded in [PROGRESS](../../docs/PROGRESS.md).
-The prior runs remain immutable. Phase 10 remains **IMPLEMENTED / UNDER REVIEW**, pending a second
-focused external re-review in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24);
-Phase 11 remains **NOT STARTED / NOT AUTHORIZED**.
+The prior runs remain immutable. At this validator-correction checkpoint, Phase 10 was
+**IMPLEMENTED / UNDER REVIEW**, pending the final focused external re-review. The current accepted
+review and governance status are recorded in Section 22. Phase 11 remains
+**NOT STARTED / NOT AUTHORIZED**.
+
+## 22. Final focused external re-review and current governance status - 2026-10-08
+
+The final focused external re-review of PR #24 returned
+`PHASE10_FINAL_FOCUSED_REREVIEW=ACCEPT_WITH_MINOR_CHANGES`. Review chronology: initial
+`PHASE10_IMPLEMENTATION_REVIEW=REQUEST_CHANGES`; focused re-review #1
+`PHASE10_FOCUSED_REREVIEW=REQUEST_CHANGES`; final focused re-review
+`PHASE10_FINAL_FOCUSED_REREVIEW=ACCEPT_WITH_MINOR_CHANGES`. B1, B2 and B3 pass, with no blocking
+findings. The sole minor finding was stale PR body evidence; the PR description is refreshed to the
+accepted canonical run and validation results. ADR-023, simulation methodology, numerical evidence,
+and immutable run history remain unchanged.
+
+Accepted canonical run: `phase10-dev-20261008-validator-fix`; manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. The run's source revision is
+`5504d855fd60b8a038a4d6574e35b579ed0f439d` and source digest is
+`a4c1ec83d4211c45d75afe4db9845b359ddb41f88f04f3611a0c3cda872096db`. Focused tests: 50 passed;
+full suite: 280 passed. GitHub Quality run [#64 / 37718032966](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37718032966)
+passed on Python 3.12 and 3.14. Detailed comparison, sensitivity and right-censor results remain in
+PROGRESS and are unchanged.
+
+**Phase 10 - REVIEWED.** Corrected implementation and numerical evidence are accepted; PR #24
+integration and formal closeout remain pending. **NOT COMPLETE.** Phase 11 is **NOT STARTED / NOT
+AUTHORIZED**. The protected holdout remains unreleased; no holdout outcomes were accessed for this
+metadata/governance update. No simulation rerun or canonical artifact change was made. The plan
+remains active until authorized PR integration and explicit closeout.
