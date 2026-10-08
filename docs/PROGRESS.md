@@ -158,7 +158,7 @@ cost differences are shown only for valid complete matched pairs; producer case-
 denominators and signed adverse results remain unchanged.
 
 Validation on Python 3.14.5: focused app-reader/service tests passed (**98**); full pytest passed
-(**378**). Ruff lint and format, documentation links (**229** local destinations/anchors),
+(**379**). Ruff lint and format, documentation links (**229** local destinations/anchors),
 `git diff --check`, and the environment's `pip check` passed. The `uv` executable was not available
 in this shell, so `uv lock --check` could not run; no dependency or lockfile changed. A read-only
 canonical service smoke covered 10 registered non-ledger resources, 82 scenario entries, 172 case
