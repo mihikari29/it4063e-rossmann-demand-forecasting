@@ -78,8 +78,8 @@ record the methodology and lifecycle. The current canonical development run is
 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. PR #23 and corrective PR #24
 are integrated at the SHAs in the current-state table. Phase 10's final closeout is recorded in the
 completed plan; Phase 10 is COMPLETE after closeout PR #25 merged into `main` at
-`d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1 is IMPLEMENTED / UNDER REVIEW on its
-feature branch; M2–M4 are not authorized. The protected holdout remains unreleased.
+`d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1 is accepted and M2 is IMPLEMENTED / UNDER
+REVIEW on its feature branch; M3–M4 are not authorized. The protected holdout remains unreleased.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -146,19 +146,20 @@ against the producer contracts. M2 is limited to shared read-only services and f
 M3–M4 remain unauthorized, PR #26 must stay draft/unmerged, and no final-holdout outcome, inference,
 or Phase 10 ledger artifact is part of this work.
 
-### Phase 11 M2 implementation checkpoint — 2026-10-08
+### Phase 11 M2 initial implementation checkpoint — 2026-10-08
 
 M2 adds closed typed queries and bounded shared services for readiness/catalog, forecast issuance,
 saved uncertainty, model comparisons, policy comparisons and the existing cutoff-safe history reader.
 Parquet selection uses Arrow predicates after full-file hash, footer schema and global manifest-row
 verification; selected rows have independent bounds. Large CSV comparisons stream exact matches and
 never materialize the complete Phase 7 comparison frame. Service DTOs whitelist response fields,
-preserve unavailable values and provenance, and serialize without NaN/NaT or artifact paths. Policy
+preserve unavailable values and provenance, reject non-finite JSON numbers, and do not expose artifact
+paths. The corrective checkpoint below fixes the initial `pd.NaT` serialization edge case. Policy
 cost differences are shown only for valid complete matched pairs; producer case-level comparisons,
 denominators and signed adverse results remain unchanged.
 
-Validation on Python 3.14.5: focused app-reader/service tests passed (**98**); full pytest passed
-(**379**). Ruff lint and format, documentation links (**229** local destinations/anchors),
+Initial implementation validation on Python 3.14.5: focused app-reader/service tests passed (**98**);
+full pytest passed (**379**). Ruff lint and format, documentation links (**229** local destinations/anchors),
 `git diff --check`, and the environment's `pip check` passed. The `uv` executable was not available
 in this shell, so `uv lock --check` could not run; no dependency or lockfile changed. A read-only
 canonical service smoke covered 10 registered non-ledger resources, 82 scenario entries, 172 case
@@ -169,6 +170,33 @@ Phase 10 ledger, or raw historical source data were read; no artifact was genera
 M2 is **IMPLEMENTED / UNDER REVIEW** pending independent review. M1 remains reviewed/accepted on the
 unmerged feature branch. PR #26 stays draft and unmerged; M3–M4 remain unauthorized and Phase 11 is
 not complete.
+
+### Phase 11 M2 corrective review-fix checkpoint — 2026-10-09
+
+The targeted correction separates target unavailability from episode failure in each policy DTO and
+allows baseline and forecast validity/availability to differ. A pair is comparable only when both
+episodes are complete, both targets are available with saved values, both matched-comparison flags
+are true, and both saved costs exist. For a non-comparable pair, the stable reason priority is:
+first incomplete episode (using that policy's summary reason), then unavailable target (using that
+policy's target reason), then invalid matched comparison, then unavailable saved cost. Available
+targets with null values and unavailable targets with non-null values are rejected as integrity
+failures. `json_safe` now converts `pd.NaT` and `pd.NA` to JSON null before date handling.
+
+The earlier test counts above are the initial implementation checkpoint. Corrective validation on
+Python 3.14.5: focused app-reader/service tests passed (**107**); full pytest passed (**387**).
+Ruff lint and format, documentation links (**229** local destinations/anchors), `git diff --check`,
+`uv lock --check` (**84** resolved packages) and installed dependency compatibility (`pip check`)
+passed. A read-only canonical service smoke opened all ten registered non-ledger outputs and
+confirmed their output hashes, schemas and manifest identities. The base reference and buffer-090
+sensitivity case-level forecast-minus-baseline cost differences remained positive (+1,842,931.05
+and +2,657,553.78 respectively); all 1,115 Store pairs were comparable for each case. These are
+synthetic simulated monetary costs, not observed inventory or proven savings. No Phase 10 ledger,
+final-holdout outcome or raw historical source data was read; no producer, canonical artifact or
+manifest was changed.
+
+M2 remains **IMPLEMENTED / UNDER REVIEW** pending independent acceptance. M1 remains accepted on the
+unmerged feature branch; PR #26 stays open, draft and unmerged. M3–M4 remain unauthorized and Phase 11
+is not complete.
 
 ## Branch cleanup inventory
 

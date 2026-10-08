@@ -53,7 +53,7 @@ comparison schemas. M2 supports only these typed, closed requests:
 | Forecast issuance | Phase 7 selected forecasts filtered by one Store and one accepted forecast origin. | At most 14 rows; date, horizon, raw/operational values and availability, candidate and model-selection provenance only. Exclude `actual_sales`, `source_open`, and retrospective assessment fields. |
 | Forecast uncertainty | Phase 8 daily intervals and cumulative uncertainty filtered by one Store, origin, and matching Fit A/B ID. Small frozen quantile tables may be read whole. | At most 56 daily interval rows and 42 cumulative rows; preserve missing strata and nulls. Exclude `actual_sales` and `assessment_source_open`; state that nominal empirical quantiles are not a 95% performance guarantee, recalibration, or coverage claim. |
 | Model comparison | Phase 7 comparison rows filtered by one or more exact producer dimensions: candidate, population, scope, validation window, horizon, Store, or metric. | Require at least one filter; Store 1–1115, horizon 1–14, bounded text values, and result limit 1–500. Preserve producer values, denominators, population, and unavailable reasons; do not recompute or combine metrics. |
-| Inventory comparison | Phase 10 comparison CSV by known `case_id`, plus policy summary and targets by `case_id` and optional Store. | Store 1–1115 when supplied; at most 2,230 policy rows per case when omitted (two fixed policy IDs across at most 1,115 stores). Return producer case-level aggregates unchanged and pair baseline/forecast by `(case_id, Store)` only after key, policy-ID, completion, target-availability, and valid-matched-comparison checks. The only derived arithmetic is the signed per-Store forecast-policy minus baseline-policy simulated holding-plus-shortfall cost for valid pairs. Do not average ratios or hide adverse values. |
+| Inventory comparison | Phase 10 comparison CSV by known `case_id`, plus policy summary and targets by `case_id` and optional Store. | Store 1–1115 when supplied; at most 2,230 policy rows per case when omitted (two fixed policy IDs across at most 1,115 stores). Return producer case-level aggregates unchanged and pair baseline/forecast by `(case_id, Store)` after key, policy-ID and provenance checks. Evaluate each policy's episode completeness, target availability/value, and matched-comparison validity independently; do not require equal policy states. The only derived arithmetic is the signed per-Store forecast-policy minus baseline-policy simulated holding-plus-shortfall cost for eligible pairs. Do not average ratios or hide adverse values. |
 | Historical Sales | Existing M1 `HistoryQuery` and `read_history_sales`. | Retain the exact M1 date/store bounds, `Store, Date, Sales, Open` projection, and pre-open July 3, 2015 cutoff. |
 
 All selection inputs are validated before opening selected outcome-bearing Parquet data. Parquet
@@ -67,3 +67,13 @@ artifact provenance, and distinguish empty results from unavailable artifacts an
 reader errors. No service cache, inference, new metrics, API routes, or UI belongs to M2.
 
 Detailed canonical result evidence remains in [PROGRESS](../../docs/PROGRESS.md); this plan does not duplicate numerical results.
+
+For inventory pair eligibility, both policies must have complete episodes, available targets with
+non-null saved values, valid matched-comparison flags, and saved costs. Preserve each policy's
+episode status/reason, target status/reason, validity and cost even when the pair is not comparable.
+The pair-level unavailable-reason priority is deterministic: first incomplete episode (use the first
+incomplete policy's summary reason), then unavailable target (use the first unavailable policy's
+target reason), then `not_valid_matched_comparison`, then `cost_unavailable`. This priority does not
+replace or discard individual policy states. A target is structurally inconsistent when its
+availability flag disagrees with its reason or when an available target has no saved value / an
+unavailable target has a saved value.

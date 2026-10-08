@@ -187,10 +187,13 @@ class ModelComparisonView:
 
 @dataclass(frozen=True, slots=True)
 class PolicyResult:
+    """One policy's saved state; episode and target reasons have separate meanings."""
+
     policy_id: str
     episode_status: str
     episode_complete: bool
     target_available: bool
+    target_unavailability_reason: str | None
     availability_reason: str | None
     valid_matched_comparison: bool
     simulated_holding_plus_shortfall_cost: float | None
@@ -420,6 +423,8 @@ class ApplicationServices:
 
 def json_safe(value: Any) -> Any:
     """Convert service DTOs to JSON primitives while refusing non-finite numbers."""
+    if value is pd.NA or value is pd.NaT:
+        return None
     if is_dataclass(value) and not isinstance(value, type):
         return {field.name: json_safe(getattr(value, field.name)) for field in fields(value)}
     if isinstance(value, StrEnum):
@@ -434,8 +439,6 @@ def json_safe(value: Any) -> Any:
         return {str(key): json_safe(item) for key, item in value.items()}
     if isinstance(value, np.generic):
         return json_safe(value.item())
-    if value is pd.NA or value is pd.NaT:
-        return None
     if isinstance(value, float) and not math.isfinite(value):
         raise ValueError("Service DTO contains a non-finite number.")
     return value
@@ -668,11 +671,23 @@ def _inventory_aggregate(row: dict[str, Any]) -> InventoryAggregate:
 
 def _policy_result(summary: dict[str, Any], target: dict[str, Any]) -> PolicyResult:
     selector = ArtifactSelector.PHASE10_POLICY_SUMMARY
+    target_selector = ArtifactSelector.PHASE10_POLICY_TARGETS
+    summary_target_available = _boolean(summary["target_available"], selector)
+    target_available = _boolean(target["target_available"], target_selector)
+    target_reason = _text(target["availability_reason"], target_selector, optional=True)
+    target_value = _number(target["target_value"], target_selector)
+    if summary_target_available != target_available:
+        raise ArtifactIntegrityError(target_selector)
+    if target_available != (target_reason is None) or target_available != (
+        target_value is not None
+    ):
+        raise ArtifactIntegrityError(target_selector)
     return PolicyResult(
         policy_id=_text(summary["policy_id"], selector),
         episode_status=_text(summary["episode_status"], selector),
         episode_complete=_boolean(summary["episode_complete"], selector),
-        target_available=_boolean(summary["target_available"], selector),
+        target_available=target_available,
+        target_unavailability_reason=target_reason,
         availability_reason=_text(summary["availability_reason"], selector, optional=True),
         valid_matched_comparison=_boolean(summary["valid_matched_comparison"], selector),
         simulated_holding_plus_shortfall_cost=_number(
@@ -681,14 +696,12 @@ def _policy_result(summary: dict[str, Any], target: dict[str, Any]) -> PolicyRes
         demand_total=_number(summary["demand_total"], selector),
         fulfilled_total=_number(summary["fulfilled_total"], selector),
         unmet_total=_number(summary["unmet_total"], selector),
-        target_value=_number(target["target_value"], ArtifactSelector.PHASE10_POLICY_TARGETS),
-        synthetic=_boolean(target["synthetic"], ArtifactSelector.PHASE10_POLICY_TARGETS),
+        target_value=target_value,
+        synthetic=_boolean(target["synthetic"], target_selector),
         calibration_transport_valid=_boolean(
-            target["calibration_transport_valid"], ArtifactSelector.PHASE10_POLICY_TARGETS
+            target["calibration_transport_valid"], target_selector
         ),
-        schedule_assumption=_text(
-            target["schedule_assumption"], ArtifactSelector.PHASE10_POLICY_TARGETS
-        ),
+        schedule_assumption=_text(target["schedule_assumption"], target_selector),
     )
 
 
@@ -696,7 +709,6 @@ def _policy_pairs(
     summary_table: ArtifactTable, target_table: ArtifactTable
 ) -> tuple[InventoryPolicyPair, ...]:
     summary_selector = ArtifactSelector.PHASE10_POLICY_SUMMARY
-    target_selector = ArtifactSelector.PHASE10_POLICY_TARGETS
     summaries = {
         (row["case_id"], int(row["Store"]), row["policy_id"]): row
         for row in _ordered_records(summary_table.frame, sort_by=("case_id", "Store", "policy_id"))
@@ -744,48 +756,18 @@ def _policy_pairs(
             for field in identity_fields
         ):
             raise ArtifactIntegrityError(summary_selector)
-        for summary, target in zip(summary_pair, target_pair, strict=True):
-            assert summary is not None and target is not None
-            if not _same_nullable(
-                summary["target_available"], target["target_available"]
-            ) or not _same_nullable(summary["availability_reason"], target["availability_reason"]):
-                raise ArtifactIntegrityError(target_selector)
-        if (
-            baseline_summary["valid_matched_comparison"]
-            != forecast_summary["valid_matched_comparison"]
-        ):
-            raise ArtifactIntegrityError(summary_selector)
         baseline = _policy_result(baseline_summary, baseline_target)
         forecast = _policy_result(forecast_summary, forecast_target)
-        complete = baseline.episode_complete and forecast.episode_complete
-        targets_available = baseline.target_available and forecast.target_available
-        comparable = (
-            baseline.valid_matched_comparison
-            and forecast.valid_matched_comparison
-            and complete
-            and targets_available
-        )
         cost_difference = None
-        unavailable_reason = None
+        unavailable_reason = _policy_pair_unavailable_reason(baseline, forecast)
+        comparable = unavailable_reason is None
         if comparable:
-            if (
-                baseline.simulated_holding_plus_shortfall_cost is None
-                or forecast.simulated_holding_plus_shortfall_cost is None
-            ):
-                unavailable_reason = "cost_unavailable"
-            else:
-                cost_difference = (
-                    forecast.simulated_holding_plus_shortfall_cost
-                    - baseline.simulated_holding_plus_shortfall_cost
-                )
-                if not math.isfinite(cost_difference):
-                    raise ArtifactSchemaError(summary_selector)
-        elif not baseline.valid_matched_comparison:
-            unavailable_reason = "not_valid_matched_comparison"
-        elif not complete:
-            unavailable_reason = "episode_incomplete"
-        else:
-            unavailable_reason = "target_unavailable"
+            baseline_cost = baseline.simulated_holding_plus_shortfall_cost
+            forecast_cost = forecast.simulated_holding_plus_shortfall_cost
+            assert baseline_cost is not None and forecast_cost is not None
+            cost_difference = forecast_cost - baseline_cost
+            if not math.isfinite(cost_difference):
+                raise ArtifactSchemaError(summary_selector)
         pairs.append(
             InventoryPolicyPair(
                 case_id=str(case_id),
@@ -810,10 +792,25 @@ def _sales_history_row(row: dict[str, Any]) -> SalesHistoryRow:
     )
 
 
-def _same_nullable(left: Any, right: Any) -> bool:
-    left_null = _is_null(left)
-    right_null = _is_null(right)
-    return left_null and right_null or (not left_null and not right_null and left == right)
+def _policy_pair_unavailable_reason(baseline: PolicyResult, forecast: PolicyResult) -> str | None:
+    """Return the first failed paired-eligibility condition in a fixed priority order.
+
+    Episode completeness takes priority, followed by target availability, each policy's
+    matched-comparison validity, and finally saved cost availability. Per-policy states
+    and reasons remain available on the returned DTO.
+    """
+    policies = (baseline, forecast)
+    for policy in policies:
+        if not policy.episode_complete:
+            return policy.availability_reason or "episode_incomplete"
+    for policy in policies:
+        if not policy.target_available:
+            return policy.target_unavailability_reason or "target_unavailable"
+    if any(not policy.valid_matched_comparison for policy in policies):
+        return "not_valid_matched_comparison"
+    if any(policy.simulated_holding_plus_shortfall_cost is None for policy in policies):
+        return "cost_unavailable"
+    return None
 
 
 def _to_json_value(value: Any) -> Any:
