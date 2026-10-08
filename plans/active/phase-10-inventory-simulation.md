@@ -7,11 +7,12 @@ Human methodology approval was given on 2026-10-07, accepting
 The initial technical review and a fresh independent methodology review both returned ACCEPT; the
 independent verdict was `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, with no blocking findings or
 required changes. That approval authorized implementation as a separate task. The implementation
-and corrected canonical development run are recorded in Sections 19–20. Phase 9 remains COMPLETE;
+and current canonical development run are recorded in Sections 19–21. Phase 9 remains COMPLETE;
 Phase 11 has not started and is not authorized. The protected final holdout remains unreleased. PR
 #23 was merged into `main` before external implementation review resolution; its B1–B3 corrective
 follow-up is in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24),
-open and pending focused external re-review. The plan remains active through independent
+open after focused re-review #1 returned REQUEST CHANGES; its only B2 validator blocker is fixed,
+and a second focused re-review is pending. The plan remains active through independent
 implementation/results review, authorized integration and explicit closeout.
 
 ## 1. Authority, base and execution boundary
@@ -492,7 +493,7 @@ after a Pandas `Series.mode` metadata collision; the corrected v2 run is retaine
 pre-review evidence. Detailed original and current canonical results are maintained in
 [PROGRESS](../../docs/PROGRESS.md), which is the authoritative numerical-results source.
 
-## 20. External implementation review fixes — 2026-10-08
+## 20. External implementation review fixes — 2026-10-08 (initial corrective checkpoint)
 
 The external implementation review returned **REQUEST CHANGES** after PR #23 merged, with blockers
 B1–B3: Phase 9 schema and date rejection ordering before byte hashing, missing-demand dependent-state
@@ -502,10 +503,23 @@ suite passed 278 tests. Ruff lint/format, documentation validation, `uv lock --c
 and `git diff --check` passed.
 
 The corrected canonical run `phase10-dev-20261008-review-fixes` completed from pinned Phase 7/8/9
-inputs without holdout access, refit, recalibration, or Phase 9 regeneration. Its manifest SHA-256,
-independent censor-count reconstruction, unchanged headline costs, sensitivity values, terminal
-exposures, invariants, and deterministic replay evidence are maintained in [PROGRESS](../../docs/PROGRESS.md),
-the authoritative numerical-results record. The new run is current; v1 and v2 remain immutable, and
-v2 is superseded as current evidence. Phase 10 remains **IMPLEMENTED / UNDER REVIEW**, not REVIEWED
-or COMPLETE, pending focused external re-review in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
+inputs without holdout access, refit, recalibration, or Phase 9 regeneration. Its results are retained
+as the prior review-fix checkpoint; the subsequent focused re-review and validator correction are in
+Section 21. Detailed numerical results remain in [PROGRESS](../../docs/PROGRESS.md).
+
+## 21. Focused re-review validator correction — 2026-10-08
+
+Focused re-review #1 returned REQUEST CHANGES: B1 pre-hash firewall, B3 terminal censoring, and B2
+simulation semantics passed; the only remaining blocker was incomplete-track validator coverage. The
+validator correction preserves simulation outputs and ADR-023 while checking origin invariants,
+static metadata/rate consistency throughout incomplete tracks, and empty receipt IDs after the first
+missing-demand boundary. New regression fixtures cover each reported mutation and a valid L=2 prefix
+that receives an order before demand becomes missing. Source commit
+`5504d855fd60b8a038a4d6574e35b579ed0f439d` passed 50 focused Phase 10 tests and 280 full-suite tests;
+the required quality checks passed. A new canonical run,
+`phase10-dev-20261008-validator-fix`, is current and logically matches the previous review-fix run in
+targets, ledger, policy summary, and comparison. Its manifest, validation fields, hash comparisons,
+censor reconstruction, and preserved numerical results are recorded in [PROGRESS](../../docs/PROGRESS.md).
+The prior runs remain immutable. Phase 10 remains **IMPLEMENTED / UNDER REVIEW**, pending a second
+focused external re-review in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24);
 Phase 11 remains **NOT STARTED / NOT AUTHORIZED**.

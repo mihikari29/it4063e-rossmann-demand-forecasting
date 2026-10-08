@@ -189,16 +189,17 @@ Methodology and ADR-023 were approved on 2026-10-07. The implementation is in
 python scripts/run_inventory_simulation.py --run-id phase10-dev-example
 ```
 
-The pre-review run `phase10-dev-20261007-implementation-v2` is retained as immutable historical
-evidence and is superseded as current canonical evidence by
-`phase10-dev-20261008-review-fixes` (manifest SHA-256
-`0716fc92623b66f4d8a6024eecb608aa992596809458fa1b7c40595b66cbdd91`). External implementation
-review returned REQUEST CHANGES after PR #23 had already merged into `main`; the follow-up fixes
-address B1–B3. See [PROGRESS](docs/PROGRESS.md) for the review chronology and authoritative
-numerical results. Published results are conditional simulations in monetary turnover-value units;
-they do not establish actual Rossmann inventory, physical demand or savings.
+The pre-review `phase10-dev-20261007-implementation-v2` and first corrected
+`phase10-dev-20261008-review-fixes` runs remain immutable historical evidence. The current canonical
+run is `phase10-dev-20261008-validator-fix` (manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Focused re-review #1 of PR #24
+returned REQUEST CHANGES after confirming B1, B3, and B2 simulation semantics; its sole B2 incomplete
+validator blocker is corrected on the same branch, with another focused re-review pending. See
+[PROGRESS](docs/PROGRESS.md) for the review chronology and authoritative numerical results. Published
+results are conditional simulations in monetary turnover-value units; they do not establish actual
+Rossmann inventory, physical demand or savings.
 
-Phase 10 remains IMPLEMENTED / UNDER REVIEW and is not REVIEWED or COMPLETE. Focused external
+Phase 10 remains IMPLEMENTED / UNDER REVIEW and is not REVIEWED or COMPLETE. A second focused external
 re-review of the corrective follow-up is pending. Phase 11 has not started or been authorized; the
 protected final holdout remains unreleased.
 

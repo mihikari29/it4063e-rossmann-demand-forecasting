@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-07
+## Current implementation and Git state — 2026-10-08
 
 | Scope | State | Integration |
 |---|---|---|
@@ -11,7 +11,7 @@
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
-| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | PR #23 merged before external review resolution; B1–B3 follow-up [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24) and corrected canonical run are recorded in the [active plan and current results](../plans/active/phase-10-inventory-simulation.md) |
+| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | Focused re-review #1 of PR #24 returned REQUEST CHANGES; its sole remaining B2 validator blocker is fixed, with refreshed evidence in the [active plan and current results](../plans/active/phase-10-inventory-simulation.md) |
 | Phase 11 and later | PLANNED / NOT STARTED | Separate authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -72,8 +72,8 @@ approval is recorded below. No final-holdout release or access is authorized.
 The [Phase 10 active plan](../plans/active/phase-10-inventory-simulation.md) and accepted
 [ADR-023](DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
 are APPROVED. Phase 10 is IMPLEMENTED / UNDER REVIEW on `fix/phase-10-review-findings`; the current
-canonical development run is `phase10-dev-20261008-review-fixes` with manifest SHA-256
-`0716fc92623b66f4d8a6024eecb608aa992596809458fa1b7c40595b66cbdd91`. The approved method uses
+canonical development run is `phase10-dev-20261008-validator-fix` with manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. The approved method uses
 daily execution against origin-frozen targets, with no rolling calibrated suffix forecasts. Phase 9
 remains COMPLETE, Phase 11 has not started or been authorized, and the protected holdout remains
 unreleased. PR #23's premature integration and the corrective follow-up are documented below.
@@ -1799,6 +1799,49 @@ has logical SHA-256 `7db6fe4f292dda065bc384cfe574819d3be8364111a2bd04ad33b1033c1
 The external backup remains at
 `C:\Users\Minh\Desktop\hust\introba\project\phase10-review-fixes-local-backup.patch`; stash
 `stash@{0}` remains applied and retained through safe push. The new [follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24)
-is open and unmerged; focused external re-review is pending. Phase 10 remains IMPLEMENTED / UNDER
-REVIEW, not REVIEWED or COMPLETE. Phase 11 remains NOT STARTED / NOT AUTHORIZED, and the protected
+is open and unmerged. Focused re-review #1 returned REQUEST CHANGES: B1 pre-hash firewall, B3
+terminal censoring, and B2 missing-demand simulation semantics passed; the sole remaining blocker was
+incomplete-track validator coverage. The correction and refreshed evidence follow.
+
+### Phase 10 focused re-review validator correction — 2026-10-08
+
+The focused external re-review of PR #24 returned `PHASE10_FOCUSED_REREVIEW=REQUEST_CHANGES`.
+B1 pre-hash firewall, B3 terminal censoring, B2 simulation semantics, and their prior regression
+coverage passed. The only blocker was incomplete-track validator coverage. Commit
+`5504d855fd60b8a038a4d6574e35b579ed0f439d` hardens the validator without changing simulation
+semantics or ADR-023: it validates all available origin-row invariants and origin order arithmetic;
+checks fixed policy/cost metadata and holding/penalty rate equations on every incomplete-track row;
+and rejects receipt IDs after the first unavailable suffix row while allowing actual receipts on the
+first missing-demand boundary. New fixtures reject each reviewer mutation independently, including
+a valid L=2 prefix with an origin order and a receipt before missing demand. The fixture also checks
+corrupt receipt amount/IDs, post-receipt pipeline, prefix stock, and prefix rate. Focused Phase 10 tests
+pass (**50 passed**); the full suite passes (**280 passed**). Ruff, format, docs, locked dependency,
+environment, and diff checks also pass.
+
+The fresh immutable canonical run `phase10-dev-20261008-validator-fix` has manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`, source revision
+`5504d855fd60b8a038a4d6574e35b579ed0f439d`, source digest
+`a4c1ec83d4211c45d75afe4db9845b359ddb41f88f04f3611a0c3cda872096db`, a clean worktree record, and
+the unchanged lock digest `584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`.
+It uses the same pinned Phase 7/8/9 inputs. Independent content-hash comparison confirms identical
+logical results to `phase10-dev-20261008-review-fixes` for targets
+(`25d127258800c584edbb72685ff11c8043e464d88ed7539967b109c8923413f9`), ledger
+(`0d58757f8b9cb099537f57d4a79b2f89be698dbf7704f93a67a1aa7db9a9ccbe`), policy summary
+(`b9610f414bfd38a363cafe25afe7821eb3ed79a241423920bafa35126b9374c2`), and comparison
+(`0133e439a6e6644fb565cbe317440a02e5617b7c668769b974dbbf29bb426bfd`).
+
+The run again has 383,560 targets/summaries, 5,753,400 ledger rows, 172 cases, 1,720 comparisons,
+383,560 complete tracks, and zero incomplete/unavailable tracks, Open-assumption violations,
+invalid foreign keys, or post-cutoff rows. Incomplete-prefix and unavailable-dependent-null
+validation fields are `not_applicable` because this canonical grid contains no incomplete tracks;
+the new fixtures exercise those branches. An independent receipt-date reconstruction gives 108,556
+final receipts before T, 236,743 on T, 38,261 with no positive receipt, 383,560 right-censored
+terminal intervals, and zero summary mismatches. Headline costs, nine sensitivity differences,
+terminal exposures, and representative replay results match the prior canonical run; their numerical
+record remains above. No Phase 7/8 refit, Phase 8 recalibration, Phase 9 regeneration, or protected
+holdout read/hash occurred. `current.json` now points to this run; v1, v2, and
+`phase10-dev-20261008-review-fixes` remain immutable, with the latter superseded as current evidence.
+
+Phase 10 remains IMPLEMENTED / UNDER REVIEW, not REVIEWED or COMPLETE; a second focused external
+re-review of PR #24 is pending. Phase 11 remains NOT STARTED / NOT AUTHORIZED, and the protected
 holdout remains unreleased.
