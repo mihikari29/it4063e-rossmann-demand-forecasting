@@ -82,8 +82,9 @@ They are not forecast features, and a candidate status is not guaranteed ground 
 ## D. Synthetic Operational Variables
 
 These are **synthetic or simulated fields, never Rossmann observations**. Phase 9's origin-safe
-scenario inputs are implemented and formally complete; Phase 10's stateful simulation is implemented
-and under review. Phase 9 generation uses its documented fixed seed; Phase 10 makes no random draws.
+scenario inputs are implemented and formally complete. Phase 10's stateful simulation and corrective
+review are accepted; formal completion takes effect when this closeout PR is integrated, as recorded in
+the completed plan. Phase 9 generation uses its documented fixed seed; Phase 10 makes no random draws.
 Monetary demand, stock, orders, and recommendations share a retail-equivalent turnover-value basis;
 they are not procurement-cost inventory. Costs below are scenario proxies. Initial demand-dependent
 inputs use only history available at the
@@ -139,21 +140,22 @@ values are illustrative assumptions, not Rossmann facts:
   later daily-review suffix method or protected holdout access is authorized.
 
 Phase 9 implements no policy, event order, queue, inventory KPI or cost aggregation under this
-approved design. Phase 10 implements those rules under the approved methodology and remains under
-external review; its corrected development run is recorded in [PROGRESS](PROGRESS.md).
+approved design. Phase 10 implements those rules under the approved methodology; corrective implementation
+and final external review are accepted. Its formal closeout and corrected development run are recorded
+in the completed plan and [PROGRESS](PROGRESS.md).
 
 ## E. Approved Phase 10 Inventory Decision and Evaluation Outputs
 
-These definitions distinguish simulated policy outputs from Rossmann observations. The Phase 10
-implementation remains under review; exact emitted column names and grains are listed in the active
-plan and canonical run manifest. `ReorderPointValue` and `EquivalentUnits` are illustrative
-concepts, not emitted fields or physical quantities. Operational forecasts require known
+These definitions distinguish simulated policy outputs from Rossmann observations. Phase 10's reviewed
+implementation is formally complete when the closeout PR is integrated. Exact emitted column names and
+grains are listed in the completed plan and canonical run manifest. `ReorderPointValue` and
+`EquivalentUnits` are illustrative concepts, not emitted fields or physical quantities. Operational forecasts require known
 source/planned Open; an unresolved required forecast makes the target unavailable rather than
 silently supplying zero.
 
-The [approved Phase 10 plan](../plans/active/phase-10-inventory-simulation.md) and accepted ADR-023
-define the refinements below. The implementation and corrected canonical development run are under
-review, not complete.
+The [approved Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md) and accepted ADR-023
+define the refinements below. The implementation and corrected canonical development run are accepted;
+the formal closeout is recorded in the completed plan.
 They retain Phase 9's accepted monetary inputs and Phase 8's origin-prefix definitions. V denotes
 retail-equivalent turnover value; K denotes synthetic cost-proxy units. Each H14 episode uses June
 5/Fit A or June 19/Fit B, with targets fixed before evaluation outcomes are loaded.

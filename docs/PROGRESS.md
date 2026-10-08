@@ -11,8 +11,8 @@
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
-| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | Focused re-review #1 of PR #24 returned REQUEST CHANGES; its sole remaining B2 validator blocker is fixed, with refreshed evidence in the [active plan and current results](../plans/active/phase-10-inventory-simulation.md) |
-| Phase 11 and later | PLANNED / NOT STARTED | Separate authorization required |
+| Phase 10 - inventory simulation | **COMPLETE on integration of this closeout PR** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; final external review accepted; [completed plan](../plans/completed/phase-10-inventory-simulation.md); canonical run and manifest below |
+| Phase 11 and later | PLANNED / NOT STARTED / NOT AUTHORIZED | Separate authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -32,11 +32,12 @@ PR #16 are integrated, and the external results review accepted the canonical de
 Fit B values are frozen for that run. Phase 8 is COMPLETE following the explicit closeout recorded
 below and in the completed plan. Phase 9 is COMPLETE after PR #19 integration, accepted independent
 implementation and numerical review, and formal closeout. Its accepted canonical run and manifest
-are recorded below and were not regenerated. Phase 10 methodology is approved under ADR-023, and
-implementation plus the corrected canonical development run are recorded below. Phase 10 is
-IMPLEMENTED / UNDER REVIEW, not complete. Phase 11 and later have not started or been authorized.
-PR #23 was merged into `main` before the external implementation review resolved; B1–B3 follow-up
-is tracked in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
+are recorded below and were not regenerated. Phase 10 methodology is accepted under ADR-023. PR #23 integrated the implementation at
+`15bce83cd63a4edfeed6defb95788da90d0f36d9`; corrective PR #24 integrated the B1-B3 fixes at
+`fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Final focused independent external/model-assisted review
+accepted the implementation and numerical evidence. The completed plan records formal closeout;
+Phase 10 becomes COMPLETE when this closeout PR is integrated. Phase 11 remains NOT STARTED / NOT
+AUTHORIZED, and the protected holdout remains unreleased.
 
 ## Immediate next boundary
 
@@ -69,14 +70,14 @@ proposal path and its unchanged content. At the Phase 9 closeout checkpoint, Pha
 queue, policy and comparison design was outside the accepted scope; the subsequent ADR-023
 approval is recorded below. No final-holdout release or access is authorized.
 
-The [Phase 10 active plan](../plans/active/phase-10-inventory-simulation.md) and accepted
+The [completed Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md) and accepted
 [ADR-023](DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
-are APPROVED. Phase 10 is IMPLEMENTED / UNDER REVIEW on `fix/phase-10-review-findings`; the current
-canonical development run is `phase10-dev-20261008-validator-fix` with manifest SHA-256
-`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. The approved method uses
-daily execution against origin-frozen targets, with no rolling calibrated suffix forecasts. Phase 9
-remains COMPLETE, Phase 11 has not started or been authorized, and the protected holdout remains
-unreleased. PR #23's premature integration and the corrective follow-up are documented below.
+record the methodology and lifecycle. The current canonical development run is
+`phase10-dev-20261008-validator-fix`, manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. PR #23 and corrective PR #24
+are integrated at the SHAs in the current-state table. Phase 10's final closeout is recorded in the
+completed plan and becomes COMPLETE when this closeout PR integrates. Phase 11 remains NOT STARTED /
+NOT AUTHORIZED; the protected holdout remains unreleased.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -1602,8 +1603,9 @@ not started and is not authorized. The protected holdout remains unreleased.
 The original design branch, `docs/phase-10-inventory-simulation-design`, was created from fetched
 `origin/main` at `8234ab2170b7c76b00623c0f4e11a82dd8f2d4b2`, the Phase 9 closeout PR #21 commit.
 
-The active `plans/active/phase-10-inventory-simulation.md` and accepted ADR-023 record the two
-approved origin/fit relationships, origin-frozen baseline/LightGBM-buffer targets, daily review,
+The then-active Phase 10 plan, now at `plans/completed/phase-10-inventory-simulation.md`, and accepted
+ADR-023 record the two approved origin/fit relationships, origin-frozen baseline/LightGBM-buffer
+targets, daily review,
 L full intervening demand days and EOD-t to BO-day t+L+1 receipts. They define lost-sales balances,
 ending-stock holding-plus-shortfall costs, exact KPI denominators, the project-specific completed
 positive-demand receipt-cycle service rate, finite-window terminal exposures and nine paired
@@ -1842,6 +1844,69 @@ record remains above. No Phase 7/8 refit, Phase 8 recalibration, Phase 9 regener
 holdout read/hash occurred. `current.json` now points to this run; v1, v2, and
 `phase10-dev-20261008-review-fixes` remain immutable, with the latter superseded as current evidence.
 
-Phase 10 remains IMPLEMENTED / UNDER REVIEW, not REVIEWED or COMPLETE; a second focused external
-re-review of PR #24 is pending. Phase 11 remains NOT STARTED / NOT AUTHORIZED, and the protected
-holdout remains unreleased.
+At this validator-correction checkpoint, Phase 10 remained IMPLEMENTED / UNDER REVIEW pending final
+focused external re-review. The accepted review and formal closeout are recorded below. Phase 11
+remains NOT STARTED / NOT AUTHORIZED, and the protected holdout remains unreleased.
+
+## Phase 10 formal closeout - 2026-10-08
+
+PR #23 integrated the Phase 10 implementation at `15bce83cd63a4edfeed6defb95788da90d0f36d9`.
+PR #24 integrated the B1/B2/B3 corrective implementation at
+`fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Both PRs are closed and merged. The final focused
+independent external/model-assisted technical review returned
+`PHASE10_FINAL_FOCUSED_REREVIEW=ACCEPT_WITH_MINOR_CHANGES`. It was not a GitHub-native APPROVE review.
+
+Review chronology and outcome:
+
+- Initial implementation review: `PHASE10_IMPLEMENTATION_REVIEW=REQUEST_CHANGES`, identifying B1,
+  B2 and B3 findings.
+- Focused re-review #1: `PHASE10_FOCUSED_REREVIEW=REQUEST_CHANGES`; B1 PASS, B3 PASS, B2 simulation
+  semantics PASS; the remaining B2 validator coverage blocker was subsequently fixed.
+- Final focused review: B1 PASS, B2 PASS, B3 PASS; no blocking findings. Holdout firewall, canonical
+  provenance, numerical regression, sensitivity, terminal accounting, reproducibility evidence and
+  repository quality gates PASS.
+- Sole minor issue: stale PR #24 metadata. The PR description was corrected with the accepted current
+  canonical evidence before/around integration.
+
+Accepted canonical run: `phase10-dev-20261008-validator-fix`; manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. Source revision
+`5504d855fd60b8a038a4d6574e35b579ed0f439d`; source digest
+`a4c1ec83d4211c45d75afe4db9845b359ddb41f88f04f3611a0c3cda872096db`; `uv.lock` SHA-256
+`584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. The canonical current pointer
+continues to identify this run. Prior immutable runs remain preserved:
+`phase10-dev-20261007-implementation`, `phase10-dev-20261007-implementation-v2`,
+`phase10-dev-20261008-review-fixes`, and `phase10-dev-20261008-validator-fix`.
+
+Canonical counts: 383,560 targets, 383,560 policy summaries, 5,753,400 ledger rows, 172 cases and
+1,720 comparison rows. All 383,560 tracks are complete; incomplete tracks, unavailable tracks,
+historical Open-assumption violations and post-cutoff outcome rows are zero.
+
+Receipt accounting: final positive receipt before T for 108,556 tracks, on T for 236,743, and no
+positive receipt for 38,261; total 383,560. The 383,560 terminal right-censored intervals and zero
+summary mismatches preserve the rule that a final positive receipt begins an unfinished interval,
+even when it occurs on T.
+
+At the synthetic-base reference, baseline cost is 90,786,517.967853 and forecast-policy cost is
+113,929,065.505821 (forecast minus baseline +23,142,547.537968). Historical conditional replay is
+15,100,677.170801 versus 19,376,775.902140 (+4,276,098.731339). These are higher simulated
+holding-plus-shortfall costs under the stated assumptions, not realized losses or universal model
+performance claims.
+
+Forecast-minus-baseline sensitivity differences remain +32.403m (p=.90), +9.034m (p=.98), +22.349m
+(L=2), +14.593m (L=7), +25.857m (C=1), +23.147m (a=.10), +23.138m (a=.30), +12.759m (g=.10) and
++33.473m (g=.75). Cost-only overlays retain identical physical trajectories. Synthetic-base terminal
+stock is 8.830303m / 7.551179m, terminal pipeline 292.442932m / 274.096540m, terminal stock cost
+6.155105m / 5.259219m, and outstanding procurement commitment 204.447440m / 191.629078m for baseline /
+forecast. These exposures remain outside the primary cost.
+
+Representative replay covered 16 tracks and 240 ledger rows; the accepted replay ledger logical
+SHA-256 is `5277ff63e999658e5264cf207f5e1bed56674ddcd28b333a8b279adbfb1962bc`. The accepted results are
+reproducibility evidence for conditional simulated policy comparisons, not evidence of actual
+Rossmann inventory or savings. Focused tests passed (50); the full suite passed (280). GitHub Quality
+run [#64 / 37718032966](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37718032966)
+passed on Python 3.12 and 3.14 for the reviewed implementation head.
+
+**Phase 10 is COMPLETE once this closeout PR is integrated into `main`.** The implementation and
+numerical evidence are accepted, corrective review findings are resolved, and formal closeout is
+recorded in the completed plan. No Phase 11 work is part of this PR. Phase 11 remains PLANNED / NOT
+STARTED / NOT AUTHORIZED. No final holdout evaluation occurred; the holdout remains unreleased.

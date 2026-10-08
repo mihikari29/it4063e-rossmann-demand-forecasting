@@ -54,30 +54,26 @@ boundaries before hashing upstream files. Existing run IDs cannot be overwritten
 remain ignored local artifacts. Phase 9 introduces no model artifact, inventory ledger, order queue
 or policy comparison.
 
-Phase 10's [active plan](../plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
-the simulator is implemented and under review. Run it with a new unused ID using
-`python scripts/run_inventory_simulation.py --run-id phase10-dev-example`. Current canonical run
-`phase10-dev-20261008-validator-fix` has manifest SHA-256
-`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`; v1, v2, and the prior
-`phase10-dev-20261008-review-fixes` run remain immutable historical evidence. The seven ignored
-files are
-`simulation_config.json`, `policy_targets.parquet`, `simulation_ledger.parquet`, `policy_summary.parquet`,
-`comparison_summary.csv`, `validation_summary.json` and `manifest.json`. The run has 383,560 target
-and summary rows, 5,753,400 ledger rows, 172 cases and 1,720 comparison rows. All requested tracks
-are complete, with zero unavailable/incomplete episodes or exclusions. These are simulated
-monetary-turnover results, not observed inventory, physical demand or savings.
+Phase 10's [completed plan](../plans/completed/phase-10-inventory-simulation.md) and ADR-023 record
+the accepted method and closeout. PR #23 integrated the implementation at
+`15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 integrated the B1-B3 corrections at
+`fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The final independent external/model-assisted review
+accepted the corrective implementation and numerical evidence; details and canonical results are in
+[PROGRESS](../docs/PROGRESS.md). The accepted run is `phase10-dev-20261008-validator-fix` with
+manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. Its seven ignored
+files are `simulation_config.json`, `policy_targets.parquet`, `simulation_ledger.parquet`,
+`policy_summary.parquet`, `comparison_summary.csv`, `validation_summary.json` and `manifest.json`.
+It contains 383,560 targets and summaries, 5,753,400 ledger rows, 172 cases and 1,720 comparisons.
+These are conditional simulated monetary-turnover values, not observed inventory, physical demand or
+savings. Phase 10 formal completion takes effect when this closeout PR is integrated into `main`.
 
 The implementation records explicit ordered schemas/keys/nulls, byte and logical hashes, pinned
 Phase 7/8/9 identities, staged reread/validation, upstream recheck, manifest-last and atomic
 publication. Existing run IDs are immutable; `current.json` advances only on complete success.
-Failure preserves prior runs/pointer. Development date boundaries are checked before outcome
-hashing; protected dates and the full raw source file are not accessed/hashed. Targets exclude
-evaluation outcomes, and approved upstream scenario/forecast artifacts are not modified or
-regenerated. External review returned REQUEST CHANGES after PR #23 merged; B1–B3 corrective changes
-are in [follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
-Focused re-review #1 passed B1, B3, and B2 simulation semantics and found only an incomplete-track
-validator blocker, now corrected; a second focused re-review is pending. Phase 10 remains IMPLEMENTED
-/ UNDER REVIEW, not REVIEWED or COMPLETE; Phase 11 is not started or authorized.
+Failure preserves prior runs/pointer. Development date boundaries are checked before outcome hashing;
+protected dates and the full raw source file are not accessed/hashed. Targets exclude evaluation
+outcomes, and approved upstream scenario/forecast artifacts are not modified or regenerated. No final
+holdout evaluation occurred. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
 
 For later models, use `data/processed/<model>/` for generated tabular evidence and
 `artifacts/<model>/` for model binaries; both conventions are ignored. These are directory
