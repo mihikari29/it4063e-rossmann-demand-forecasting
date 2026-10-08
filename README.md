@@ -6,8 +6,9 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` contains completed Phases 0–9. Phase 5 additive Holt-Winters was integrated with the
-architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
+`main` has Phases 0–9 formally complete and the reviewed Phase 10 implementation integrated.
+Phases 0–10 are complete after this closeout PR integrates into `main`. Phase 5 additive Holt-Winters
+was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
 LightGBM candidate was reviewed and merged by
@@ -44,13 +45,16 @@ preserves the design, implementation and review record. PR #19 was squash-merged
 acceptance. The canonical accepted development run is
 `phase9-dev-20261007-config-validation-fix` (manifest SHA-256
 `573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`). It produces synthetic
-monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10's
-[active design](plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
-implementation is **IMPLEMENTED / UNDER REVIEW**. PR #23 was merged before the external
-implementation review resolved; the B1–B3 fixes are on `fix/phase-10-review-findings` in the new
-[follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
-The current corrected canonical development run is recorded below and in [PROGRESS](docs/PROGRESS.md).
-Phase 11 has not started or been authorized.
+monetary context only; it does not fit forecasts or simulate inventory policies.
+
+Phase 10 was implemented under ADR-023. PR #23 integrated the implementation at
+`15bce83cd63a4edfeed6defb95788da90d0f36d9` and B1-B3 corrective changes integrated by PR #24 at
+`fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The final independent external/model-assisted review
+accepted the corrective implementation and numerical evidence. The [completed plan](plans/completed/phase-10-inventory-simulation.md)
+records formal closeout. The accepted canonical run is `phase10-dev-20261008-validator-fix`
+(manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0-10
+are complete after this closeout PR is integrated into `main`; Phase 11 remains NOT STARTED / NOT
+AUTHORIZED. The protected final holdout remains unreleased.
 
 ## Environment and quick start
 
@@ -163,9 +167,9 @@ outputs are local artifacts and are not committed. All operational values are il
 assumptions. This command does not create an inventory ledger, evaluate a policy, estimate realized
 savings, or access the protected final holdout.
 
-## Phase 10 — implemented / under review
+## Phase 10 - inventory simulation closeout
 
-The [active plan](plans/active/phase-10-inventory-simulation.md) defines **Simulated inventory-value
+The [completed plan](plans/completed/phase-10-inventory-simulation.md) defines **Simulated inventory-value
 policy comparison and sensitivity analysis**. It compares a historical-mean standing target with
 a frozen LightGBM point-prefix plus cumulative buffer at June 5/Fit A or June 19/Fit B. Targets
 are set once before evaluation outcomes, then reused for daily inventory reviews. There is no
@@ -189,26 +193,27 @@ Methodology and ADR-023 were approved on 2026-10-07. The implementation is in
 python scripts/run_inventory_simulation.py --run-id phase10-dev-example
 ```
 
-The pre-review `phase10-dev-20261007-implementation-v2` and first corrected
-`phase10-dev-20261008-review-fixes` runs remain immutable historical evidence. The current canonical
-run is `phase10-dev-20261008-validator-fix` (manifest SHA-256
-`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Focused re-review #1 of PR #24
-returned REQUEST CHANGES after confirming B1, B3, and B2 simulation semantics; its sole B2 incomplete
-validator blocker is corrected on the same branch, with another focused re-review pending. See
-[PROGRESS](docs/PROGRESS.md) for the review chronology and authoritative numerical results. Published
-results are conditional simulations in monetary turnover-value units; they do not establish actual
-Rossmann inventory, physical demand or savings.
+The pre-review `phase10-dev-20261007-implementation-v2` and `phase10-dev-20261008-review-fixes`
+runs remain immutable historical evidence. The accepted canonical run is
+`phase10-dev-20261008-validator-fix` (manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Final independent
+external/model-assisted review returned `PHASE10_FINAL_FOCUSED_REREVIEW=ACCEPT_WITH_MINOR_CHANGES`:
+B1, B2 and B3 PASS, with no blocking findings. The only minor issue was stale PR #24 metadata; it was
+corrected. Review history, provenance, tests and numerical evidence are in [PROGRESS](docs/PROGRESS.md).
 
-Phase 10 remains IMPLEMENTED / UNDER REVIEW and is not REVIEWED or COMPLETE. A second focused external
-re-review of the corrective follow-up is pending. Phase 11 has not started or been authorized; the
-protected final holdout remains unreleased.
+This simulated inventory-value policy comparison reports higher simulated holding-plus-shortfall
+cost under these assumptions for the synthetic-base and historical reference cases. It does not
+establish real inventory, physical demand, real stockouts, savings, universal forecast performance,
+statistical superiority, optimality, calibrated synthetic service guarantees or production readiness.
+Phase 10 is COMPLETE when this closeout PR is integrated into `main`; no final holdout evaluation
+occurred. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
 
 ## Architecture and remaining work
 
 Implemented packages: `data/` (provenance/preparation), `analysis/` (descriptive EDA),
 `features/` (shared static/history contract), `forecasting/` (baselines/evaluation/runners and
-development-only model selection), and `inventory/` (Phase 9 origin-safe scenarios and the Phase 10
-policy simulator under review).
+development-only model selection), and `inventory/` (Phase 9 origin-safe scenarios and the reviewed
+Phase 10 policy simulator).
 Thin command scripts expose reusable logic; notebooks are exploration/presentation.
 
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
@@ -220,17 +225,17 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   origin-anchored prefixes only.
 - Phase 9: **COMPLETE**; the accepted generator creates exogenous synthetic scenario inputs only.
   See the [completed plan](plans/completed/phase-9-synthetic-inventory.md).
-- Phase 10: [approved design and implementation record](plans/active/phase-10-inventory-simulation.md);
-  implementation and canonical development results are under external review, not complete.
+- Phase 10: [completed design, implementation and closeout record](plans/completed/phase-10-inventory-simulation.md);
+  its implementation and corrective PR are integrated, with completion effective on this closeout PR.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
 - Phase 14: recorded results, report, slides and demonstration.
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
-records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and
-formally closed. Phase 9 implements only the approved scenario generator; Phase 10 implements the
-separate stateful simulator and remains under review. Later phases require separate authorization.
+records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and formally
+closed. Phase 9 implements only the approved scenario generator. Phase 10's reviewed stateful simulator
+is formally closed when this closeout PR integrates. Later phases require separate authorization.
 The final holdout remains protected.
 
 ## Quality and repository layout

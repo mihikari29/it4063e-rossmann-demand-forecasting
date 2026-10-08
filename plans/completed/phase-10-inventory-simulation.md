@@ -1,19 +1,14 @@
 # Phase 10 — Inventory Simulation & Sensitivity Analysis
 
-**Status: IMPLEMENTED / UNDER REVIEW.**
-
-Human methodology approval was given on 2026-10-07, accepting
-[ADR-023](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting).
-The initial technical review and a fresh independent methodology review both returned ACCEPT; the
-independent verdict was `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, with no blocking findings or
-required changes. That approval authorized implementation as a separate task. The implementation
-and current canonical development run are recorded in Sections 19–21. Phase 9 remains COMPLETE;
-Phase 11 has not started and is not authorized. The protected final holdout remains unreleased. PR
-#23 was merged into `main` before external implementation review resolution; its B1–B3 corrective
-follow-up is in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24),
-open after focused re-review #1 returned REQUEST CHANGES; its only B2 validator blocker is fixed,
-and a second focused re-review is pending. The plan remains active through independent
-implementation/results review, authorized integration and explicit closeout.
+**Status: COMPLETE (effective when this formal closeout PR is integrated).** ADR-023 is ACCEPTED;
+methodology was approved before implementation. PR #23 integrated the implementation at
+`15bce83cd63a4edfeed6defb95788da90d0f36d9`, and PR #24 integrated corrective B1/B2/B3 changes at
+`fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The final independent external/model-assisted technical
+review accepted the corrected implementation and numerical evidence. The accepted canonical run is
+`phase10-dev-20261008-validator-fix` (manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Formal closeout is recorded
+below and becomes effective when this closeout PR is integrated into `main`. Phase 11 remains
+NOT STARTED / NOT AUTHORIZED. No final holdout evaluation or release occurred.
 
 ## 1. Authority, base and execution boundary
 
@@ -520,6 +515,42 @@ the required quality checks passed. A new canonical run,
 `phase10-dev-20261008-validator-fix`, is current and logically matches the previous review-fix run in
 targets, ledger, policy summary, and comparison. Its manifest, validation fields, hash comparisons,
 censor reconstruction, and preserved numerical results are recorded in [PROGRESS](../../docs/PROGRESS.md).
-The prior runs remain immutable. Phase 10 remains **IMPLEMENTED / UNDER REVIEW**, pending a second
-focused external re-review in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24);
-Phase 11 remains **NOT STARTED / NOT AUTHORIZED**.
+At this validator-correction checkpoint, the final focused external re-review was still pending.
+Its accepted outcome and formal closeout are recorded in Sections 22-23. Phase 11 remains
+**NOT STARTED / NOT AUTHORIZED**.
+
+## 22. Final focused external review acceptance - 2026-10-08
+
+The independent external/model-assisted implementation review chronology was:
+
+- Initial review: `PHASE10_IMPLEMENTATION_REVIEW=REQUEST_CHANGES`, with B1, B2 and B3 findings.
+- Focused re-review #1: `PHASE10_FOCUSED_REREVIEW=REQUEST_CHANGES`. B1 and B3 passed, B2 simulation
+  semantics passed, and incomplete-track validator coverage remained a blocker.
+- Final focused review: `PHASE10_FINAL_FOCUSED_REREVIEW=ACCEPT_WITH_MINOR_CHANGES`. B1, B2 and B3
+  passed; no blocking findings remained. Holdout firewall, canonical provenance, numerical regression,
+  sensitivity, terminal accounting, reproducibility evidence and repository quality gates passed.
+
+The sole minor issue was stale PR #24 metadata, corrected before/around integration. These were
+independent external/model-assisted technical reviews, not GitHub-native APPROVE reviews. ADR-023
+methodology and the accepted numerical results did not change.
+
+The accepted canonical run is `phase10-dev-20261008-validator-fix`, manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`; source revision
+`5504d855fd60b8a038a4d6574e35b579ed0f439d`; source digest
+`a4c1ec83d4211c45d75afe4db9845b359ddb41f88f04f3611a0c3cda872096db`; and `uv.lock` SHA-256
+`584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. Counts are 383,560 targets,
+383,560 policy summaries, 5,753,400 ledger rows, 172 cases, 1,720 comparison rows and 383,560 complete
+tracks; incomplete, unavailable, historical Open-assumption violating and post-cutoff outcome rows are
+zero. Canonical numerical and censoring details remain in [PROGRESS](../../docs/PROGRESS.md).
+
+## 23. Formal closeout - 2026-10-08
+
+PR #23 implementation merge SHA: `15bce83cd63a4edfeed6defb95788da90d0f36d9`.
+PR #24 corrective merge SHA: `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`.
+The implementation and corrective review findings are integrated; final focused external review is
+accepted; the accepted canonical run and immutable prior run history are preserved above and in
+PROGRESS. This formal closeout PR changes lifecycle/governance documentation only.
+
+**Phase 10 is COMPLETE once this closeout PR is integrated into `main`.** No Phase 11 work is part of
+this PR. Phase 11 remains NOT STARTED / NOT AUTHORIZED. No final holdout evaluation occurred, and the
+protected holdout remains unreleased.

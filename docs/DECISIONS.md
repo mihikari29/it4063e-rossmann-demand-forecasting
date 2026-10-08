@@ -638,22 +638,30 @@ service-level guarantee is introduced. The protected holdout remains unreleased.
 
 ## ADR-023 — Origin-Frozen Daily Inventory Policy Simulation and Finite-Window Accounting
 
-**Status:** ACCEPTED after explicit human methodology approval, 2026-10-07. IMPLEMENTATION NOT STARTED.
+**Status:** ACCEPTED after explicit human methodology approval, 2026-10-07.
 
 **Review evidence:** Initial technical methodology review ACCEPT; fresh independent methodology
 review `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`. No blocking findings or required methodology
-changes. Human approval is recorded in the active Phase 10 plan and PROGRESS; this is not a claim of
+changes. Human approval is recorded in the Phase 10 plan and PROGRESS; this is not a claim of
 GitHub-native reviewer approval.
+
+**Lifecycle note:** At the 2026-10-07 approval synchronization, implementation had not started.
+Implementation was subsequently reviewed and integrated through PR #23 at
+`15bce83cd63a4edfeed6defb95788da90d0f36d9` and corrective PR #24 at
+`fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The final independent external/model-assisted technical
+review accepted the corrective implementation; formal Phase 10 closeout is recorded in the completed
+Phase 10 plan. This lifecycle note does not change the accepted methodology or authorize holdout
+access.
 
 **Scope extension:** ADR-016/021/022's Phase 10 handoff only. Accepted Phases 0–9 methodology,
 selected LightGBM recipe and Phase 8 fitted tables remain unchanged. Full proposal:
-[active Phase 10 plan](../plans/active/phase-10-inventory-simulation.md).
+[completed Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md).
 
 **Context:** Phase 9 is COMPLETE and supplies exogenous monetary scenarios, not inventory policies.
 Phase 8 supplies cumulative uncertainty for approved origin-anchored prefixes only; it provides
 no calibrated later-review suffix. A daily forecast-refresh simulator would exceed that handoff.
-Technical and independent reviews supported the proposal; explicit human approval now authorizes
-implementation only as a separate next task.
+Technical and independent methodology reviews supported the proposal; at the approval checkpoint,
+explicit human approval authorized implementation only as a separate next task.
 
 **Accepted decision:** Use separate H14 development episodes at end-of-day June 5/Fit A and
 June 19/Fit B, ending by July 3. Set exactly two standing targets once at origin: baseline
@@ -713,9 +721,9 @@ The proposed standing target may be stale. Two origins, dependent Stores, cold s
 truncation, artificial costs, uncalibrated stress transport and endogenous cycles limit inference.
 This is policy simulation/comparison, not industrial optimization or proof of superiority.
 
-**Consequences:** Implement only the active plan under this accepted ADR. Require
-fixtures, repository quality gates, reproducible canonical development validation, independent
-implementation/numerical review, authorized integration and explicit closeout. Phase 10 is approved
-but IMPLEMENTATION NOT STARTED. Phase 9 remains COMPLETE; Phase 11 has not started and is not
-authorized. This documentation approval/integration changes no code, tests, scripts, dependencies
-or simulation artifacts and does not authorize holdout access.
+**Consequences:** Implementation followed this accepted ADR and completed plan; the corrective
+implementation and external/model-assisted technical review were integrated through PR #23 and PR #24.
+The accepted canonical development run and formal closeout are recorded in the completed Phase 10 plan
+and PROGRESS. At approval, implementation had not started; that historical checkpoint is preserved
+above. Phase 9 remains COMPLETE. Phase 11 remains NOT STARTED / NOT AUTHORIZED. No
+final holdout evaluation or access was part of Phase 10 or this closeout.

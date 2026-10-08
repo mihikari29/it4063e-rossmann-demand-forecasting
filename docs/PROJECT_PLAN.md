@@ -19,9 +19,10 @@ work into four manageable packages:
 A package may share one concise execution plan, but each model/methodology approval and phase
 boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
 Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/phase-9-synthetic-inventory.md)
-preserves the design, implementation and review record. Phase 10's [active design](../plans/active/phase-10-inventory-simulation.md)
-and ADR-023 are APPROVED; Phase 10 is IMPLEMENTED / UNDER REVIEW on the branch and run recorded in
-[PROGRESS](PROGRESS.md). Phase 11 has not started and is not authorized.
+preserves the design, implementation and review record. Phase 10's [completed plan](../plans/completed/phase-10-inventory-simulation.md)
+and ADR-023 record the accepted methodology, integrated implementation, corrective review and formal
+closeout. Phase 10 becomes COMPLETE when this closeout PR integrates, as recorded in
+[PROGRESS](PROGRESS.md). Phase 11 remains NOT STARTED / NOT AUTHORIZED.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -138,9 +139,11 @@ requiring future Open remain unavailable without separately reviewed origin-know
 provenance or a separately approved synthetic/conditional schedule not derived from protected
 actual Open. Cumulative results support origin-anchored prefixes only; no Phase 10 suffix
 calibration is authorized here. No final-holdout evaluation is authorized. Phase 8 is COMPLETE
-for the accepted canonical development run. Phase 9 is formally closed as COMPLETE. Phase 10
-methodology is approved under ADR-023; its implementation and corrected development run are under
-external review as recorded in [PROGRESS](PROGRESS.md). Phase 11 remains separate and unauthorized.
+for the accepted canonical development run. Phase 9 is formally closed as COMPLETE. Phase 10's
+methodology is accepted under ADR-023; its implementation and B1-B3 corrections are integrated, final
+external/model-assisted review is accepted, and formal closeout is recorded in the
+[completed plan](../plans/completed/phase-10-inventory-simulation.md) and [PROGRESS](PROGRESS.md).
+Phase 10 becomes COMPLETE when this closeout PR integrates. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
@@ -169,31 +172,30 @@ synthetic-regime transport and later daily-review suffix calibration are not app
 The accepted canonical run and manifest are recorded in [PROGRESS](PROGRESS.md); Phase 9 does not
 implement inventory policies or establish physical inventory, observed stockouts or savings.
 
-## Phase 10 — Inventory Simulation & Sensitivity Analysis
+## Phase 10 - Inventory Simulation & Sensitivity Analysis
 
 **Objective:** Compare simple replenishment policies under stated assumptions.
-**Status:** IMPLEMENTED / UNDER REVIEW; NOT COMPLETE.
-**Design:** [Active Phase 10 plan](../plans/active/phase-10-inventory-simulation.md) and accepted
-ADR-023. Human approval and review evidence are recorded in the plan and [PROGRESS](PROGRESS.md).
-**Dependencies:** Phases 8–9 and development-only forecasts.
-**Deliverables:** Implemented stateful order/receipt/stock ledger, policy/KPI comparison and
-sensitivity report. The corrected canonical development run and artifact identities are recorded
-in [PROGRESS](PROGRESS.md).
+**Status:** COMPLETE (effective when this formal closeout PR is integrated).
+**Design:** [Completed Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md) and accepted
+ADR-023. Human methodology approval, corrective implementation review, integration and formal closeout
+are recorded in the plan and [PROGRESS](PROGRESS.md).
+**Integration:** PR #23 merged at `15bce83cd63a4edfeed6defb95788da90d0f36d9`; corrective PR #24
+merged at `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The accepted canonical development run is
+`phase10-dev-20261008-validator-fix`, manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`.
+**Deliverables:** Stateful order/receipt/stock ledger, policy/KPI comparison and sensitivity evidence;
+final review accepted B1-B3 corrections with no blocking findings.
 **Acceptance / boundary:** At June 5/Fit A or June 19/Fit B, freeze a historical-mean or
 LightGBM-plus-buffer standing target from the original h1..P prefix. R=1, L=2–7, P=L+1<=14;
 L means full intervening demand days, so EOD-t orders arrive BO-day t+L+1. Execute daily lost-sales
-queue/stock transitions against the unchanged target through day 13; suppress day-14 ordering.
-No forecast refresh, suffix bounds, q scaling, fit or recalibration. Synthetic q transport is
-explicitly uncalibrated. Compare common inputs and complete matched episodes using value fill,
-positive-demand stockout, ending-stock inventory and simulated holding-plus-shortfall cost.
-Use the project-specific completed positive-demand receipt-cycle service rate, with policy-dependent
-denominator/censoring; no guaranteed CSL. Retain terminal orders/exposure with identical treatment.
-Nine one-factor-at-a-time overlays supplement existing scenarios without changing Phase 9.
-Unknown inputs remain unavailable. Approved methodology, fixtures and quality gates pass, and the
-corrected development run has complete matched tracks with staged ledger checks. Independent
-implementation/results review remains pending before authorized integration and explicit closeout;
-negative findings are valid. No actual inventory, stockout, savings or optimality claim; holdout
-remains protected.
+queue/stock transitions against the unchanged target through day 13; suppress day-14 ordering. No
+forecast refresh, suffix bounds, q scaling, fit or recalibration. Synthetic q transport is explicitly
+uncalibrated. Compare common inputs and complete matched episodes using value fill, positive-demand
+stockout, ending-stock inventory and simulated holding-plus-shortfall cost. Use the project-specific
+completed positive-demand receipt-cycle service rate, with policy-dependent denominator/censoring; no
+guaranteed CSL. Retain terminal orders/exposure with identical treatment. Negative cost comparisons
+remain part of the accepted evidence; no actual inventory, stockout, savings or optimality claim.
+No final holdout evaluation or release occurred. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
 
 ## Phase 11 — Application Services & Thin API
 
