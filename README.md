@@ -46,10 +46,11 @@ acceptance. The canonical accepted development run is
 `573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`). It produces synthetic
 monetary context only; it does not fit forecasts or simulate inventory policies. Phase 10's
 [active design](plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
-implementation is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-10-inventory-simulation`. The
-implementation is in [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23),
-which is open and unmerged. The corrected canonical development run is recorded below and in
-[PROGRESS](docs/PROGRESS.md). Phase 11 has not started or been authorized.
+implementation is **IMPLEMENTED / UNDER REVIEW**. PR #23 was merged before the external
+implementation review resolved; the B1–B3 fixes are on `fix/phase-10-review-findings` in the new
+[follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
+The current corrected canonical development run is recorded below and in [PROGRESS](docs/PROGRESS.md).
+Phase 11 has not started or been authorized.
 
 ## Environment and quick start
 
@@ -188,18 +189,19 @@ Methodology and ADR-023 were approved on 2026-10-07. The implementation is in
 python scripts/run_inventory_simulation.py --run-id phase10-dev-example
 ```
 
-The canonical run is `phase10-dev-20261007-implementation-v2` (manifest SHA-256
-`889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`). It contains 383,560 target
-and summary tracks, 5,753,400 ledger rows, 172 cases and 1,720 comparison rows. All requested tracks
-are complete, with zero unavailable/incomplete episodes, exclusions or historical Open-assumption
-violations. Staged validation confirms the approved grids, balances, queue identities, cost
-arithmetic, paired inputs and holdout firewall. Results are conditional simulations in monetary
-turnover-value units; they do not establish actual Rossmann inventory, physical demand or savings.
-See [PROGRESS](docs/PROGRESS.md) for comparison, sensitivity and terminal-exposure results.
+The pre-review `phase10-dev-20261007-implementation-v2` and first corrected
+`phase10-dev-20261008-review-fixes` runs remain immutable historical evidence. The current canonical
+run is `phase10-dev-20261008-validator-fix` (manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Focused re-review #1 of PR #24
+returned REQUEST CHANGES after confirming B1, B3, and B2 simulation semantics; its sole B2 incomplete
+validator blocker is corrected on the same branch, with another focused re-review pending. See
+[PROGRESS](docs/PROGRESS.md) for the review chronology and authoritative numerical results. Published
+results are conditional simulations in monetary turnover-value units; they do not establish actual
+Rossmann inventory, physical demand or savings.
 
-Phase 10 remains under review and is not COMPLETE. External implementation/numerical review is
-pending. Phase 11 has not started or been authorized; the protected final holdout remains
-unreleased.
+Phase 10 remains IMPLEMENTED / UNDER REVIEW and is not REVIEWED or COMPLETE. A second focused external
+re-review of the corrective follow-up is pending. Phase 11 has not started or been authorized; the
+protected final holdout remains unreleased.
 
 ## Architecture and remaining work
 

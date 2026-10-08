@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-07
+## Current implementation and Git state — 2026-10-08
 
 | Scope | State | Integration |
 |---|---|---|
@@ -11,7 +11,7 @@
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
-| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23) open/unmerged; [active plan and results](../plans/active/phase-10-inventory-simulation.md); external implementation/numerical review pending |
+| Phase 10 — inventory simulation | **IMPLEMENTED / UNDER REVIEW** | Focused re-review #1 of PR #24 returned REQUEST CHANGES; its sole remaining B2 validator blocker is fixed, with refreshed evidence in the [active plan and current results](../plans/active/phase-10-inventory-simulation.md) |
 | Phase 11 and later | PLANNED / NOT STARTED | Separate authorization required |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
@@ -35,8 +35,8 @@ implementation and numerical review, and formal closeout. Its accepted canonical
 are recorded below and were not regenerated. Phase 10 methodology is approved under ADR-023, and
 implementation plus the corrected canonical development run are recorded below. Phase 10 is
 IMPLEMENTED / UNDER REVIEW, not complete. Phase 11 and later have not started or been authorized.
-The implementation is open for review in [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23);
-it remains unmerged.
+PR #23 was merged into `main` before the external implementation review resolved; B1–B3 follow-up
+is tracked in [PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
 
 ## Immediate next boundary
 
@@ -71,12 +71,12 @@ approval is recorded below. No final-holdout release or access is authorized.
 
 The [Phase 10 active plan](../plans/active/phase-10-inventory-simulation.md) and accepted
 [ADR-023](DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
-are APPROVED. Phase 10 is IMPLEMENTED / UNDER REVIEW on `feat/phase-10-inventory-simulation`; the
-corrected canonical run is `phase10-dev-20261007-implementation-v2` with manifest SHA-256
-`889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`. The approved method uses
+are APPROVED. Phase 10 is IMPLEMENTED / UNDER REVIEW on `fix/phase-10-review-findings`; the current
+canonical development run is `phase10-dev-20261008-validator-fix` with manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. The approved method uses
 daily execution against origin-frozen targets, with no rolling calibrated suffix forecasts. Phase 9
 remains COMPLETE, Phase 11 has not started or been authorized, and the protected holdout remains
-unreleased.
+unreleased. PR #23's premature integration and the corrective follow-up are documented below.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -1657,15 +1657,17 @@ The following required checks ran after the approval documentation update using 
 | `python scripts/check_docs.py` | PASS — 214 local destinations/anchors across 25 Markdown files |
 | `git diff --check` | PASS |
 
-## Phase 10 implementation and development validation — 2026-10-07
+## Phase 10 implementation and development validation — 2026-10-07 (pre-review merge checkpoint)
 
-**State: IMPLEMENTED / UNDER REVIEW.** Implementation branch: `feat/phase-10-inventory-simulation`;
-source/test correction commit: `4aefc8c1f21a392270150d46aae610a5dea428e0`. [PR #23](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/23)
-is open and unmerged; external implementation and numerical review remain pending. Phase 10 is not
-COMPLETE. Phase 11 remains NOT STARTED / NOT AUTHORIZED, and the protected holdout remains
-unreleased.
+**State at the merge checkpoint: IMPLEMENTED / UNDER REVIEW.** Implementation branch:
+`feat/phase-10-inventory-simulation`; source/test correction commit:
+`4aefc8c1f21a392270150d46aae610a5dea428e0`. PR #23 merged into `main` as
+`15bce83cd63a4edfeed6defb95788da90d0f36d9` on 2026-10-07 before the external implementation review
+was resolved. The later review returned REQUEST CHANGES with B1–B3; this historical section records
+pre-review implementation evidence only. Phase 10 is not COMPLETE. Phase 11 remains NOT STARTED /
+NOT AUTHORIZED, and the protected holdout remains unreleased.
 
-The corrected canonical development run is
+The pre-review canonical development run was
 `phase10-dev-20261007-implementation-v2`, with manifest SHA-256
 `889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`. Its code revision is
 `4aefc8c1f21a392270150d46aae610a5dea428e0`, source SHA-256
@@ -1714,14 +1716,15 @@ the baseline and 7.551/274.097 million for the forecast policy. Terminal stock-c
 are 6.155/5.259 million, and terminal procurement commitments are 204.447/191.629 million.
 These exposures are not included in the primary objective and are not savings.
 
-The corrected run followed an earlier immutable publication whose target builder had serialized a
-Pandas `Series.mode` method representation into the `mode` metadata. The source now uses explicit
-column indexing, with a regression assertion for both targets. The first run remains ignored and
-immutable under `phase10-dev-20261007-implementation`; it is superseded and is not canonical
-evidence. The corrected v2 run is the current-pointer target.
+At that checkpoint, the corrected v2 run was the current-pointer target. It followed an earlier
+immutable publication whose target builder had serialized a Pandas `Series.mode` method
+representation into the `mode` metadata. The source then used explicit column indexing, with a
+regression assertion for both targets. The first run remains ignored and immutable under
+`phase10-dev-20261007-implementation`; it is superseded and is not canonical evidence.
 
-No second full run was performed after the corrected canonical run. Fixture determinism and ordering
-invariance tests pass. A deterministic representative replay covered 18 June-5 Store-1 cases:
+No second full run was performed after the corrected canonical run at that checkpoint. Fixture
+determinism and ordering-invariance tests pass. A deterministic representative replay covered 18
+June-5 Store-1 cases:
 historical reference, all eight Phase 9 families at reference, and all nine synthetic-base OFAT
 variants, both policies, 36 tracks and 540 ledger rows. Replayed ledger rows and summaries matched
 the published subset exactly after explicit-schema casting; source/replay subset logical SHA-256
@@ -1731,3 +1734,114 @@ Quality gates after the correction: 34 focused Phase 10 tests passed; the full r
 passed (264 tests in 104.61 seconds); Ruff check and format, docs validation, `uv lock --check`,
 `uv pip check`, and `git diff --check` passed. The data outputs remain ignored; no dependency, lock,
 Phase 9 source/artifact, accepted methodology, or proposal text changed.
+
+## Phase 10 external implementation review and corrective follow-up — 2026-10-08
+
+The independent implementation review returned **REQUEST CHANGES** after PR #23 had merged. It
+identified three implementation blockers, with no change to accepted ADR-023 methodology:
+
+- **B1:** Phase 9's semantic date/schema preflight could be bypassed by a timestamp field and did
+  not prove rejection occurred before Parquet byte hashing.
+- **B2:** the first missing-demand row could retain dependent post-demand values, and the streaming
+  validator did not validate an incomplete track's available prefix and unavailable suffix.
+- **B3:** a positive receipt on terminal day T incorrectly removed the terminal right-censored
+  receipt interval.
+
+The fixes and regression tests were recovered onto `fix/phase-10-review-findings`, based on
+`origin/main` at `15bce83cd63a4edfeed6defb95788da90d0f36d9`. Recovery matched the external binary patch
+backup exactly. Source/test commit `296feac19cd69f94a74f7d3322044377f1f1413f` passed 48 focused
+tests and 278 full-suite tests. Ruff check/format, documentation validation, `uv lock --check`,
+`uv pip check`, and `git diff --check` passed. No Phase 7, 8, or 9 code, artifacts, or methods
+changed.
+
+A fresh full canonical run, `phase10-dev-20261008-review-fixes`, completed with manifest SHA-256
+`0716fc92623b66f4d8a6024eecb608aa992596809458fa1b7c40595b66cbdd91`, code revision
+`296feac19cd69f94a74f7d3322044377f1f1413f`, source SHA-256
+`bb0e0f6f52e3d744da7d17a4a094e2e3ddbded19e9e69bc6fd2a1d9ccec8df7d`, clean-worktree provenance,
+and `uv.lock` SHA-256 `584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. It pins the
+existing Phase 7/8/9 runs and identities, records ADR-023, and states that protected holdout values
+were not read or hashed, no refit/recalibration was performed, and Phase 9 was not regenerated.
+`data/processed/inventory_simulation/current.json` points to this run. The v1 and v2 run directories
+remain present with their original manifest hashes: v1
+`4e5e992760836b93b44fffaff3baa497b79a6a24f6587694cece1a2891a45921`; v2
+`889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`. V2 remains immutable
+pre-review evidence and is superseded as the current canonical run.
+
+The output has 383,560 target rows, 383,560 summary rows, 5,753,400 ledger rows, 172 cases, and
+1,720 comparison rows. All 383,560 tracks are complete; incomplete/unavailable tracks and
+historical Open-assumption violations are zero. Independent reconstruction from ledger receipt
+dates found exactly 383,560 right-censored terminal intervals and zero summary mismatches. The
+final positive receipt was before T for 108,556 tracks, on T for 236,743, and absent for 38,261.
+The corrected summary counts the unfinished final interval for every track, including a receipt on
+T and episodes with no positive receipts.
+
+Headline primary costs are unchanged from v2. For synthetic-base reference, baseline is
+90,786,517.967853, LightGBM-buffer is 113,929,065.505821, and forecast-minus-baseline is
++23,142,547.537968. Historical conditional replay is 15,100,677.170801 vs 19,376,775.902140,
+difference +4,276,098.731339. The nine paired sensitivity differences are +32.403m (p=.90),
++9.034m (p=.98), +22.349m (L=2), +14.593m (L=7), +25.857m (C=1), +23.147m (a=.10), +23.138m
+(a=.30), +12.759m (g=.10), and +33.473m (g=.75). Synthetic-base terminal stock is 8.830303m /
+7.551179m, terminal pipeline 292.442932m / 274.096540m, terminal stock cost 6.155105m /
+5.259219m, and outstanding procurement commitment 204.447440m / 191.629078m, respectively.
+These are simulated monetary-turnover exposures, not realized inventory or savings.
+
+Validation reports zero invalid foreign keys and post-cutoff rows and passes queue identity, daily
+and terminal balances, target arithmetic, common policy input identity, and cost-only sensitivity
+trajectory identity. Complete-track validation passed; incomplete-prefix and dependent-null checks
+were not applicable because the canonical grid has no incomplete tracks. A representative
+deterministic replay of historical reference, synthetic base, `promo_peak`, both origins, both
+policies, and `holding_010` matched exactly: 16 tracks and 240 ledger rows. Published/replay logical
+hashes match for ledger (`5277ff63e999658e5264cf207f5e1bed56674ddcd28b333a8b279adbfb1962bc`) and
+summaries (`dd752db39d28c0913fbeb8fa14668acd8de296e0f5ea00ee1481b29a58f4e233`). A two-policy
+terminal-receipt fixture replay verified a completed cycle plus a censored terminal interval and
+has logical SHA-256 `7db6fe4f292dda065bc384cfe574819d3be8364111a2bd04ad33b1033c1406ee`.
+
+The external backup remains at
+`C:\Users\Minh\Desktop\hust\introba\project\phase10-review-fixes-local-backup.patch`; stash
+`stash@{0}` remains applied and retained through safe push. The new [follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24)
+is open and unmerged. Focused re-review #1 returned REQUEST CHANGES: B1 pre-hash firewall, B3
+terminal censoring, and B2 missing-demand simulation semantics passed; the sole remaining blocker was
+incomplete-track validator coverage. The correction and refreshed evidence follow.
+
+### Phase 10 focused re-review validator correction — 2026-10-08
+
+The focused external re-review of PR #24 returned `PHASE10_FOCUSED_REREVIEW=REQUEST_CHANGES`.
+B1 pre-hash firewall, B3 terminal censoring, B2 simulation semantics, and their prior regression
+coverage passed. The only blocker was incomplete-track validator coverage. Commit
+`5504d855fd60b8a038a4d6574e35b579ed0f439d` hardens the validator without changing simulation
+semantics or ADR-023: it validates all available origin-row invariants and origin order arithmetic;
+checks fixed policy/cost metadata and holding/penalty rate equations on every incomplete-track row;
+and rejects receipt IDs after the first unavailable suffix row while allowing actual receipts on the
+first missing-demand boundary. New fixtures reject each reviewer mutation independently, including
+a valid L=2 prefix with an origin order and a receipt before missing demand. The fixture also checks
+corrupt receipt amount/IDs, post-receipt pipeline, prefix stock, and prefix rate. Focused Phase 10 tests
+pass (**50 passed**); the full suite passes (**280 passed**). Ruff, format, docs, locked dependency,
+environment, and diff checks also pass.
+
+The fresh immutable canonical run `phase10-dev-20261008-validator-fix` has manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`, source revision
+`5504d855fd60b8a038a4d6574e35b579ed0f439d`, source digest
+`a4c1ec83d4211c45d75afe4db9845b359ddb41f88f04f3611a0c3cda872096db`, a clean worktree record, and
+the unchanged lock digest `584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`.
+It uses the same pinned Phase 7/8/9 inputs. Independent content-hash comparison confirms identical
+logical results to `phase10-dev-20261008-review-fixes` for targets
+(`25d127258800c584edbb72685ff11c8043e464d88ed7539967b109c8923413f9`), ledger
+(`0d58757f8b9cb099537f57d4a79b2f89be698dbf7704f93a67a1aa7db9a9ccbe`), policy summary
+(`b9610f414bfd38a363cafe25afe7821eb3ed79a241423920bafa35126b9374c2`), and comparison
+(`0133e439a6e6644fb565cbe317440a02e5617b7c668769b974dbbf29bb426bfd`).
+
+The run again has 383,560 targets/summaries, 5,753,400 ledger rows, 172 cases, 1,720 comparisons,
+383,560 complete tracks, and zero incomplete/unavailable tracks, Open-assumption violations,
+invalid foreign keys, or post-cutoff rows. Incomplete-prefix and unavailable-dependent-null
+validation fields are `not_applicable` because this canonical grid contains no incomplete tracks;
+the new fixtures exercise those branches. An independent receipt-date reconstruction gives 108,556
+final receipts before T, 236,743 on T, 38,261 with no positive receipt, 383,560 right-censored
+terminal intervals, and zero summary mismatches. Headline costs, nine sensitivity differences,
+terminal exposures, and representative replay results match the prior canonical run; their numerical
+record remains above. No Phase 7/8 refit, Phase 8 recalibration, Phase 9 regeneration, or protected
+holdout read/hash occurred. `current.json` now points to this run; v1, v2, and
+`phase10-dev-20261008-review-fixes` remain immutable, with the latter superseded as current evidence.
+
+Phase 10 remains IMPLEMENTED / UNDER REVIEW, not REVIEWED or COMPLETE; a second focused external
+re-review of PR #24 is pending. Phase 11 remains NOT STARTED / NOT AUTHORIZED, and the protected
+holdout remains unreleased.

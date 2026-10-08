@@ -56,9 +56,11 @@ or policy comparison.
 
 Phase 10's [active plan](../plans/active/phase-10-inventory-simulation.md) and ADR-023 are approved;
 the simulator is implemented and under review. Run it with a new unused ID using
-`python scripts/run_inventory_simulation.py --run-id phase10-dev-example`. Corrected canonical run
-`phase10-dev-20261007-implementation-v2` has manifest SHA-256
-`889e8e513c68791dae3c547e9df531ed9ed0c98ce257518c0c011b2a9fe6056e`; its seven ignored files are
+`python scripts/run_inventory_simulation.py --run-id phase10-dev-example`. Current canonical run
+`phase10-dev-20261008-validator-fix` has manifest SHA-256
+`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`; v1, v2, and the prior
+`phase10-dev-20261008-review-fixes` run remain immutable historical evidence. The seven ignored
+files are
 `simulation_config.json`, `policy_targets.parquet`, `simulation_ledger.parquet`, `policy_summary.parquet`,
 `comparison_summary.csv`, `validation_summary.json` and `manifest.json`. The run has 383,560 target
 and summary rows, 5,753,400 ledger rows, 172 cases and 1,720 comparison rows. All requested tracks
@@ -71,7 +73,11 @@ publication. Existing run IDs are immutable; `current.json` advances only on com
 Failure preserves prior runs/pointer. Development date boundaries are checked before outcome
 hashing; protected dates and the full raw source file are not accessed/hashed. Targets exclude
 evaluation outcomes, and approved upstream scenario/forecast artifacts are not modified or
-regenerated. Phase 10 remains under external review; Phase 11 is not started or authorized.
+regenerated. External review returned REQUEST CHANGES after PR #23 merged; B1–B3 corrective changes
+are in [follow-up PR #24](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/24).
+Focused re-review #1 passed B1, B3, and B2 simulation semantics and found only an incomplete-track
+validator blocker, now corrected; a second focused re-review is pending. Phase 10 remains IMPLEMENTED
+/ UNDER REVIEW, not REVIEWED or COMPLETE; Phase 11 is not started or authorized.
 
 For later models, use `data/processed/<model>/` for generated tabular evidence and
 `artifacts/<model>/` for model binaries; both conventions are ignored. These are directory
