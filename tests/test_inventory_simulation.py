@@ -583,6 +583,118 @@ def test_incomplete_stream_validates_prefix_boundary_and_unavailable_nulls(
         simulation._validate_ledger_stream(ledger_path, expected_tracks=1, expected_rows=15)
 
 
+def test_incomplete_stream_rejects_corrupt_origin_and_static_metadata(tmp_path):
+    target = _target(simulation.POLICY_IDS[0])
+    values = [10.0] * 14
+    values[4] = None
+    ledger, summary = simulation.simulate_case(
+        target,
+        _demand(values, missing_horizons=(5,)),
+        common_input_identity="incomplete-origin-corruption",
+    )
+    ledger_path = tmp_path / "incomplete-origin-ledger.parquet"
+    target_path = tmp_path / "incomplete-origin-targets.parquet"
+    summary_path = tmp_path / "incomplete-origin-summary.parquet"
+    pq.write_table(
+        pa.Table.from_pylist([target], schema=simulation.POLICY_TARGET_SCHEMA), target_path
+    )
+    pq.write_table(
+        pa.Table.from_pylist([summary], schema=simulation.POLICY_SUMMARY_SCHEMA), summary_path
+    )
+
+    def validate(rows):
+        pq.write_table(
+            pa.Table.from_pylist(rows, schema=simulation.SIMULATION_LEDGER_SCHEMA), ledger_path
+        )
+        return simulation._validate_ledger_stream(
+            ledger_path,
+            expected_tracks=1,
+            expected_rows=15,
+            summary_path=summary_path,
+            target_path=target_path,
+        )
+
+    assert ledger[3]["receipts_today_value"] > 0
+    assert ledger[3]["received_order_ids"] == ledger[0]["order_id"]
+    assert validate(ledger)["validated_incomplete_prefix_tracks"] == 1
+
+    corruptions = [
+        (0, "ending_inventory_value", 999.0),
+        (0, "available_stock_value", 999.0),
+        (0, "receipts_today_value", 123.0),
+        (0, "review_status", "terminal_boundary"),
+        (1, "HoldingCostRate", 999.0),
+        (1, "UnmetPenaltyRate", 999.0),
+        (0, "HoldingCostRate", 999.0),
+        (0, "UnmetPenaltyRate", 999.0),
+        (6, "received_order_ids", "invented_receipt"),
+        (1, "SupplierLeadTime", 3),
+        (1, "ProtectionPeriod", 4),
+        (1, "ProcurementCostRatio", 0.8),
+        (1, "AnnualHoldingRate", 0.3),
+        (1, "GoodwillPenaltyRate", 0.6),
+        (1, "target_value", float(ledger[1]["target_value"]) + 1.0),
+        (1, "target_available", False),
+    ]
+    for horizon, field, value in corruptions:
+        corrupted = [dict(row) for row in ledger]
+        corrupted[horizon][field] = value
+        with pytest.raises(simulation.SimulationIntegrityError):
+            validate(corrupted)
+
+
+def test_incomplete_stream_validates_prefix_receipt_and_rejects_receipt_corruptions(
+    tmp_path,
+):
+    target = _target(simulation.POLICY_IDS[0])
+    values = [0.0] * 14
+    values[4] = None
+    ledger, summary = simulation.simulate_case(
+        target,
+        _demand(values, missing_horizons=(5,)),
+        common_input_identity="incomplete-prefix-receipt",
+    )
+    receipt_row = ledger[3]
+    assert receipt_row["receipts_today_value"] > 0
+    assert receipt_row["received_order_ids"] == ledger[0]["order_id"]
+    ledger_path = tmp_path / "incomplete-receipt-ledger.parquet"
+    target_path = tmp_path / "incomplete-receipt-targets.parquet"
+    summary_path = tmp_path / "incomplete-receipt-summary.parquet"
+    pq.write_table(
+        pa.Table.from_pylist([target], schema=simulation.POLICY_TARGET_SCHEMA), target_path
+    )
+    pq.write_table(
+        pa.Table.from_pylist([summary], schema=simulation.POLICY_SUMMARY_SCHEMA), summary_path
+    )
+
+    def validate(rows):
+        pq.write_table(
+            pa.Table.from_pylist(rows, schema=simulation.SIMULATION_LEDGER_SCHEMA), ledger_path
+        )
+        return simulation._validate_ledger_stream(
+            ledger_path,
+            expected_tracks=1,
+            expected_rows=15,
+            summary_path=summary_path,
+            target_path=target_path,
+        )
+
+    assert validate(ledger)["validated_incomplete_prefix_tracks"] == 1
+    corruptions = [
+        (3, "receipts_today_value", receipt_row["receipts_today_value"] + 1.0),
+        (3, "received_order_ids", ""),
+        (3, "pipeline_after_receipt_value", receipt_row["pipeline_after_receipt_value"] + 1.0),
+        (2, "starting_inventory_value", ledger[2]["starting_inventory_value"] + 1.0),
+        (1, "HoldingCostRate", 999.0),
+        (1, "UnmetPenaltyRate", 999.0),
+    ]
+    for horizon, field, value in corruptions:
+        corrupted = [dict(row) for row in ledger]
+        corrupted[horizon][field] = value
+        with pytest.raises(simulation.SimulationIntegrityError):
+            validate(corrupted)
+
+
 def test_closed_day_demand_zero_but_stock_receipts_review_and_holding_continue():
     target = _target(simulation.POLICY_IDS[0])
     path = _demand([0.0] * 14, open_values=[0] + [1] * 13)

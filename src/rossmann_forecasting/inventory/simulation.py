@@ -2521,8 +2521,72 @@ def _validate_ledger_stream(
         if row["state_available"] or not row["state_unavailable_reason"]:
             raise SimulationIntegrityError(f"Unavailable state metadata is inconsistent for {key}.")
 
+    def validate_static_track_metadata(track: list[dict[str, Any]], key: Any) -> None:
+        """Validate per-track policy inputs and their derived cost rates on every row."""
+        static_fields = (
+            "SupplierLeadTime",
+            "ProtectionPeriod",
+            "ProcurementCostRatio",
+            "AnnualHoldingRate",
+            "GoodwillPenaltyRate",
+            "HoldingCostRate",
+            "UnmetPenaltyRate",
+            "target_value",
+            "target_available",
+        )
+        first = track[0]
+        for row in track:
+            for field in static_fields:
+                expected = first[field]
+                actual = row[field]
+                if field == "target_available":
+                    matches = actual is expected
+                elif expected is None or actual is None:
+                    matches = expected is None and actual is None
+                elif field in {
+                    "ProcurementCostRatio",
+                    "AnnualHoldingRate",
+                    "GoodwillPenaltyRate",
+                    "HoldingCostRate",
+                    "UnmetPenaltyRate",
+                    "target_value",
+                }:
+                    matches = _close(float(actual), float(expected))
+                else:
+                    matches = actual == expected
+                if not matches:
+                    raise SimulationIntegrityError(
+                        f"Static track metadata {field} changes at h{row['horizon']} for {key}."
+                    )
+
+            cost_ratio = _number(
+                row["ProcurementCostRatio"], "ProcurementCostRatio", nonnegative=True
+            )
+            annual_rate = _number(row["AnnualHoldingRate"], "AnnualHoldingRate", nonnegative=True)
+            goodwill_rate = _number(
+                row["GoodwillPenaltyRate"], "GoodwillPenaltyRate", nonnegative=True
+            )
+            holding_rate = _number(row["HoldingCostRate"], "HoldingCostRate", nonnegative=True)
+            unmet_rate = _number(row["UnmetPenaltyRate"], "UnmetPenaltyRate", nonnegative=True)
+            if not _close(holding_rate, cost_ratio * annual_rate / 365.0):
+                raise SimulationIntegrityError(
+                    f"HoldingCostRate arithmetic failed at h{row['horizon']} for {key}."
+                )
+            if not _close(unmet_rate, (1.0 - cost_ratio) + goodwill_rate):
+                raise SimulationIntegrityError(
+                    f"UnmetPenaltyRate arithmetic failed at h{row['horizon']} for {key}."
+                )
+
     def validate_incomplete_track(track: list[dict[str, Any]], key: Any) -> tuple[bool, bool]:
         """Validate every available prefix transition and the unavailable boundary."""
+        validate_static_track_metadata(track, key)
+        origin = track[0]["forecast_origin"]
+        for row in track:
+            horizon = int(row["horizon"])
+            if row["forecast_origin"] != origin or row["Date"] != origin + timedelta(days=horizon):
+                raise SimulationIntegrityError(
+                    f"Incomplete-track calendar sequence failed for {key}."
+                )
         first_unavailable = next(
             (index for index, row in enumerate(track) if not bool(row["state_available"])), None
         )
@@ -2547,9 +2611,40 @@ def _validate_ledger_stream(
         lead = int(origin_row["SupplierLeadTime"])
         target_value = _number(origin_row["target_value"], "target_value", nonnegative=True)
         stock = _number(origin_row["starting_inventory_value"], "initial stock", nonnegative=True)
+        if (
+            not bool(origin_row["state_available"])
+            or origin_row["state_unavailable_reason"] is not None
+            or origin_row["review_status"] != "origin_review"
+            or origin_row["ScenarioOpen"] is not None
+            or origin_row["source_open"] is not None
+            or origin_row["received_order_ids"] != ""
+            or bool(origin_row["historical_open_assumption_violation"])
+        ):
+            raise SimulationIntegrityError(f"Origin metadata is inconsistent for {key}.")
+        origin_values = (
+            ("receipts_today_value", 0.0),
+            ("available_stock_value", stock),
+            ("demand_value", None),
+            ("fulfilled_value", None),
+            ("unmet_value", None),
+            ("ending_inventory_value", stock),
+            ("pipeline_before_receipt_value", 0.0),
+            ("pipeline_after_receipt_value", 0.0),
+            ("holding_cost", 0.0),
+            ("unmet_penalty", 0.0),
+            ("inventory_position_value", stock),
+        )
+        for field, expected in origin_values:
+            actual = origin_row[field]
+            if expected is None:
+                if not _is_null(actual):
+                    raise SimulationIntegrityError(f"Origin field {field} must be null for {key}.")
+            elif not _close(float(actual), expected):
+                raise SimulationIntegrityError(f"Origin field {field} failed for {key}.")
         if not _close(float(origin_row["inventory_position_value"]), stock):
             raise SimulationIntegrityError(f"Origin inventory position failed for {key}.")
         queue: dict[str, tuple[date, float]] = {}
+        order_ids: set[str] = set()
 
         def place_order(row: Mapping[str, Any], horizon: int, expected: float) -> None:
             value = float(row["order_value"])
@@ -2560,8 +2655,14 @@ def _validate_ledger_stream(
             if value > 0:
                 due_date = row["Date"] + timedelta(days=lead + 1)
                 order_id = row["order_id"]
-                if order_id is None or row["order_due_date"] != due_date or order_id in queue:
+                expected_id = f"{key[0]}:{key[1]}:{key[2]}:h{horizon}"
+                if (
+                    order_id != expected_id
+                    or row["order_due_date"] != due_date
+                    or order_id in order_ids
+                ):
                     raise SimulationIntegrityError(f"Order identity/due date failed for {key}.")
+                order_ids.add(order_id)
                 queue[str(order_id)] = (due_date, value)
             elif row["order_id"] is not None or row["order_due_date"] is not None:
                 raise SimulationIntegrityError(f"Zero order has order metadata for {key}.")
@@ -2686,6 +2787,10 @@ def _validate_ledger_stream(
             if row["review_status"] != "state_unavailable_after_missing_demand":
                 raise SimulationIntegrityError(f"State resumed after missing demand for {key}.")
             validate_unavailable_values(row, key, int(row["horizon"]))
+            if row["received_order_ids"] != "":
+                raise SimulationIntegrityError(
+                    f"Unavailable suffix has received-order IDs at h{row['horizon']} for {key}."
+                )
             if row["state_unavailable_reason"] != boundary["state_unavailable_reason"]:
                 raise SimulationIntegrityError(
                     f"Missing-demand reason changed after boundary for {key}."
