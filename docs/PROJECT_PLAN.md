@@ -21,8 +21,10 @@ boundary stays explicit. Phase 8 is COMPLETE following accepted results and expl
 Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/phase-9-synthetic-inventory.md)
 preserves the design, implementation and review record. Phase 10's [completed plan](../plans/completed/phase-10-inventory-simulation.md)
 and ADR-023 record the accepted methodology, integrated implementation, corrective review and formal
-closeout. Phase 10 becomes COMPLETE when this closeout PR integrates, as recorded in
-[PROGRESS](PROGRESS.md). Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+closeout. Phase 10 is COMPLETE on `main` after PR #25 merged at
+`d437269b9f0cf36a842cdfd496ad50a310804768`, as recorded in [PROGRESS](PROGRESS.md). Phase 11's
+read-only application architecture is approved; M1 is IMPLEMENTED / UNDER REVIEW, while M2–M4
+remain unauthorized and Phase 11 is not complete.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -143,7 +145,8 @@ for the accepted canonical development run. Phase 9 is formally closed as COMPLE
 methodology is accepted under ADR-023; its implementation and B1-B3 corrections are integrated, final
 external/model-assisted review is accepted, and formal closeout is recorded in the
 [completed plan](../plans/completed/phase-10-inventory-simulation.md) and [PROGRESS](PROGRESS.md).
-Phase 10 becomes COMPLETE when this closeout PR integrates. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+Phase 10 is COMPLETE on `main` after closeout PR #25 merged at
+`d437269b9f0cf36a842cdfd496ad50a310804768`.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
@@ -195,11 +198,14 @@ stockout, ending-stock inventory and simulated holding-plus-shortfall cost. Use 
 completed positive-demand receipt-cycle service rate, with policy-dependent denominator/censoring; no
 guaranteed CSL. Retain terminal orders/exposure with identical treatment. Negative cost comparisons
 remain part of the accepted evidence; no actual inventory, stockout, savings or optimality claim.
-No final holdout evaluation or release occurred. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+No final holdout evaluation or release occurred. At the Phase 10 closeout checkpoint, Phase 11 had
+not started; its current M1 implementation/review state is maintained in [PROGRESS](PROGRESS.md).
 
 ## Phase 11 — Application Services & Thin API
 
-**Status:** PLANNED / NOT STARTED; separate authorization required.
+**Status:** M1 IMPLEMENTED / UNDER REVIEW; Phase 11 is not complete. M2–M4 remain planned and are
+not authorized by the current task.
+**Execution plan:** [Phase 11 active plan](../plans/active/phase-11-application-services.md).
 **Objective:** Expose the frozen analytics through reusable Python services and a small HTTP adapter.
 **Dependencies:** Phases 7–10.
 **Deliverables:** Forecast/uncertainty/inventory service functions, thin FastAPI request/response

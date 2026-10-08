@@ -11,8 +11,8 @@
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
-| Phase 10 - inventory simulation | **COMPLETE on integration of this closeout PR** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; final external review accepted; [completed plan](../plans/completed/phase-10-inventory-simulation.md); canonical run and manifest below |
-| Phase 11 and later | PLANNED / NOT STARTED / NOT AUTHORIZED | Separate authorization required |
+| Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
+| Phase 11 — Application Services & Thin API | **M1 IMPLEMENTED / UNDER REVIEW; Phase 11 NOT COMPLETE** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; [active plan](../plans/active/phase-11-application-services.md); M2–M4 not authorized |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -35,9 +35,10 @@ implementation and numerical review, and formal closeout. Its accepted canonical
 are recorded below and were not regenerated. Phase 10 methodology is accepted under ADR-023. PR #23 integrated the implementation at
 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; corrective PR #24 integrated the B1-B3 fixes at
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Final focused independent external/model-assisted review
-accepted the implementation and numerical evidence. The completed plan records formal closeout;
-Phase 10 becomes COMPLETE when this closeout PR is integrated. Phase 11 remains NOT STARTED / NOT
-AUTHORIZED, and the protected holdout remains unreleased.
+accepted the implementation and numerical evidence. Closeout PR #25 was squash-merged into `main`
+at `d437269b9f0cf36a842cdfd496ad50a310804768`; Phase 10 is COMPLETE. Phase 11 architecture is
+approved, and the current task authorizes M1 only. M1 is implemented on the focused feature branch
+and remains under review; M2–M4 are not authorized. The protected holdout remains unreleased.
 
 ## Immediate next boundary
 
@@ -85,6 +86,29 @@ full-source validation and descriptive EDA
 did include those labels; [EDA_FINDINGS](EDA_FINDINGS.md) records that exposure. Do not claim an
 entirely never-inspected test set or reuse those full-period cohorts for modeling. ADR-015 defers
 the single authorized sequential final evaluation until model, intervals and policies are frozen.
+
+### Phase 11 M1 implementation checkpoint — 2026-10-08
+
+M1 adds typed contracts and fixed, read-only readers for the accepted Phase 7–10 canonical outputs,
+plus a synthetic-fixture-tested historical Sales reader. Exact pinned manifest bytes, run IDs,
+upstream lineage, output hashes, producer schemas and primary keys are checked. CSV/JSON and Parquet
+reads are bounded and projected; output hash memoization is process-local and invalidated by a change
+to the file's device, inode, size or nanosecond modification time. There is no selector for the
+Phase 10 ledger and no `current.json` fallback.
+
+The history reader accepts one Store and at most 366 days through 2015-07-03. It validates requests
+before opening the dataset, then uses an Arrow `Store`/`Date` predicate and the fixed `Store`, `Date`,
+`Sales`, `Open` projection. Synthetic fixtures prove a crossing-cutoff request does not open the
+dataset and that protected rows and `Customers` are not returned. Canonical artifact smoke reads
+verified all ten registered outputs; no forecast or inventory artifact was regenerated or changed.
+No protected July 4–31 outcome rows were read or materialized. The M1 reader path invokes no
+fitting, forecasting, simulation or publication function.
+
+Validation on the existing Python 3.14.5 environment: 308 pytest tests passed; Ruff check and format
+passed; the documentation link checker passed; `uv lock --check` resolved 84 packages without a
+lock change; `uv pip check` found all 62 installed packages compatible. M1 is **IMPLEMENTED / UNDER
+REVIEW**. Phase 11 is not complete; M2–M4, final-holdout access and merge remain outside this
+authorization.
 
 ## Branch cleanup inventory
 

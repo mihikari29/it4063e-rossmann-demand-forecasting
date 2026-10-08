@@ -6,8 +6,10 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` has Phases 0–9 formally complete and the reviewed Phase 10 implementation integrated.
-Phases 0–10 are complete after this closeout PR integrates into `main`. Phase 5 additive Holt-Winters
+`main` has Phases 0–10 formally complete following Phase 10 closeout PR #25, merged at
+`d437269b9f0cf36a842cdfd496ad50a310804768`. The Phase 11 read-only application architecture is
+approved; M1 is implemented under review on `feat/phase-11-application-services`, while M2–M4 remain
+unauthorized and Phase 11 is not complete. Phase 5 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
@@ -52,9 +54,9 @@ Phase 10 was implemented under ADR-023. PR #23 integrated the implementation at
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The final independent external/model-assisted review
 accepted the corrective implementation and numerical evidence. The [completed plan](plans/completed/phase-10-inventory-simulation.md)
 records formal closeout. The accepted canonical run is `phase10-dev-20261008-validator-fix`
-(manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0-10
-are complete after this closeout PR is integrated into `main`; Phase 11 remains NOT STARTED / NOT
-AUTHORIZED. The protected final holdout remains unreleased.
+(manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0–10
+are complete on `main` after PR #25 integration. Phase 11 M1 is under review on its feature branch;
+M2–M4 are not authorized. The protected final holdout remains unreleased.
 
 ## Environment and quick start
 
