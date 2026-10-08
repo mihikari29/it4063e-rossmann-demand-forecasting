@@ -898,6 +898,109 @@ def test_csv_integer_nullability_is_preserved_and_enforced(
         fixture_store.reader().read(required_selector)
 
 
+@pytest.mark.parametrize(
+    "token",
+    ["2\x00.5", "1\x00garbage", "1\x00" + "9" * 129],
+)
+def test_csv_integer_reader_rejects_embedded_nul_bytes(
+    fixture_store: FixtureStore, token: str
+) -> None:
+    selector = ArtifactSelector.PHASE8_DAILY_QUANTILES
+    spec = _ARTIFACTS[selector]
+    output = _artifact_path(fixture_store, selector)
+    _write_csv(output, selector, spec.csv_header or (), values={"n": token})
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError) as error:
+        fixture_store.reader().read(selector)
+
+    assert str(error.value) == "The canonical artifact does not satisfy its schema contract."
+    assert error.value.__cause__ is None
+    assert b"\x00" in output.read_bytes()
+
+
+@pytest.mark.parametrize(
+    ("selector", "field"),
+    [
+        (ArtifactSelector.PHASE7_MODEL_COMPARISON, "candidate_id"),
+        (ArtifactSelector.PHASE8_DAILY_QUANTILES, "fit_id"),
+        (ArtifactSelector.PHASE8_CUMULATIVE_QUANTILES, "fit_id"),
+        (ArtifactSelector.PHASE10_COMPARISON, "case_id"),
+    ],
+)
+def test_csv_reader_rejects_embedded_nul_in_string_field(
+    fixture_store: FixtureStore, selector: ArtifactSelector, field: str
+) -> None:
+    spec = _ARTIFACTS[selector]
+    output = _artifact_path(fixture_store, selector)
+    _write_csv(output, selector, spec.csv_header or (), values={field: "nul\x00fixture"})
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_csv_reader_rejects_nul_outside_csv_fields(
+    fixture_store: FixtureStore,
+) -> None:
+    selector = ArtifactSelector.PHASE8_DAILY_QUANTILES
+    output = _artifact_path(fixture_store, selector)
+    output.write_bytes(output.read_bytes() + b"\x00")
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_csv_nul_check_preserves_valid_values_nulls_and_files(
+    fixture_store: FixtureStore,
+) -> None:
+    comparison_fixture = FixtureStore(fixture_store.root / "valid-phase7")
+    comparison_selector = ArtifactSelector.PHASE7_MODEL_COMPARISON
+    comparison_spec = _ARTIFACTS[comparison_selector]
+    comparison_output = _artifact_path(comparison_fixture, comparison_selector)
+    _write_csv(
+        comparison_output,
+        comparison_selector,
+        comparison_spec.csv_header or (),
+        values={"candidate_id": "candidate-λ", "Store": None},
+    )
+    comparison_fixture.refresh_output(comparison_selector)
+
+    quantile_fixture = FixtureStore(fixture_store.root / "valid-phase8")
+    quantile_selector = ArtifactSelector.PHASE8_DAILY_QUANTILES
+    quantile_spec = _ARTIFACTS[quantile_selector]
+    quantile_output = _artifact_path(quantile_fixture, quantile_selector)
+    _write_csv(
+        quantile_output,
+        quantile_selector,
+        quantile_spec.csv_header or (),
+        values={"fit_id": "fit-λ", "n": "1.0"},
+    )
+    quantile_fixture.refresh_output(quantile_selector)
+    before = {
+        comparison_output: comparison_output.read_bytes(),
+        quantile_output: quantile_output.read_bytes(),
+    }
+
+    comparison = comparison_fixture.reader().read(comparison_selector).frame
+    quantiles = quantile_fixture.reader().read(quantile_selector).frame
+
+    assert len(comparison) == len(quantiles) == 1
+    assert comparison.loc[0, "candidate_id"] == "candidate-λ"
+    assert str(comparison["candidate_id"].dtype) == "string"
+    assert pd.isna(comparison.loc[0, "Store"])
+    assert str(comparison["Store"].dtype) == "Int64"
+    assert quantiles.loc[0, "fit_id"] == "fit-λ"
+    assert quantiles.loc[0, "n"] == 1
+    assert str(quantiles["fit_id"].dtype) == "string"
+    assert str(quantiles["n"].dtype) == "Int64"
+    assert before == {
+        comparison_output: comparison_output.read_bytes(),
+        quantile_output: quantile_output.read_bytes(),
+    }
+
+
 def test_csv_values_use_nullable_semantic_dtypes(fixture_store: FixtureStore) -> None:
     daily = fixture_store.reader().read(ArtifactSelector.PHASE8_DAILY_QUANTILES).frame
     comparison = fixture_store.reader().read(ArtifactSelector.PHASE10_COMPARISON).frame

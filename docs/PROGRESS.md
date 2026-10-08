@@ -118,6 +118,19 @@ passed. No dependency or lockfile changed. M1 remains **IMPLEMENTED / UNDER REVI
 independent acceptance; Phase 11 is not complete, and M2–M4, final-holdout access and merge remain
 outside this authorization.
 
+The targeted M1 correctness fix rejects any CSV source containing an embedded NUL before pandas
+tokenization. The bounded 1 MiB byte scan runs in the same pass as output SHA-256 verification;
+matching verified fingerprints reuse that result under the documented immutable local-artifact
+assumption, and changed fingerprints trigger a fresh hash and scan. Public-reader fixtures cover
+all three reproduced integer-token bypasses, NUL bytes in string columns across all four CSV
+selectors, a NUL outside field data, and unchanged values, UTF-8, nullable `Int64`, row counts and
+source bytes for valid CSVs. Focused reader tests passed (80 tests), and the full suite passed (360
+tests). Ruff, formatting, documentation links, `git diff --check`, lock consistency (84 packages)
+and installed dependency compatibility (62 packages) passed. Read-only smoke reads passed for all
+ten registered canonical development outputs; output, manifest and binding sizes and modification
+times were unchanged. The Phase 10 ledger and final holdout were not read. M1 remains
+**IMPLEMENTED / UNDER REVIEW**; M2–M4 remain unauthorized.
+
 ## Branch cleanup inventory
 
 GitHub snapshot, 2026-10-05; cleanup is recommended only after checking unique commits and working

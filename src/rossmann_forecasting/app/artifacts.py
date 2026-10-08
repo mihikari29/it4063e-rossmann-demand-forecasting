@@ -883,6 +883,16 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _sha256_file_and_check_nul(path: Path) -> tuple[str, bool]:
+    digest = hashlib.sha256()
+    contains_nul = False
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            contains_nul |= b"\x00" in chunk
+            digest.update(chunk)
+    return digest.hexdigest(), contains_nul
+
+
 def _is_sha256(value: Any) -> bool:
     return (
         isinstance(value, str)
@@ -1337,12 +1347,18 @@ class _ArtifactReader:
             return
 
         try:
-            actual_hash = _sha256_file(path)
+            if spec.file_format == "csv":
+                actual_hash, contains_nul = _sha256_file_and_check_nul(path)
+            else:
+                actual_hash = _sha256_file(path)
+                contains_nul = False
             after = self._fingerprint(path)
         except OSError:
             raise ArtifactUnavailableError(selector, UnavailableReason.MISSING_ARTIFACT) from None
         if before != after or actual_hash != metadata["sha256"]:
             raise ArtifactIntegrityError(selector)
+        if contains_nul:
+            raise ArtifactSchemaError(selector)
         # The trust model treats local canonical outputs as immutable. Fingerprint changes force
         # rehashing; matching device/inode/size/mtime_ns does not prove unchanged bytes.
         self._verified_output_fingerprints[path] = after
