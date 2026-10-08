@@ -797,6 +797,107 @@ def test_rejects_fractional_value_in_csv_integer_field(fixture_store: FixtureSto
         fixture_store.reader().read(selector)
 
 
+@pytest.mark.parametrize(
+    ("selector", "field", "token", "expected"),
+    [
+        (ArtifactSelector.PHASE8_DAILY_QUANTILES, "n", "-9223372036854775808", -(2**63)),
+        (ArtifactSelector.PHASE8_DAILY_QUANTILES, "n", "9223372036854775807", 2**63 - 1),
+        (
+            ArtifactSelector.PHASE7_MODEL_COMPARISON,
+            "Store",
+            "9007199254740993.0",
+            9007199254740993,
+        ),
+        (ArtifactSelector.PHASE8_DAILY_QUANTILES, "n", "1.0", 1),
+        (ArtifactSelector.PHASE8_DAILY_QUANTILES, "n", "+1", 1),
+        (ArtifactSelector.PHASE8_DAILY_QUANTILES, "n", "-1", -1),
+        (ArtifactSelector.PHASE8_DAILY_QUANTILES, "n", "0.00", 0),
+    ],
+)
+def test_csv_integer_tokens_are_parsed_exactly(
+    fixture_store: FixtureStore,
+    selector: ArtifactSelector,
+    field: str,
+    token: str,
+    expected: int,
+) -> None:
+    spec = _ARTIFACTS[selector]
+    _write_csv(
+        _artifact_path(fixture_store, selector),
+        selector,
+        spec.csv_header or (),
+        values={field: token},
+    )
+    fixture_store.refresh_output(selector)
+
+    result = fixture_store.reader().read(selector).frame
+
+    assert result.loc[0, field] == expected
+    assert str(result[field].dtype) == "Int64"
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "9223372036854775808",
+        "-9223372036854775809",
+        "2.0000000000000001",
+        "not-an-integer",
+        "1_0",
+        "  ",
+        "NaN",
+        "Infinity",
+        "1e400",
+        "1e-9999999999999999",
+        "9" * 129,
+    ],
+)
+def test_csv_integer_tokens_reject_fractional_malformed_and_out_of_range_values(
+    fixture_store: FixtureStore, token: str
+) -> None:
+    selector = ArtifactSelector.PHASE8_DAILY_QUANTILES
+    spec = _ARTIFACTS[selector]
+    _write_csv(
+        _artifact_path(fixture_store, selector),
+        selector,
+        spec.csv_header or (),
+        values={"n": token},
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(selector)
+
+
+def test_csv_integer_nullability_is_preserved_and_enforced(
+    fixture_store: FixtureStore,
+) -> None:
+    optional_selector = ArtifactSelector.PHASE7_MODEL_COMPARISON
+    optional_spec = _ARTIFACTS[optional_selector]
+    _write_csv(
+        _artifact_path(fixture_store, optional_selector),
+        optional_selector,
+        optional_spec.csv_header or (),
+        values={"Store": None},
+    )
+    fixture_store.refresh_output(optional_selector)
+    optional = fixture_store.reader().read(optional_selector).frame
+    assert pd.isna(optional.loc[0, "Store"])
+    assert str(optional["Store"].dtype) == "Int64"
+
+    required_selector = ArtifactSelector.PHASE8_DAILY_QUANTILES
+    required_spec = _ARTIFACTS[required_selector]
+    _write_csv(
+        _artifact_path(fixture_store, required_selector),
+        required_selector,
+        required_spec.csv_header or (),
+        values={"n": None},
+    )
+    fixture_store.refresh_output(required_selector)
+    with pytest.raises(ArtifactSchemaError):
+        fixture_store.reader().read(required_selector)
+
+
 def test_csv_values_use_nullable_semantic_dtypes(fixture_store: FixtureStore) -> None:
     daily = fixture_store.reader().read(ArtifactSelector.PHASE8_DAILY_QUANTILES).frame
     comparison = fixture_store.reader().read(ArtifactSelector.PHASE10_COMPARISON).frame

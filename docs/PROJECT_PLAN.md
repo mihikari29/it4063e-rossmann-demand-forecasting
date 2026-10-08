@@ -178,7 +178,8 @@ implement inventory policies or establish physical inventory, observed stockouts
 ## Phase 10 - Inventory Simulation & Sensitivity Analysis
 
 **Objective:** Compare simple replenishment policies under stated assumptions.
-**Status:** COMPLETE (effective when this formal closeout PR is integrated).
+**Status:** COMPLETE. Formal closeout PR #25 merged into `main` at
+`d437269b9f0cf36a842cdfd496ad50a310804768`.
 **Design:** [Completed Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md) and accepted
 ADR-023. Human methodology approval, corrective implementation review, integration and formal closeout
 are recorded in the plan and [PROGRESS](PROGRESS.md).

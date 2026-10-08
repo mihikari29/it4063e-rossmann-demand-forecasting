@@ -6,10 +6,12 @@ import csv
 import hashlib
 import json
 import math
+import re
 import stat
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal, InvalidOperation
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -274,6 +276,50 @@ def _csv_dtypes(
             if column in result:
                 raise ValueError(f"Duplicate CSV schema field: {column}.")
             result[column] = dtype
+    return result
+
+
+_INT64_MIN = -(2**63)
+_INT64_MAX = 2**63 - 1
+_MAX_INTEGER_TOKEN_LENGTH = 128
+_DECIMAL_TOKEN_PATTERN = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\Z")
+
+
+def _parse_int64_token(token: str) -> int:
+    """Parse one exact, bounded decimal integer token into the signed Int64 range."""
+    if len(token) > _MAX_INTEGER_TOKEN_LENGTH:
+        raise ValueError("Integer token is too long.")
+    normalized_token = token.strip()
+    if _DECIMAL_TOKEN_PATTERN.fullmatch(normalized_token) is None:
+        raise ValueError("Integer token is malformed.")
+    try:
+        value = Decimal(normalized_token)
+    except InvalidOperation:
+        raise ValueError("Integer token is malformed.") from None
+    if not value.is_finite():
+        raise ValueError("Integer token must be finite.")
+
+    sign, digits, exponent = value.as_tuple()
+    first_nonzero = next((index for index, digit in enumerate(digits) if digit), None)
+    if first_nonzero is None:
+        return 0
+    significant_digits = digits[first_nonzero:]
+
+    if exponent >= 0:
+        integer_length = len(significant_digits) + exponent
+        if integer_length > 19:
+            raise ValueError("Integer token is outside the signed Int64 range.")
+        integer_text = "".join(map(str, significant_digits)) + "0" * exponent
+    else:
+        scale = -exponent
+        if scale >= len(significant_digits) or any(significant_digits[-scale:]):
+            raise ValueError("Integer token has a fractional value.")
+        integer_text = "".join(map(str, significant_digits[:-scale]))
+
+    magnitude = int(integer_text)
+    result = -magnitude if sign else magnitude
+    if not _INT64_MIN <= result <= _INT64_MAX:
+        raise ValueError("Integer token is outside the signed Int64 range.")
     return result
 
 
@@ -1343,14 +1389,10 @@ class _ArtifactReader:
                 if dtype == "string":
                     frame[name] = values
                 elif dtype == "Int64":
-                    numeric = pd.to_numeric(values, errors="coerce")
-                    if (
-                        (values.notna() & numeric.isna()).any()
-                        or not numeric.dropna().map(math.isfinite).all()
-                        or numeric.dropna().mod(1).ne(0).any()
-                    ):
-                        raise ArtifactSchemaError(selector)
-                    frame[name] = numeric.astype("Int64")
+                    parsed = values.map(
+                        lambda token: pd.NA if pd.isna(token) else _parse_int64_token(token)
+                    )
+                    frame[name] = parsed.astype("Int64")
                 elif dtype == "Float64":
                     numeric = pd.to_numeric(values, errors="coerce")
                     if (values.notna() & numeric.isna()).any() or not numeric.dropna().map(
