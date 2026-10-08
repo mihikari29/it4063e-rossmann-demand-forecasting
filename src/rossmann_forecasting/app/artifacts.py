@@ -21,18 +21,25 @@ import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 
 from rossmann_forecasting.app.contracts import (
+    ArtifactErrorCode,
     ArtifactIntegrityError,
     ArtifactReadError,
+    ArtifactReadiness,
     ArtifactSchemaError,
     ArtifactSelector,
     ArtifactTable,
     ArtifactUnavailableError,
+    ArtifactValidationLevel,
     CanonicalRunIdentity,
     DuplicateArtifactKeyError,
+    ForecastQuery,
     HistoryQuery,
     InvalidArtifactRequestError,
+    InventoryComparisonQuery,
+    ModelComparisonQuery,
     Phase,
     UnavailableReason,
+    UncertaintyQuery,
     UnsafeArtifactPathError,
     UnsupportedArtifactSelectorError,
 )
@@ -52,6 +59,14 @@ MAX_HISTORY_ROWS = 366
 MAX_STORE_ID = 1115
 MAX_MANIFEST_BYTES = 1_000_000
 MAX_BINDINGS_BYTES = 1_000_000
+PHASE7_FORECAST_ORIGINS = (date(2015, 5, 22), date(2015, 6, 5), date(2015, 6, 19))
+PHASE8_FIT_ORIGINS = {"A": date(2015, 6, 5), "B": date(2015, 6, 19)}
+MAX_FORECAST_VIEW_ROWS = 14
+MAX_DAILY_INTERVAL_VIEW_ROWS = 56
+MAX_CUMULATIVE_VIEW_ROWS = 42
+MAX_PHASE10_CASE_VIEW_ROWS = 2_230
+MAX_PHASE10_COMPARISON_VIEW_ROWS = 32
+MAX_MODEL_COMPARISON_VIEW_ROWS = 500
 
 
 @dataclass(frozen=True, slots=True)
@@ -982,6 +997,333 @@ class _ArtifactReader:
             manifest_sha256=identity.manifest_sha256,
             output_sha256=metadata["sha256"],
             frame=frame,
+            selected_rows=len(frame),
+            manifest_rows=metadata["rows"],
+        )
+
+    def inspect_readiness(self) -> tuple[ArtifactReadiness, ...]:
+        """Inspect registered resources without reading or hashing their output bodies."""
+        statuses: list[ArtifactReadiness] = []
+        for selector, spec in _ARTIFACTS.items():
+            identity = self._expected_runs[spec.phase]
+            level = ArtifactValidationLevel.UNAVAILABLE
+            output_present = False
+            manifest_validated = False
+            output_hash_verified = False
+            error_code = None
+            try:
+                output_path = self._trusted_file(
+                    identity.manifest_relative_path.parent / spec.filename,
+                    selector,
+                    UnavailableReason.MISSING_ARTIFACT,
+                )
+                output_present = True
+                level = ArtifactValidationLevel.PRESENT
+            except ArtifactReadError as error:
+                error_code = error.code
+                if error.code is not ArtifactErrorCode.UNAVAILABLE:
+                    level = ArtifactValidationLevel.INVALID
+                output_path = None
+            if level is not ArtifactValidationLevel.INVALID:
+                try:
+                    self._trusted_file(
+                        identity.manifest_relative_path,
+                        selector,
+                        UnavailableReason.MISSING_MANIFEST,
+                    )
+                    manifest = self._read_manifest(identity, selector)
+                    self._output_metadata(manifest, spec)
+                    manifest_validated = True
+                    level = ArtifactValidationLevel.MANIFEST_VALIDATED
+                    if output_path is not None and self._verified_output_fingerprints.get(
+                        output_path
+                    ) == self._fingerprint(output_path):
+                        output_hash_verified = True
+                        level = ArtifactValidationLevel.OUTPUT_VERIFIED
+                except ArtifactReadError as error:
+                    error_code = error.code
+                    if error.code is not ArtifactErrorCode.UNAVAILABLE:
+                        level = ArtifactValidationLevel.INVALID
+                    elif output_present:
+                        level = ArtifactValidationLevel.PRESENT
+                    else:
+                        level = ArtifactValidationLevel.UNAVAILABLE
+                except OSError:
+                    error_code = ArtifactErrorCode.UNAVAILABLE
+                    level = (
+                        ArtifactValidationLevel.PRESENT
+                        if output_present
+                        else ArtifactValidationLevel.UNAVAILABLE
+                    )
+            statuses.append(
+                ArtifactReadiness(
+                    selector=selector,
+                    phase=spec.phase,
+                    run_id=identity.run_id,
+                    manifest_sha256=identity.manifest_sha256,
+                    level=level,
+                    output_present=output_present,
+                    manifest_validated=manifest_validated,
+                    output_hash_verified=output_hash_verified,
+                    error_code=error_code,
+                )
+            )
+        return tuple(statuses)
+
+    def read_forecasts(self, query: ForecastQuery) -> ArtifactTable:
+        """Read one forecast Store/origin through a fixed Arrow predicate."""
+        self._validate_forecast_query(query)
+        predicate = (ds.field("Store") == query.store_id) & (
+            ds.field("forecast_origin")
+            == pa.scalar(datetime.combine(query.forecast_origin, time.min), type=pa.timestamp("ns"))
+        )
+        return self._read_selected_parquet(
+            ArtifactSelector.PHASE7_FORECASTS, predicate, MAX_FORECAST_VIEW_ROWS
+        )
+
+    def read_daily_intervals(self, query: UncertaintyQuery) -> ArtifactTable:
+        """Read one Fit/Store/origin daily-interval view through Arrow."""
+        self._validate_uncertainty_query(query)
+        predicate = (
+            (ds.field("fit_id") == query.fit_id)
+            & (ds.field("Store") == query.store_id)
+            & (
+                ds.field("forecast_origin")
+                == pa.scalar(
+                    datetime.combine(query.forecast_origin, time.min), type=pa.timestamp("ns")
+                )
+            )
+        )
+        return self._read_selected_parquet(
+            ArtifactSelector.PHASE8_DAILY_INTERVALS, predicate, MAX_DAILY_INTERVAL_VIEW_ROWS
+        )
+
+    def read_cumulative_uncertainty(self, query: UncertaintyQuery) -> ArtifactTable:
+        """Read one Fit/Store/origin cumulative-uncertainty view through Arrow."""
+        self._validate_uncertainty_query(query)
+        predicate = (
+            (ds.field("fit_id") == query.fit_id)
+            & (ds.field("Store") == query.store_id)
+            & (
+                ds.field("forecast_origin")
+                == pa.scalar(
+                    datetime.combine(query.forecast_origin, time.min), type=pa.timestamp("ns")
+                )
+            )
+        )
+        return self._read_selected_parquet(
+            ArtifactSelector.PHASE8_CUMULATIVE_UNCERTAINTY,
+            predicate,
+            MAX_CUMULATIVE_VIEW_ROWS,
+        )
+
+    def read_inventory_artifact(
+        self,
+        selector: ArtifactSelector,
+        query: InventoryComparisonQuery,
+    ) -> ArtifactTable:
+        """Read one Phase 10 summary/target case, optionally for a single Store."""
+        self._validate_inventory_query(query)
+        if not isinstance(selector, ArtifactSelector) or selector not in {
+            ArtifactSelector.PHASE10_POLICY_SUMMARY,
+            ArtifactSelector.PHASE10_POLICY_TARGETS,
+        }:
+            raise UnsupportedArtifactSelectorError()
+        predicate = ds.field("case_id") == query.case_id
+        if query.store_id is not None:
+            predicate = predicate & (ds.field("Store") == query.store_id)
+        return self._read_selected_parquet(selector, predicate, MAX_PHASE10_CASE_VIEW_ROWS)
+
+    def read_inventory_comparison(self, query: InventoryComparisonQuery) -> ArtifactTable:
+        """Read only the bounded Phase 10 comparison rows for one case."""
+        self._validate_inventory_query(query)
+        return self._read_selected_csv(
+            ArtifactSelector.PHASE10_COMPARISON,
+            {"case_id": query.case_id},
+            MAX_PHASE10_COMPARISON_VIEW_ROWS,
+        )
+
+    def read_model_comparison(self, query: ModelComparisonQuery) -> ArtifactTable:
+        """Stream and return exact matches for a bounded set of fixed Phase 7 dimensions."""
+        filters = self._validate_model_comparison_query(query)
+        return self._read_selected_csv(
+            ArtifactSelector.PHASE7_MODEL_COMPARISON,
+            filters,
+            query.limit,
+            excess_is_request_error=True,
+        )
+
+    def _validate_forecast_query(self, query: ForecastQuery) -> None:
+        selector = ArtifactSelector.PHASE7_FORECASTS
+        if (
+            not isinstance(query, ForecastQuery)
+            or isinstance(query.store_id, bool)
+            or not isinstance(query.store_id, int)
+            or not 1 <= query.store_id <= MAX_STORE_ID
+            or type(query.forecast_origin) is not date
+            or query.forecast_origin not in PHASE7_FORECAST_ORIGINS
+        ):
+            raise InvalidArtifactRequestError(selector)
+
+    def _validate_uncertainty_query(self, query: UncertaintyQuery) -> None:
+        selector = ArtifactSelector.PHASE8_DAILY_INTERVALS
+        if not isinstance(query, UncertaintyQuery):
+            raise InvalidArtifactRequestError(selector)
+        if (
+            isinstance(query.store_id, bool)
+            or not isinstance(query.store_id, int)
+            or not 1 <= query.store_id <= MAX_STORE_ID
+            or not isinstance(query.fit_id, str)
+            or query.fit_id not in PHASE8_FIT_ORIGINS
+            or type(query.forecast_origin) is not date
+            or PHASE8_FIT_ORIGINS.get(query.fit_id) != query.forecast_origin
+        ):
+            raise InvalidArtifactRequestError(selector)
+
+    @staticmethod
+    def _validate_inventory_query(query: InventoryComparisonQuery) -> None:
+        selector = ArtifactSelector.PHASE10_COMPARISON
+        if not isinstance(query, InventoryComparisonQuery):
+            raise InvalidArtifactRequestError(selector)
+        if (
+            not isinstance(query.case_id, str)
+            or re.fullmatch(r"[A-Za-z0-9._-]{1,128}", query.case_id) is None
+            or (
+                query.store_id is not None
+                and (
+                    isinstance(query.store_id, bool)
+                    or not isinstance(query.store_id, int)
+                    or not 1 <= query.store_id <= MAX_STORE_ID
+                )
+            )
+        ):
+            raise InvalidArtifactRequestError(selector)
+
+    @staticmethod
+    def _validate_model_comparison_query(query: ModelComparisonQuery) -> dict[str, object]:
+        selector = ArtifactSelector.PHASE7_MODEL_COMPARISON
+        if not isinstance(query, ModelComparisonQuery):
+            raise InvalidArtifactRequestError(selector)
+        filters: dict[str, object] = {}
+        for field in (
+            "candidate_id",
+            "population",
+            "scope",
+            "validation_window",
+            "metric",
+        ):
+            value = getattr(query, field)
+            if value is None:
+                continue
+            if (
+                not isinstance(value, str)
+                or not value
+                or len(value) > 128
+                or any(ord(character) < 32 for character in value)
+            ):
+                raise InvalidArtifactRequestError(selector)
+            if field == "validation_window" and value not in {
+                "validation_1",
+                "validation_2",
+                "validation_3",
+            }:
+                raise InvalidArtifactRequestError(selector)
+            filters[field] = value
+        for field in ("horizon", "store_id"):
+            value = getattr(query, field)
+            if value is None:
+                continue
+            upper_bound = 14 if field == "horizon" else MAX_STORE_ID
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or not 1 <= value <= upper_bound
+            ):
+                raise InvalidArtifactRequestError(selector)
+            filters["Store" if field == "store_id" else field] = value
+        if not filters or (
+            isinstance(query.limit, bool)
+            or not isinstance(query.limit, int)
+            or not 1 <= query.limit <= MAX_MODEL_COMPARISON_VIEW_ROWS
+        ):
+            raise InvalidArtifactRequestError(selector)
+        return filters
+
+    def _read_selected_parquet(
+        self,
+        selector: ArtifactSelector,
+        predicate: ds.Expression,
+        max_selected_rows: int,
+    ) -> ArtifactTable:
+        if selector not in _ARTIFACTS or _ARTIFACTS[selector].file_format != "parquet":
+            raise UnsupportedArtifactSelectorError()
+        spec = _ARTIFACTS[selector]
+        identity = self._expected_runs[spec.phase]
+        manifest = self._read_manifest(identity, selector)
+        metadata = self._output_metadata(manifest, spec)
+        path = self._trusted_file(
+            identity.manifest_relative_path.parent / spec.filename,
+            selector,
+            UnavailableReason.MISSING_ARTIFACT,
+        )
+        self._verify_output_file(path, metadata, spec, selector)
+        frame = self._read_parquet(
+            path,
+            metadata,
+            spec,
+            selector,
+            predicate=predicate,
+            max_selected_rows=max_selected_rows,
+        )
+        self._assert_unique_key(frame, spec, selector)
+        return ArtifactTable(
+            selector=selector,
+            run_id=identity.run_id,
+            manifest_sha256=identity.manifest_sha256,
+            output_sha256=metadata["sha256"],
+            frame=frame,
+            selected_rows=len(frame),
+            manifest_rows=metadata["rows"],
+        )
+
+    def _read_selected_csv(
+        self,
+        selector: ArtifactSelector,
+        filters: Mapping[str, object],
+        max_selected_rows: int,
+        *,
+        excess_is_request_error: bool = False,
+    ) -> ArtifactTable:
+        if selector not in _ARTIFACTS or _ARTIFACTS[selector].file_format != "csv":
+            raise UnsupportedArtifactSelectorError()
+        spec = _ARTIFACTS[selector]
+        identity = self._expected_runs[spec.phase]
+        manifest = self._read_manifest(identity, selector)
+        metadata = self._output_metadata(manifest, spec)
+        path = self._trusted_file(
+            identity.manifest_relative_path.parent / spec.filename,
+            selector,
+            UnavailableReason.MISSING_ARTIFACT,
+        )
+        self._verify_output_file(path, metadata, spec, selector)
+        frame = self._read_csv_selected(
+            path,
+            metadata,
+            spec,
+            selector,
+            filters,
+            max_selected_rows,
+            excess_is_request_error=excess_is_request_error,
+        )
+        self._assert_unique_key(frame, spec, selector)
+        return ArtifactTable(
+            selector=selector,
+            run_id=identity.run_id,
+            manifest_sha256=identity.manifest_sha256,
+            output_sha256=metadata["sha256"],
+            frame=frame,
+            selected_rows=len(frame),
+            manifest_rows=metadata["rows"],
         )
 
     def read_history_sales(self, query: HistoryQuery) -> pd.DataFrame:
@@ -1399,33 +1741,121 @@ class _ArtifactReader:
             )
             if len(raw) != metadata["rows"]:
                 raise ArtifactIntegrityError(selector)
-            frame = raw.loc[:, list(spec.projection)].copy()
-            for name, dtype in dtypes.items():
-                values = frame[name].where(frame[name].ne(""), pd.NA).astype("string")
-                if dtype == "string":
-                    frame[name] = values
-                elif dtype == "Int64":
-                    parsed = values.map(
-                        lambda token: pd.NA if pd.isna(token) else _parse_int64_token(token)
-                    )
-                    frame[name] = parsed.astype("Int64")
-                elif dtype == "Float64":
-                    numeric = pd.to_numeric(values, errors="coerce")
-                    if (values.notna() & numeric.isna()).any() or not numeric.dropna().map(
-                        math.isfinite
-                    ).all():
-                        raise ArtifactSchemaError(selector)
-                    frame[name] = numeric.astype("Float64")
-                elif dtype == "boolean":
-                    if not (values.isna() | values.isin(["True", "False"])).all():
-                        raise ArtifactSchemaError(selector)
-                    frame[name] = values.map({"True": True, "False": False}).astype("boolean")
-                else:
-                    raise ArtifactSchemaError(selector)
+            frame = self._convert_csv_frame(
+                raw.loc[:, list(spec.projection)].copy(), spec, selector, dtypes
+            )
         except ArtifactReadError:
             raise
         except Exception:
             raise ArtifactSchemaError(selector) from None
+        return frame
+
+    def _read_csv_selected(
+        self,
+        path: Path,
+        metadata: dict[str, Any],
+        spec: _ArtifactSpec,
+        selector: ArtifactSelector,
+        filters: Mapping[str, object],
+        max_selected_rows: int,
+        *,
+        excess_is_request_error: bool = False,
+    ) -> pd.DataFrame:
+        if (
+            not filters
+            or not set(filters).issubset(spec.projection)
+            or max_selected_rows < 1
+            or spec.csv_header is None
+        ):
+            raise InvalidArtifactRequestError(selector)
+        dtypes = _CSV_DTYPES.get(selector)
+        if dtypes is None or set(dtypes) != set(spec.projection):
+            raise ArtifactSchemaError(selector)
+        try:
+            with path.open("r", encoding="utf-8-sig", newline="") as stream:
+                reader = csv.DictReader(stream)
+                if (
+                    reader.fieldnames is None
+                    or len(reader.fieldnames) != len(set(reader.fieldnames))
+                    or tuple(reader.fieldnames) != spec.csv_header
+                    or not _descriptor_matches_schema(metadata, selector)
+                ):
+                    raise ArtifactSchemaError(selector)
+                selected: list[dict[str, str]] = []
+                row_count = 0
+                exceeded = False
+                for record in reader:
+                    row_count += 1
+                    if None in record or any(value is None for value in record.values()):
+                        raise ArtifactSchemaError(selector)
+                    matches = True
+                    for name, expected in filters.items():
+                        token = record.get(name)
+                        if token is None:
+                            raise ArtifactSchemaError(selector)
+                        if name in {"Store", "horizon"}:
+                            try:
+                                observed: object = (
+                                    None if token == "" else _parse_int64_token(token)
+                                )
+                            except ValueError:
+                                raise ArtifactSchemaError(selector) from None
+                        else:
+                            observed = None if token == "" else token
+                        if observed != expected:
+                            matches = False
+                            break
+                    if matches:
+                        if len(selected) < max_selected_rows + 1:
+                            selected.append({name: record[name] for name in spec.projection})
+                        if len(selected) > max_selected_rows:
+                            exceeded = True
+                if row_count != metadata["rows"]:
+                    raise ArtifactIntegrityError(selector)
+                if exceeded:
+                    if excess_is_request_error:
+                        raise InvalidArtifactRequestError(selector)
+                    raise ArtifactIntegrityError(selector)
+            raw = pd.DataFrame.from_records(selected, columns=spec.projection)
+            return self._convert_csv_frame(raw, spec, selector, dtypes)
+        except ArtifactReadError:
+            raise
+        except (OSError, UnicodeDecodeError, csv.Error):
+            raise ArtifactSchemaError(selector) from None
+        except Exception:
+            raise ArtifactSchemaError(selector) from None
+
+    def _convert_csv_frame(
+        self,
+        frame: pd.DataFrame,
+        spec: _ArtifactSpec,
+        selector: ArtifactSelector,
+        dtypes: Mapping[str, str],
+    ) -> pd.DataFrame:
+        if tuple(frame.columns) != spec.projection:
+            raise ArtifactSchemaError(selector)
+        for name, dtype in dtypes.items():
+            values = frame[name].where(frame[name].ne(""), pd.NA).astype("string")
+            if dtype == "string":
+                frame[name] = values
+            elif dtype == "Int64":
+                parsed = values.map(
+                    lambda token: pd.NA if pd.isna(token) else _parse_int64_token(token)
+                )
+                frame[name] = parsed.astype("Int64")
+            elif dtype == "Float64":
+                numeric = pd.to_numeric(values, errors="coerce")
+                if (values.notna() & numeric.isna()).any() or not numeric.dropna().map(
+                    math.isfinite
+                ).all():
+                    raise ArtifactSchemaError(selector)
+                frame[name] = numeric.astype("Float64")
+            elif dtype == "boolean":
+                if not (values.isna() | values.isin(["True", "False"])).all():
+                    raise ArtifactSchemaError(selector)
+                frame[name] = values.map({"True": True, "False": False}).astype("boolean")
+            else:
+                raise ArtifactSchemaError(selector)
         self._assert_required_non_null(frame, selector, _CSV_REQUIRED_NON_NULL.get(selector, ()))
         return frame
 
@@ -1435,6 +1865,9 @@ class _ArtifactReader:
         metadata: dict[str, Any],
         spec: _ArtifactSpec,
         selector: ArtifactSelector,
+        *,
+        predicate: ds.Expression | None = None,
+        max_selected_rows: int | None = None,
     ) -> pd.DataFrame:
         try:
             parquet = pq.ParquetFile(path)
@@ -1493,25 +1926,32 @@ class _ArtifactReader:
 
         try:
             dataset = ds.dataset(path, format="parquet")
-            predicate = None
             if spec.development_date_filter:
                 date_type = dataset.schema.field("Date").type
                 if not self._supported_date_type(date_type):
                     raise ArtifactSchemaError(selector)
                 next_day = DEVELOPMENT_CUTOFF + timedelta(days=1)
                 upper = self._date_scalar(next_day, date_type)
-                predicate = ds.field("Date") < upper
+                development_predicate = ds.field("Date") < upper
+                predicate = (
+                    development_predicate
+                    if predicate is None
+                    else predicate & development_predicate
+                )
+            row_limit = spec.max_rows if max_selected_rows is None else max_selected_rows
             table = dataset.scanner(
                 columns=list(spec.projection),
                 filter=predicate,
                 batch_size=65_536,
                 use_threads=False,
-            ).head(spec.max_rows + 1)
+            ).head(row_limit + 1)
         except ArtifactReadError:
             raise
         except Exception:
             raise ArtifactSchemaError(selector) from None
-        if table.num_rows != metadata["rows"]:
+        if table.num_rows > row_limit or (
+            max_selected_rows is None and table.num_rows != metadata["rows"]
+        ):
             raise ArtifactIntegrityError(selector)
         try:
             frame = table.to_pandas()

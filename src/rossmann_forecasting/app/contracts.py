@@ -54,6 +54,16 @@ class ArtifactErrorCode(StrEnum):
     UNSAFE_PATH = "unsafe_artifact_path"
 
 
+class ArtifactValidationLevel(StrEnum):
+    """Highest resource-validation level actually reached by an inspection."""
+
+    UNAVAILABLE = "unavailable"
+    PRESENT = "present"
+    MANIFEST_VALIDATED = "manifest_validated"
+    OUTPUT_VERIFIED = "output_verified"
+    INVALID = "invalid"
+
+
 @dataclass(frozen=True, slots=True)
 class CanonicalRunIdentity:
     """Trusted, repository-relative identity for one accepted immutable run."""
@@ -83,6 +93,62 @@ class ArtifactTable:
     manifest_sha256: str
     output_sha256: str
     frame: pd.DataFrame
+    selected_rows: int = 0
+    manifest_rows: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactReadiness:
+    """Sanitized readiness level for one fixed canonical selector."""
+
+    selector: ArtifactSelector
+    phase: Phase
+    run_id: str
+    manifest_sha256: str
+    level: ArtifactValidationLevel
+    output_present: bool
+    manifest_validated: bool
+    output_hash_verified: bool
+    error_code: ArtifactErrorCode | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ForecastQuery:
+    """One Store and accepted Phase 7 forecast origin."""
+
+    store_id: int
+    forecast_origin: date
+
+
+@dataclass(frozen=True, slots=True)
+class UncertaintyQuery:
+    """One Store and one matching accepted Phase 8 fit/origin."""
+
+    store_id: int
+    forecast_origin: date
+    fit_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ModelComparisonQuery:
+    """Bounded exact-match filters over the fixed Phase 7 comparison dimensions."""
+
+    candidate_id: str | None = None
+    population: str | None = None
+    scope: str | None = None
+    validation_window: str | None = None
+    horizon: int | None = None
+    store_id: int | None = None
+    metric: str | None = None
+    limit: int = 200
+
+
+@dataclass(frozen=True, slots=True)
+class InventoryComparisonQuery:
+    """One known Phase 10 case, optionally restricted to one Store."""
+
+    case_id: str
+    store_id: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

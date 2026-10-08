@@ -12,7 +12,7 @@
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
-| Phase 11 — Application Services & Thin API | **M1 IMPLEMENTED / UNDER REVIEW; Phase 11 NOT COMPLETE** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; [active plan](../plans/active/phase-11-application-services.md); M2–M4 not authorized |
+| Phase 11 — Application Services & Thin API | **M1 REVIEWED / ACCEPTED; M2 IMPLEMENTED / UNDER REVIEW; Phase 11 NOT COMPLETE** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; [active plan](../plans/active/phase-11-application-services.md); M3–M4 not authorized |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -37,8 +37,8 @@ are recorded below and were not regenerated. Phase 10 methodology is accepted un
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Final focused independent external/model-assisted review
 accepted the implementation and numerical evidence. Closeout PR #25 was squash-merged into `main`
 at `d437269b9f0cf36a842cdfd496ad50a310804768`; Phase 10 is COMPLETE. Phase 11 architecture is
-approved, and the current task authorizes M1 only. M1 is implemented on the focused feature branch
-and remains under review; M2–M4 are not authorized. The protected holdout remains unreleased.
+approved. M1 is reviewed/formally accepted and M2 is implemented under review on the focused feature
+branch; M3–M4 remain unauthorized. The protected holdout remains unreleased.
 
 ## Immediate next boundary
 
@@ -129,7 +129,46 @@ tests). Ruff, formatting, documentation links, `git diff --check`, lock consiste
 and installed dependency compatibility (62 packages) passed. Read-only smoke reads passed for all
 ten registered canonical development outputs; output, manifest and binding sizes and modification
 times were unchanged. The Phase 10 ledger and final holdout were not read. M1 remains
-**IMPLEMENTED / UNDER REVIEW**; M2–M4 remain unauthorized.
+**IMPLEMENTED / UNDER REVIEW**; M2–M4 remained unauthorized at that checkpoint.
+
+### Phase 11 M1 acceptance and M2 implementation checkpoint — 2026-10-08
+
+The Technical Lead formally accepted M1 after the final independent targeted review returned
+`ACCEPT` on exact PR #26 head `1fef9c7f27cb27068f8fcb415378771b878d4aed`. The PR remains open,
+draft and unmerged; `main` remains at Phase 10 closeout commit
+`d437269b9f0cf36a842cdfd496ad50a310804768`. This records M1 review acceptance, not phase completion
+or integration.
+
+The Technical Lead authorized M2 on the same branch and PR. M2 is in implementation and remains
+pending independent review. Before code changes, the active plan froze supported selectors, query
+bounds, service response whitelists, selective-read integrity behavior and comparison semantics
+against the producer contracts. M2 is limited to shared read-only services and fixture tests;
+M3–M4 remain unauthorized, PR #26 must stay draft/unmerged, and no final-holdout outcome, inference,
+or Phase 10 ledger artifact is part of this work.
+
+### Phase 11 M2 implementation checkpoint — 2026-10-08
+
+M2 adds closed typed queries and bounded shared services for readiness/catalog, forecast issuance,
+saved uncertainty, model comparisons, policy comparisons and the existing cutoff-safe history reader.
+Parquet selection uses Arrow predicates after full-file hash, footer schema and global manifest-row
+verification; selected rows have independent bounds. Large CSV comparisons stream exact matches and
+never materialize the complete Phase 7 comparison frame. Service DTOs whitelist response fields,
+preserve unavailable values and provenance, and serialize without NaN/NaT or artifact paths. Policy
+cost differences are shown only for valid complete matched pairs; producer case-level comparisons,
+denominators and signed adverse results remain unchanged.
+
+Validation on Python 3.14.5: focused app-reader/service tests passed (**98**); full pytest passed
+(**378**). Ruff lint and format, documentation links (**229** local destinations/anchors),
+`git diff --check`, and the environment's `pip check` passed. The `uv` executable was not available
+in this shell, so `uv lock --check` could not run; no dependency or lockfile changed. A read-only
+canonical service smoke covered 10 registered non-ledger resources, 82 scenario entries, 172 case
+IDs, all service views, and 1,115 matched Store pairs. Responses were JSON-safe and cutoff-safe;
+canonical output and manifest sizes/modification times were unchanged. No final-holdout outcomes,
+Phase 10 ledger, or raw historical source data were read; no artifact was generated or mutated.
+
+M2 is **IMPLEMENTED / UNDER REVIEW** pending independent review. M1 remains reviewed/accepted on the
+unmerged feature branch. PR #26 stays draft and unmerged; M3–M4 remain unauthorized and Phase 11 is
+not complete.
 
 ## Branch cleanup inventory
 

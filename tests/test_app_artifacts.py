@@ -7,7 +7,7 @@ import hashlib
 import json
 import stat
 from dataclasses import replace
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -30,9 +30,13 @@ from rossmann_forecasting.app.contracts import (
     ArtifactUnavailableError,
     CanonicalRunIdentity,
     DuplicateArtifactKeyError,
+    ForecastQuery,
     HistoryQuery,
     InvalidArtifactRequestError,
+    InventoryComparisonQuery,
+    ModelComparisonQuery,
     Phase,
+    UncertaintyQuery,
     UnsafeArtifactPathError,
     UnsupportedArtifactSelectorError,
 )
@@ -1451,3 +1455,258 @@ def test_missing_historical_dataset_is_explicit(fixture_store: FixtureStore) -> 
         fixture_store.reader().read_history_sales(
             HistoryQuery(1, date(2015, 7, 1), date(2015, 7, 3))
         )
+
+
+def test_selected_forecast_pushes_arrow_predicate_and_keeps_global_row_count(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    selector = ArtifactSelector.PHASE7_FORECASTS
+    schema = _FIXTURE_SCHEMAS[selector]
+    rows = []
+    for store_id, origin in ((1, datetime(2015, 6, 5)), (2, datetime(2015, 6, 19))):
+        row = {field.name: _sample_arrow_value(field) for field in schema}
+        row.update(
+            {
+                "Store": store_id,
+                "forecast_origin": origin,
+                "Date": origin.replace(day=origin.day + 1),
+                "horizon": 1,
+            }
+        )
+        rows.append(row)
+    pq.write_table(
+        pa.Table.from_pylist(rows, schema=schema), _artifact_path(fixture_store, selector)
+    )
+    fixture_store.refresh_output(selector)
+
+    original_dataset = artifact_module.ds.dataset
+    observed: dict[str, object] = {}
+
+    class RecordingDataset:
+        def __init__(self, wrapped: object) -> None:
+            self._wrapped = wrapped
+            self.schema = wrapped.schema
+
+        def scanner(self, **kwargs: object) -> object:
+            observed.update(kwargs)
+            return self._wrapped.scanner(**kwargs)
+
+    monkeypatch.setattr(
+        artifact_module.ds,
+        "dataset",
+        lambda *args, **kwargs: RecordingDataset(original_dataset(*args, **kwargs)),
+    )
+    result = fixture_store.reader().read_forecasts(ForecastQuery(1, date(2015, 6, 5)))
+
+    assert len(result.frame) == result.selected_rows == 1
+    assert result.manifest_rows == 2
+    assert result.frame.loc[0, "Store"] == 1
+    assert tuple(observed["columns"]) == _ARTIFACTS[selector].projection
+    assert "Store" in str(observed["filter"])
+    assert "forecast_origin" in str(observed["filter"])
+
+
+def test_filtered_parquet_validates_full_footer_count_before_arrow_scan(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    selector = ArtifactSelector.PHASE7_FORECASTS
+    _write_table(_artifact_path(fixture_store, selector), selector)
+    metadata = fixture_store.manifests[Phase.PHASE7]["outputs"][_ARTIFACTS[selector].filename]
+    assert isinstance(metadata, dict)
+    metadata["rows"] = 2
+    fixture_store.refresh_manifest(Phase.PHASE7)
+    monkeypatch.setattr(
+        artifact_module.ds,
+        "dataset",
+        lambda *args, **kwargs: pytest.fail("Arrow scan ran before footer validation"),
+    )
+
+    with pytest.raises(ArtifactIntegrityError):
+        fixture_store.reader().read_forecasts(ForecastQuery(1, date(2015, 6, 19)))
+
+
+def test_selected_forecast_enforces_its_own_row_bound(fixture_store: FixtureStore) -> None:
+    selector = ArtifactSelector.PHASE7_FORECASTS
+    schema = _FIXTURE_SCHEMAS[selector]
+    origin = datetime(2015, 6, 5)
+    rows = []
+    for horizon in range(1, 16):
+        row = {field.name: _sample_arrow_value(field) for field in schema}
+        row.update(
+            {
+                "Store": 1,
+                "forecast_origin": origin,
+                "Date": origin + timedelta(days=horizon),
+                "horizon": horizon,
+            }
+        )
+        rows.append(row)
+    pq.write_table(
+        pa.Table.from_pylist(rows, schema=schema), _artifact_path(fixture_store, selector)
+    )
+    fixture_store.refresh_output(selector)
+
+    with pytest.raises(ArtifactIntegrityError):
+        fixture_store.reader().read_forecasts(ForecastQuery(1, date(2015, 6, 5)))
+
+
+def test_model_comparison_filters_stream_without_full_pandas_materialization(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    selector = ArtifactSelector.PHASE7_MODEL_COMPARISON
+    spec = _ARTIFACTS[selector]
+    path = _artifact_path(fixture_store, selector)
+    rows = []
+    for metric in ("mae", "rmse"):
+        row = {name: _csv_value(selector, name) for name in spec.projection}
+        row["metric"] = metric
+        rows.append(["" if row[name] is None else row[name] for name in spec.projection])
+    with path.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(spec.csv_header)
+        writer.writerows(rows)
+    metadata = fixture_store.manifests[Phase.PHASE7]["outputs"][spec.filename]
+    assert isinstance(metadata, dict)
+    metadata["rows"] = 2
+    metadata["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+    metadata["bytes"] = path.stat().st_size
+    fixture_store.refresh_manifest(Phase.PHASE7)
+    monkeypatch.setattr(
+        artifact_module.pd,
+        "read_csv",
+        lambda *args, **kwargs: pytest.fail("filtered CSV was materialized through pandas"),
+    )
+    reader = fixture_store.reader()
+    query = ModelComparisonQuery(candidate_id="global_lightgbm_gbdt_regression_l1", limit=2)
+
+    result = reader.read_model_comparison(query)
+    assert result.selected_rows == result.manifest_rows == 2
+    assert result.frame["metric"].tolist() == ["mae", "rmse"]
+    assert str(result.frame["Store"].dtype) == "Int64"
+    with pytest.raises(InvalidArtifactRequestError):
+        reader.read_model_comparison(
+            ModelComparisonQuery(candidate_id="global_lightgbm_gbdt_regression_l1", limit=1)
+        )
+
+
+def test_model_comparison_query_is_validated_before_manifest_read(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    reader = fixture_store.reader()
+    monkeypatch.setattr(
+        reader,
+        "_read_manifest",
+        lambda *args, **kwargs: pytest.fail("manifest opened for an unbounded query"),
+    )
+
+    with pytest.raises(InvalidArtifactRequestError):
+        reader.read_model_comparison(ModelComparisonQuery())
+
+
+def test_uncertainty_views_push_fit_store_and_origin_predicates(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    selectors = (
+        ArtifactSelector.PHASE8_DAILY_INTERVALS,
+        ArtifactSelector.PHASE8_CUMULATIVE_UNCERTAINTY,
+    )
+    for selector in selectors:
+        schema = _FIXTURE_SCHEMAS[selector]
+        row = {field.name: _sample_arrow_value(field) for field in schema}
+        row.update(
+            {
+                "fit_id": "B",
+                "Store": 1,
+                "forecast_origin": datetime(2015, 6, 19),
+            }
+        )
+        pq.write_table(
+            pa.Table.from_pylist([row], schema=schema), _artifact_path(fixture_store, selector)
+        )
+        fixture_store.refresh_output(selector)
+    original_dataset = artifact_module.ds.dataset
+    scans: list[dict[str, object]] = []
+
+    class RecordingDataset:
+        def __init__(self, wrapped: object) -> None:
+            self._wrapped = wrapped
+            self.schema = wrapped.schema
+
+        def scanner(self, **kwargs: object) -> object:
+            scans.append(kwargs)
+            return self._wrapped.scanner(**kwargs)
+
+    monkeypatch.setattr(
+        artifact_module.ds,
+        "dataset",
+        lambda *args, **kwargs: RecordingDataset(original_dataset(*args, **kwargs)),
+    )
+    reader = fixture_store.reader()
+    query = UncertaintyQuery(1, date(2015, 6, 19), "B")
+    daily = reader.read_daily_intervals(query)
+    cumulative = reader.read_cumulative_uncertainty(query)
+
+    assert daily.selected_rows == cumulative.selected_rows == 1
+    assert len(scans) == 2
+    for scan, selector in zip(scans, selectors, strict=True):
+        assert tuple(scan["columns"]) == _ARTIFACTS[selector].projection
+        assert "fit_id" in str(scan["filter"])
+        assert "Store" in str(scan["filter"])
+        assert "forecast_origin" in str(scan["filter"])
+
+
+def test_uncertainty_fit_origin_pair_is_validated_before_manifest_read(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    reader = fixture_store.reader()
+    monkeypatch.setattr(
+        reader,
+        "_read_manifest",
+        lambda *args, **kwargs: pytest.fail("manifest opened for a mismatched fit/origin"),
+    )
+
+    with pytest.raises(InvalidArtifactRequestError):
+        reader.read_daily_intervals(UncertaintyQuery(1, date(2015, 6, 19), "A"))
+
+
+def test_inventory_selector_pushes_case_and_store_predicate(
+    fixture_store: FixtureStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    selector = ArtifactSelector.PHASE10_POLICY_SUMMARY
+    schema = POLICY_SUMMARY_SCHEMA
+    rows = []
+    for case_id, store_id in (("fixture-case", 1), ("other-case", 2)):
+        row = {field.name: _sample_arrow_value(field) for field in schema}
+        row.update({"case_id": case_id, "Store": store_id})
+        rows.append(row)
+    pq.write_table(
+        pa.Table.from_pylist(rows, schema=schema), _artifact_path(fixture_store, selector)
+    )
+    fixture_store.refresh_output(selector)
+    original_dataset = artifact_module.ds.dataset
+    observed: dict[str, object] = {}
+
+    class RecordingDataset:
+        def __init__(self, wrapped: object) -> None:
+            self._wrapped = wrapped
+            self.schema = wrapped.schema
+
+        def scanner(self, **kwargs: object) -> object:
+            observed.update(kwargs)
+            return self._wrapped.scanner(**kwargs)
+
+    monkeypatch.setattr(
+        artifact_module.ds,
+        "dataset",
+        lambda *args, **kwargs: RecordingDataset(original_dataset(*args, **kwargs)),
+    )
+    result = fixture_store.reader().read_inventory_artifact(
+        selector, InventoryComparisonQuery("fixture-case", store_id=1)
+    )
+
+    assert len(result.frame) == result.selected_rows == 1
+    assert result.manifest_rows == 2
+    assert result.frame.loc[0, "case_id"] == "fixture-case"
+    assert result.frame.loc[0, "Store"] == 1
+    assert "case_id" in str(observed["filter"])
+    assert "Store" in str(observed["filter"])
