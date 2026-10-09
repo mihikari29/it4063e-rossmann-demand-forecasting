@@ -21,6 +21,7 @@ from rossmann_forecasting.app.dashboard_presenters import (
     SUPPORTED_CUMULATIVE_PROBABILITIES,
     SUPPORTED_FIT_ORIGINS,
     SUPPORTED_FORECAST_ORIGINS,
+    artifact_provenance_records,
     catalog_provenance_records,
     cumulative_table_records,
     error_notice,
@@ -38,7 +39,6 @@ from rossmann_forecasting.app.dashboard_presenters import (
 from rossmann_forecasting.app.services import (
     ApplicationCatalog,
     ApplicationServices,
-    ArtifactProvenance,
     ForecastIssuanceView,
     ForecastUncertaintyView,
     SalesHistoryView,
@@ -225,18 +225,47 @@ def _render_history(services: _DashboardServices) -> None:
 
 
 def _render_history_result(view: SalesHistoryView, query: HistoryQuery) -> None:
+    if not isinstance(view, SalesHistoryView) or not isinstance(view.rows, tuple):
+        raise TypeError("Unexpected historical Sales view.")
+    if type(view.state) is not str or view.state not in ("available", "empty"):
+        raise ValueError("Unexpected historical Sales state.")
+    if view.selector != "historical_sales" or view.through_date != "2015-07-03":
+        raise ValueError("Unexpected historical Sales identity.")
+    if (view.state == "empty") != (not view.rows):
+        raise ValueError("Historical Sales state does not match its rows.")
+
+    row_count = len(view.rows)
+    chart_records: list[dict[str, object]] = []
+    source_records: list[dict[str, object]] = []
+    open_records: list[dict[str, object]] = []
+    dates: list[date] = []
+    sales_values: list[int | float | None] = []
+    if view.rows:
+        if any(row.store_id != query.store_id for row in view.rows):
+            raise ValueError("Historical Sales rows do not match the selected Store.")
+        chart_records = history_chart_records(view.rows, query.start_date, query.end_date)
+        source_records = history_source_records(view.rows)
+        if any(
+            date.fromisoformat(row["Date"]) < query.start_date
+            or date.fromisoformat(row["Date"]) > query.end_date
+            for row in source_records
+        ):
+            raise ValueError("Historical Sales rows do not match the selected date range.")
+        dates = [date.fromisoformat(record["Date"]) for record in chart_records]
+        sales_values = [record["Sales"] for record in chart_records]
+        open_records = [
+            {"Date": row["Date"], "Source Open": row["Source Open"]} for row in source_records
+        ]
+
     st.subheader(
         f"Applied history · Store {query.store_id} · "
         f"{query.start_date.isoformat()} through {query.end_date.isoformat()}"
     )
-    st.caption(f"Observed source rows returned: {len(view.rows)}")
+    st.caption(f"Observed source rows returned: {row_count}")
     if view.state == "empty" or not view.rows:
         st.info("No observed rows for this selection.")
         return
 
-    chart_records = history_chart_records(view.rows, query.start_date, query.end_date)
-    sales_values = [record["Sales"] for record in chart_records]
-    dates = [date.fromisoformat(record["Date"]) for record in chart_records]
     figure, axis = plt.subplots(figsize=(11, 4))
     try:
         axis.plot(dates, sales_values, marker="o", linewidth=1.4, label="Observed Sales")
@@ -255,10 +284,6 @@ def _render_history_result(view: SalesHistoryView, query: HistoryQuery) -> None:
 
     st.subheader("Source Open status")
     st.caption("Source Open is shown separately. Unknown Open is not a closure.")
-    source_records = history_source_records(view.rows)
-    open_records = [
-        {"Date": row["Date"], "Source Open": row["Source Open"]} for row in source_records
-    ]
     st.dataframe(open_records, hide_index=True, width="stretch")
 
     st.subheader("Bounded source rows")
@@ -376,9 +401,6 @@ def _render_forecast_explorer(services: _DashboardServices) -> None:
         _render_uncertainty_methodology()
         return
 
-    st.subheader("Forecast uncertainty")
-    _render_uncertainty_methodology(fit_id)
-
     uncertainty_query = UncertaintyQuery(
         store_id=store_id,
         forecast_origin=origin,
@@ -388,9 +410,11 @@ def _render_forecast_explorer(services: _DashboardServices) -> None:
         with _SERVICE_LOCK:
             uncertainty_view = services.forecast_uncertainty(uncertainty_query)
     except Exception as error:
+        st.subheader("Forecast uncertainty")
         _render_error(error)
         return
 
+    st.subheader("Forecast uncertainty")
     try:
         _render_uncertainty_result(
             uncertainty_view,
@@ -412,39 +436,34 @@ def _render_forecast_result(
     max_horizon: int,
     series: str,
 ) -> None:
+    if not isinstance(view, ForecastIssuanceView) or not isinstance(view.points, tuple):
+        raise TypeError("Unexpected forecast issuance view.")
     if view.query != query:
         raise ValueError("The forecast result does not match the applied query.")
+    if type(view.state) is not str or view.state not in ("available", "empty"):
+        raise ValueError("Unexpected forecast issuance state.")
+    if (view.state == "empty") != (not view.points):
+        raise ValueError("Forecast issuance state does not match its rows.")
+
     target_start = query.forecast_origin + timedelta(days=1)
     target_end = query.forecast_origin + timedelta(days=14)
-    st.subheader(
-        f"Applied forecast · Store {query.store_id} · Origin {query.forecast_origin.isoformat()}"
-    )
-    st.write(
-        f"Forecast targets: {target_start.isoformat()} through {target_end.isoformat()} "
-        "(supported H14 path)."
-    )
-    st.caption(
-        "Operational routing is a conditional historical replay using opening information; "
-        "it is not a live known-future schedule."
-    )
-
     identities = forecast_identity(view.points)
-    if identities:
-        st.markdown("**Frozen candidate identity**")
-        st.dataframe(identities, hide_index=True, width="stretch")
-    else:
-        st.info("No saved forecast rows were returned for this Store and origin.")
-
+    horizons = [point.horizon for point in view.points]
+    if len(set(horizons)) != len(horizons):
+        raise ValueError("Duplicate forecast horizons were returned.")
+    if any(
+        point.date != (query.forecast_origin + timedelta(days=point.horizon)).isoformat()
+        for point in view.points
+    ):
+        raise ValueError("Forecast dates do not match their saved horizons.")
     counts = forecast_display_counts(view.points, max_horizon)
-    st.caption(
-        f"Visible saved rows: {counts['rows']} · raw available: {counts['raw_available']} · "
-        f"operational available: {counts['operational_available']} · "
-        f"displayed horizons: 1–{max_horizon} of the H14 request."
-    )
+    chart = forecast_chart_records(view.points, query.forecast_origin, max_horizon, series)
+    table = forecast_table_records(view.points, max_horizon)
+    provenance = artifact_provenance_records((view.provenance,))
+    series_label = "Raw forecast" if series == "raw" else "Saved operational forecast"
 
+    figure = None
     if view.points:
-        series_label = "Raw forecast" if series == "raw" else "Saved operational forecast"
-        chart = forecast_chart_records(view.points, query.forecast_origin, max_horizon, series)
         figure, axis = plt.subplots(figsize=(10, 4))
         try:
             axis.plot(
@@ -467,17 +486,47 @@ def _render_forecast_result(
             axis.set_xticks(tuple(range(0, max_horizon + 1)))
             axis.legend(loc="best")
             figure.tight_layout()
-            st.pyplot(figure, clear_figure=True, width="stretch")
-        finally:
+        except Exception:
             plt.close(figure)
+            raise
 
-        table = forecast_table_records(view.points, max_horizon)
+    try:
+        st.subheader(
+            f"Applied forecast · Store {query.store_id} · "
+            f"Origin {query.forecast_origin.isoformat()}"
+        )
+        st.write(
+            f"Forecast targets: {target_start.isoformat()} through {target_end.isoformat()} "
+            "(supported H14 path)."
+        )
+        st.caption(
+            "Operational routing is a conditional historical replay using opening information; "
+            "it is not a live known-future schedule."
+        )
+
+        if identities:
+            st.markdown("**Frozen candidate identity**")
+            st.dataframe(identities, hide_index=True, width="stretch")
+        else:
+            st.info("No saved forecast rows were returned for this Store and origin.")
+
+        st.caption(
+            f"Visible saved rows: {counts['rows']} · raw available: {counts['raw_available']} · "
+            f"operational available: {counts['operational_available']} · "
+            f"displayed horizons: 1–{max_horizon} of the H14 request."
+        )
+
+        if figure is not None:
+            st.pyplot(figure, clear_figure=True, width="stretch")
         if table:
             st.subheader("Exact saved forecast rows")
             st.dataframe(table, hide_index=True, width="stretch")
 
-    st.subheader("Forecast artifact provenance")
-    st.dataframe(_provenance_records((view.provenance,)), hide_index=True, width="stretch")
+        st.subheader("Forecast artifact provenance")
+        st.dataframe(provenance, hide_index=True, width="stretch")
+    finally:
+        if figure is not None:
+            plt.close(figure)
 
 
 def _render_uncertainty_result(
@@ -490,40 +539,70 @@ def _render_uncertainty_result(
     prefix_days: int,
     probability: float,
 ) -> None:
+    if not isinstance(view, ForecastUncertaintyView):
+        raise TypeError("Unexpected forecast uncertainty view.")
     if view.query != query:
         raise ValueError("The uncertainty result does not match the applied query.")
-    st.write(f"Store {query.store_id} · Fit {fit_id} · Origin {query.forecast_origin.isoformat()}")
-    st.write(view.interpretation)
+    if type(view.state) is not str or view.state not in ("available", "empty"):
+        raise ValueError("Unexpected forecast uncertainty state.")
+    if not isinstance(view.daily_intervals, tuple) or not isinstance(
+        view.cumulative_uncertainty, tuple
+    ):
+        raise TypeError("Unexpected forecast uncertainty rows.")
+    if type(view.interpretation) is not str:
+        raise TypeError("Unexpected uncertainty interpretation.")
+    if (view.state == "empty") != (not view.daily_intervals and not view.cumulative_uncertainty):
+        raise ValueError("Forecast uncertainty state does not match its rows.")
 
     daily_records = interval_table_records(view.daily_intervals, interval_kind, max_horizon)
-    st.markdown(f"**Daily {interval_kind} empirical intervals · H{max_horizon} display only**")
+    daily_keys = [(row.interval_kind, row.horizon) for row in view.daily_intervals]
+    if len(set(daily_keys)) != len(daily_keys):
+        raise ValueError("Duplicate daily uncertainty horizons were returned.")
+    if any(
+        row.date != (query.forecast_origin + timedelta(days=row.horizon)).isoformat()
+        for row in view.daily_intervals
+    ):
+        raise ValueError("Daily interval dates do not match their saved horizons.")
+    segments = interval_band_segments(view.daily_intervals, interval_kind, max_horizon)
+    cumulative_records = cumulative_table_records(
+        view.cumulative_uncertainty, prefix_days, probability
+    )
+    cumulative_keys = [(row.prefix_days, row.probability) for row in view.cumulative_uncertainty]
+    if len(set(cumulative_keys)) != len(cumulative_keys):
+        raise ValueError("Duplicate cumulative uncertainty rows were returned.")
+    provenance = artifact_provenance_records(view.provenance)
+    if len(provenance) != 2:
+        raise ValueError("Both uncertainty provenance records are required.")
+
+    incomplete_warning: str | None = None
+    if cumulative_records:
+        cumulative_row = cumulative_records[0]
+        reason = cumulative_row["Unavailable reason"]
+        if not cumulative_row["Prefix complete"]:
+            incomplete_warning = (
+                "This origin-anchored prefix is incomplete."
+                if reason is None
+                else f"This origin-anchored prefix is incomplete: {reason}."
+            )
+        elif any(
+            cumulative_row[field] is None
+            for field in ("D_k", "Signed q", "U_k", "Safety stock", "Target")
+        ):
+            incomplete_warning = (
+                "The prefix is marked complete, but one or more saved numerical values are "
+                "unavailable."
+                if reason is None
+                else (
+                    "The prefix is marked complete, but saved numerical values are unavailable: "
+                    f"{reason}."
+                )
+            )
+
+    figure = None
     if daily_records:
-        segments = interval_band_segments(view.daily_intervals, interval_kind, max_horizon)
         figure, axis = plt.subplots(figsize=(10, 4))
         try:
-            point_label_used = False
-            band_label_used = False
-            for segment in segments:
-                horizons = [row["Horizon"] for row in segment]
-                lower = [row["Lower"] for row in segment]
-                upper = [row["Upper"] for row in segment]
-                points = [row["Point estimate"] for row in segment]
-                axis.fill_between(
-                    horizons,
-                    lower,
-                    upper,
-                    alpha=0.22,
-                    label=("Saved empirical lower–upper band" if not band_label_used else None),
-                )
-                band_label_used = True
-                axis.plot(
-                    horizons,
-                    points,
-                    marker="o",
-                    linewidth=1.4,
-                    label=("Saved point estimate" if not point_label_used else None),
-                )
-                point_label_used = True
+            _draw_interval_segments(axis, segments)
             if not segments:
                 axis.text(
                     0.5,
@@ -539,49 +618,41 @@ def _render_uncertainty_result(
             axis.set_ylabel("Sales value (units as saved in table)")
             axis.legend(loc="best")
             figure.tight_layout()
-            st.pyplot(figure, clear_figure=True, width="stretch")
-        finally:
+        except Exception:
             plt.close(figure)
-        st.dataframe(daily_records, hide_index=True, width="stretch")
-    else:
-        st.info("No saved daily interval rows match this series and displayed horizon.")
+            raise
 
-    cumulative_records = cumulative_table_records(
-        view.cumulative_uncertainty, prefix_days, probability
-    )
-    st.markdown(f"**Saved cumulative prefix · k={prefix_days} · p={probability:.2f}**")
-    st.caption(
-        "Cumulative prefixes retain their saved k and H14 issuance meaning; H7 filters daily "
-        "display rows only."
-    )
-    if not cumulative_records:
-        st.info("No saved cumulative row matches this prefix and probability.")
-    else:
-        st.dataframe(cumulative_records, hide_index=True, width="stretch")
-        row = cumulative_records[0]
-        if not row["Prefix complete"]:
-            reason = row["Unavailable reason"]
-            st.warning(
-                "This origin-anchored prefix is incomplete."
-                if reason is None
-                else f"This origin-anchored prefix is incomplete: {reason}."
-            )
-        elif any(
-            row[field] is None for field in ("D_k", "Signed q", "U_k", "Safety stock", "Target")
-        ):
-            reason = row["Unavailable reason"]
-            st.warning(
-                "The prefix is marked complete, but one or more saved numerical values are "
-                "unavailable."
-                if reason is None
-                else (
-                    "The prefix is marked complete, but saved numerical values are unavailable: "
-                    f"{reason}."
-                )
-            )
+    try:
+        st.write(
+            f"Store {query.store_id} · Fit {fit_id} · Origin {query.forecast_origin.isoformat()}"
+        )
+        _render_uncertainty_methodology(fit_id)
+        st.write(view.interpretation)
+        st.markdown(f"**Daily {interval_kind} empirical intervals · H{max_horizon} display only**")
+        if daily_records:
+            if figure is not None:
+                st.pyplot(figure, clear_figure=True, width="stretch")
+            st.dataframe(daily_records, hide_index=True, width="stretch")
+        else:
+            st.info("No saved daily interval rows match this series and displayed horizon.")
 
-    st.subheader("Uncertainty artifact provenance")
-    st.dataframe(_provenance_records(view.provenance), hide_index=True, width="stretch")
+        st.markdown(f"**Saved cumulative prefix · k={prefix_days} · p={probability:.2f}**")
+        st.caption(
+            "Cumulative prefixes retain their saved k and H14 issuance meaning; H7 filters daily "
+            "display rows only."
+        )
+        if not cumulative_records:
+            st.info("No saved cumulative row matches this prefix and probability.")
+        else:
+            st.dataframe(cumulative_records, hide_index=True, width="stretch")
+            if incomplete_warning is not None:
+                st.warning(incomplete_warning)
+
+        st.subheader("Uncertainty artifact provenance")
+        st.dataframe(provenance, hide_index=True, width="stretch")
+    finally:
+        if figure is not None:
+            plt.close(figure)
 
 
 def _render_uncertainty_methodology(fit_id: str | None = None) -> None:
@@ -634,25 +705,54 @@ def _load_catalog(services: _DashboardServices) -> ApplicationCatalog | None:
     return catalog
 
 
-def _provenance_records(
-    provenance: tuple[ArtifactProvenance, ...],
-) -> list[dict[str, object]]:
-    rows: list[dict[str, object]] = []
-    for item in provenance:
-        if not isinstance(item, ArtifactProvenance):
-            raise TypeError("Unexpected artifact-provenance value.")
-        rows.append(
-            {
-                "selector": item.selector,
-                "phase": item.phase,
-                "run_id": item.run_id,
-                "manifest_sha256": item.manifest_sha256,
-                "output_sha256": item.output_sha256,
-                "selected_rows": item.selected_rows,
-                "manifest_rows": item.manifest_rows,
-            }
-        )
-    return rows
+def _draw_interval_segments(axis, segments: list[list[dict[str, object]]]) -> None:
+    """Draw saved intervals without hiding singleton ranges or joining gaps."""
+    interval_label = "Saved empirical interval"
+    point_label = "Saved point estimate"
+    for segment in segments:
+        horizons = [row["Horizon"] for row in segment]
+        lower = [row["Lower"] for row in segment]
+        upper = [row["Upper"] for row in segment]
+        points = [row["Point estimate"] for row in segment]
+        if len(segment) >= 2:
+            axis.fill_between(
+                horizons,
+                lower,
+                upper,
+                color="C0",
+                alpha=0.22,
+                label=interval_label,
+            )
+        elif len(segment) == 1:
+            horizon = horizons[0]
+            axis.vlines(
+                horizon,
+                lower[0],
+                upper[0],
+                color="C0",
+                linewidth=2.2,
+                label=interval_label,
+            )
+            axis.plot(
+                (horizon, horizon),
+                (lower[0], upper[0]),
+                color="C0",
+                linestyle="none",
+                marker="_",
+                markersize=9,
+                label="_nolegend_",
+            )
+        interval_label = "_nolegend_"
+        if any(point is not None for point in points):
+            axis.plot(
+                horizons,
+                points,
+                color="C1",
+                marker="o",
+                linewidth=1.4,
+                label=point_label,
+            )
+            point_label = "_nolegend_"
 
 
 def _render_catalog_state(label: str, state: str, count: int) -> None:

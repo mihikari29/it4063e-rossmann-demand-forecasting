@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import date, datetime, timedelta
+from unittest.mock import patch
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.collections import LineCollection, PolyCollection
+from matplotlib.figure import Figure
 from streamlit.testing.v1 import AppTest
 from test_app_artifacts import FixtureStore, _artifact_path
 
@@ -25,6 +29,8 @@ from rossmann_forecasting.app.dashboard_presenters import (
     SUPPORTED_CUMULATIVE_PROBABILITIES,
     SUPPORTED_FIT_ORIGINS,
     SUPPORTED_FORECAST_ORIGINS,
+    interval_band_segments,
+    interval_table_records,
     validate_history_selection,
 )
 from rossmann_forecasting.app.services import (
@@ -271,6 +277,7 @@ class _DashboardSpy:
         self.catalog_value = _catalog() if catalog is None else catalog
         self.catalog_calls = 0
         self.history_queries: list[HistoryQuery] = []
+        self.history_value: SalesHistoryView | None = None
         self.forecast_queries: list[ForecastQuery] = []
         self.uncertainty_queries: list[UncertaintyQuery] = []
         self.history_error: Exception | None = None
@@ -287,11 +294,18 @@ class _DashboardSpy:
         self.history_queries.append(query)
         if self.history_error is not None:
             raise self.history_error
-        rows = (
+        if self.history_value is not None:
+            return self.history_value
+        candidates = (
             SalesHistoryRow(query.store_id, query.start_date.isoformat(), 0.0, None),
             SalesHistoryRow(
                 query.store_id, (query.start_date + timedelta(days=2)).isoformat(), None, 0.0
             ),
+        )
+        rows = tuple(
+            row
+            for row in candidates
+            if query.start_date <= date.fromisoformat(row.date) <= query.end_date
         )
         return SalesHistoryView("available", rows, "2015-07-03", "historical_sales")
 
@@ -309,12 +323,26 @@ class _DashboardSpy:
         return self.uncertainty_value or _uncertainty_view(query)
 
 
+class _SensitiveValue:
+    def __repr__(self) -> str:
+        return "C:\\private\\secret.parquet"
+
+
 def _widget(app: AppTest, collection: str, label: str):
     return next(item for item in getattr(app, collection) if item.label == label)
 
 
 def _apply(app: AppTest) -> AppTest:
     return _widget(app, "button", "Apply selection").click().run()
+
+
+def _apply_with_chart_spy(app: AppTest) -> tuple[AppTest, int]:
+    from rossmann_forecasting.app import dashboard
+
+    with patch.object(dashboard.st, "pyplot", wraps=dashboard.st.pyplot) as pyplot:
+        app = _apply(app)
+        chart_count = pyplot.call_count
+    return app, chart_count
 
 
 def test_history_screen_uses_catalog_and_only_applied_history_service() -> None:
@@ -365,6 +393,25 @@ def test_history_empty_missing_and_integrity_errors_are_clear_and_sanitized() ->
     assert "integrity check" in corrupt_text
     assert "artifact_integrity_error" in corrupt_text
     assert not corrupt_app.dataframe
+
+
+def test_malformed_history_row_shows_only_a_sanitized_panel_error() -> None:
+    services = _DashboardSpy()
+    services.history_value = SalesHistoryView(
+        "available",
+        (SalesHistoryRow(1, "2015-05-09", _SensitiveValue(), None),),  # type: ignore[arg-type]
+        "2015-07-03",
+        "historical_sales",
+    )
+    app, chart_count = _apply_with_chart_spy(_app(services, "Historical Sales"))
+
+    visible = _visible_text(app)
+    assert not app.exception
+    assert "internal_error" in visible
+    assert "C:\\private\\secret.parquet" not in visible
+    assert "private" not in visible
+    assert not app.dataframe
+    assert chart_count == 0
 
 
 @pytest.mark.parametrize(
@@ -471,14 +518,42 @@ def test_forecast_store_origin_change_uses_new_labels_and_failed_query_clears_re
     assert not app.dataframe
 
 
+@pytest.mark.parametrize("corruption", ("row", "provenance"))
+def test_malformed_forecast_presentation_is_atomic_and_sanitized(corruption: str) -> None:
+    services = _DashboardSpy()
+    query = ForecastQuery(1, date(2015, 6, 19))
+    base_view = _forecast_view(query)
+    if corruption == "row":
+        bad_point = replace(base_view.points[0], candidate_id=_SensitiveValue())
+        services.forecast_value = replace(base_view, points=(bad_point, *base_view.points[1:]))
+    else:
+        bad_provenance = replace(base_view.provenance, run_id=_SensitiveValue())
+        services.forecast_value = replace(base_view, provenance=bad_provenance)
+
+    app = _app(services)
+    _widget(app, "selectbox", "Forecast origin").set_value("2015-06-19")
+    app, chart_count = _apply_with_chart_spy(app)
+
+    visible = _visible_text(app)
+    assert not app.exception
+    assert "internal_error" in visible
+    assert "C:\\private\\secret.parquet" not in visible
+    assert "private" not in visible
+    assert "Applied forecast" not in visible
+    assert "Forecast artifact provenance" not in visible
+    assert not app.dataframe
+    assert chart_count == 0
+
+
 def test_uncertainty_preserves_reasons_negative_quantile_independent_provenance_and_caveats() -> (
     None
 ):
     services = _DashboardSpy()
     app = _app(services)
     _widget(app, "selectbox", "Forecast origin").set_value("2015-06-19")
-    app = _apply(app)
+    app, chart_count = _apply_with_chart_spy(app)
     visible = _visible_text(app)
+    assert chart_count == 2  # one forecast chart and one daily uncertainty chart
 
     assert "unknown_schedule" in visible
     assert "-7.25" in visible
@@ -540,7 +615,10 @@ def test_complete_cumulative_prefix_with_missing_saved_values_is_not_filled() ->
     base_view = _uncertainty_view(query)
     services.uncertainty_value = replace(
         base_view,
-        cumulative_uncertainty=base_view.cumulative_uncertainty + (complete_missing,),
+        cumulative_uncertainty=tuple(
+            complete_missing if (row.prefix_days, row.probability) == (14, 0.98) else row
+            for row in base_view.cumulative_uncertainty
+        ),
     )
     app = _app(services)
     _widget(app, "selectbox", "Forecast origin").set_value("2015-06-19")
@@ -549,7 +627,7 @@ def test_complete_cumulative_prefix_with_missing_saved_values_is_not_filled() ->
 
     visible = _visible_text(app)
     assert "quantile_unavailable" in visible
-    assert "one or more saved numerical values are unavailable" in visible
+    assert "saved numerical values are unavailable: quantile_unavailable" in visible
     assert "Target" in visible
 
 
@@ -572,11 +650,87 @@ def test_all_unavailable_daily_intervals_keep_reasons_and_render_no_band_data() 
     services.uncertainty_value = replace(base_view, daily_intervals=unavailable)
     app = _app(services)
     _widget(app, "selectbox", "Forecast origin").set_value("2015-06-19")
-    app = _apply(app)
+    app, chart_count = _apply_with_chart_spy(app)
 
     visible = _visible_text(app)
     assert "insufficient_tail_sample" in visible
     assert "Available" in visible
+    assert chart_count == 2  # the forecast and the no-available-band explanation charts
+
+
+def test_interval_chart_draws_singleton_ranges_and_keeps_saved_bounds_and_gaps() -> None:
+    from rossmann_forecasting.app.dashboard import _draw_interval_segments
+
+    query = UncertaintyQuery(1, date(2015, 6, 19), "B")
+    intervals = (
+        _daily(query, 1, point=120.0, lower=10.0, upper=20.0),
+        _daily(
+            query,
+            2,
+            point=None,
+            lower=None,
+            upper=None,
+            available=False,
+            reason="unknown_schedule",
+        ),
+        _daily(query, 3, point=25.0, lower=20.0, upper=30.0),
+        _daily(query, 4, point=40.0, lower=35.0, upper=45.0),
+        _daily(query, 6, point=None, lower=5.0, upper=8.0),
+    )
+    segments = interval_band_segments(intervals, "raw", 14)
+    table = interval_table_records(intervals, "raw", 14)
+
+    assert [[row["Horizon"] for row in segment] for segment in segments] == [[1], [3, 4], [6]]
+    assert table[0]["Point estimate"] == 120.0
+    assert (table[0]["Lower"], table[0]["Upper"], table[0]["Width"]) == (10.0, 20.0, 10.0)
+    assert table[1]["Unavailable reason"] == "unknown_schedule"
+    assert (table[1]["Point estimate"], table[1]["Lower"], table[1]["Upper"]) == (
+        None,
+        None,
+        None,
+    )
+
+    figure = Figure()
+    axis = figure.subplots()
+    _draw_interval_segments(axis, segments)
+    FigureCanvasAgg(figure).draw()
+
+    singleton_ranges = [item for item in axis.collections if isinstance(item, LineCollection)]
+    adjacent_bands = [item for item in axis.collections if isinstance(item, PolyCollection)]
+    assert len(singleton_ranges) == 2
+    assert len(adjacent_bands) == 1
+    assert [segment.tolist() for item in singleton_ranges for segment in item.get_segments()] == [
+        [[1.0, 10.0], [1.0, 20.0]],
+        [[6.0, 5.0], [6.0, 8.0]],
+    ]
+    point_lines = [line for line in axis.lines if line.get_marker() == "o"]
+    assert [line.get_ydata().tolist() for line in point_lines] == [[120.0], [25.0, 40.0]]
+    endpoint_markers = [line for line in axis.lines if line.get_marker() == "_"]
+    assert [line.get_ydata().tolist() for line in endpoint_markers] == [[10.0, 20.0], [5.0, 8.0]]
+    labels = axis.get_legend_handles_labels()[1]
+    assert labels.count("Saved empirical interval") == 1
+    assert "Saved point estimate" in labels
+    assert not any("standard deviation" in label or "standard error" in label for label in labels)
+
+    unavailable = tuple(
+        _daily(
+            query,
+            horizon,
+            point=None,
+            lower=None,
+            upper=None,
+            available=False,
+            reason="insufficient_tail_sample",
+        )
+        for horizon in (1, 2)
+    )
+    empty_figure = Figure()
+    empty_axis = empty_figure.subplots()
+    assert interval_band_segments(unavailable, "raw", 14) == []
+    _draw_interval_segments(empty_axis, [])
+    FigureCanvasAgg(empty_figure).draw()
+    assert not empty_axis.collections
+    assert not empty_axis.lines
 
 
 def test_active_screen_dispatch_and_uncertainty_error_do_not_keep_uncertainty_panel() -> None:
@@ -599,6 +753,46 @@ def test_active_screen_dispatch_and_uncertainty_error_do_not_keep_uncertainty_pa
     assert "private" not in visible
     assert "Uncertainty artifact provenance" not in visible
     assert "Forecast artifact provenance" in visible
+
+
+@pytest.mark.parametrize("corruption", ("daily", "cumulative", "provenance"))
+def test_malformed_uncertainty_presentation_is_atomic_and_keeps_valid_forecast(
+    corruption: str,
+) -> None:
+    services = _DashboardSpy()
+    query = UncertaintyQuery(1, date(2015, 6, 19), "B")
+    base_view = _uncertainty_view(query)
+    if corruption == "daily":
+        bad_interval = replace(base_view.daily_intervals[0], lower=_SensitiveValue())
+        services.uncertainty_value = replace(
+            base_view, daily_intervals=(bad_interval, *base_view.daily_intervals[1:])
+        )
+    elif corruption == "cumulative":
+        bad_row = replace(base_view.cumulative_uncertainty[0], target_value=_SensitiveValue())
+        services.uncertainty_value = replace(
+            base_view, cumulative_uncertainty=(bad_row, *base_view.cumulative_uncertainty[1:])
+        )
+    else:
+        first, second = base_view.provenance
+        services.uncertainty_value = replace(
+            base_view,
+            provenance=(replace(first, manifest_sha256="C:\\private\\secret.parquet"), second),
+        )
+
+    app = _app(services)
+    _widget(app, "selectbox", "Forecast origin").set_value("2015-06-19")
+    app, chart_count = _apply_with_chart_spy(app)
+
+    visible = _visible_text(app)
+    assert not app.exception
+    assert "internal_error" in visible
+    assert "private" not in visible
+    assert "Applied forecast" in visible
+    assert "Forecast artifact provenance" in visible
+    assert "Uncertainty artifact provenance" not in visible
+    assert "Saved cumulative prefix" not in visible
+    assert len(app.dataframe) == 3  # forecast identity, exact rows, and forecast provenance
+    assert chart_count == 1  # only the valid forecast chart
 
 
 def test_stale_service_dto_identity_is_never_labeled_as_the_new_selection() -> None:

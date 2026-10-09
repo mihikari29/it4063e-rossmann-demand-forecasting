@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -231,7 +231,7 @@ def _point(
     date_text: str | None = None,
 ) -> ForecastPoint:
     return ForecastPoint(
-        date=date_text or f"2015-06-{19 + horizon:02d}",
+        date=date_text or (date(2015, 6, 19) + timedelta(days=horizon)).isoformat(),
         horizon=horizon,
         raw_forecast=raw,
         operational_forecast=operational,
@@ -254,7 +254,7 @@ def _interval(
     date_text: str | None = None,
 ) -> DailyInterval:
     return DailyInterval(
-        date=date_text or f"2015-06-{19 + horizon:02d}",
+        date=date_text or (date(2015, 6, 19) + timedelta(days=horizon)).isoformat(),
         horizon=horizon,
         interval_kind=kind,
         point_forecast=point,

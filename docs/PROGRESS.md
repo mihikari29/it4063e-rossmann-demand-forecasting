@@ -2286,3 +2286,32 @@ passed on Python 3.12 and 3.14 for the reviewed implementation head.
 numerical evidence are accepted, corrective review findings are resolved, and formal closeout is
 recorded in the completed plan. No Phase 11 work is part of this PR. Phase 11 remains PLANNED / NOT
 STARTED / NOT AUTHORIZED. No final holdout evaluation occurred; the holdout remains unreleased.
+
+### Phase 12 M2 independent review corrections — 2026-10-09
+
+M2 remains IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m2`; existing Draft PR #30 remains
+open and unmerged. This corrective task resolves findings M2-01 and M2-02 without starting M3/M4,
+deployment or Phase 13.
+
+M2-01 moves all Historical Sales, forecast and uncertainty DTO conversion ahead of their analytical
+tables and charts. Safe typed provenance conversion rejects arbitrary objects and path-like values.
+Malformed result data now produces a fixed `internal_error` for its panel, with no partial saved
+rows or chart. Forecast and uncertainty remain independent: an uncertainty conversion error keeps
+the successfully converted forecast visible.
+
+M2-02 keeps `fill_between()` for contiguous intervals with multiple horizons and draws singleton
+intervals as vertical saved lower-to-upper ranges with endpoint markers. The saved point remains
+separate from its interval and can appear outside it. Missing and unavailable horizons split chart
+segments, and saved table bounds, widths, reasons, points and nulls remain unchanged.
+
+Validation: 71 focused dashboard/presenter/M2 tests passed. Whole-repository pytest passed 502 tests
+on Python 3.12 and 502 on Python 3.14, with one existing Starlette/httpx deprecation warning per run.
+Ruff lint and format passed. `uv lock --check` resolved 109 packages. `uv pip check` passed with 91
+packages in the Python 3.12 environment and 93 in Python 3.14. The docs checker passed with 259
+local destinations/anchors across 27 Markdown files; `git diff --check` passed. Git reported only
+the configured LF-to-CRLF normalization notices for the modified files.
+
+Tests used fixtures; no producer, saved artifact, model, metric, dependency or lockfile changed.
+No real-data rerun, model fitting, ledger access, protected July outcome access, manual browser,
+performance or deployment check was performed. PR #30 requires final external review; Phase 12 is
+not complete.

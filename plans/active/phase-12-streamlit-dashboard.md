@@ -773,3 +773,29 @@ through 2015-07-03, 14 saved forecast rows for Store 1/origin 2015-06-19, and Fi
 tables with 28 daily and 42 cumulative rows. The forecast view reported 14 raw and 14 operational
 available rows. It read no Phase 10 ledger and no July 4–31 outcomes; it did not modify or regenerate
 artifacts. No manual browser, performance, deployment or real-data fitting test was performed.
+
+## 14. M2 independent review corrections — 2026-10-09
+
+The focused corrective task addresses M2-01 and M2-02 on the existing PR #30 branch. M2 remains
+IMPLEMENTED / UNDER REVIEW; PR #30 stays draft and unmerged. M3/M4, deployment and Phase 13 remain
+outside this authorization.
+
+| Finding | Resolution |
+|---|---|
+| M2-01 — atomic presentation preparation | Historical Sales, forecast issuance, and daily/cumulative uncertainty results now convert and validate every relevant row, chart record, exact table and provenance record before rendering analytical result content. Invalid DTOs produce only the fixed `internal_error` for that panel. Provenance accepts explicitly typed, path-free identifiers and nonnegative counts; arbitrary objects and local path strings are rejected. A failing uncertainty panel does not remove the already validated forecast panel. |
+| M2-02 — singleton empirical interval visibility | Contiguous available segments with at least two horizons still use `fill_between()`. A one-horizon segment now uses a vertical saved lower-to-upper range with endpoint markers and the label “Saved empirical interval”. The saved point estimate is plotted independently, including when outside its interval. Unavailable or absent horizons continue to split segments; no values or dates are added. |
+
+AppTests inject malformed historical rows, forecast rows and provenance, daily interval rows,
+cumulative rows and uncertainty provenance. They assert sanitized errors, no partial failing-panel
+tables/charts, no private path or object representation, and forecast retention after uncertainty
+failure. An Agg chart test checks singleton vertical ranges and endpoints, a filled adjacent segment,
+separated segments, an out-of-range point, exact saved bounds, null/reason values and an all-
+unavailable case.
+
+Validation for the corrective head: 71 focused dashboard/presenter/M2 tests passed; the full suite
+passed 502 tests on Python 3.12 and 502 on Python 3.14, each with one existing Starlette/httpx
+deprecation warning. Ruff lint and format passed; `uv lock --check` resolved 109 packages;
+`uv pip check` passed for both locked environments (91 packages on Python 3.12, 93 on Python 3.14).
+The Markdown link checker passed with 259 local destinations/anchors across 27 files. No service,
+producer, artifact, model, metric, dependency or lockfile changed. No new real-data run, ledger or
+protected outcome access, manual browser, performance or deployment test was performed.
