@@ -9,9 +9,16 @@ import pandas as pd
 import pytest
 
 from rossmann_forecasting.app.contracts import (
+    ArtifactErrorCode,
     ArtifactIntegrityError,
     ArtifactSchemaError,
     ArtifactSelector,
+    ArtifactUnavailableError,
+    DuplicateArtifactKeyError,
+    InvalidArtifactRequestError,
+    UnavailableReason,
+    UnsafeArtifactPathError,
+    UnsupportedArtifactSelectorError,
 )
 from rossmann_forecasting.app.dashboard_presenters import (
     catalog_provenance_records,
@@ -139,14 +146,65 @@ def test_catalog_provenance_only_includes_returned_provenance() -> None:
     ]
 
 
-def test_artifact_error_notices_are_fixed_distinct_and_path_free() -> None:
-    integrity = error_notice(ArtifactIntegrityError(ArtifactSelector.PHASE9_SCENARIO_CATALOG))
-    schema = error_notice(ArtifactSchemaError(ArtifactSelector.PHASE9_SCENARIO_CATALOG))
-    unexpected = error_notice(RuntimeError("C:\\private\\root\\manifest.json"))
+@pytest.mark.parametrize(
+    ("error", "expected_code", "expected_message"),
+    [
+        (
+            ArtifactUnavailableError(
+                ArtifactSelector.PHASE9_SCENARIO_CATALOG, UnavailableReason.MISSING_ARTIFACT
+            ),
+            ArtifactErrorCode.UNAVAILABLE.value,
+            "A required resource is unavailable. Static project information remains available.",
+        ),
+        (
+            ArtifactIntegrityError(ArtifactSelector.PHASE9_SCENARIO_CATALOG),
+            ArtifactErrorCode.INTEGRITY.value,
+            "A resource failed its integrity check. Unverified details are hidden.",
+        ),
+        (
+            ArtifactSchemaError(ArtifactSelector.PHASE9_SCENARIO_CATALOG),
+            ArtifactErrorCode.SCHEMA.value,
+            "A resource does not match its accepted schema. Unverified details are hidden.",
+        ),
+        (
+            DuplicateArtifactKeyError(ArtifactSelector.PHASE9_SCENARIO_CATALOG),
+            ArtifactErrorCode.DUPLICATE_KEY.value,
+            "A resource contains invalid keys. Unverified details are hidden.",
+        ),
+        (
+            UnsupportedArtifactSelectorError(),
+            ArtifactErrorCode.UNSUPPORTED_SELECTOR.value,
+            "The requested resource is unsupported.",
+        ),
+        (
+            InvalidArtifactRequestError(ArtifactSelector.PHASE9_SCENARIO_CATALOG),
+            ArtifactErrorCode.INVALID_REQUEST.value,
+            "The resource request is invalid.",
+        ),
+        (
+            UnsafeArtifactPathError(ArtifactSelector.PHASE9_SCENARIO_CATALOG),
+            ArtifactErrorCode.UNSAFE_PATH.value,
+            "A resource failed a path-safety check.",
+        ),
+    ],
+)
+def test_artifact_error_notices_are_resource_neutral_and_keep_stable_codes(
+    error: Exception, expected_code: str, expected_message: str
+) -> None:
+    notice = error_notice(error)
 
-    assert integrity.code == "artifact_integrity_error"
-    assert schema.code == "artifact_schema_error"
-    assert integrity.message != schema.message
-    assert integrity.selector == "phase9_scenario_catalog"
-    assert unexpected.code == "internal_error"
-    assert "C:\\private" not in unexpected.message
+    assert notice.code == expected_code
+    assert notice.message == expected_message
+    assert "catalog" not in notice.message.lower()
+    assert "C:\\private" not in notice.message
+
+
+def test_unexpected_error_notice_is_fixed_and_path_free() -> None:
+    notice = error_notice(RuntimeError("C:\\private\\root\\manifest.json"))
+
+    assert notice.code == "internal_error"
+    assert (
+        notice.message
+        == "The saved-resource check could not be completed. Error details are hidden."
+    )
+    assert "C:\\private" not in notice.message

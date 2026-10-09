@@ -90,7 +90,8 @@ def _render_overview(services: _CatalogServices) -> None:
         )
 
     st.subheader("Saved resource readiness")
-    st.caption("Readiness reflects the catalog service's latest checks for this screen load.")
+    st.caption("Use this control to retry the saved-resource checks for the current screen load.")
+    refresh_requested = st.button("Refresh resource status", key="refresh_resource_status")
     try:
         with _SERVICE_LOCK:
             catalog = services.catalog()
@@ -101,6 +102,16 @@ def _render_overview(services: _CatalogServices) -> None:
         _render_error(error)
         return
 
+    try:
+        records = resource_status_records(catalog.resources)
+        provenance = catalog_provenance_records(catalog)
+    except Exception:  # Keep untrusted DTO or conversion details out of the browser.
+        _render_internal_error()
+        return
+
+    if refresh_requested:
+        st.caption("Resource status refreshed from the catalog service.")
+
     _render_catalog_state(
         "Scenario catalog", catalog.scenario_catalog_state, len(catalog.scenarios)
     )
@@ -108,13 +119,11 @@ def _render_overview(services: _CatalogServices) -> None:
         "Inventory case catalog", catalog.inventory_case_state, len(catalog.inventory_case_ids)
     )
 
-    records = resource_status_records(catalog.resources)
     if records:
         st.dataframe(records, hide_index=True, width="stretch")
     else:
         st.info("The catalog service returned no resource-readiness records.")
 
-    provenance = catalog_provenance_records(catalog)
     if provenance:
         st.subheader("Verified catalog provenance")
         st.dataframe(provenance, hide_index=True, width="stretch")
@@ -142,6 +151,11 @@ def _render_error(error: Exception) -> None:
     st.caption(f"Error code: `{notice.code}`")
     if notice.selector is not None:
         st.caption(f"Logical resource: `{notice.selector}`")
+
+
+def _render_internal_error() -> None:
+    st.error("The saved-resource check could not be completed. Error details are hidden.")
+    st.caption("Error code: `internal_error`")
 
 
 def _render_placeholder(screen: str) -> None:

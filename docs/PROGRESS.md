@@ -136,6 +136,36 @@ The feature branch is pushed in [draft PR #29](https://github.com/mihikari29/it4
 targeting `main`; the final task report records its current head SHA. M2–M4 remain unauthorized;
 do not merge or start subsequent work.
 
+### Phase 12 M1 independent review corrections — 2026-10-09
+
+The narrow corrective task addresses review findings M1-01 through M1-03 on the existing PR #29
+branch. M1-01 adds an explicit **Refresh resource status** button to Overview. Each click reruns
+the existing `catalog()` service under its existing lock and reader validation; no new application
+cache or inference/artifact-generation path is introduced. An AppTest removes a fixture scenario
+artifact, verifies the unavailable state, restores its original bytes, clicks refresh, and verifies
+recovery and provenance. The reader spy confirms each run reads only the Phase 9 scenario catalog
+and Phase 10 comparison resources.
+
+M1-02 moves both resource-readiness and provenance conversions inside a sanitized presentation
+boundary and completes both before emitting resource tables/status cards. Invalid injected resource
+and provenance DTOs each render the fixed `internal_error` notice with no partial table or path.
+The existing `ArtifactReadError` mapping is unchanged. M1-03 replaces catalog-specific shared error
+copy with resource-neutral language. Table-driven tests preserve all stable error codes and distinct
+unavailable, integrity, schema, duplicate-key, unsupported-selector, invalid-request and unsafe-path
+messages without raw exception details. Focused dashboard/presenter tests pass (**24 passed**).
+
+Whole-repository pytest passed on Python 3.12 and 3.14 (**455 passed each**) with the existing
+Starlette/httpx deprecation warning. Python 3.12 used the locked isolated uv environment with dev,
+API and dashboard extras; Python 3.14 used the locked project environment. Ruff lint and format
+passed (102 files formatted), documentation links passed (259 local destinations/anchors across 27
+Markdown files), `uv lock --check` passed (109 resolved packages), `uv pip check` passed (93
+compatible installed packages), and `git diff --check` passed. No dependency or lockfile changed.
+
+GitHub's Python 3.12/3.14 Quality result and PR metadata are verified after the corrective push and
+reported in the final task handoff. M1 remains IMPLEMENTED / UNDER REVIEW; PR #29 remains draft and
+unmerged. No model inference, canonical artifact generation, real-data pipeline, ledger access,
+protected holdout access or deployment occurred.
+
 ## Immediate next boundary
 
 Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 is **COMPLETE**:

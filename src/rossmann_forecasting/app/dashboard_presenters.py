@@ -24,20 +24,20 @@ from rossmann_forecasting.app.services import (
 
 _ERROR_MESSAGES = {
     ArtifactErrorCode.UNAVAILABLE: (
-        "A required saved resource is unavailable. Static project information remains available."
+        "A required resource is unavailable. Static project information remains available."
     ),
     ArtifactErrorCode.INTEGRITY: (
-        "A saved catalog failed its integrity check. Unverified catalog details are hidden."
+        "A resource failed its integrity check. Unverified details are hidden."
     ),
     ArtifactErrorCode.SCHEMA: (
-        "A saved catalog does not match its accepted schema. Unverified catalog details are hidden."
+        "A resource does not match its accepted schema. Unverified details are hidden."
     ),
     ArtifactErrorCode.DUPLICATE_KEY: (
-        "A saved catalog contains invalid keys. Unverified catalog details are hidden."
+        "A resource contains invalid keys. Unverified details are hidden."
     ),
-    ArtifactErrorCode.UNSUPPORTED_SELECTOR: "The requested saved resource is unsupported.",
-    ArtifactErrorCode.INVALID_REQUEST: "The saved-resource request is invalid.",
-    ArtifactErrorCode.UNSAFE_PATH: "A saved resource failed a path-safety check.",
+    ArtifactErrorCode.UNSUPPORTED_SELECTOR: "The requested resource is unsupported.",
+    ArtifactErrorCode.INVALID_REQUEST: "The resource request is invalid.",
+    ArtifactErrorCode.UNSAFE_PATH: "A resource failed a path-safety check.",
 }
 
 

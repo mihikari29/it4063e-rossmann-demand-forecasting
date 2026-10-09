@@ -698,3 +698,31 @@ in an empty temporary directory; it shows static project context, ten unavailabl
 and no fabricated provenance without reading repository artifacts. The other four navigation entries
 remain placeholders and issue no service calls. The draft PR is under review; M1 is not accepted and
 no later milestone has started.
+
+## 12. Independent M1 review corrections — 2026-10-09
+
+This narrow corrective checkpoint addresses the three minor findings from the independent review
+of PR #29 at `218dd69ef0b49e1e5ee3204026ede912fa3a4eee`. It remains within M1 and does not change
+analytical/service contracts, dependencies, canonical evidence or the M1 acceptance boundary.
+
+| Finding | Resolution and focused evidence |
+|---|---|
+| M1-01 — explicit resource refresh | The Overview exposes **Refresh resource status**. Clicking it reruns the existing `ApplicationServices.catalog()` call under the existing service lock; all reads continue through `_ArtifactReader` integrity validation. No Streamlit DTO/data cache or inference/generation call was added. AppTest starts with a missing fixture scenario artifact, restores its original bytes, clicks refresh and verifies the catalog recovers with verified provenance. The reader spy observes only Phase 9 catalog and Phase 10 comparison reads on each run. |
+| M1-02 — presentation conversion boundary | `resource_status_records()` and `catalog_provenance_records()` are both converted before any catalog status/table is rendered. Any conversion exception produces only the fixed `internal_error` notice; the service's known `ArtifactReadError` mapping remains on its existing path. Two AppTest cases inject invalid resource/provenance DTO values and verify no partial table/state or private path is displayed. |
+| M1-03 — reusable error wording | Shared `error_notice()` copy now refers to resources rather than catalogs while preserving the stable unavailable, integrity, schema, duplicate-key, unsupported-selector, invalid-request, unsafe-path and internal error codes. Table-driven tests pin every known code and distinct sanitized wording. |
+
+Focused dashboard/presenter pytest: **24 passed**. Local validation evidence:
+
+| Check | Result |
+|---|---|
+| Focused dashboard/presenter pytest | 24 passed. |
+| Whole-repository pytest, Python 3.12 | 455 passed; one existing Starlette/httpx deprecation warning, using locked isolated uv environment with dev/api/dashboard extras. |
+| Whole-repository pytest, Python 3.14 | 455 passed; the same existing warning, using the locked project environment. |
+| Ruff lint / format | Passed; 102 files already formatted. |
+| Documentation links | `scripts/check_docs.py` passed; 259 local destinations/anchors across 27 Markdown files. |
+| Dependencies | `uv lock --check` passed with 109 resolved packages; `uv pip check` passed with 93 compatible installed packages. No dependency or lock change. |
+| `git diff --check` | Passed. |
+
+The pushed draft PR carries the GitHub Python 3.12/3.14 Quality result; M1 remains IMPLEMENTED /
+UNDER REVIEW pending independent final review. No model inference, artifact generation, real-data
+run, ledger or protected holdout access occurred.

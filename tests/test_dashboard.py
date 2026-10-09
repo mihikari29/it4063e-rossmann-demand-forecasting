@@ -119,6 +119,70 @@ def test_missing_catalog_artifacts_render_unavailable_without_crashing(fixture_s
     assert "ArtifactReadError" not in visible
 
 
+def test_refresh_resource_status_recovers_after_fixture_resource_is_restored(fixture_store) -> None:
+    selector = ArtifactSelector.PHASE9_SCENARIO_CATALOG
+    path = _artifact_path(fixture_store, selector)
+    original_bytes = path.read_bytes()
+    path.unlink()
+    reader = _ReaderSpy(fixture_store.reader())
+    spy = _CatalogSpy(ApplicationServices(reader))
+
+    app = _app(spy)
+    unavailable = _visible_text(app)
+
+    assert not app.exception
+    assert spy.catalog_calls == 1
+    assert "Scenario catalog: unavailable in this checkout" in unavailable
+    assert app.button[0].label == "Refresh resource status"
+
+    path.write_bytes(original_bytes)
+    app.button[0].click().run()
+    recovered = _visible_text(app)
+
+    assert not app.exception
+    assert spy.catalog_calls == 2
+    assert "Scenario catalog: available (1 entries)" in recovered
+    assert "Verified catalog provenance" in recovered
+    assert "Resource status refreshed from the catalog service." in recovered
+    assert (
+        reader.read_selectors
+        == [
+            ArtifactSelector.PHASE9_SCENARIO_CATALOG,
+            ArtifactSelector.PHASE10_COMPARISON,
+        ]
+        * 2
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("resources", (object(),)),
+        ("scenario_provenance", object()),
+    ],
+)
+def test_invalid_catalog_presentation_value_is_sanitized_and_tables_are_hidden(
+    fixture_store, field: str, value: object
+) -> None:
+    catalog = ApplicationServices(fixture_store.reader()).catalog()
+    private_path = "C:\\private\\rossmann\\manifest.json"
+
+    class InvalidPresentationService:
+        def catalog(self):
+            return replace(catalog, **{field: value})
+
+    app = _app(InvalidPresentationService())
+    visible = _visible_text(app)
+
+    assert not app.exception
+    assert "internal_error" in visible
+    assert "Error details are hidden" in visible
+    assert private_path not in visible
+    assert not app.dataframe
+    assert "Scenario catalog: available" not in visible
+    assert "Verified catalog provenance" not in visible
+
+
 def test_clean_checkout_keeps_static_overview_and_reports_resources_unavailable(tmp_path) -> None:
     services = ApplicationServices(_ArtifactReader(root=tmp_path))
 
