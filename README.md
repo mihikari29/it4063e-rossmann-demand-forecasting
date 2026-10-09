@@ -8,9 +8,9 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 `main` has Phases 0–10 formally complete following Phase 10 closeout PR #25, merged at
 `d437269b9f0cf36a842cdfd496ad50a310804768`. The Phase 11 read-only application architecture is
-approved; M1 and M2 are accepted, M3 is formally accepted and its M3-01 follow-up is resolved.
-M4 is implemented and under independent review on `feat/phase-11-application-services`.
-Phase 11 is not complete.
+approved; M1, M2 and M3 are formally accepted; M3-01 is resolved; M4 is formally accepted
+with minor changes and M4-01 is resolved. The separate final PR integration and merge-readiness
+review remains pending; Phase 11 is not complete.
 PR #26 remains draft and unmerged. Phase 5 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
@@ -57,9 +57,10 @@ Phase 10 was implemented under ADR-023. PR #23 integrated the implementation at
 accepted the corrective implementation and numerical evidence. The [completed plan](plans/completed/phase-10-inventory-simulation.md)
 records formal closeout. The accepted canonical run is `phase10-dev-20261008-validator-fix`
 (manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0–10
-are complete on `main` after PR #25 integration. Phase 11 M1 and M2 are accepted; M3 is formally
-accepted with minor follow-up M3-01; M4 is authorized for implementation on the feature branch. The
-protected final holdout remains unreleased.
+are complete on `main` after PR #25 integration. Phase 11 M1, M2 and M3 are formally accepted;
+M3-01 is resolved; M4 is formally accepted with minor changes and M4-01 is resolved. Final PR
+integration and merge-readiness review and formal closeout remain pending. The protected final
+holdout remains unreleased.
 
 ## Environment and quick start
 
@@ -213,10 +214,10 @@ cost under these assumptions for the synthetic-base and historical reference cas
 establish real inventory, physical demand, real stockouts, savings, universal forecast performance,
 statistical superiority, optimality, calibrated synthetic service guarantees or production readiness.
 Phase 10 is **COMPLETE** after closeout PR #25 merged into `main` at
-`d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 M1 and
-M2 are accepted; M3 is formally accepted and M3-01 is resolved by M4. M4 is implemented and under
-independent review on the same draft PR #26. Phase 11 remains incomplete and PR #26 remains
-unmerged.
+`d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 M1,
+M2 and M3 are formally accepted; M3-01 is resolved; M4 is formally accepted with minor changes;
+M4-01 is resolved by this documentation correction. Final PR integration, merge-readiness review
+and formal closeout remain pending. Phase 11 is incomplete and PR #26 remains draft and unmerged.
 
 ## Phase 11 local/demo API
 

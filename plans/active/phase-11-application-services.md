@@ -1,6 +1,6 @@
 # Phase 11 — Application Services & Thin API
 
-**Status:** M1 and M2 ACCEPTED; M3 ACCEPTED (M3-01 RESOLVED); M4 IMPLEMENTED / UNDER INDEPENDENT REVIEW. Phase 11 is not complete.
+**Status:** M1, M2 and M3 ACCEPTED; M3-01 RESOLVED; M4 ACCEPTED WITH MINOR CHANGES (M4-01 RESOLVED). Final PR integration and merge-readiness review and formal Phase 11 closeout remain pending; Phase 11 is not complete.
 **Base:** `main` / `origin/main` at `d437269b9f0cf36a842cdfd496ad50a310804768`.
 **Approved architecture:** A read-only cached-development-results application with reusable Python services, a thin local/demo FastAPI adapter, and Streamlit calling the shared services directly. API hosting remains optional (ADR-017 and the accepted Phase 11 architecture review).
 
@@ -10,10 +10,10 @@
 |---|---|---|
 | M1 — Typed contracts and safe canonical artifact readers | Pin accepted Phase 7–10 identities; validate manifests, lineage and requested output hashes; expose fixed, read-only artifact readers and a cutoff-safe historical Sales reader; fixture tests only. | **Reviewed / formally accepted** on 2026-10-08; PR remains open and draft. |
 | M2 — Shared application services | Compose verified cached results into forecast, uncertainty and inventory views; preserve explicit null/unavailable values and methodological caveats. | **Reviewed / formally accepted** on exact PR #26 head `cd7d3319760379716244e4db6c0cf0cb96ec6cbd` after independent ACCEPT, 2026-10-09. |
-| M3 — Thin local/demo API | Add the approved HTTP adapter and request/error tests over the shared services. | **Formally accepted with minor follow-up M3-01** by the Technical Lead on 2026-10-09; M3-01 was resolved in M4. |
-| M4 — Integration, documentation and handoff | Close M3-01; add focused HTTP-to-reader fixture integration evidence; document clean-checkout startup and direct shared-service handoff. | **Authorized for implementation** on 2026-10-09; implemented and under independent review. |
+| M3 — Thin local/demo API | Add the approved HTTP adapter and request/error tests over the shared services. | **Formally accepted** by the Technical Lead on 2026-10-09; its M3-01 follow-up was resolved in M4. |
+| M4 — Integration, documentation and handoff | Close M3-01; add focused HTTP-to-reader fixture integration evidence; document clean-checkout startup and direct shared-service handoff. | **Formally accepted with minor changes** by the Technical Lead after independent review; M4-01 was resolved in this documentation update. |
 
-The Technical Lead formally accepted M1 after independent review on exact head `1fef9c7f27cb27068f8fcb415378771b878d4aed`, and M2 after independent ACCEPT on exact head `cd7d3319760379716244e4db6c0cf0cb96ec6cbd`. M3 was formally accepted with minor follow-up M3-01 after the independent `ACCEPT_WITH_MINOR_CHANGES` review on exact head `6169e850d824e3f6eccc1faa57b3d4a311646bd6`. The Technical Lead authorized M4 implementation on this same feature branch and PR; M4 resolved M3-01, added cross-layer fixture evidence, and completed startup/use documentation and handoff. Keep PR #26 draft and unmerged; Phase 11 remains incomplete. Streamlit, hosting/deployment, inference and Phase 13 evaluation remain outside this authorization.
+The Technical Lead formally accepted M1 after independent review on exact head `1fef9c7f27cb27068f8fcb415378771b878d4aed`, M2 after independent ACCEPT on exact head `cd7d3319760379716244e4db6c0cf0cb96ec6cbd`, and M3 with minor follow-up M3-01 after independent `ACCEPT_WITH_MINOR_CHANGES` review on exact head `6169e850d824e3f6eccc1faa57b3d4a311646bd6`. The Technical Lead later formally accepted M4 with minor changes after independent review of exact head `db2d8ce47e7704e7beb11f7c7b08fd846ac1619c`; M3-01 was resolved in M4 and M4-01 is resolved by this documentation-only correction. The implementation milestones are accepted; separate final PR integration/merge-readiness review and formal Phase 11 closeout remain pending. Keep PR #26 open, draft and unmerged. Streamlit, hosting/deployment, inference and Phase 13 evaluation remain outside scope.
 
 ## Frozen methodology and information boundaries
 
@@ -115,11 +115,10 @@ unavailable target has a saved value.
 
 ## Phase 11 M4 integration handoff
 
-The Technical Lead formally accepted M3 with the single minor follow-up M3-01 after the independent
-`ACCEPT_WITH_MINOR_CHANGES` review on PR #26 head
-`6169e850d824e3f6eccc1faa57b3d4a311646bd6`, and authorized M4 on this same branch and draft PR.
-M4 is **IMPLEMENTED / UNDER REVIEW** until independent review. M1, M2 and M3 acceptance checkpoints
-remain intact; Phase 11 is incomplete and PR #26 must remain draft and unmerged.
+At this M4 implementation handoff checkpoint, M3 had been accepted with minor follow-up M3-01
+and M4 was authorized on this branch and draft PR. The independent review and later Technical Lead
+acceptance are recorded in the M4 acceptance checkpoint below. M1, M2 and M3 acceptance checkpoints
+remain intact; Phase 11 remains incomplete and PR #26 remains draft and unmerged.
 
 M3-01: the centralized Starlette HTTP exception handler must preserve only the framework's
 `Allow` response header on 405 responses. Keep the fixed sanitized JSON body and status, do not
@@ -169,7 +168,18 @@ for its HTTPX fallback. It does not occur on application/Uvicorn startup and is 
 the Python 3.12/3.14 CI matrix and locked environment unchanged unless an implemented correctness
 requirement demonstrates otherwise.
 
-M4 independent review should focus on M3-01; the complete fixture-backed HTTP -> M2 -> M1 path;
-failure and serialization behavior; exact startup examples; the full test and quality matrix; and
-canonical compatibility snapshots if local development artifacts are available. Acceptance and
-Phase 11 closeout remain separate Technical Lead decisions.
+The independent M4 review examined the complete fixture-backed HTTP -> M2 -> M1 path, failure
+and serialization behavior, startup examples, quality evidence and canonical compatibility. It
+returned `ACCEPT_WITH_MINOR_CHANGES`; the Technical Lead formally accepted M4. The separate final
+Phase 11 integration review and explicit closeout remain pending.
+
+## Phase 11 M4 independent review and acceptance - 2026-10-09
+
+The independent review of PR #26 head `db2d8ce47e7704e7beb11f7c7b08fd846ac1619c` returned
+`ACCEPT_WITH_MINOR_CHANGES`. It confirmed M3-01 is resolved and identified M4-01 as a stale current-
+status paragraph in PROGRESS. The documentation-only correction is recorded in the Phase 11 M4
+acceptance checkpoint there. The Technical Lead formally accepted M4 with minor changes.
+
+M1-M4 implementation milestones are accepted and M3-01/M4-01 are resolved. A separate final PR
+integration and merge-readiness review and explicit Phase 11 closeout remain pending. PR #26 stays
+open, draft and unmerged. The protected holdout remains unreleased.

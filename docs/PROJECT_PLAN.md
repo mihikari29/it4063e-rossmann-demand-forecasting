@@ -23,9 +23,10 @@ preserves the design, implementation and review record. Phase 10's [completed pl
 and ADR-023 record the accepted methodology, integrated implementation, corrective review and formal
 closeout. Phase 10 is COMPLETE on `main` after PR #25 merged at
 `d437269b9f0cf36a842cdfd496ad50a310804768`, as recorded in [PROGRESS](PROGRESS.md). Phase 11's
-read-only application architecture is approved; M1 and M2 are accepted; M3 is accepted and M3-01
-is resolved; M4 is implemented and under independent review. Phase 11 is not complete and PR #26
-remains draft and unmerged.
+read-only application architecture is approved; M1-M3 are accepted; M3-01 and M4-01 are
+resolved; and M4 is accepted with minor changes. The separate final PR integration and
+merge-readiness review and formal Phase 11 closeout remain pending. PR #26 remains draft and
+unmerged; Phase 11 is not complete.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -205,20 +206,23 @@ not started; its current M1 implementation/review state is maintained in [PROGRE
 
 ## Phase 11 — Application Services & Thin API
 
-**Status:** M1 and M2 ACCEPTED; M3 ACCEPTED (M3-01 RESOLVED); M4 IMPLEMENTED / UNDER INDEPENDENT
-REVIEW; Phase 11 is not complete. PR #26 remains draft and unmerged.
+**Status:** M1, M2 and M3 ACCEPTED; M3-01 RESOLVED; M4 ACCEPTED WITH MINOR CHANGES (M4-01
+RESOLVED); final PR integration and merge-readiness review pending. Phase 11 is not complete;
+PR #26 remains draft and unmerged.
 **Execution plan:** [Phase 11 active plan](../plans/active/phase-11-application-services.md).
 **Objective:** Expose the frozen analytics through reusable Python services and a small HTTP adapter.
 **Dependencies:** Phases 7–10.
 **Deliverables:** Forecast/uncertainty/inventory services, thin FastAPI adapter, fixture-backed
 cross-layer integration evidence, and reproducible local startup/handoff guidance.
 **Acceptance / boundary:** No notebook dependency, duplicated model logic or microservice system.
-M1 safe readers, M2 DTO services, and M3 HTTP routes remain the shared chain; close M3-01 by
-preserving Starlette's `Allow` header on sanitized 405 responses. Future Streamlit calls
+M1 safe readers, M2 DTO services, and M3 HTTP routes remain the shared chain; M3-01 was
+resolved by preserving Starlette's `Allow` header on sanitized 405 responses. Future Streamlit calls
 `ApplicationServices` directly. No new model/policy tuning, inference, simulation or artifact
 packaging is authorized. Ignored canonical artifacts are local prerequisites for demo data routes;
-fixture tests and process health require no Rossmann data or Kaggle credentials. M4 remains under
-independent review and does not complete Phase 11 or authorize merge.
+fixture tests and process health require no Rossmann data or Kaggle credentials. M4 is accepted with
+minor changes, including the resolved M4-01 documentation correction. The separate final PR
+integration and merge-readiness review remains pending; Phase 11 is not complete and merge is not
+authorized.
 
 ## Phase 12 — Streamlit Dashboard
 

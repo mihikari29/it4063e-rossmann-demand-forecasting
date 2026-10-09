@@ -12,7 +12,7 @@
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
-| Phase 11 — Application Services & Thin API | **M1–M2 ACCEPTED; M3 ACCEPTED WITH MINOR FOLLOW-UP M3-01; M4 IMPLEMENTED / UNDER REVIEW; Phase 11 NOT COMPLETE** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; PR #26 remains draft/unmerged; [active plan](../plans/active/phase-11-application-services.md) |
+| Phase 11 — Application Services & Thin API | **M1-M3 ACCEPTED; M3-01 RESOLVED; M4 ACCEPTED WITH MINOR CHANGES; M4-01 RESOLVED; FINAL PR REVIEW PENDING** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; PR #26 remains open, draft and unmerged; [active plan](../plans/active/phase-11-application-services.md) |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -37,8 +37,10 @@ are recorded below and were not regenerated. Phase 10 methodology is accepted un
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Final focused independent external/model-assisted review
 accepted the implementation and numerical evidence. Closeout PR #25 was squash-merged into `main`
 at `d437269b9f0cf36a842cdfd496ad50a310804768`; Phase 10 is COMPLETE. Phase 11 architecture is
-approved. M1 and M2 are accepted; M3 is formally accepted with minor follow-up M3-01; M4 is
-authorized for implementation on the focused feature branch. The protected holdout remains unreleased.
+approved. M1, M2 and M3 are formally accepted; M3-01 is resolved; M4 is accepted with minor changes
+and M4-01 is resolved by this documentation correction. The final PR integration and merge-readiness
+review and formal Phase 11 closeout remain pending. PR #26 remains open, draft and unmerged. The
+protected final holdout remains unreleased.
 
 ## Immediate next boundary
 
@@ -78,8 +80,11 @@ record the methodology and lifecycle. The current canonical development run is
 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. PR #23 and corrective PR #24
 are integrated at the SHAs in the current-state table. Phase 10's final closeout is recorded in the
 completed plan; Phase 10 is COMPLETE after closeout PR #25 merged into `main` at
-`d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1 and M2 are accepted and M3 is IMPLEMENTED /
-UNDER REVIEW on its feature branch; M4 is not authorized. The protected holdout remains unreleased.
+`d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1, M2 and M3 are formally accepted;
+M3-01 is resolved; M4 is accepted with minor changes; and M4-01 is resolved by this correction.
+The accepted implementation milestones await a separate final PR integration and merge-readiness
+review and explicit formal closeout. PR #26 remains open, draft and unmerged. No final-holdout release
+is authorized.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -271,6 +276,22 @@ Reference and `buffer_090` signed differences remained respectively +1,842,931.0
 no ledger, history source, or holdout. No inference, simulation, or canonical artifact generation
 was performed. M4 remains implemented / under independent review; PR #26 remains draft and
 unmerged, and Phase 11 remains incomplete.
+
+
+### Phase 11 M4 acceptance and M4-01 correction - 2026-10-09
+
+The independent M4 review of expected PR #26 head
+`db2d8ce47e7704e7beb11f7c7b08fd846ac1619c` returned `ACCEPT_WITH_MINOR_CHANGES`. It confirmed
+M3-01 is resolved and identified M4-01 as the sole remaining finding: the current "Immediate next
+boundary" paragraph still described M3 as under review and M4 as unauthorized. This documentation-
+only correction updates that status; no product finding remains. The Technical Lead formally
+accepted M4 with minor changes.
+
+M1, M2 and M3 are formally accepted; M3-01 and M4-01 are resolved; M4 is accepted with minor
+changes. The implementation milestones are accepted, but the separate final PR integration and
+merge-readiness review and formal Phase 11 closeout remain pending. PR #26 remains open, draft and
+unmerged. No final-holdout release is authorized. Prior implementation test totals and canonical
+results remain recorded in the preceding M4 checkpoint.
 
 
 ## Branch cleanup inventory
