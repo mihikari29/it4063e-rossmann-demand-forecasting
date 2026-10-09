@@ -1,11 +1,13 @@
 # Phase 12 — Streamlit Dashboard Design
 
-**Status:** PROPOSED / AWAITING REVIEW. Workflow lifecycle: PLANNED.
-**Date:** 2026-10-09. **Authority:** Architecture audit and design documentation only, including
-commit, push and a draft PR. Implementation, dependency installation, artifact export/upload,
-deployment and merge are not authorized by this task.
-**Branch:** `docs/phase-12-streamlit-design`, directly from fetched `origin/main`
-`2a47ae7dd959daac8eacf2b5410f090edbbcd7cb`; no stacked integration dependency.
+**Phase status:** PLANNED. M1 design and implementation scope are APPROVED / AUTHORIZED;
+M1 is IMPLEMENTED / UNDER REVIEW with evidence in §11. M2–M4 remain PLANNED / NOT AUTHORIZED.
+**Date:** 2026-10-09. **Authority:** The original design task authorized documentation and a draft
+PR. The subsequent Technical Lead task authorizes M1 implementation, a compatible optional
+Streamlit dependency, commit, push and a draft PR; it does not authorize merge, deployment,
+artifact distribution, M2–M4 or Phase 13.
+**Implementation branch:** `feat/phase-12-streamlit-m1`, directly from fetched `origin/main`
+`9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`; no stacked integration dependency.
 
 ## 1. Verified baseline and design boundary
 
@@ -14,7 +16,8 @@ The initial worktree was clean on the already merged `docs/phase-11-closeout` br
 on the base above. The live all-PR collection contained 27 PRs, all merged, with none open.
 PR #26 integrated services at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; PR #27 integrated
 formal Phase 11 closeout at the current main SHA. The local `main` branch was behind and was
-not used as the design base. Phase 12 is unimplemented; Phase 13 remains unauthorized.
+not used as the original design base. Phase 12 was unimplemented at that audit baseline; Phase 13
+remains unauthorized.
 
 Audit sources, in project precedence order: [proposal](../../docs/PROPOSAL.md),
 [accepted decisions](../../docs/DECISIONS.md), [roadmap](../../docs/PROJECT_PLAN.md),
@@ -48,7 +51,7 @@ Sales, Open or Customers access, hashing, export or reveal. No canonical artifac
 | Five screens and a single sidebar navigation control | Proposed. Combine forecast and uncertainty; combine overview and provenance. Render only the active screen. |
 | Presentation technology | Proposed: Streamlit plus existing pandas/matplotlib, with an optional `dashboard` extra added only during authorized implementation. No Plotly, SHAP or other chart package is necessary. Generate the lock through uv. |
 | Result caching | Proposed: no Streamlit DTO/data cache initially. Retain existing process-local output-hash memoization and immutable-artifact assumptions. |
-| Deployment | Proposed primary: one private LAN course instance on the existing artifact-owning machine. Confirm course acceptance and audience before exposure. Cloud alternatives require additional approved distribution contracts. |
+| Deployment | UNDECIDED. Private LAN on the artifact-owning machine remains one candidate only. Course acceptance, audience, and distribution are not approved. |
 | Service extensions | Excluded from the core. Calibration counts/coverage, structured inventory case metadata and per-store operational parameters need separate typed service designs if requested. |
 
 Conflicts are explicit rather than edits to the approved proposal:
@@ -62,9 +65,8 @@ Conflicts are explicit rather than edits to the approved proposal:
   DTOs. Core history shows only bounded Sales/Open. Full-source historical EDA must not be loaded
   into this dashboard because it includes the protected period. Those richer views are deferred.
 - Proposal §20 names Community Cloud / Render. ADR-017 leaves deployment details for this plan.
-  A private LAN instance is the smallest no-upload option, but whether it satisfies the course's
-  deployment requirement is an open human decision. A local-only localhost session does not count
-  as deployment acceptance in this plan.
+  Deployment mode remains undecided. Private LAN is a candidate, subject to a later audience and
+  course-requirement decision. No deployment or artifact distribution is approved here.
 - ADR-004's old reference to optional 28-day views is superseded by ADR-017 and the current proposal:
   only H14 and its first-seven-day display are supported.
 - Some dictionary/data-layout/roadmap paragraphs retain older Phase 10/11 lifecycle language.
@@ -74,6 +76,21 @@ Conflicts are explicit rather than edits to the approved proposal:
 
 No ADR or proposal text changes in this design task. Any later accepted material distribution or
 service-contract change must be recorded with explicit approval before dependent code.
+
+## Approval checkpoint — 2026-10-09
+
+The Technical Lead's explicit M1 authorization is recorded in the implementation task following
+the review and merge of design PR #28 into `main` at
+`9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`. This accepts the five-screen architecture, direct
+`ApplicationServices` calls, and M1 shell/presentation scope. It authorizes a compatible optional
+Streamlit dependency only; existing pandas/matplotlib remain the presentation foundation. The
+feature implementation branch is `feat/phase-12-streamlit-m1`, based directly on current main.
+
+M1 may implement the application shell, overview/readiness screen, pure presentation helpers,
+sanitized UI errors and fixture-backed tests. Other four screens stay honest, data-free placeholders;
+their service queries are out of scope. The proposal's interactive stock/lead-time/service-level
+what-if behavior is excluded from M1–M3. Phase 13 holdout access is not authorized. Deployment
+remains undecided; LAN is only a candidate. M2–M4 remain PLANNED / NOT AUTHORIZED.
 
 ## 3. Actual Phase 11 interfaces
 
@@ -453,7 +470,7 @@ with pinned manifests and fixed repository-relative paths. Putting a few rows at
 fails byte hashes/global row checks. Fetching `current.json`, substituting fixture pins or stripping
 hash checks is unacceptable. A model binary is unnecessary because no inference runs.
 
-### A. Recommended: private LAN deployment on the artifact-owning machine
+### A. Candidate: private LAN deployment on the artifact-owning machine
 
 Run one authorized Streamlit process on the existing trusted Windows/team machine and make its UI
 reachable from another course device on an approved private LAN. Keep the canonical files in place;
@@ -551,15 +568,15 @@ no packaging, transfer, provisioning or deployment.
 
 ## 7. Milestones and independent Luna 6 task boundaries
 
-All milestones below are **PROPOSED / NOT AUTHORIZED**. After Technical Lead design approval, assign
-one independently bounded Luna 6 implementation task at a time; do not execute future milestones
-merely because earlier tests pass. Record exact reviewed heads and independent acceptance in this
-same active plan. A future feature branch must start from then-current main, or explicitly record
-any unmerged design integration dependency. No agent delegation occurred in this design task.
+M1 is APPROVED / AUTHORIZED only under the checkpoint above. M2–M4 remain PLANNED / NOT
+AUTHORIZED. Assign each future milestone only after its separate authorization; passing M1 tests
+does not start later work. Record exact reviewed heads and independent acceptance in this same
+active plan. A future feature branch must start from then-current main, or explicitly record any
+unmerged integration dependency. No agent delegation occurred in this task.
 
 | Milestone | Luna 6 implementation boundary and dependencies | Required review / acceptance evidence |
 |---|---|---|
-| M1 — Shell and presentation boundary | Approved screen/state/dependency choices. Add dashboard extra/lock, thin entrypoint, five-screen shell, pure presentation helpers, safe errors and fixture injection. Implement static overview/provenance and clean-checkout states only. No forecasting/history/comparison screens, hosting or service extension. | Locked install on Python 3.12/3.14; missing/corrupt catalog AppTest; accurate readiness; conversion/null/error tests; no file paths/raw exception echo or HTTP/model dispatch. Independent review accepts shell before M2. |
+| M1 — Shell and presentation boundary | Authorized scope. Add dashboard extra/lock, thin entrypoint, five-screen shell, pure presentation helpers, safe errors and fixture injection. Implement static overview/provenance and clean-checkout states only. No forecasting/history/comparison screens, hosting or service extension. | Locked install on Python 3.12/3.14; missing/corrupt catalog AppTest; accurate readiness; conversion/null/error tests; no file paths/raw exception echo or HTTP/model dispatch. Independent review accepts shell before M2. |
 | M2 — History, forecast and uncertainty | Accepted M1. Implement §§4.2–4.4 using exactly current services and DTOs. Source/date/fit/form validation, sparse plots, raw/operational distinction, cumulative table and caveats. No metrics/simulation/deployment or new quantile/coverage reader. | Fixture UI→services→reader tests, cutoff-before-open assertions, all origin/fit cases, H7 display subset, partial/all-unavailable intervals and negative-q cases. Read-only non-ledger development smoke only after implementation authorization. Independent methodology/UI review before M3. |
 | M3 — Model and inventory comparisons | Accepted M2. Implement §§4.5–4.6 and proposed bounded query presets; exact producer tables/denominators, case vs Store scope and adverse-result display. No sliders, ratio aggregation, daily ledger or service changes. | All candidates/horizons and coverage preserved; bounded-query fixtures and canonical service smoke; positive/negative/null/asymmetric pair UI tests; unchanged aggregates under Store selection; scientific-language review. Independent review before M4. |
 | M4 — Integration and one authorized deployment | Accepted M3, explicit host/audience approval and distribution-contract approval if B/C replaces A. Run full fixture/quality matrix, manual browser layout and two-session checks, benchmark selected host, document real deployment startup/failure behavior and obtain final independent review. The approval must name any extra B/C work before assigning it to Luna 6. | One audience-accessible URL showing accepted development evidence; absent/corrupt-resource behavior; no publicly served raw/ignored files/holdout; measured latency/memory evidence; code/lock/run provenance; Technical Lead acceptance, authorized merge and explicit Phase 12 closeout. Stop there. |
@@ -642,9 +659,40 @@ Executed on the existing locked Windows environment, Python 3.14.5 / uv 0.12.23:
 | Scope comparison against base | Source/tests, pyproject/lock, proposal/ADRs, CI and data documentation unchanged. Only this plan, PROGRESS, PROJECT_PLAN and README changed. |
 | Refetch before publication | `origin/main` still `2a47ae7dd959daac8eacf2b5410f090edbbcd7cb`. |
 
-No local Python 3.12 or Streamlit UI/deployment check was run: Streamlit is not implemented or
-installed by this task. No canonical artifact contents, ledger, protected outcomes, source-wide EDA
-files or model binaries were opened/hashed for this audit. Official Streamlit documentation and
-GitHub repository metadata were read. Publication identifiers are supplied in the task handoff
-after creation. The plan remains PROPOSED / AWAITING REVIEW; no implementation or methodology
-approval follows from these checks.
+No local Python 3.12 or Streamlit UI/deployment check was run at the design-task checkpoint:
+Streamlit was not installed by that task. No canonical artifact contents, ledger, protected outcomes,
+source-wide EDA files or model binaries were opened/hashed for that audit. Official Streamlit
+documentation and GitHub repository metadata were read. At that checkpoint the design still awaited
+review; those checks alone did not approve implementation or methodology. See the M1 implementation
+checkpoint below for its separate authorization and evidence.
+
+## 11. M1 implementation checkpoint — 2026-10-09
+
+Status: IMPLEMENTED / UNDER REVIEW. Approval and scope are recorded above. Implementation is
+limited to the shell, static overview/readiness presentation, pure display helpers, safe error
+handling and fixture-backed tests. Other screens are data-free placeholders and do not dispatch
+services. M2–M4, deployment, publication of artifacts and Phase 13 remain outside this task.
+
+The implementation branch is `feat/phase-12-streamlit-m1`, based on the PR #28 merge SHA
+`9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`. The changes are committed and published in the draft
+PR linked below. This checkpoint does not mark M1 accepted or Phase 12 complete.
+
+| Checkpoint | Actual evidence |
+|---|---|
+| Branch and base | `feat/phase-12-streamlit-m1` from `origin/main` at `9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`; the design PR #28 is merged. |
+| Commit / review | See the M1 draft PR and head SHA in the final handoff; merge is not authorized. |
+| Focused dashboard tests | `pytest tests/test_dashboard.py tests/test_dashboard_presenters.py -q`: 13 passed before the final clean-checkout test was added. The final full-suite run includes all 14 dashboard tests. |
+| Full suite, Python 3.12 | Locked isolated `uv run --isolated --locked --extra dev --extra api --extra dashboard --python 3.12 python -m pytest`: 445 passed; one existing Starlette/httpx deprecation warning. |
+| Full suite, Python 3.14 | Locked project environment `python -m pytest`: 445 passed; the same existing warning. |
+| Ruff | `python -m ruff check .` and `python -m ruff format --check .`: passed; 102 files already formatted. |
+| Documentation | `python scripts/check_docs.py`: passed; 259 local destinations/anchors across 27 Markdown files. |
+| Dependencies | `uv lock --check`: passed, 109 resolved packages. `uv pip check`: passed, 93 installed packages compatible. Streamlit 1.65.0 resolved under `dashboard = ["streamlit>=1.50,<2"]`. |
+| AppTest behavior | Fixture-backed tests cover successful readiness/provenance, fully empty checkout, missing/corrupt catalogs, empty state, safe conversion and errors, all five screens and no non-catalog service dispatch. The reader spy observes only Phase 9 catalog and Phase 10 comparison reads; fixtures are isolated under pytest temporary paths. |
+| `git diff --check` | Passed before commit. |
+| Not performed | No manual browser, performance, deployment, real-data pipeline, canonical artifact regeneration, ledger access or protected holdout access. |
+
+Full-suite testing used fixtures only. The empty-checkout case injects an `_ArtifactReader` rooted
+in an empty temporary directory; it shows static project context, ten unavailable resource statuses
+and no fabricated provenance without reading repository artifacts. The other four navigation entries
+remain placeholders and issue no service calls. The draft PR is under review; M1 is not accepted and
+no later milestone has started.

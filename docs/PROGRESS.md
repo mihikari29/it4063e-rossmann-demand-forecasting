@@ -13,7 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 — Streamlit Dashboard | **PROPOSED / AWAITING REVIEW** (PLANNED) | [Active design proposal](../plans/active/phase-12-streamlit-dashboard.md); documentation only, unimplemented and unmerged |
+| Phase 12 — Streamlit Dashboard | PLANNED; M1 **IMPLEMENTED / UNDER REVIEW** | M1 on `feat/phase-12-streamlit-m1` from `9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`; [active plan](../plans/active/phase-12-streamlit-dashboard.md). M2–M4 unauthorized; not merged. |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -88,8 +88,8 @@ limit richer EDA, calibration diagnostics, structured case selectors and operati
 the core proposes bounded Sales/Open history and saved-case comparisons. It explicitly records
 the narrower scope relative to proposal §22 for Technical Lead review without editing the proposal.
 
-The minimal deployment recommendation is a private course LAN instance on the artifact-owning
-machine, subject to approval that it satisfies the course requirement. Private canonical-file cloud
+Deployment remains undecided; private course LAN is one candidate, subject to later approval that it
+satisfies the course requirement. Private canonical-file cloud
 provisioning and a separately reviewed reduced DTO evidence snapshot are alternatives, each requiring
 additional distribution/contract approval. A clean checkout or synthetic fixtures cannot substitute
 for accepted analytical evidence. No source, API, service, model, simulation, dependency or canonical
@@ -100,9 +100,40 @@ and installed dependency compatibility, plus diff/scope self-review. The existin
 Starlette TestClient deprecation warning remains. Detailed check scope is recorded in the active
 plan; no Streamlit implementation, UI test or deployment was performed.
 
-Phase 12 is **PROPOSED / AWAITING REVIEW**, not approved, implemented or complete. Dependency
-installation, implementation, artifact export/upload, hosting and merge are outside this task.
-Phase 13 final-holdout evaluation and Phase 14 reporting remain future work; the holdout is unreleased.
+At the end of that original design task, Phase 12 was **PROPOSED / AWAITING REVIEW**. That historical
+boundary was superseded by the later M1 authorization recorded below; Phase 13 and Phase 14 remain
+future work, and the holdout is unreleased.
+
+### Phase 12 M1 implementation checkpoint — 2026-10-09
+
+Technical Lead authorization followed verification that design PR #28 was merged into `main` at
+`9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`. M1 is limited to the Streamlit shell, static overview
+and catalog/readiness presentation, pure display helpers, sanitized UI errors and fixture-backed
+tests. The other four screens remain data-free placeholders and make no service queries. The
+optional dashboard extra is used only by the dashboard and AppTest suite; pandas/matplotlib remain
+the visualization foundation. Deployment is undecided, the proposal's interactive what-if scope is
+excluded from M1–M3, and M2–M4 and Phase 13 remain unauthorized. No holdout or ledger access is
+authorized.
+
+Implementation branch: `feat/phase-12-streamlit-m1`, based directly on the verified merge SHA above.
+M1 is IMPLEMENTED / UNDER REVIEW only; it is not accepted, merged or a Phase 12 closeout. The
+focused UI/presenter tests passed (13 before the final empty-checkout test was added); the final
+suite includes 14 dashboard tests. Whole-repository pytest passed with 445 tests on Python 3.12 and
+445 on Python 3.14, each with one existing Starlette/httpx deprecation warning. The 3.12 run used a
+locked isolated uv environment; the 3.14 run used the locked project environment.
+
+Ruff lint and format checks passed (102 files formatted), documentation links passed (259 local
+destinations/anchors across 27 Markdown files), `uv lock --check` passed with 109 resolved packages,
+and `uv pip check` passed with 93 compatible installed packages. The dashboard extra resolves
+Streamlit 1.65.0 under `streamlit>=1.50,<2`. AppTests use temporary fixture roots; the empty-checkout
+case renders static content and unavailable statuses without provenance, while the corrupt-catalog
+case displays a fixed integrity error without a local path. Navigation tests confirm that only the
+overview calls `catalog()` and its reader opens only the Phase 9 scenario catalog and Phase 10
+comparison output. No manual browser/performance test, real-data pipeline, deployment, canonical
+artifact regeneration, ledger access or protected holdout access was performed.
+
+The feature branch is pushed in a draft PR targeting `main`; commit head and PR URL are recorded in
+the final task handoff below. M2–M4 remain unauthorized; do not merge or start subsequent work.
 
 ## Immediate next boundary
 
@@ -146,8 +177,9 @@ completed plan; Phase 10 is COMPLETE after closeout PR #25 merged into `main` at
 M3-01 is resolved; M4 is accepted with minor changes; and M4-01 is resolved by this correction.
 Phase 11 is COMPLETE following PR #26 squash merge at
 `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; its [completed plan](../plans/completed/phase-11-application-services.md)
-records formal acceptance. Phase 12's [design proposal](../plans/active/phase-12-streamlit-dashboard.md)
-is PROPOSED / AWAITING REVIEW and remains unimplemented; Phase 13 still requires a
+records formal acceptance. Phase 12 M1 is IMPLEMENTED / UNDER REVIEW on the feature branch, as
+recorded in the [active plan](../plans/active/phase-12-streamlit-dashboard.md); M2–M4 are not
+authorized. Phase 13 still requires a
 separate frozen protocol and explicit authorization to release holdout outcomes. The holdout remains
 unreleased.
 

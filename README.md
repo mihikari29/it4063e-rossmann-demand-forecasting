@@ -67,7 +67,7 @@ Python **3.12–3.14** is supported; **3.14** is the reference environment. Inst
 [uv 0.12.23](https://docs.astral.sh/uv/getting-started/installation/) and run from the repo root:
 
 ```powershell
-uv sync --locked --extra dev --extra api --python 3.14
+uv sync --locked --extra dev --extra api --extra dashboard --python 3.14
 .\.venv\Scripts\Activate.ps1
 python -m pytest
 ```
@@ -75,7 +75,8 @@ python -m pytest
 On macOS/Linux use `source .venv/bin/activate`. Both Python 3.12 and 3.14 passed the fixture suite
 in isolated locked Windows environments. `pyproject.toml` is the hand-maintained dependency source;
 `uv.lock` pins resolved packages/hashes. The optional `api` extra installs FastAPI, Uvicorn and the
-HTTP test client for the local adapter and its fixture tests; none are core forecasting dependencies.
+HTTP test client for the local adapter and its fixture tests. The optional `dashboard` extra installs
+Streamlit for the M1 dashboard and AppTest suite. Neither extra is a core forecasting dependency.
 Add `--extra acquisition` to sync only if using Kaggle API; manual acquisition needs no credentials
 in this repo. See [workflow](docs/WORKFLOW.md) for lock updates, CI, branch lifecycle and contribution
 authority.
@@ -226,8 +227,8 @@ tests need no canonical local artifacts or Kaggle credentials. For a clean check
 locked development and API extras and run the fixture suite:
 
 ```powershell
-uv sync --locked --extra dev --extra api --python 3.14
-uv run --locked --extra dev --extra api python -m pytest
+uv sync --locked --extra dev --extra api --extra dashboard --python 3.14
+uv run --locked --extra dev --extra api --extra dashboard python -m pytest
 ```
 
 Start the local server from the repository root:
@@ -235,6 +236,20 @@ Start the local server from the repository root:
 ```powershell
 uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.app.api:app --host 127.0.0.1 --port 8000
 ```
+
+## Phase 12 M1 dashboard
+
+The M1 Streamlit shell is implemented under review. Its overview shows static project context and
+saved catalog/readiness when local artifacts are available; the other four screens remain
+data-free placeholders. Install the optional dashboard extra and run from the repository root:
+
+```powershell
+uv sync --locked --extra dashboard --python 3.14
+uv run --locked --extra dashboard streamlit run streamlit_app.py
+```
+
+The dashboard does not train or infer forecasts, run inventory simulation, access the Phase 10
+ledger, or evaluate the protected final holdout. Deployment remains undecided.
 
 In PowerShell, check process health, list supported cases, and try a bounded forecast or the
 canonical reference inventory case:
@@ -284,8 +299,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 - Phase 11: **COMPLETE**; the [completed plan](plans/completed/phase-11-application-services.md)
   records the shared Python services and thin local/demo FastAPI adapter. Streamlit calls the same
   services directly; separate API hosting and Evidently are optional.
-- Phase 12: the [Streamlit design proposal](plans/active/phase-12-streamlit-dashboard.md) is
-  **PROPOSED / AWAITING REVIEW**; implementation and deployment remain unauthorized.
+- Phase 12: M1 is **IMPLEMENTED / UNDER REVIEW** on the feature branch; M2–M4 remain unauthorized.
+  The [active plan](plans/active/phase-12-streamlit-dashboard.md) records the boundary and evidence.
 - Phase 13: one frozen sequential final evaluation remains future work requiring separate
   authorization. The protected holdout remains unreleased.
 - Phase 14: recorded results, report, slides and demonstration.
