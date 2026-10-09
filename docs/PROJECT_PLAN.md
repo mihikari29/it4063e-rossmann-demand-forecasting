@@ -23,8 +23,8 @@ preserves the design, implementation and review record. Phase 10's [completed pl
 and ADR-023 record the accepted methodology, integrated implementation, corrective review and formal
 closeout. Phase 10 is COMPLETE on `main` after PR #25 merged at
 `d437269b9f0cf36a842cdfd496ad50a310804768`, as recorded in [PROGRESS](PROGRESS.md). Phase 11's
-read-only application architecture is approved; M1 is REVIEWED / formally accepted and M2 is
-IMPLEMENTED / UNDER REVIEW, while M3–M4 remain unauthorized and Phase 11 is not complete.
+read-only application architecture is approved; M1 and M2 are REVIEWED / formally accepted; M3 is
+IMPLEMENTED / UNDER REVIEW and M4 remains unauthorized. Phase 11 is not complete.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -204,8 +204,8 @@ not started; its current M1 implementation/review state is maintained in [PROGRE
 
 ## Phase 11 — Application Services & Thin API
 
-**Status:** M1 REVIEWED / formally accepted; M2 IMPLEMENTED / UNDER REVIEW; Phase 11 is not
-complete. M3–M4 remain planned and unauthorized.
+**Status:** M1 and M2 REVIEWED / formally accepted; M3 IMPLEMENTED / UNDER REVIEW; Phase 11 is not
+complete. M4 remains unauthorized.
 **Execution plan:** [Phase 11 active plan](../plans/active/phase-11-application-services.md).
 **Objective:** Expose the frozen analytics through reusable Python services and a small HTTP adapter.
 **Dependencies:** Phases 7–10.

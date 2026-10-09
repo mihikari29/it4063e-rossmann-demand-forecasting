@@ -8,8 +8,8 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 `main` has Phases 0–10 formally complete following Phase 10 closeout PR #25, merged at
 `d437269b9f0cf36a842cdfd496ad50a310804768`. The Phase 11 read-only application architecture is
-approved; M1 is reviewed/formally accepted and M2 is implemented under review on
-`feat/phase-11-application-services`, while M3–M4 remain unauthorized and Phase 11 is not complete.
+approved; M1 and M2 are reviewed/formally accepted and M3 is implemented under review on
+`feat/phase-11-application-services`, while M4 remains unauthorized and Phase 11 is not complete.
 PR #26 remains draft and unmerged. Phase 5 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
@@ -56,8 +56,9 @@ Phase 10 was implemented under ADR-023. PR #23 integrated the implementation at
 accepted the corrective implementation and numerical evidence. The [completed plan](plans/completed/phase-10-inventory-simulation.md)
 records formal closeout. The accepted canonical run is `phase10-dev-20261008-validator-fix`
 (manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0–10
-are complete on `main` after PR #25 integration. Phase 11 M1 is accepted and M2 is under review
-on its feature branch; M3–M4 are not authorized. The protected final holdout remains unreleased.
+are complete on `main` after PR #25 integration. Phase 11 M1 and M2 are accepted and M3 is
+implemented under review on its feature branch; M4 is not authorized. The protected final holdout
+remains unreleased.
 
 ## Environment and quick start
 
@@ -65,16 +66,18 @@ Python **3.12–3.14** is supported; **3.14** is the reference environment. Inst
 [uv 0.12.23](https://docs.astral.sh/uv/getting-started/installation/) and run from the repo root:
 
 ```powershell
-uv sync --locked --extra dev --python 3.14
+uv sync --locked --extra dev --extra api --python 3.14
 .\.venv\Scripts\Activate.ps1
 python -m pytest
 ```
 
 On macOS/Linux use `source .venv/bin/activate`. Both Python 3.12 and 3.14 passed the fixture suite
 in isolated locked Windows environments. `pyproject.toml` is the hand-maintained dependency source;
-`uv.lock` pins resolved packages/hashes. Add `--extra acquisition` to sync only if using Kaggle API;
-manual acquisition needs no credentials in this repo. See [workflow](docs/WORKFLOW.md) for lock
-updates, CI, branch lifecycle and contribution authority.
+`uv.lock` pins resolved packages/hashes. The optional `api` extra installs FastAPI, Uvicorn and the
+HTTP test client for the local adapter and its fixture tests; none are core forecasting dependencies.
+Add `--extra acquisition` to sync only if using Kaggle API; manual acquisition needs no credentials
+in this repo. See [workflow](docs/WORKFLOW.md) for lock updates, CI, branch lifecycle and contribution
+authority.
 
 ## Data setup and commands
 
@@ -209,9 +212,25 @@ cost under these assumptions for the synthetic-base and historical reference cas
 establish real inventory, physical demand, real stockouts, savings, universal forecast performance,
 statistical superiority, optimality, calibrated synthetic service guarantees or production readiness.
 Phase 10 is **COMPLETE** after closeout PR #25 merged into `main` at
-`d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 M1 is
-reviewed/formally accepted and M2 is implemented under review on its feature branch. M3–M4
-remain planned and unauthorized.
+`d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 M1 and
+M2 are reviewed/formally accepted; M3 is authorized and implemented under review on the same draft
+PR #26. M4 remains unauthorized and Phase 11 is incomplete.
+
+## Phase 11 local/demo API
+
+The read-only FastAPI adapter serves the accepted application-service views. Run it from the
+repository root on localhost with the optional API dependencies installed:
+
+```powershell
+uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.app.api:app --host 127.0.0.1 --port 8000
+```
+
+The routes are `/health`, `/api/v1/catalog`, `/api/v1/forecasts`, `/api/v1/uncertainty`,
+`/api/v1/model-comparison`, `/api/v1/inventory`, and `/api/v1/history`. They read pinned
+development results or bounded historical Sales through the shared services; the adapter adds no
+inference or simulation. Inventory values remain synthetic monetary comparisons, and historical
+access ends 2015-07-03. Error bodies use stable sanitized JSON codes. The server binds to
+`127.0.0.1`; public hosting and production deployment are outside this milestone.
 
 ## Architecture and remaining work
 

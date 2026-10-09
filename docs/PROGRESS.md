@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-08
+## Current implementation and Git state — 2026-10-09
 
 | Scope | State | Integration |
 |---|---|---|
@@ -12,7 +12,7 @@
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
-| Phase 11 — Application Services & Thin API | **M1 REVIEWED / ACCEPTED; M2 IMPLEMENTED / UNDER REVIEW; Phase 11 NOT COMPLETE** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; [active plan](../plans/active/phase-11-application-services.md); M3–M4 not authorized |
+| Phase 11 — Application Services & Thin API | **M1–M2 REVIEWED / ACCEPTED; M3 IMPLEMENTED / UNDER REVIEW; Phase 11 NOT COMPLETE** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; [active plan](../plans/active/phase-11-application-services.md); M4 not authorized |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -37,8 +37,8 @@ are recorded below and were not regenerated. Phase 10 methodology is accepted un
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Final focused independent external/model-assisted review
 accepted the implementation and numerical evidence. Closeout PR #25 was squash-merged into `main`
 at `d437269b9f0cf36a842cdfd496ad50a310804768`; Phase 10 is COMPLETE. Phase 11 architecture is
-approved. M1 is reviewed/formally accepted and M2 is implemented under review on the focused feature
-branch; M3–M4 remain unauthorized. The protected holdout remains unreleased.
+approved. M1 and M2 are reviewed/formally accepted; M3 implementation is separately authorized on
+the focused feature branch, while M4 remains unauthorized. The protected holdout remains unreleased.
 
 ## Immediate next boundary
 
@@ -78,8 +78,8 @@ record the methodology and lifecycle. The current canonical development run is
 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. PR #23 and corrective PR #24
 are integrated at the SHAs in the current-state table. Phase 10's final closeout is recorded in the
 completed plan; Phase 10 is COMPLETE after closeout PR #25 merged into `main` at
-`d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1 is accepted and M2 is IMPLEMENTED / UNDER
-REVIEW on its feature branch; M3–M4 are not authorized. The protected holdout remains unreleased.
+`d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1 and M2 are accepted and M3 is IMPLEMENTED /
+UNDER REVIEW on its feature branch; M4 is not authorized. The protected holdout remains unreleased.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -194,9 +194,44 @@ synthetic simulated monetary costs, not observed inventory or proven savings. No
 final-holdout outcome or raw historical source data was read; no producer, canonical artifact or
 manifest was changed.
 
-M2 remains **IMPLEMENTED / UNDER REVIEW** pending independent acceptance. M1 remains accepted on the
-unmerged feature branch; PR #26 stays open, draft and unmerged. M3–M4 remain unauthorized and Phase 11
-is not complete.
+M2 is formally accepted as recorded in the 2026-10-09 review/authorization checkpoint below. M1
+remains accepted on the unmerged feature branch; PR #26 stays open, draft and unmerged. M3–M4 were
+unauthorized at this historical checkpoint, and Phase 11 was not complete.
+
+### Phase 11 M2 formal acceptance and M3 authorization — 2026-10-09
+
+The Technical Lead formally accepted M2 following the independent `ACCEPT` review of exact PR #26
+head `cd7d3319760379716244e4db6c0cf0cb96ec6cbd`. This records the project acceptance checkpoint;
+the PR remains draft and unmerged. M1 and M2 are REVIEWED / ACCEPTED on the feature branch.
+
+The Technical Lead separately authorized M3 implementation on the same branch and PR. M3 is
+AUTHORIZED / IN IMPLEMENTATION pending independent review. The HTTP route, query, response and
+sanitized error contract was frozen in the [active Phase 11 plan](../plans/active/phase-11-application-services.md)
+before adapter implementation. M4, merge and Phase 11 closeout remain outside this authorization.
+The Phase 10 ledger and protected final holdout remain excluded.
+
+### Phase 11 M3 implementation checkpoint — 2026-10-09
+
+Implemented the frozen seven-route, read-only FastAPI adapter in `src/rossmann_forecasting/app/api.py`
+over the accepted M2 services. Added fixture-backed endpoint, selector, bound, error-sanitization,
+serialization and mutation-method tests in `tests/test_app_api.py`; added optional API dependencies,
+locked them, enabled that extra in CI and documented local use. The routes expose only accepted
+development artifacts and the M1 bounded Sales history view. No inference, simulation, producer
+changes, ledger access or holdout access was added.
+
+The full fixture suite passed: 424 tests on Python 3.14.5 in 119.56 seconds. The M1/M2/M3 focused
+suite passed 144 tests. Ruff lint and formatting, Markdown-link validation (230 destinations across
+26 files), `uv lock --check`, `pip check` and `git diff --check` passed. The full test run emitted one
+upstream Starlette deprecation warning because its TestClient currently uses `httpx`; no test failed.
+
+A canonical-data API smoke returned 200 for all seven routes, including forecast, uncertainty,
+comparison, inventory and history. The 82 scenario entries, 172 cases and 1,115 policy pairs were
+available as expected. Before/after snapshots confirmed 15 registered non-ledger canonical files
+were unchanged. The smoke did not read the simulation ledger, protected holdout or raw historical
+source beyond the authorized bounded-history route.
+
+M3 is **IMPLEMENTED / UNDER REVIEW**, pending independent review and exact-head CI on PR #26. PR #26
+remains draft and unmerged. M4 remains unauthorized; Phase 11 is not complete.
 
 ## Branch cleanup inventory
 
