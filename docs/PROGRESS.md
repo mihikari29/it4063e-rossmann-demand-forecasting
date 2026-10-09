@@ -13,7 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 — Streamlit Dashboard | M1 **ACCEPTED / INTEGRATED**; M2 **IMPLEMENTED / UNDER REVIEW** | M1 PR #29 merged at `cb508a0bbdefe6afeba6e1ea8ebad5a0614a03f6`. M2 branch `feat/phase-12-streamlit-m2` starts from that `main` SHA; [active plan](../plans/active/phase-12-streamlit-dashboard.md). M3/M4 not authorized; deployment pending. |
+| Phase 12 - Streamlit Dashboard | M1 ACCEPTED / INTEGRATED; M2 ACCEPTED / INTEGRATED; M3 IMPLEMENTED / UNDER REVIEW | M2 PR #30 merged at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`. M3 branch `feat/phase-12-streamlit-m3` starts directly from that `main` SHA and is in [draft PR #31](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/31), open and unmerged; [active plan](../plans/active/phase-12-streamlit-dashboard.md). M4 NOT AUTHORIZED; deployment undecided; Phase 13 unauthorized. |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -2315,3 +2315,17 @@ Tests used fixtures; no producer, saved artifact, model, metric, dependency or l
 No real-data rerun, model fitting, ledger access, protected July outcome access, manual browser,
 performance or deployment check was performed. PR #30 requires final external review; Phase 12 is
 not complete.
+
+## Phase 12 M3 implementation checkpoint - 2026-10-09
+
+M2 is accepted and integrated by PR #30 at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`. Main-branch Quality [run #37955545881](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37955545881) passed for Python 3.12 and 3.14, satisfying the M3 authorization gate. M3 is IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m3`, based directly on that main SHA, in [draft PR #31](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/31), open and unmerged. Its model/inventory behavior, exact read-only smoke queries, row counts and service provenance are recorded in the [active Phase 12 plan](../plans/active/phase-12-streamlit-dashboard.md).
+
+The focused dashboard/M2/presenter suite passed 98 tests. The full fixture suite passed 529 tests on each of Python 3.12 and 3.14, each with one existing Starlette/httpx deprecation warning. Ruff lint/format, Markdown links, lock consistency, the locked Python 3.14 dependency check and `git diff --check` passed. M3 smoke used only public application services and confirmed the adverse whole-case reference and `buffer_090` cost differences already recorded above remain visible. Store 1 policy pairs were comparable in that smoke; no noncomparable canonical pair was observed. No Phase 10 daily ledger, protected July outcome, producer, simulation, fit, or canonical artifact mutation was part of the work.
+
+M3 remains under review; no merge or Phase 12 closeout is authorized. M4 is NOT AUTHORIZED, deployment remains undecided, Phase 13 is not authorized, and the final holdout remains protected.
+
+### Phase 12 M3-01 corrective review - 2026-10-10
+
+M3-01 is resolved on the existing `feat/phase-12-streamlit-m3` branch and Draft PR #31. `_render_model_comparison_error()` now handles presenter `ModelComparisonTooLargeError` separately from `ArtifactReadError`, shows the fixed "Narrow the selection." message with UI identifier `comparison_too_large`, and never reads a nonexistent `.code` attribute. Genuine `InvalidArtifactRequestError` continues to show its `invalid_artifact_request` code. No raw exception, path, traceback or partial result is displayed; service contracts and query limits are unchanged.
+
+The presenter overflow test verifies a view above the explicit query limit returns `ModelComparisonTooLargeError`. The AppTest injects oversized views after a successful screen render and verifies the sanitized message/identifier, no uncaught error, and no result table, chart, provenance or stale result. The existing invalid-request test pins its original stable code. Focused dashboard/M2/presenter tests passed 100; full pytest passed 531 tests on Python 3.12 and 531 on Python 3.14, each with one existing Starlette/httpx deprecation warning. Ruff, format, link, lock, dependency and whitespace checks passed. M3 remains IMPLEMENTED / UNDER REVIEW; PR #31 remains draft and unmerged. No ledger or protected holdout access occurred; M4 and Phase 13 remain unauthorized.

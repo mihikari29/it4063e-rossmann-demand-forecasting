@@ -11,16 +11,29 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from rossmann_forecasting.app.contracts import (
+    ArtifactErrorCode,
+    ArtifactReadError,
     ForecastQuery,
     HistoryQuery,
+    InventoryComparisonQuery,
+    ModelComparisonQuery,
     UncertaintyQuery,
 )
 from rossmann_forecasting.app.dashboard_presenters import (
     HISTORY_DEFAULT_END,
     HISTORY_DEFAULT_START,
+    INVENTORY_REFERENCE_CASE,
+    MODEL_CANDIDATES,
+    MODEL_COMMON_POPULATION,
+    MODEL_COVERAGE_METRIC,
+    MODEL_MAPE_DIAGNOSTICS,
+    MODEL_METRICS,
+    MODEL_SCOPES,
+    MODEL_VALIDATION_WINDOWS,
     SUPPORTED_CUMULATIVE_PROBABILITIES,
     SUPPORTED_FIT_ORIGINS,
     SUPPORTED_FORECAST_ORIGINS,
+    ModelComparisonTooLargeError,
     artifact_provenance_records,
     catalog_provenance_records,
     cumulative_table_records,
@@ -33,7 +46,14 @@ from rossmann_forecasting.app.dashboard_presenters import (
     history_source_records,
     interval_band_segments,
     interval_table_records,
+    inventory_case_ids,
+    inventory_comparison_records,
+    inventory_store_ids,
+    model_candidate_labels,
+    model_comparison_query_presets,
+    model_comparison_records,
     resource_status_records,
+    scenario_catalog_records,
     validate_history_selection,
 )
 from rossmann_forecasting.app.services import (
@@ -41,6 +61,8 @@ from rossmann_forecasting.app.services import (
     ApplicationServices,
     ForecastIssuanceView,
     ForecastUncertaintyView,
+    InventoryComparisonView,
+    ModelComparisonView,
     SalesHistoryView,
 )
 
@@ -54,6 +76,10 @@ class _DashboardServices(Protocol):
 
     def forecast_uncertainty(self, query: UncertaintyQuery) -> ForecastUncertaintyView: ...
 
+    def model_comparison(self, query: ModelComparisonQuery) -> ModelComparisonView: ...
+
+    def inventory_comparison(self, query: InventoryComparisonQuery) -> InventoryComparisonView: ...
+
 
 _SERVICE_LOCK = threading.RLock()
 _SCREENS = (
@@ -63,10 +89,6 @@ _SCREENS = (
     "Model Comparison",
     "Inventory Comparison",
 )
-_PLACEHOLDER_COPY = {
-    "Model Comparison": "Saved model comparisons are not available in this milestone.",
-    "Inventory Comparison": "Saved inventory comparisons are not available in this milestone.",
-}
 
 
 def run_dashboard(services: _DashboardServices | None = None) -> None:
@@ -87,8 +109,13 @@ def run_dashboard(services: _DashboardServices | None = None) -> None:
         _render_history(provider)
     elif screen == "Forecast Explorer":
         _render_forecast_explorer(provider)
+    elif screen == "Model Comparison":
+        _render_model_comparison(provider)
+    elif screen == "Inventory Comparison":
+        _render_inventory_comparison(provider)
     else:
-        _render_placeholder(screen)
+        st.title("Overview & Evidence")
+        _render_internal_error()
 
 
 def _render_overview(services: _DashboardServices) -> None:
@@ -672,6 +699,529 @@ def _render_uncertainty_methodology(fit_id: str | None = None) -> None:
         )
 
 
+def _render_model_comparison(services: _DashboardServices) -> None:
+    st.title("Model Comparison")
+    st.caption(
+        "Saved development comparisons only. MAE on the three-way common, source-Open eligible "
+        "population is primary; standalone coverage is a separate population."
+    )
+    catalog = _load_catalog(services)
+    if catalog is None:
+        return
+    try:
+        stores = inventory_store_ids(catalog)
+    except Exception:
+        _render_internal_error()
+        return
+    if not stores:
+        st.info("The catalog has no supported Store selection.")
+        return
+
+    with st.form("model_comparison_form"):
+        scope = st.selectbox("Scope", MODEL_SCOPES, key="model_comparison_scope")
+        metric = st.selectbox(
+            "Metric",
+            MODEL_METRICS,
+            index=MODEL_METRICS.index("mae"),
+            key="model_comparison_metric",
+            help="MAE is primary; MAPE values are saved percentages and WAPE values are fractions.",
+        )
+        validation_window = None
+        store_id = None
+        if scope == "validation_window":
+            validation_window = st.selectbox(
+                "Validation window",
+                MODEL_VALIDATION_WINDOWS,
+                key="model_comparison_window",
+            )
+        elif scope == "store":
+            store_id = st.selectbox("Store", stores, key="model_comparison_store")
+        submitted = st.form_submit_button("Apply selection")
+
+    if not submitted:
+        st.info("Choose a comparison scope and metric, then apply the selection.")
+        return
+
+    primary_figure = None
+    horizon_figure = None
+    try:
+        queries = model_comparison_query_presets(
+            scope,
+            metric,
+            validation_window=validation_window,
+            store_id=store_id,
+        )
+        query_views: dict[ModelComparisonQuery, ModelComparisonView] = {}
+        with _SERVICE_LOCK:
+            for query in queries.values():
+                if query not in query_views:
+                    query_views[query] = services.model_comparison(query)
+        views = {name: query_views[query] for name, query in queries.items()}
+        records = {
+            name: model_comparison_records(views[name], query) for name, query in queries.items()
+        }
+        candidate_states = [
+            {"candidate_id": candidate, "availability": state}
+            for candidate, state in model_candidate_labels(records["primary"]).items()
+        ]
+        provenance_records = _model_provenance_records(queries, views)
+        primary_figure = _model_comparison_figure(records["primary"], scope, metric)
+        horizon_figure = _horizon_mae_figure(records["horizon_mae"])
+    except Exception as error:
+        if primary_figure is not None:
+            plt.close(primary_figure)
+        if horizon_figure is not None:
+            plt.close(horizon_figure)
+        _render_model_comparison_error(error)
+        return
+
+    try:
+        selected_scope = scope.replace("_", " ")
+        st.subheader(f"Primary comparison · {metric.upper()} · {selected_scope}")
+        st.caption(
+            f"Population: {MODEL_COMMON_POPULATION}. Saved values, denominators and paired fields "
+            "are shown without recomputation or row averaging."
+        )
+        st.dataframe(candidate_states, hide_index=True, width="stretch")
+        if records["primary"]:
+            st.dataframe(records["primary"], hide_index=True, width="stretch")
+        else:
+            st.info("No saved rows are available for this common-population selection.")
+        if primary_figure is not None:
+            st.pyplot(primary_figure, clear_figure=True, width="stretch")
+
+        st.subheader("Saved MAE by horizon · h1–h14")
+        st.caption(
+            "Three-way common population. Every returned horizon is retained, including weaker "
+            "horizons such as h2, h9 and h10; absent or unavailable rows are not filled."
+        )
+        if records["horizon_mae"]:
+            st.dataframe(records["horizon_mae"], hide_index=True, width="stretch")
+        else:
+            st.info("No saved common-population horizon MAE rows are available.")
+        if horizon_figure is not None:
+            st.pyplot(horizon_figure, clear_figure=True, width="stretch")
+
+        st.subheader("Standalone forecast coverage · separate population")
+        st.caption(
+            "These saved coverage rows use the standalone population and must not be compared "
+            "as if they shared the primary common-population denominator."
+        )
+        if records["standalone_coverage"]:
+            st.dataframe(records["standalone_coverage"], hide_index=True, width="stretch")
+        else:
+            st.info("No standalone coverage rows were returned for this saved selection.")
+
+        st.subheader("Saved WAPE values and denominators")
+        st.caption(
+            "WAPE and coverage are saved fractions; the exact fraction remains in the table."
+        )
+        if records["wape"]:
+            st.dataframe(records["wape"], hide_index=True, width="stretch")
+        else:
+            st.info("No saved WAPE rows were returned for this selection.")
+
+        if metric == "mape":
+            st.subheader("Saved MAPE denominator diagnostics")
+            st.caption(
+                "MAPE values are already percentages. These saved rows report eligible MAPE rows "
+                "and actual-zero rows excluded from MAPE; no counts are inferred."
+            )
+            for diagnostic in MODEL_MAPE_DIAGNOSTICS:
+                st.markdown(f"**{diagnostic}**")
+                if records[diagnostic]:
+                    st.dataframe(records[diagnostic], hide_index=True, width="stretch")
+                else:
+                    st.info(f"No saved {diagnostic} rows were returned.")
+
+        st.subheader("Comparison artifact provenance")
+        st.dataframe(provenance_records, hide_index=True, width="stretch")
+        with st.expander("Methodology and limits"):
+            st.markdown(
+                "The frozen LightGBM recipe was selected using development evidence. Primary "
+                "accuracy uses the approved source-Open eligible common population; conditional "
+                "operational zeros do not establish better primary accuracy. Three late-season "
+                "Friday origins provide limited temporal diversity and confound horizon with "
+                "weekday. These saved comparisons are not independent proof of production "
+                "superiority, and this screen does not make a new model-selection verdict."
+            )
+    finally:
+        if primary_figure is not None:
+            plt.close(primary_figure)
+        if horizon_figure is not None:
+            plt.close(horizon_figure)
+
+
+def _model_provenance_records(
+    queries: dict[str, ModelComparisonQuery], views: dict[str, ModelComparisonView]
+) -> list[dict[str, object]]:
+    records = []
+    seen: set[ModelComparisonQuery] = set()
+    for name, query in queries.items():
+        if query in seen:
+            continue
+        seen.add(query)
+        provenance = artifact_provenance_records((views[name].provenance,))
+        if len(provenance) != 1 or provenance[0]["selector"] != "phase7_model_comparison":
+            raise ValueError("Unexpected model comparison provenance.")
+        records.append({"query_preset": name, **provenance[0]})
+    return records
+
+
+def _model_comparison_figure(records: list[dict[str, object]], scope: str, metric: str):
+    available = [row for row in records if row["value"] is not None]
+    if not available:
+        return None
+    figure, axis = plt.subplots(figsize=(10, 4))
+    try:
+        if scope == "horizon":
+            for candidate in MODEL_CANDIDATES:
+                candidate_rows = [row for row in available if row["candidate_id"] == candidate]
+                by_horizon = {row["horizon"]: row["value"] for row in candidate_rows}
+                if len(by_horizon) != len(candidate_rows):
+                    raise ValueError("Duplicate candidate horizons cannot be charted.")
+                horizons = tuple(range(1, 15))
+                axis.plot(
+                    horizons,
+                    [by_horizon.get(horizon) for horizon in horizons],
+                    marker="o",
+                    linewidth=1.5,
+                    label=candidate,
+                )
+            axis.set_xticks(tuple(range(1, 15)))
+            axis.set_xlabel("Saved forecast horizon")
+        elif scope == "week_block":
+            blocks = sorted(
+                {
+                    (row["week_block_start_horizon"], row["week_block_end_horizon"])
+                    for row in available
+                }
+            )
+            width = 0.8 / max(len(MODEL_CANDIDATES), 1)
+            positions = tuple(range(len(blocks)))
+            for candidate_index, candidate in enumerate(MODEL_CANDIDATES):
+                candidate_rows = [row for row in available if row["candidate_id"] == candidate]
+                lookup = {}
+                for row in candidate_rows:
+                    key = (row["week_block_start_horizon"], row["week_block_end_horizon"])
+                    if key in lookup:
+                        raise ValueError("Duplicate candidate week blocks cannot be charted.")
+                    lookup[key] = row["value"]
+                offset = (candidate_index - (len(MODEL_CANDIDATES) - 1) / 2) * width
+                axis.bar(
+                    [position + offset for position, block in enumerate(blocks) if block in lookup],
+                    [lookup[block] for block in blocks if block in lookup],
+                    width=width,
+                    label=candidate,
+                )
+            axis.set_xticks(positions)
+            axis.set_xticklabels([f"h{first}–h{last}" for first, last in blocks])
+            axis.set_xlabel("Saved week-block bounds")
+        else:
+            values = {}
+            for row in available:
+                candidate = row["candidate_id"]
+                if candidate in values:
+                    raise ValueError("Duplicate candidate rows cannot be charted.")
+                values[candidate] = row["value"]
+            candidates = tuple(candidate for candidate in MODEL_CANDIDATES if candidate in values)
+            axis.bar(candidates, [values[candidate] for candidate in candidates])
+            axis.tick_params(axis="x", labelrotation=25)
+            axis.set_xlabel("Saved candidate")
+        axis.set_title(f"Saved {metric.upper()} · {scope.replace('_', ' ')}")
+        axis.set_ylabel(_model_metric_axis_label(metric))
+        axis.legend(loc="best") if scope in ("horizon", "week_block") else None
+        figure.tight_layout()
+        return figure
+    except Exception:
+        plt.close(figure)
+        raise
+
+
+def _horizon_mae_figure(records: list[dict[str, object]]):
+    if not records:
+        return None
+    figure, axis = plt.subplots(figsize=(10, 4))
+    try:
+        for candidate in MODEL_CANDIDATES:
+            candidate_rows = [row for row in records if row["candidate_id"] == candidate]
+            by_horizon = {row["horizon"]: row["value"] for row in candidate_rows}
+            if len(by_horizon) != len(candidate_rows):
+                raise ValueError("Duplicate MAE horizons cannot be charted.")
+            if candidate_rows:
+                horizons = tuple(range(1, 15))
+                axis.plot(
+                    horizons,
+                    [by_horizon.get(horizon) for horizon in horizons],
+                    marker="o",
+                    linewidth=1.5,
+                    label=candidate,
+                )
+        axis.set_title("Saved MAE by horizon · three-way common population")
+        axis.set_xlabel("Saved forecast horizon")
+        axis.set_ylabel("MAE (monetary Sales value)")
+        axis.set_xticks(tuple(range(1, 15)))
+        axis.legend(loc="best")
+        figure.tight_layout()
+        return figure
+    except Exception:
+        plt.close(figure)
+        raise
+
+
+def _model_metric_axis_label(metric: str) -> str:
+    if metric == "mape":
+        return "MAPE (saved percentage points)"
+    if metric in ("wape", MODEL_COVERAGE_METRIC):
+        return "Saved fraction"
+    return f"{metric.upper()} (monetary Sales value)"
+
+
+def _render_model_comparison_error(error: Exception) -> None:
+    if isinstance(error, ModelComparisonTooLargeError):
+        st.error("The saved comparison exceeded its presentation limit. Narrow the selection.")
+        st.caption("Error code: `comparison_too_large`")
+        st.caption("Logical resource: `phase7_model_comparison`")
+        return
+    if isinstance(error, ArtifactReadError) and error.code is ArtifactErrorCode.INVALID_REQUEST:
+        st.error("The saved comparison is too large for this selection. Narrow the selection.")
+        st.caption(f"Error code: `{error.code.value}`")
+        st.caption("Logical resource: `phase7_model_comparison`")
+        return
+    _render_error(error)
+
+
+def _render_inventory_comparison(services: _DashboardServices) -> None:
+    st.title("Inventory Comparison")
+    st.caption(
+        "Saved simulated monetary-value comparisons only. Rossmann Sales is turnover, not "
+        "physical SKU demand or observed inventory."
+    )
+    catalog = _load_catalog(services)
+    if catalog is None:
+        return
+    try:
+        case_ids = inventory_case_ids(catalog)
+        stores = inventory_store_ids(catalog)
+        scenario_records = scenario_catalog_records(catalog)
+        catalog_provenance = _inventory_catalog_provenance_records(catalog)
+        if catalog.inventory_case_state not in ("available", "empty", "unavailable"):
+            raise ValueError("Unexpected inventory case catalog state.")
+        if (catalog.inventory_case_state == "available") != bool(case_ids):
+            raise ValueError("Inventory case catalog state does not match its IDs.")
+        if catalog.scenario_catalog_state not in ("available", "empty", "unavailable"):
+            raise ValueError("Unexpected scenario catalog state.")
+        if (catalog.scenario_catalog_state == "available") != bool(scenario_records):
+            raise ValueError("Scenario catalog state does not match its entries.")
+    except Exception:
+        _render_internal_error()
+        return
+
+    st.subheader("Scenario catalog metadata")
+    st.caption("This Phase 9 metadata is not mapped to the selected inventory case.")
+    if scenario_records:
+        st.dataframe(scenario_records, hide_index=True, width="stretch")
+    elif catalog.scenario_catalog_state == "unavailable":
+        st.warning("Scenario catalog metadata is unavailable in this checkout.")
+    else:
+        st.info("No scenario catalog metadata was returned.")
+
+    if catalog.inventory_case_state == "unavailable":
+        st.warning("Saved inventory cases are unavailable in this checkout.")
+        return
+    if catalog.inventory_case_state == "empty" or not case_ids:
+        st.info("The verified inventory case catalog contains no saved cases.")
+        return
+
+    default_case = INVENTORY_REFERENCE_CASE if INVENTORY_REFERENCE_CASE in case_ids else case_ids[0]
+    store_options: tuple[int | None, ...] = (None, *stores) if stores else (None,)
+    with st.form("inventory_comparison_form"):
+        case_id = st.selectbox(
+            "Saved case",
+            case_ids,
+            index=case_ids.index(default_case),
+            key="inventory_case_id",
+        )
+        selected_store = st.selectbox(
+            "Store (optional)",
+            store_options,
+            index=1 if stores else 0,
+            format_func=lambda value: "Whole case only" if value is None else f"Store {value}",
+            key="inventory_store_id",
+        )
+        submitted = st.form_submit_button("Apply selection")
+
+    if not submitted:
+        st.info("Choose an exact saved case and optional Store, then apply the selection.")
+        return
+    if type(case_id) is not str or case_id not in case_ids:
+        st.error("Choose an exact case ID from the current catalog.")
+        return
+    if selected_store is not None and (
+        type(selected_store) is not int or selected_store not in stores
+    ):
+        st.error("Choose a Store from the supported catalog.")
+        return
+
+    query = InventoryComparisonQuery(case_id=case_id, store_id=selected_store)
+    case_cost_figure = None
+    store_cost_figure = None
+    try:
+        with _SERVICE_LOCK:
+            view = services.inventory_comparison(query)
+        prepared = inventory_comparison_records(view, query)
+        case_provenance = prepared["provenance"]
+        selected_pair = next(
+            (pair for pair in prepared["pairs"] if pair["Store"] == selected_store),
+            None,
+        )
+        if selected_store is None:
+            selected_policy_rows: list[dict[str, object]] = []
+        elif selected_pair is None:
+            selected_policy_rows = []
+        else:
+            selected_policy_rows = [
+                row for row in prepared["policies"] if row["Store"] == selected_store
+            ]
+        aggregate_cost = next(
+            (
+                row
+                for row in prepared["aggregates"]
+                if row["metric"] == "SimulatedHoldingPlusShortfallCost"
+            ),
+            None,
+        )
+        case_cost_figure = _inventory_cost_figure(
+            None if aggregate_cost is None else aggregate_cost["forecast_minus_baseline"],
+            "Whole saved case · forecast minus baseline cost",
+            None if aggregate_cost is None else aggregate_cost["cost_direction"],
+        )
+        store_cost_figure = _inventory_cost_figure(
+            None if selected_pair is None else selected_pair["forecast_minus_baseline_cost"],
+            "Selected Store · forecast minus baseline cost",
+            None if selected_pair is None else selected_pair["cost_direction"],
+        )
+    except Exception as error:
+        if case_cost_figure is not None:
+            plt.close(case_cost_figure)
+        if store_cost_figure is not None:
+            plt.close(store_cost_figure)
+        _render_inventory_comparison_error(error)
+        return
+
+    try:
+        st.subheader("Whole saved case — all matched Stores")
+        st.caption(
+            "These saved aggregates retain their whole-case scope regardless of the optional "
+            "Store selection. Values and service denominators are producer outputs. Signed cost "
+            "difference means forecast-policy cost minus baseline-policy cost."
+        )
+        if prepared["missing_metrics"]:
+            st.warning(
+                "The saved case has an incomplete metric set: "
+                + ", ".join(prepared["missing_metrics"])
+                + ". Missing metrics are not filled."
+            )
+        if prepared["aggregates"]:
+            st.dataframe(prepared["aggregates"], hide_index=True, width="stretch")
+        else:
+            st.info("No saved whole-case aggregate rows were returned.")
+        if case_cost_figure is not None:
+            st.pyplot(case_cost_figure, clear_figure=True, width="stretch")
+
+        st.subheader("Selected Store — saved policy pair")
+        if selected_store is None:
+            st.info("No Store was selected. Whole-case aggregates above remain available.")
+        elif selected_pair is None:
+            st.info(
+                f"No saved policy pair was returned for Store {selected_store}. "
+                "Whole-case aggregates above retain their original scope."
+            )
+        else:
+            st.dataframe([selected_pair], hide_index=True, width="stretch")
+            if selected_policy_rows:
+                st.dataframe(selected_policy_rows, hide_index=True, width="stretch")
+            if store_cost_figure is not None:
+                st.pyplot(store_cost_figure, clear_figure=True, width="stretch")
+            if not selected_pair["comparable"]:
+                st.info(
+                    "The saved policy pair is not comparable. Its cost difference remains "
+                    f"unavailable: {selected_pair['difference_unavailable_reason']}."
+                )
+
+        st.caption(
+            "Inventory is simulated monetary-value accounting, not observed stock or physical "
+            "demand. Targets are frozen at the forecast origin. The general reviewed R=1, "
+            "L=2–7 and P=L+1 context does not verify a selected Store's individual parameter. "
+            "Synthetic stress and conditional "
+            "historical replay are distinct; quantile transport to synthetic demand is not "
+            "calibrated. Completed-cycle service denominators depend on policy and terminal "
+            "censoring. Terminal stock and pipeline exposures are separate from primary cost. "
+            "No current replenishment recommendation is provided."
+        )
+        st.subheader("Saved artifact provenance")
+        st.dataframe(case_provenance, hide_index=True, width="stretch")
+        if catalog_provenance:
+            with st.expander("Catalog provenance"):
+                st.dataframe(catalog_provenance, hide_index=True, width="stretch")
+    finally:
+        if case_cost_figure is not None:
+            plt.close(case_cost_figure)
+        if store_cost_figure is not None:
+            plt.close(store_cost_figure)
+
+
+def _inventory_cost_figure(value: object, title: str, direction: object):
+    if value is None:
+        return None
+    if type(value) not in (int, float):
+        raise TypeError("Unexpected saved inventory cost difference.")
+    figure, axis = plt.subplots(figsize=(8, 2.6))
+    try:
+        axis.barh([0], [value], color="C0")
+        axis.axvline(0, color="black", linewidth=1.2)
+        axis.set_yticks([0], labels=["Forecast policy − baseline policy"])
+        axis.set_xlabel("Saved signed simulated cost difference")
+        axis.set_title(title)
+        axis.text(
+            0.01,
+            0.96,
+            str(direction),
+            transform=axis.transAxes,
+            va="top",
+        )
+        figure.tight_layout()
+        return figure
+    except Exception:
+        plt.close(figure)
+        raise
+
+
+def _inventory_catalog_provenance_records(catalog: ApplicationCatalog) -> list[dict[str, object]]:
+    items = tuple(
+        item
+        for item in (catalog.scenario_provenance, catalog.inventory_case_provenance)
+        if item is not None
+    )
+    records = artifact_provenance_records(items)
+    allowed = {"phase9_scenario_catalog", "phase10_comparison"}
+    if any(row["selector"] not in allowed for row in records):
+        raise ValueError("Unexpected inventory catalog provenance.")
+    return records
+
+
+def _render_inventory_comparison_error(error: Exception) -> None:
+    if isinstance(error, ArtifactReadError) and error.code is ArtifactErrorCode.INVALID_REQUEST:
+        st.error(
+            "The saved inventory comparison is invalid or exceeds its reader limits. "
+            "No result tables or charts were displayed."
+        )
+        st.caption(f"Error code: `{error.code.value}`")
+        st.caption("Logical resource: `phase10_comparison`")
+        return
+    _render_error(error)
+
+
 def _catalog_stores(catalog: ApplicationCatalog) -> tuple[int, ...]:
     return tuple(
         store_id
@@ -780,9 +1330,3 @@ def _render_error(error: Exception) -> None:
 def _render_internal_error() -> None:
     st.error("The request could not be completed. Error details are hidden.")
     st.caption("Error code: `internal_error`")
-
-
-def _render_placeholder(screen: str) -> None:
-    st.title(screen)
-    st.info(_PLACEHOLDER_COPY[screen])
-    st.caption("This screen does not query application services in M2.")
