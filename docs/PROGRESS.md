@@ -230,8 +230,10 @@ available as expected. Before/after snapshots confirmed 15 registered non-ledger
 were unchanged. The smoke did not read the simulation ledger, protected holdout or raw historical
 source beyond the authorized bounded-history route.
 
-M3 is **IMPLEMENTED / UNDER REVIEW**, pending independent review and exact-head CI on PR #26. PR #26
-remains draft and unmerged. M4 remains unauthorized; Phase 11 is not complete.
+M3 is **IMPLEMENTED / UNDER REVIEW**, pending independent review. GitHub Quality run [#75 /
+37882356772](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37882356772)
+passed on exact implementation head `8ee9c0639b8598dfe7f79ad6175f4f87a1b030f1` for Python 3.12
+and 3.14. PR #26 remains draft and unmerged. M4 remains unauthorized; Phase 11 is not complete.
 
 ## Branch cleanup inventory
 
