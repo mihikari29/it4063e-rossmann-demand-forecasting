@@ -22,11 +22,10 @@ Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/p
 preserves the design, implementation and review record. Phase 10's [completed plan](../plans/completed/phase-10-inventory-simulation.md)
 and ADR-023 record the accepted methodology, integrated implementation, corrective review and formal
 closeout. Phase 10 is COMPLETE on `main` after PR #25 merged at
-`d437269b9f0cf36a842cdfd496ad50a310804768`, as recorded in [PROGRESS](PROGRESS.md). Phase 11's
-read-only application architecture is approved; M1-M3 are accepted; M3-01 and M4-01 are
-resolved; and M4 is accepted with minor changes. The separate final PR integration and
-merge-readiness review and formal Phase 11 closeout remain pending. PR #26 remains draft and
-unmerged; Phase 11 is not complete.
+`d437269b9f0cf36a842cdfd496ad50a310804768`, as recorded in [PROGRESS](PROGRESS.md). Phase 11 is
+COMPLETE: M1-M4 are accepted, findings M3-01, M4-01 and FR-01 are resolved, and PR #26 was
+squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`. Its
+[completed plan](../plans/completed/phase-11-application-services.md) records formal closeout.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -206,10 +205,10 @@ not started; its current M1 implementation/review state is maintained in [PROGRE
 
 ## Phase 11 — Application Services & Thin API
 
-**Status:** M1, M2 and M3 ACCEPTED; M3-01 RESOLVED; M4 ACCEPTED WITH MINOR CHANGES (M4-01
-RESOLVED); final PR integration and merge-readiness review pending. Phase 11 is not complete;
-PR #26 remains draft and unmerged.
-**Execution plan:** [Phase 11 active plan](../plans/active/phase-11-application-services.md).
+**Status:** COMPLETE. M1-M4 are accepted; M3-01, M4-01 and FR-01 are resolved. PR #26 was
+squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`, and the implementation
+and integration gates are satisfied.
+**Execution plan:** [Phase 11 completed plan](../plans/completed/phase-11-application-services.md).
 **Objective:** Expose the frozen analytics through reusable Python services and a small HTTP adapter.
 **Dependencies:** Phases 7–10.
 **Deliverables:** Forecast/uncertainty/inventory services, thin FastAPI adapter, fixture-backed
@@ -220,14 +219,13 @@ resolved by preserving Starlette's `Allow` header on sanitized 405 responses. Fu
 `ApplicationServices` directly. No new model/policy tuning, inference, simulation or artifact
 packaging is authorized. Ignored canonical artifacts are local prerequisites for demo data routes;
 fixture tests and process health require no Rossmann data or Kaggle credentials. M4 is accepted with
-minor changes, including the resolved M4-01 documentation correction. The separate final PR
-integration and merge-readiness review remains pending; Phase 11 is not complete and merge is not
-authorized.
+minor changes, including the resolved M4-01 documentation correction. PR #26 integration and final
+merge-readiness review are complete; Quality #81 passed on the merge SHA for Python 3.12 and 3.14.
 
 ## Phase 12 — Streamlit Dashboard
 
 **Objective:** Provide an understandable course demonstration.
-**Dependencies:** Phase 11 shared services; it need not call FastAPI over HTTP.
+**Dependencies:** Accepted Phase 11 shared services (see the [completed Phase 11 plan](../plans/completed/phase-11-application-services.md)); it need not call FastAPI over HTTP.
 **Deliverables:** Store/scenario controls, history/forecast/interval views, inventory assumptions and
 alerts; one deployed Streamlit demonstration when deployment is authorized.
 **Acceptance / boundary:** UI claims match supported inputs and clearly label synthetic quantities,

@@ -6,12 +6,11 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` has Phases 0–10 formally complete following Phase 10 closeout PR #25, merged at
-`d437269b9f0cf36a842cdfd496ad50a310804768`. The Phase 11 read-only application architecture is
-approved; M1, M2 and M3 are formally accepted; M3-01 is resolved; M4 is formally accepted
-with minor changes and M4-01 is resolved. The separate final PR integration and merge-readiness
-review remains pending; Phase 11 is not complete.
-PR #26 remains draft and unmerged. Phase 5 additive Holt-Winters
+`main` has Phases 0–11 formally complete. Phase 11 PR #26 was squash-merged at
+`725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; M1-M4 are accepted and findings M3-01, M4-01 and
+FR-01 are resolved. See the [completed Phase 11 plan](plans/completed/phase-11-application-services.md)
+and [PROGRESS](docs/PROGRESS.md) for closeout evidence. The protected final holdout remains
+unreleased. Phase 5 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
@@ -57,10 +56,10 @@ Phase 10 was implemented under ADR-023. PR #23 integrated the implementation at
 accepted the corrective implementation and numerical evidence. The [completed plan](plans/completed/phase-10-inventory-simulation.md)
 records formal closeout. The accepted canonical run is `phase10-dev-20261008-validator-fix`
 (manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0–10
-are complete on `main` after PR #25 integration. Phase 11 M1, M2 and M3 are formally accepted;
-M3-01 is resolved; M4 is formally accepted with minor changes and M4-01 is resolved. Final PR
-integration and merge-readiness review and formal closeout remain pending. The protected final
-holdout remains unreleased.
+are complete on `main` after PR #25 integration. Phase 11 is COMPLETE following PR #26's squash
+merge at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; M1-M4 are accepted and M3-01, M4-01 and FR-01
+are resolved. Its [completed plan](plans/completed/phase-11-application-services.md) records the
+formal closeout. The protected final holdout remains unreleased.
 
 ## Environment and quick start
 
@@ -214,10 +213,11 @@ cost under these assumptions for the synthetic-base and historical reference cas
 establish real inventory, physical demand, real stockouts, savings, universal forecast performance,
 statistical superiority, optimality, calibrated synthetic service guarantees or production readiness.
 Phase 10 is **COMPLETE** after closeout PR #25 merged into `main` at
-`d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 M1,
-M2 and M3 are formally accepted; M3-01 is resolved; M4 is formally accepted with minor changes;
-M4-01 is resolved by this documentation correction. Final PR integration, merge-readiness review
-and formal closeout remain pending. Phase 11 is incomplete and PR #26 remains draft and unmerged.
+`d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 is
+COMPLETE after PR #26 squash-merged at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; M1-M4 are
+accepted, findings M3-01, M4-01 and FR-01 are resolved, and post-merge Quality #81 passed on Python
+3.12 and 3.14. The [completed Phase 11 plan](plans/completed/phase-11-application-services.md)
+records the formal closeout. The protected final holdout remains unreleased.
 
 ## Phase 11 local/demo API
 
@@ -258,7 +258,7 @@ outputs or manifests are absent, catalog reports unavailable resources and a req
 missing artifact returns sanitized `503`; fixture tests still work from a clean checkout. Canonical
 local artifacts are not included in Git. Rossmann Sales are monetary turnover, not physical demand;
 simulated costs do not establish observed inventory or savings. The server binds to `127.0.0.1`;
-public hosting is outside scope. See the [Phase 11 handoff](plans/active/phase-11-application-services.md#phase-11-m4-integration-handoff)
+public hosting is outside scope. See the [Phase 11 handoff](plans/completed/phase-11-application-services.md#phase-11-m4-integration-handoff)
 for service interfaces, artifact requirements and limitations.
 
 ## Architecture and remaining work
@@ -281,9 +281,11 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 - Phase 10: COMPLETE following integration of closeout PR #25 into `main`; its [completed design,
   implementation and closeout record](plans/completed/phase-10-inventory-simulation.md) is preserved
   in the completed plan.
-- Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
-  final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
-  are optional.
+- Phase 11: **COMPLETE**; the [completed plan](plans/completed/phase-11-application-services.md)
+  records the shared Python services and thin local/demo FastAPI adapter. Streamlit calls the same
+  services directly; separate API hosting and Evidently are optional.
+- Phases 12–13: Streamlit and one frozen sequential final evaluation remain future work requiring
+  separate authorization. The protected holdout remains unreleased.
 - Phase 14: recorded results, report, slides and demonstration.
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)

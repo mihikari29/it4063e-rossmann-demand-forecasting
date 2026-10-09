@@ -1,6 +1,6 @@
 # Phase 11 — Application Services & Thin API
 
-**Status:** M1, M2 and M3 ACCEPTED; M3-01 RESOLVED; M4 ACCEPTED WITH MINOR CHANGES (M4-01 RESOLVED). Final PR integration and merge-readiness review and formal Phase 11 closeout remain pending; Phase 11 is not complete.
+**Status:** COMPLETE following verified PR #26 integration and the formal closeout recorded below. M1-M4 are accepted; M3-01, M4-01 and FR-01 are resolved.
 **Base:** `main` / `origin/main` at `d437269b9f0cf36a842cdfd496ad50a310804768`.
 **Approved architecture:** A read-only cached-development-results application with reusable Python services, a thin local/demo FastAPI adapter, and Streamlit calling the shared services directly. API hosting remains optional (ADR-017 and the accepted Phase 11 architecture review).
 
@@ -13,7 +13,7 @@
 | M3 — Thin local/demo API | Add the approved HTTP adapter and request/error tests over the shared services. | **Formally accepted** by the Technical Lead on 2026-10-09; its M3-01 follow-up was resolved in M4. |
 | M4 — Integration, documentation and handoff | Close M3-01; add focused HTTP-to-reader fixture integration evidence; document clean-checkout startup and direct shared-service handoff. | **Formally accepted with minor changes** by the Technical Lead after independent review; M4-01 was resolved in this documentation update. |
 
-The Technical Lead formally accepted M1 after independent review on exact head `1fef9c7f27cb27068f8fcb415378771b878d4aed`, M2 after independent ACCEPT on exact head `cd7d3319760379716244e4db6c0cf0cb96ec6cbd`, and M3 with minor follow-up M3-01 after independent `ACCEPT_WITH_MINOR_CHANGES` review on exact head `6169e850d824e3f6eccc1faa57b3d4a311646bd6`. The Technical Lead later formally accepted M4 with minor changes after independent review of exact head `db2d8ce47e7704e7beb11f7c7b08fd846ac1619c`; M3-01 was resolved in M4 and M4-01 is resolved by this documentation-only correction. The implementation milestones are accepted; separate final PR integration/merge-readiness review and formal Phase 11 closeout remain pending. Keep PR #26 open, draft and unmerged. Streamlit, hosting/deployment, inference and Phase 13 evaluation remain outside scope.
+The Technical Lead formally accepted M1 after independent review on exact head `1fef9c7f27cb27068f8fcb415378771b878d4aed`, M2 after independent ACCEPT on exact head `cd7d3319760379716244e4db6c0cf0cb96ec6cbd`, and M3 with minor follow-up M3-01 after independent `ACCEPT_WITH_MINOR_CHANGES` review on exact head `6169e850d824e3f6eccc1faa57b3d4a311646bd6`. The Technical Lead later formally accepted M4 with minor changes after independent review of exact head `db2d8ce47e7704e7beb11f7c7b08fd846ac1619c`; M3-01 was resolved in M4 and M4-01 was corrected before merge. The final full-PR merge-readiness review returned `READY_WITH_MINOR_CHANGES`; FR-01 was resolved before integration. PR #26 and formal Phase 11 closeout are recorded below. Streamlit, hosting/deployment, inference and Phase 13 evaluation remain outside scope.
 
 ## Frozen methodology and information boundaries
 
@@ -183,3 +183,43 @@ acceptance checkpoint there. The Technical Lead formally accepted M4 with minor 
 M1-M4 implementation milestones are accepted and M3-01/M4-01 are resolved. A separate final PR
 integration and merge-readiness review and explicit Phase 11 closeout remain pending. PR #26 stays
 open, draft and unmerged. The protected holdout remains unreleased.
+
+## Phase 11 formal closeout — 2026-10-09
+
+The Technical Lead authorized formal Phase 11 closeout on 2026-10-09 after verifying the integration
+of PR #26. The original PR was #26 on `feat/phase-11-application-services`; its final reviewed head
+was `77128a3b589cbe662833962cd20aacb03241dd55`. GitHub squash-merged it into `main` at
+`725d30a59d7c8e04e44f3bcbcce9186f8a1183be`. The plan is archived following that verified
+integration.
+
+M1, M2, M3 and M4 are formally **ACCEPTED**. Independent reviews returned M1 `ACCEPT`, M2 `ACCEPT`,
+M3 `ACCEPT_WITH_MINOR_CHANGES`, and M4 `ACCEPT_WITH_MINOR_CHANGES`; the final full-PR review returned
+`READY_WITH_MINOR_CHANGES`. Findings M3-01, M4-01 and FR-01 were resolved before merge. The
+implementation, integration and review gates are satisfied. Original milestone acceptance heads
+and dated implementation/review checkpoints above are preserved.
+
+GitHub Quality run [#80](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37901697377)
+passed on final reviewed PR head `77128a3b589cbe662833962cd20aacb03241dd55`; post-merge run
+[#81](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37902479835)
+passed on the squash merge SHA. Both Python 3.12 and 3.14 jobs passed locked dependency checks,
+fixture tests, lint, formatting and Markdown links. The previously accepted baselines were 431 full
+tests and 151 focused application tests. For this closeout, the full suite was rerun: 431 passed;
+the 151-test focused subset was not rerun. The existing nonblocking Starlette TestClient deprecation
+warning remains.
+
+The application reads pinned saved development results and performs no new inference. Its historical
+view is limited to one Store, the `Store`, `Date`, `Sales`, `Open` projection, and dates through
+2015-07-03; it never exposes Customers. Rossmann Sales are monetary turnover. Saved uncertainty
+results are empirical and do not guarantee coverage. Inventory results are conditional synthetic
+monetary simulations, not physical inventory, actual stockouts, proven savings or validated optimal
+policies. A positive forecast-minus-baseline simulated cost is adverse; the existing accepted signed
+differences remain +1,842,931.0502027555 for the reference case and +2,657,553.7797287568 for
+`buffer_090`. These are recorded results, not new closeout calculations.
+
+The protected final holdout remains unreleased, and the Phase 10 simulation ledger and canonical
+artifacts were not read, hashed, regenerated or changed for this closeout. No real-data forecast fit,
+final-holdout evaluation, recalibration or canonical simulation/artifact regeneration was performed;
+the closeout's repository test run used the approved fixture suite. Phase 12 Streamlit work and
+Phase 13 evaluation remain outside scope and require their separate authorization. Refer to
+[PROGRESS](../../docs/PROGRESS.md) for the accepted Phase 7-10 result records and full Phase 11
+checkpoint history.
