@@ -226,8 +226,9 @@ merge-readiness review are complete; Quality #81 passed on the merge SHA for Pyt
 
 **Status:** PLANNED; M1 is IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m1` from
 `9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`. Its [active plan](../plans/active/phase-12-streamlit-dashboard.md)
-records M1 authorization and evidence. M2–M4 remain PLANNED / NOT AUTHORIZED; deployment is
-undecided and artifact distribution is not authorized.
+records M1 authorization and evidence; [draft PR #29](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/29)
+is open. M2–M4 remain PLANNED / NOT AUTHORIZED; deployment is undecided and artifact distribution
+is not authorized.
 **Objective:** Provide an understandable course demonstration.
 **Dependencies:** Accepted Phase 11 shared services (see the [completed Phase 11 plan](../plans/completed/phase-11-application-services.md)); it need not call FastAPI over HTTP.
 **Deliverables:** Store/scenario controls, history/forecast/interval views, inventory assumptions and

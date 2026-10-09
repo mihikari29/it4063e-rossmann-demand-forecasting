@@ -674,13 +674,15 @@ handling and fixture-backed tests. Other screens are data-free placeholders and 
 services. M2–M4, deployment, publication of artifacts and Phase 13 remain outside this task.
 
 The implementation branch is `feat/phase-12-streamlit-m1`, based on the PR #28 merge SHA
-`9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`. The changes are committed and published in the draft
-PR linked below. This checkpoint does not mark M1 accepted or Phase 12 complete.
+`9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`. Initial implementation commit `911f25a` is included in
+[draft PR #29](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/29), targeting
+`main`. The final task report records the PR's current head SHA. This checkpoint does not mark M1
+accepted or Phase 12 complete.
 
 | Checkpoint | Actual evidence |
 |---|---|
 | Branch and base | `feat/phase-12-streamlit-m1` from `origin/main` at `9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`; the design PR #28 is merged. |
-| Commit / review | See the M1 draft PR and head SHA in the final handoff; merge is not authorized. |
+| Commit / review | Initial implementation commit `911f25a`; see PR #29 for the current head. Merge is not authorized. |
 | Focused dashboard tests | `pytest tests/test_dashboard.py tests/test_dashboard_presenters.py -q`: 13 passed before the final clean-checkout test was added. The final full-suite run includes all 14 dashboard tests. |
 | Full suite, Python 3.12 | Locked isolated `uv run --isolated --locked --extra dev --extra api --extra dashboard --python 3.12 python -m pytest`: 445 passed; one existing Starlette/httpx deprecation warning. |
 | Full suite, Python 3.14 | Locked project environment `python -m pytest`: 445 passed; the same existing warning. |

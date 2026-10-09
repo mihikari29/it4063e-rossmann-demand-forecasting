@@ -13,7 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 — Streamlit Dashboard | PLANNED; M1 **IMPLEMENTED / UNDER REVIEW** | M1 on `feat/phase-12-streamlit-m1` from `9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`; [active plan](../plans/active/phase-12-streamlit-dashboard.md). M2–M4 unauthorized; not merged. |
+| Phase 12 — Streamlit Dashboard | PLANNED; M1 **IMPLEMENTED / UNDER REVIEW** | [Draft PR #29](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/29) from `feat/phase-12-streamlit-m1`, based on `9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`; [active plan](../plans/active/phase-12-streamlit-dashboard.md). M2–M4 unauthorized; not merged. |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -132,8 +132,9 @@ overview calls `catalog()` and its reader opens only the Phase 9 scenario catalo
 comparison output. No manual browser/performance test, real-data pipeline, deployment, canonical
 artifact regeneration, ledger access or protected holdout access was performed.
 
-The feature branch is pushed in a draft PR targeting `main`; commit head and PR URL are recorded in
-the final task handoff below. M2–M4 remain unauthorized; do not merge or start subsequent work.
+The feature branch is pushed in [draft PR #29](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/29)
+targeting `main`; the final task report records its current head SHA. M2–M4 remain unauthorized;
+do not merge or start subsequent work.
 
 ## Immediate next boundary
 
