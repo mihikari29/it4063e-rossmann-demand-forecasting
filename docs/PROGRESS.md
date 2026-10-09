@@ -12,7 +12,7 @@
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
-| Phase 11 — Application Services & Thin API | **M1–M2 REVIEWED / ACCEPTED; M3 IMPLEMENTED / UNDER REVIEW; Phase 11 NOT COMPLETE** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; [active plan](../plans/active/phase-11-application-services.md); M4 not authorized |
+| Phase 11 — Application Services & Thin API | **M1–M2 ACCEPTED; M3 ACCEPTED WITH MINOR FOLLOW-UP M3-01; M4 IMPLEMENTED / UNDER REVIEW; Phase 11 NOT COMPLETE** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; PR #26 remains draft/unmerged; [active plan](../plans/active/phase-11-application-services.md) |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -37,8 +37,8 @@ are recorded below and were not regenerated. Phase 10 methodology is accepted un
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Final focused independent external/model-assisted review
 accepted the implementation and numerical evidence. Closeout PR #25 was squash-merged into `main`
 at `d437269b9f0cf36a842cdfd496ad50a310804768`; Phase 10 is COMPLETE. Phase 11 architecture is
-approved. M1 and M2 are reviewed/formally accepted; M3 implementation is separately authorized on
-the focused feature branch, while M4 remains unauthorized. The protected holdout remains unreleased.
+approved. M1 and M2 are accepted; M3 is formally accepted with minor follow-up M3-01; M4 is
+authorized for implementation on the focused feature branch. The protected holdout remains unreleased.
 
 ## Immediate next boundary
 
@@ -234,6 +234,43 @@ M3 is **IMPLEMENTED / UNDER REVIEW**, pending independent review. GitHub Quality
 37882356772](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37882356772)
 passed on exact implementation head `8ee9c0639b8598dfe7f79ad6175f4f87a1b030f1` for Python 3.12
 and 3.14. PR #26 remains draft and unmerged. M4 remains unauthorized; Phase 11 is not complete.
+
+
+### Phase 11 M3 formal acceptance and M4 authorization — 2026-10-09
+
+The Technical Lead formally accepted M3 with the single minor follow-up M3-01 after the independent
+`ACCEPT_WITH_MINOR_CHANGES` review of exact PR #26 head
+`6169e850d824e3f6eccc1faa57b3d4a311646bd6`. M3-01 is the omitted framework-provided `Allow`
+header on HTTP 405 responses. The Technical Lead authorized M4 implementation on the same branch
+and draft PR. M4 is limited to that correction, cross-layer fixture integration evidence, and
+reproducible startup/use guidance and handoff. M1 and M2 remain accepted; Phase 11 remains
+incomplete; PR #26 remains draft and unmerged.
+
+
+### Phase 11 M4 implementation and local verification — 2026-10-09
+
+M4 resolves M3-01 by preserving only Starlette's framework-provided `Allow` header on sanitized
+HTTP 405 responses. New fixture-backed HTTP-to-reader tests exercise the shared service chain,
+validated artifact provenance, null/unavailable results, Store versus case-level inventory views,
+the history cutoff, and process-only health. The tests use synthetic fixtures and do not require
+canonical artifacts or Kaggle credentials.
+
+The locked full repository suite passed **431 tests** with one existing Starlette TestClient
+deprecation warning. The focused application suites passed **151 tests**; the locked API and
+integration invocation passed **44 tests**. Ruff, repository formatting (96 Python files), the docs
+link/anchor check (232 local targets across 26 documents), locked dependency sync, lock check, and
+installed dependency compatibility check passed. The documented local Uvicorn command was started
+on `127.0.0.1`; health, catalog, forecast, and inventory reference requests returned 200.
+
+A read-only canonical API smoke made seven successful requests across health, catalog, forecast,
+uncertainty, model comparison, and both inventory cases. It returned the pinned 14-point forecast,
+28 daily intervals, 42 cumulative prefixes, four comparison rows, and 1,115 policy pairs per case.
+Reference and `buffer_090` signed differences remained respectively +1,842,931.0502027555 and
++2,657,553.7797287568. All 15 registered canonical file snapshots were unchanged; the smoke read
+no ledger, history source, or holdout. No inference, simulation, or canonical artifact generation
+was performed. M4 remains implemented / under independent review; PR #26 remains draft and
+unmerged, and Phase 11 remains incomplete.
+
 
 ## Branch cleanup inventory
 

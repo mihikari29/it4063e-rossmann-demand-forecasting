@@ -8,8 +8,9 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 `main` has Phases 0–10 formally complete following Phase 10 closeout PR #25, merged at
 `d437269b9f0cf36a842cdfd496ad50a310804768`. The Phase 11 read-only application architecture is
-approved; M1 and M2 are reviewed/formally accepted and M3 is implemented under review on
-`feat/phase-11-application-services`, while M4 remains unauthorized and Phase 11 is not complete.
+approved; M1 and M2 are accepted, M3 is formally accepted and its M3-01 follow-up is resolved.
+M4 is implemented and under independent review on `feat/phase-11-application-services`.
+Phase 11 is not complete.
 PR #26 remains draft and unmerged. Phase 5 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
@@ -56,9 +57,9 @@ Phase 10 was implemented under ADR-023. PR #23 integrated the implementation at
 accepted the corrective implementation and numerical evidence. The [completed plan](plans/completed/phase-10-inventory-simulation.md)
 records formal closeout. The accepted canonical run is `phase10-dev-20261008-validator-fix`
 (manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0–10
-are complete on `main` after PR #25 integration. Phase 11 M1 and M2 are accepted and M3 is
-implemented under review on its feature branch; M4 is not authorized. The protected final holdout
-remains unreleased.
+are complete on `main` after PR #25 integration. Phase 11 M1 and M2 are accepted; M3 is formally
+accepted with minor follow-up M3-01; M4 is authorized for implementation on the feature branch. The
+protected final holdout remains unreleased.
 
 ## Environment and quick start
 
@@ -213,24 +214,51 @@ establish real inventory, physical demand, real stockouts, savings, universal fo
 statistical superiority, optimality, calibrated synthetic service guarantees or production readiness.
 Phase 10 is **COMPLETE** after closeout PR #25 merged into `main` at
 `d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 M1 and
-M2 are reviewed/formally accepted; M3 is authorized and implemented under review on the same draft
-PR #26. M4 remains unauthorized and Phase 11 is incomplete.
+M2 are accepted; M3 is formally accepted and M3-01 is resolved by M4. M4 is implemented and under
+independent review on the same draft PR #26. Phase 11 remains incomplete and PR #26 remains
+unmerged.
 
 ## Phase 11 local/demo API
 
-The read-only FastAPI adapter serves the accepted application-service views. Run it from the
-repository root on localhost with the optional API dependencies installed:
+The read-only FastAPI adapter exposes the accepted M2 services through seven GET routes. Fixture
+tests need no canonical local artifacts or Kaggle credentials. For a clean checkout, install the
+locked development and API extras and run the fixture suite:
+
+```powershell
+uv sync --locked --extra dev --extra api --python 3.14
+uv run --locked --extra dev --extra api python -m pytest
+```
+
+Start the local server from the repository root:
 
 ```powershell
 uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.app.api:app --host 127.0.0.1 --port 8000
 ```
 
+In PowerShell, check process health, list supported cases, and try a bounded forecast or the
+canonical reference inventory case:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/catalog
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/forecasts?store_id=1&forecast_origin=2015-06-19"
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/inventory?case_id=synthetic_base-20150605-r00--reference"
+```
+
+Portable shells can use `curl` with the same URLs. Stop Uvicorn with **Ctrl+C**.
+
 The routes are `/health`, `/api/v1/catalog`, `/api/v1/forecasts`, `/api/v1/uncertainty`,
 `/api/v1/model-comparison`, `/api/v1/inventory`, and `/api/v1/history`. They read pinned
 development results or bounded historical Sales through the shared services; the adapter adds no
 inference or simulation. Inventory values remain synthetic monetary comparisons, and historical
-access ends 2015-07-03. Error bodies use stable sanitized JSON codes. The server binds to
-`127.0.0.1`; public hosting and production deployment are outside this milestone.
+access ends 2015-07-03. Error bodies use stable sanitized JSON codes. Health `200` reports only that
+the process responds; it does not certify artifact integrity. If ignored canonical Phase 7–10
+outputs or manifests are absent, catalog reports unavailable resources and a request requiring a
+missing artifact returns sanitized `503`; fixture tests still work from a clean checkout. Canonical
+local artifacts are not included in Git. Rossmann Sales are monetary turnover, not physical demand;
+simulated costs do not establish observed inventory or savings. The server binds to `127.0.0.1`;
+public hosting is outside scope. See the [Phase 11 handoff](plans/active/phase-11-application-services.md#phase-11-m4-integration-handoff)
+for service interfaces, artifact requirements and limitations.
 
 ## Architecture and remaining work
 

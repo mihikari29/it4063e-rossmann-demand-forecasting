@@ -23,8 +23,9 @@ preserves the design, implementation and review record. Phase 10's [completed pl
 and ADR-023 record the accepted methodology, integrated implementation, corrective review and formal
 closeout. Phase 10 is COMPLETE on `main` after PR #25 merged at
 `d437269b9f0cf36a842cdfd496ad50a310804768`, as recorded in [PROGRESS](PROGRESS.md). Phase 11's
-read-only application architecture is approved; M1 and M2 are REVIEWED / formally accepted; M3 is
-IMPLEMENTED / UNDER REVIEW and M4 remains unauthorized. Phase 11 is not complete.
+read-only application architecture is approved; M1 and M2 are accepted; M3 is accepted and M3-01
+is resolved; M4 is implemented and under independent review. Phase 11 is not complete and PR #26
+remains draft and unmerged.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -204,16 +205,20 @@ not started; its current M1 implementation/review state is maintained in [PROGRE
 
 ## Phase 11 — Application Services & Thin API
 
-**Status:** M1 and M2 REVIEWED / formally accepted; M3 IMPLEMENTED / UNDER REVIEW; Phase 11 is not
-complete. M4 remains unauthorized.
+**Status:** M1 and M2 ACCEPTED; M3 ACCEPTED (M3-01 RESOLVED); M4 IMPLEMENTED / UNDER INDEPENDENT
+REVIEW; Phase 11 is not complete. PR #26 remains draft and unmerged.
 **Execution plan:** [Phase 11 active plan](../plans/active/phase-11-application-services.md).
 **Objective:** Expose the frozen analytics through reusable Python services and a small HTTP adapter.
 **Dependencies:** Phases 7–10.
-**Deliverables:** Forecast/uncertainty/inventory service functions, thin FastAPI request/response
-adapter, input/error tests and local startup instructions.
+**Deliverables:** Forecast/uncertainty/inventory services, thin FastAPI adapter, fixture-backed
+cross-layer integration evidence, and reproducible local startup/handoff guidance.
 **Acceptance / boundary:** No notebook dependency, duplicated model logic or microservice system.
-Cache only with keys containing origin/configuration/scenario identity. Separate API hosting is
-optional; service/API implementation does not authorize new model/policy tuning.
+M1 safe readers, M2 DTO services, and M3 HTTP routes remain the shared chain; close M3-01 by
+preserving Starlette's `Allow` header on sanitized 405 responses. Future Streamlit calls
+`ApplicationServices` directly. No new model/policy tuning, inference, simulation or artifact
+packaging is authorized. Ignored canonical artifacts are local prerequisites for demo data routes;
+fixture tests and process health require no Rossmann data or Kaggle credentials. M4 remains under
+independent review and does not complete Phase 11 or authorize merge.
 
 ## Phase 12 — Streamlit Dashboard
 
