@@ -70,7 +70,12 @@ def create_app(services: ApplicationServices | None = None) -> FastAPI:
             code, message = "method_not_allowed", "The requested HTTP method is not allowed."
         else:
             code, message = "http_error", "The HTTP request could not be completed."
-        return _error_response(exc.status_code, code, message)
+        headers = None
+        if exc.status_code == 405 and exc.headers is not None:
+            allow = exc.headers.get("Allow")
+            if allow is not None:
+                headers = {"Allow": allow}
+        return _error_response(exc.status_code, code, message, headers=headers)
 
     @application.exception_handler(Exception)
     async def unexpected_error_handler(_: Request, __: Exception) -> JSONResponse:
@@ -216,10 +221,17 @@ def _dto_response(value: Any) -> JSONResponse:
     return JSONResponse(content=json_safe(value))
 
 
-def _error_response(status_code: int, code: str, message: str) -> JSONResponse:
+def _error_response(
+    status_code: int,
+    code: str,
+    message: str,
+    *,
+    headers: dict[str, str] | None = None,
+) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
         content={"error": {"code": code, "message": message}},
+        headers=headers,
     )
 
 

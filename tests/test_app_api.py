@@ -539,6 +539,34 @@ def test_mutation_methods_never_dispatch_and_do_not_change_fixture_outputs(
     assert outputs == {path: (path.stat().st_size, path.stat().st_mtime_ns) for path in outputs}
 
 
+def test_405_preserves_framework_allow_header_without_dispatching_services(
+    fixture_store: FixtureStore,
+) -> None:
+    class NeverCalledServices:
+        def __getattr__(self, name: str):
+            pytest.fail(f"unsupported method dispatched to application service {name}")
+
+    with _client(fixture_store, services=NeverCalledServices()) as client:
+        health = client.post("/health")
+        catalog = client.post("/api/v1/catalog")
+        missing = client.post("/not-a-route")
+
+    for response in (health, catalog):
+        assert response.status_code == 405
+        assert response.headers["allow"] == "GET"
+        assert response.json() == {
+            "error": {
+                "code": "method_not_allowed",
+                "message": "The requested HTTP method is not allowed.",
+            }
+        }
+
+    assert missing.status_code == 404
+    assert missing.json() == {
+        "error": {"code": "not_found", "message": "The requested endpoint does not exist."}
+    }
+
+
 def test_response_serialization_is_deterministic_and_documentation_routes_are_off(
     fixture_store: FixtureStore,
 ) -> None:
