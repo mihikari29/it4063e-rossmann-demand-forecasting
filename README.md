@@ -284,8 +284,10 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 - Phase 11: **COMPLETE**; the [completed plan](plans/completed/phase-11-application-services.md)
   records the shared Python services and thin local/demo FastAPI adapter. Streamlit calls the same
   services directly; separate API hosting and Evidently are optional.
-- Phases 12–13: Streamlit and one frozen sequential final evaluation remain future work requiring
-  separate authorization. The protected holdout remains unreleased.
+- Phase 12: the [Streamlit design proposal](plans/active/phase-12-streamlit-dashboard.md) is
+  **PROPOSED / AWAITING REVIEW**; implementation and deployment remain unauthorized.
+- Phase 13: one frozen sequential final evaluation remains future work requiring separate
+  authorization. The protected holdout remains unreleased.
 - Phase 14: recorded results, report, slides and demonstration.
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)

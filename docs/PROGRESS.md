@@ -13,6 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
+| Phase 12 — Streamlit Dashboard | **PROPOSED / AWAITING REVIEW** (PLANNED) | [Active design proposal](../plans/active/phase-12-streamlit-dashboard.md); documentation only, unimplemented and unmerged |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -71,6 +72,38 @@ hashed, regenerated or changed. No real-data forecast fit, final-holdout evaluat
 or canonical simulation/artifact regeneration was performed; the closeout repository test run used
 the fixture suite. Phase 12 and Phase 13 remain outside this authorization.
 
+### Phase 12 architecture audit and design proposal — 2026-10-09
+
+The authorized task is design documentation, commit/push and a draft PR only. The worktree was clean
+on the already merged `docs/phase-11-closeout` branch. Fetch and live GitHub metadata verified
+`origin/main` at `2a47ae7dd959daac8eacf2b5410f090edbbcd7cb`, the actual PR #27 Phase 11 closeout
+merge; all 27 existing PRs were merged and none open. The new `docs/phase-12-streamlit-design`
+branch starts directly from that main SHA. Phase 11 remains COMPLETE.
+
+The [active Phase 12 plan](../plans/active/phase-12-streamlit-dashboard.md) audits the existing
+reader/service/API contracts and tests, proposes five screens using direct `ApplicationServices`
+calls, and separates the seven candidate content sections into implementation-ready specifications.
+Four proposed milestones have bounded Luna 6 task/review boundaries. Public service DTO omissions
+limit richer EDA, calibration diagnostics, structured case selectors and operational parameters;
+the core proposes bounded Sales/Open history and saved-case comparisons. It explicitly records
+the narrower scope relative to proposal §22 for Technical Lead review without editing the proposal.
+
+The minimal deployment recommendation is a private course LAN instance on the artifact-owning
+machine, subject to approval that it satisfies the course requirement. Private canonical-file cloud
+provisioning and a separately reviewed reduced DTO evidence snapshot are alternatives, each requiring
+additional distribution/contract approval. A clean checkout or synthetic fixtures cannot substitute
+for accepted analytical evidence. No source, API, service, model, simulation, dependency or canonical
+artifact changed; no canonical artifact contents, ledger or protected outcomes were read/hashed.
+Design-task checks passed on Python 3.14.5 / uv 0.12.23: 151 focused application tests and all
+431 fixture tests, Ruff lint/format, 259 local documentation destinations/anchors, lock consistency
+and installed dependency compatibility, plus diff/scope self-review. The existing nonblocking
+Starlette TestClient deprecation warning remains. Detailed check scope is recorded in the active
+plan; no Streamlit implementation, UI test or deployment was performed.
+
+Phase 12 is **PROPOSED / AWAITING REVIEW**, not approved, implemented or complete. Dependency
+installation, implementation, artifact export/upload, hosting and merge are outside this task.
+Phase 13 final-holdout evaluation and Phase 14 reporting remain future work; the holdout is unreleased.
+
 ## Immediate next boundary
 
 Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 is **COMPLETE**:
@@ -113,7 +146,8 @@ completed plan; Phase 10 is COMPLETE after closeout PR #25 merged into `main` at
 M3-01 is resolved; M4 is accepted with minor changes; and M4-01 is resolved by this correction.
 Phase 11 is COMPLETE following PR #26 squash merge at
 `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; its [completed plan](../plans/completed/phase-11-application-services.md)
-records formal acceptance. Phase 12 remains planned and unimplemented; Phase 13 still requires a
+records formal acceptance. Phase 12's [design proposal](../plans/active/phase-12-streamlit-dashboard.md)
+is PROPOSED / AWAITING REVIEW and remains unimplemented; Phase 13 still requires a
 separate frozen protocol and explicit authorization to release holdout outcomes. The holdout remains
 unreleased.
 

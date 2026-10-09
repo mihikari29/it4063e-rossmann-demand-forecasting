@@ -224,6 +224,9 @@ merge-readiness review are complete; Quality #81 passed on the merge SHA for Pyt
 
 ## Phase 12 — Streamlit Dashboard
 
+**Status:** PLANNED; the [active design proposal](../plans/active/phase-12-streamlit-dashboard.md)
+is **PROPOSED / AWAITING REVIEW**. Architecture audit/design only is authorized; implementation,
+dependency changes, artifact distribution and deployment require separate approval.
 **Objective:** Provide an understandable course demonstration.
 **Dependencies:** Accepted Phase 11 shared services (see the [completed Phase 11 plan](../plans/completed/phase-11-application-services.md)); it need not call FastAPI over HTTP.
 **Deliverables:** Store/scenario controls, history/forecast/interval views, inventory assumptions and
