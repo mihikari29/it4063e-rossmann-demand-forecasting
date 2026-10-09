@@ -1,14 +1,8 @@
-# Phase 12 — Streamlit Dashboard Design
+# Phase 12 - Streamlit Dashboard Design
 
-**Phase status:** M1 ACCEPTED / INTEGRATED; M2 IMPLEMENTED / UNDER REVIEW. M3/M4 remain
-PLANNED / NOT AUTHORIZED, Phase 12 is not complete, deployment is pending, and Phase 13 remains
-protected. **Date:** 2026-10-09. **Authority:** PR #29 was accepted and squash-merged into `main`
-at `cb508a0bbdefe6afeba6e1ea8ebad5a0614a03f6`; its reviewed head was
-`2460b3d59ef1fce90702719c59501e84dd5f36af`. The M2 task authorized implementation only after that
-merge, then authorized commit, push and one draft PR targeting `main`. Do not merge this M2 PR or
-start M3/M4, deployment or Phase 13.
-**Implementation branch:** `feat/phase-12-streamlit-m2`, created directly from the verified
-`origin/main` merge SHA above, with no stacked integration dependency.
+**Phase status:** M1 ACCEPTED / INTEGRATED; M2 ACCEPTED / INTEGRATED; M3 IMPLEMENTED / UNDER REVIEW. M4 remains PLANNED / NOT AUTHORIZED. Phase 12 is open, deployment is undecided, Phase 13 is unauthorized, and the final holdout remains protected. **Date:** 2026-10-09. **Authority:** M2 PR #30 was accepted and merged into `main` at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`; main-branch Quality [run #37955545881](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37955545881) passed on Python 3.12 and 3.14. The M3 task authorizes only sections 4.5-4.6, commit/push and a draft PR targeting `main`. Do not merge M3 or start M4, deployment or Phase 13.
+
+**Implementation branch:** `feat/phase-12-streamlit-m3`, created directly from `origin/main` at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`; no stacked integration dependency.
 
 ## 1. Verified baseline and design boundary
 
@@ -799,3 +793,26 @@ deprecation warning. Ruff lint and format passed; `uv lock --check` resolved 109
 The Markdown link checker passed with 259 local destinations/anchors across 27 files. No service,
 producer, artifact, model, metric, dependency or lockfile changed. No new real-data run, ledger or
 protected outcome access, manual browser, performance or deployment test was performed.
+
+## 15. M3 implementation checkpoint - 2026-10-09
+
+Status: IMPLEMENTED / UNDER REVIEW. M2 is accepted and integrated at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`. M3 implements only Model Comparison and Inventory Comparison. M4 is NOT AUTHORIZED; deployment remains undecided; Phase 13 is not authorized and the final holdout remains protected.
+
+The Model Comparison screen uses fixed query presets through `model_comparison()`: the selected common-population metric at the selected scope (limit 42 for horizon, otherwise 200), common-population MAE by horizon, standalone forecast coverage, and WAPE denominators. MAPE requests also fetch the saved MAPE row-count and excluded-zero diagnostics. The screen keeps standalone coverage separate from the common population, retains returned candidate/horizon rows and numerical nulls, labels MAPE as saved percentages and WAPE/coverage as saved fractions, and displays the exact saved denominator and paired fields. No rows are averaged, rankings recomputed, or values filled.
+
+The Inventory Comparison screen selects only exact catalog case IDs and supported Stores, calls `inventory_comparison()`, and presents all ten saved case aggregates separately from the selected Store pair. The case aggregates keep whole-case scope when Store changes. Cost is explicitly forecast-policy minus baseline-policy: positive is adverse/higher simulated cost, negative is favorable/lower cost conditional on assumptions, zero is equal, and null retains its reason. The chart includes a zero reference. Target zero remains distinct from an unavailable target. Presenter validation rejects policy states inconsistent with the saved pair comparability flag. The page states that general reviewed R=1, L=2-7 and P=L+1 context does not verify a selected Store's individual parameter.
+
+The focused M3 AppTest/presenter module adds 27 tests. The combined focused dashboard/M2/presenter suite passed 98 tests. Existing M1/M2 tests remain in the suite; their service spies and M2 scope assertion were adjusted only to allow the two new public comparison calls while continuing to reject direct reader or ledger access. Fixture-backed service integration uses isolated temporary artifacts and canonical `_ArtifactReader`/`ApplicationServices` instances.
+
+Read-only development smoke used only public `catalog()`, `model_comparison()` and `inventory_comparison()` calls. Exact queries and response sizes:
+
+- `ModelComparisonQuery(population="three_way_common", scope="pooled", metric="mae", limit=200)`: 3 rows.
+- `ModelComparisonQuery(population="three_way_common", scope="horizon", metric="mae", limit=42)`: 42 rows across h1-h14 and three candidates. The saved LightGBM h10 MAE is 2280.988920462052, numerator 7627626.950025102, denominator 3344.0.
+- `ModelComparisonQuery(population="standalone", scope="validation_window", metric="open_label_forecast_coverage_rate", limit=200)`: 9 rows. Saved numerators/denominators by window are 11678/11678, 13438/13438 and 13437/13437 for each candidate.
+- `InventoryComparisonQuery(case_id="synthetic_base-20150605-r00--reference", store_id=1)` and `InventoryComparisonQuery(case_id="synthetic_base-20150605-r00--buffer_090", store_id=1)`: 10 whole-case aggregate rows and one Store pair each. Both selected Store 1 pairs were comparable; a noncomparable canonical Store pair was not observed in this smoke. Whole-case adverse cost differences remain the accepted values recorded in [PROGRESS](../../docs/PROGRESS.md). The selected Store pair differences were -1127.4760554752131 and -751.211217876554 respectively, which do not replace or alter whole-case aggregates.
+
+The service-returned model provenance was selector `phase7_model_comparison`, run `365f22d4c3f94722a594ab934a22c4f6`, manifest SHA-256 `03a1f26ba5855fd0576667bf280df938664c196a802de0a71e696a600b281cdc`, output SHA-256 `c648e8e407dc367e56f26cb421656dabc8d742a9a3cd3d3b092b746a84b10357`, and 190680 manifest rows; selected rows were 3, 42 and 9 for the queries above. Inventory provenance used run `phase10-dev-20261008-validator-fix`, manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`, and selectors `phase10_comparison` (output SHA-256 `8d4b519e87677e04ff0f5e75404c37671c22c9b7ed0b229728bf17444a61e7be`, 10 selected / 1720 manifest rows), `phase10_policy_summary` (output SHA-256 `93d2e36e286be7c36c33d383b07d73569637f70de5d96378a0a72e85f60f9cb0`, 2 / 383560), and `phase10_policy_targets` (output SHA-256 `e8ba96d12ecd307df8d8c21368f448ff3a45dca1ed6f21be6bba22b2c66a95ba`, 2 / 383560). Repeating case queries returned the same provenance. These are service results, not a copied or independently recalculated artifact audit.
+
+Validation on the locked Windows environments: full pytest passed 529 tests on Python 3.12 and 529 on Python 3.14, each with one existing Starlette/httpx deprecation warning. The combined focused dashboard/M2/presenter suite passed 98 tests. Ruff lint and format passed (104 files already formatted); `uv lock --check` resolved 109 packages; `uv pip check --python .venv/Scripts/python.exe` passed with 93 compatible installed packages; the Markdown checker passed with 261 local destinations/anchors across 27 Markdown files; and `git diff --check` passed. The main-branch M2 gate Quality run #37955545881 passed both Python jobs before M3 began. Final M3-head GitHub Quality is verified after publication and recorded in the task handoff.
+
+Smoke and tests used no Phase 10 daily ledger or July 4-31 holdout outcome. No canonical artifact was generated or changed. No model fit, simulation, manual browser, performance or deployment test was performed. README launch/use instructions did not change. M3 awaits independent Technical Lead review; no merge or Phase 12 closeout is authorized.

@@ -741,7 +741,7 @@ def test_active_screen_dispatch_and_uncertainty_error_do_not_keep_uncertainty_pa
 
     app.sidebar.radio[0].set_value("Model Comparison").run()
     app.sidebar.radio[0].set_value("Inventory Comparison").run()
-    assert services.catalog_calls == 1
+    assert services.catalog_calls == 3
     assert not services.forecast_queries and not services.history_queries
 
     app.sidebar.radio[0].set_value("Forecast Explorer").run()
@@ -937,14 +937,16 @@ def test_supported_uncertainty_controls_are_closed_sets() -> None:
     assert SUPPORTED_CUMULATIVE_PROBABILITIES == (0.90, 0.95, 0.98)
 
 
-def test_dashboard_has_no_api_loopback_inference_comparison_or_ledger_access() -> None:
+def test_dashboard_uses_public_comparison_services_without_loopback_or_ledger_access() -> None:
     from pathlib import Path
 
     source = Path("src/rossmann_forecasting/app/dashboard.py").read_text(encoding="utf-8")
     assert "create_app" not in source
     assert "httpx" not in source
     assert "requests." not in source
-    assert "model_comparison(" not in source
-    assert "inventory_comparison(" not in source
+    assert "model_comparison(" in source
+    assert "inventory_comparison(" in source
+    assert "read_model_comparison(" not in source
+    assert "read_inventory" not in source
     assert "simulation_ledger" not in source
     assert "PHASE10_POLICY" not in source

@@ -54,10 +54,20 @@ class _CatalogSpy:
     def __init__(self, services: ApplicationServices) -> None:
         self.services = services
         self.catalog_calls = 0
+        self.model_queries = []
+        self.inventory_queries = []
 
     def catalog(self):
         self.catalog_calls += 1
         return self.services.catalog()
+
+    def model_comparison(self, query):
+        self.model_queries.append(query)
+        return self.services.model_comparison(query)
+
+    def inventory_comparison(self, query):
+        self.inventory_queries.append(query)
+        return self.services.inventory_comparison(query)
 
 
 class _ReaderSpy:
@@ -236,7 +246,7 @@ def test_empty_catalog_is_distinct_from_missing_resources(fixture_store) -> None
     assert "unavailable in this checkout" not in visible
 
 
-def test_placeholders_do_not_dispatch_catalog_or_other_service_queries(fixture_store) -> None:
+def test_m3_screens_wait_for_apply_before_comparison_queries(fixture_store) -> None:
     spy = _CatalogSpy(ApplicationServices(fixture_store.reader()))
     app = _app(spy)
     assert spy.catalog_calls == 1
@@ -250,11 +260,16 @@ def test_placeholders_do_not_dispatch_catalog_or_other_service_queries(fixture_s
         app.sidebar.radio[0].set_value(screen).run()
         assert not app.exception
         assert screen in _visible_text(app)
-        if screen in ("Historical Sales", "Forecast Explorer"):
+        if screen in (
+            "Historical Sales",
+            "Forecast Explorer",
+            "Model Comparison",
+            "Inventory Comparison",
+        ):
             assert any(button.label == "Apply selection" for button in app.button)
-        else:
-            assert "does not query application services in M2" in _visible_text(app)
-    assert spy.catalog_calls == 3
+    assert spy.catalog_calls == 5
+    assert not spy.model_queries
+    assert not spy.inventory_queries
 
 
 def test_unexpected_service_error_is_sanitized() -> None:
