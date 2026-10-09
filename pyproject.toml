@@ -32,6 +32,9 @@ api = [
     "httpx>=0.27,<1",
     "uvicorn>=0.34,<1",
 ]
+dashboard = [
+    "streamlit>=1.50,<2",
+]
 
 [project.scripts]
 rossmann-acquire = "rossmann_forecasting.data.acquisition:cli_main"

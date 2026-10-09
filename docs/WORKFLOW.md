@@ -74,9 +74,10 @@ Do not mark COMPLETE in advance of a verified merge merely to avoid a later stat
 
 `pyproject.toml` is the only hand-maintained dependency source; `uv.lock` is generated.
 The reference Python is 3.14; the supported range is 3.12–3.14 (ADR-018).
-Use pinned uv 0.12.23, then `uv sync --locked --extra dev --extra api --python 3.14` to install the
-fixture-test and local API extras; optionally add `--extra acquisition` for Kaggle. The API extra
-keeps FastAPI, its ASGI server, and its HTTP test client out of the core forecasting dependencies.
+Use pinned uv 0.12.23, then `uv sync --locked --extra dev --extra api --extra dashboard --python 3.14`
+to install the fixture-test, local API and Streamlit AppTest extras; optionally add
+`--extra acquisition` for Kaggle. The API and dashboard extras keep FastAPI, its server/client and
+Streamlit out of the core forecasting dependencies.
 See [README setup](../README.md#environment-and-quick-start).
 
 After changing dependency bounds, run `uv lock`, review the resolved diff, and check

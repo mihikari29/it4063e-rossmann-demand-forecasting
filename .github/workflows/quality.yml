@@ -26,14 +26,14 @@ jobs:
           version: "0.12.23"
           python-version: ${{ matrix.python-version }}
       - name: Install locked development environment
-        run: uv sync --locked --extra dev --extra api
+        run: uv sync --locked --extra dev --extra api --extra dashboard
       - name: Check dependencies
         run: uv pip check
       - name: Test fixtures
-        run: uv run --locked --extra dev --extra api python -m pytest
+        run: uv run --locked --extra dev --extra api --extra dashboard python -m pytest
       - name: Lint
-        run: uv run --locked --extra dev --extra api python -m ruff check .
+        run: uv run --locked --extra dev --extra api --extra dashboard python -m ruff check .
       - name: Check formatting
-        run: uv run --locked --extra dev --extra api python -m ruff format --check .
+        run: uv run --locked --extra dev --extra api --extra dashboard python -m ruff format --check .
       - name: Check Markdown links
-        run: uv run --locked --extra dev --extra api python scripts/check_docs.py
+        run: uv run --locked --extra dev --extra api --extra dashboard python scripts/check_docs.py
