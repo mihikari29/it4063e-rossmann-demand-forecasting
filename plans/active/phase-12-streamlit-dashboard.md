@@ -2,7 +2,7 @@
 
 **Phase status:** M1 ACCEPTED / INTEGRATED; M2 ACCEPTED / INTEGRATED; M3 IMPLEMENTED / UNDER REVIEW. M4 remains PLANNED / NOT AUTHORIZED. Phase 12 is open, deployment is undecided, Phase 13 is unauthorized, and the final holdout remains protected. **Date:** 2026-10-09. **Authority:** M2 PR #30 was accepted and merged into `main` at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`; main-branch Quality [run #37955545881](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37955545881) passed on Python 3.12 and 3.14. The M3 task authorizes only sections 4.5-4.6, commit/push and a draft PR targeting `main`. Do not merge M3 or start M4, deployment or Phase 13.
 
-**Implementation branch:** `feat/phase-12-streamlit-m3`, created directly from `origin/main` at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`; no stacked integration dependency.
+**Implementation branch:** `feat/phase-12-streamlit-m3`, created directly from `origin/main` at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`; no stacked integration dependency. Draft PR [#31](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/31) targets `main` and remains open/unmerged.
 
 ## 1. Verified baseline and design boundary
 
@@ -796,7 +796,7 @@ protected outcome access, manual browser, performance or deployment test was per
 
 ## 15. M3 implementation checkpoint - 2026-10-09
 
-Status: IMPLEMENTED / UNDER REVIEW. M2 is accepted and integrated at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`. M3 implements only Model Comparison and Inventory Comparison. M4 is NOT AUTHORIZED; deployment remains undecided; Phase 13 is not authorized and the final holdout remains protected.
+Status: IMPLEMENTED / UNDER REVIEW in draft PR [#31](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/31). M2 is accepted and integrated at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`. M3 implements only Model Comparison and Inventory Comparison. M4 is NOT AUTHORIZED; deployment remains undecided; Phase 13 is not authorized and the final holdout remains protected.
 
 The Model Comparison screen uses fixed query presets through `model_comparison()`: the selected common-population metric at the selected scope (limit 42 for horizon, otherwise 200), common-population MAE by horizon, standalone forecast coverage, and WAPE denominators. MAPE requests also fetch the saved MAPE row-count and excluded-zero diagnostics. The screen keeps standalone coverage separate from the common population, retains returned candidate/horizon rows and numerical nulls, labels MAPE as saved percentages and WAPE/coverage as saved fractions, and displays the exact saved denominator and paired fields. No rows are averaged, rankings recomputed, or values filled.
 
