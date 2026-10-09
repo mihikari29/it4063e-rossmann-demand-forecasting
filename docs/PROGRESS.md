@@ -13,7 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 — Streamlit Dashboard | PLANNED; M1 **IMPLEMENTED / UNDER REVIEW** | [Draft PR #29](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/29) from `feat/phase-12-streamlit-m1`, based on `9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`; [active plan](../plans/active/phase-12-streamlit-dashboard.md). M2–M4 unauthorized; not merged. |
+| Phase 12 — Streamlit Dashboard | M1 **ACCEPTED / INTEGRATED**; M2 **IMPLEMENTED / UNDER REVIEW** | M1 PR #29 merged at `cb508a0bbdefe6afeba6e1ea8ebad5a0614a03f6`. M2 branch `feat/phase-12-streamlit-m2` starts from that `main` SHA; [active plan](../plans/active/phase-12-streamlit-dashboard.md). M3/M4 not authorized; deployment pending. |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -166,6 +166,45 @@ reported in the final task handoff. M1 remains IMPLEMENTED / UNDER REVIEW; PR #2
 unmerged. No model inference, canonical artifact generation, real-data pipeline, ledger access,
 protected holdout access or deployment occurred.
 
+### Phase 12 M1 integration and M2 implementation checkpoint — 2026-10-09
+
+PR #29 was accepted and squash-merged into `main` at
+`cb508a0bbdefe6afeba6e1ea8ebad5a0614a03f6`. The reviewed M1 head
+`2460b3d59ef1fce90702719c59501e84dd5f36af` has the same Git tree as the merge. The conditional M2
+authorization gate is satisfied. Branch `feat/phase-12-streamlit-m2` starts directly from that main
+SHA. M1 is ACCEPTED / INTEGRATED; M2 is IMPLEMENTED / UNDER REVIEW. This does not close Phase 12.
+
+M2 implements the Historical Sales and Forecast Explorer/uncertainty screens from the approved
+plan. The UI uses only `catalog()`, `sales_history(HistoryQuery)`,
+`forecast_issuance(ForecastQuery)` and `forecast_uncertainty(UncertaintyQuery)` with the existing
+DTOs. It adds no service, model inference, analytical producer change, metric, inventory assumption,
+dependency or lockfile change. History validates Store/date bounds before dispatch and distinguishes
+observed zero, null and missing calendar dates. Forecast output is saved H14; H7 filters display
+only. Raw/operational availability stays separate. Fit A/June 5 and Fit B/June 19 map from the
+catalog; May 22 sends no uncertainty request. Daily and cumulative saved values, unavailable
+reasons and their separate provenance are retained without recalculation or rounding.
+
+The UI labels history as retrospective development evidence, displays source Open separately,
+describes operational routing as a conditional historical replay, and exposes empirical/sparse
+uncertainty limitations. It does not access Customers, model-comparison results, inventory ledgers,
+or July 4–31 protected outcomes. M3/M4 remain NOT AUTHORIZED, deployment remains pending, and the
+Phase 13 holdout remains protected.
+
+Focused dashboard/presenter/M2 tests passed (**64 passed**). The full fixture suite passed on Python
+3.12 (**495 passed**) and Python 3.14 (**495 passed**); each run reported the existing
+Starlette/httpx deprecation warning. Ruff lint/format passed (103 files already formatted),
+`uv lock --check` passed with 109 resolved packages, and `uv pip check` passed with 93 compatible
+packages. `scripts/check_docs.py` passed with 259 local destinations/anchors across 27 Markdown
+files, and `git diff --check` passed. Git emitted configured LF-to-CRLF normalization notices for
+modified files.
+
+The optional read-only development smoke used Store 1, history 2015-06-19–2015-07-03, the June 19
+H14 forecast and Fit B uncertainty. It returned 15 history rows, 14 forecast rows (14 raw and 14
+operational available), 28 daily interval rows and 42 cumulative rows, with the service's saved
+provenance. No source values were printed, no artifact was changed or regenerated, and the Phase 10
+ledger and protected holdout were not accessed. No manual browser, performance or deployment test
+was performed.
+
 ## Immediate next boundary
 
 Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 is **COMPLETE**:
@@ -209,8 +248,9 @@ M3-01 is resolved; M4 is accepted with minor changes; and M4-01 is resolved by t
 Phase 11 is COMPLETE following PR #26 squash merge at
 `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; its [completed plan](../plans/completed/phase-11-application-services.md)
 records formal acceptance. Phase 12 M1 is IMPLEMENTED / UNDER REVIEW on the feature branch, as
-recorded in the [active plan](../plans/active/phase-12-streamlit-dashboard.md); M2–M4 are not
-authorized. Phase 13 still requires a
+recorded in the [active plan](../plans/active/phase-12-streamlit-dashboard.md); the current
+checkpoint below supersedes that earlier M1-only state: M1 is ACCEPTED / INTEGRATED and M2 is
+IMPLEMENTED / UNDER REVIEW. M3/M4 remain unauthorized. Phase 13 still requires a
 separate frozen protocol and explicit authorization to release holdout outcomes. The holdout remains
 unreleased.
 

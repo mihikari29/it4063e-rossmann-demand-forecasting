@@ -249,9 +249,12 @@ def test_placeholders_do_not_dispatch_catalog_or_other_service_queries(fixture_s
     ):
         app.sidebar.radio[0].set_value(screen).run()
         assert not app.exception
-        assert spy.catalog_calls == 1
         assert screen in _visible_text(app)
-        assert "does not query application services in M1" in _visible_text(app)
+        if screen in ("Historical Sales", "Forecast Explorer"):
+            assert any(button.label == "Apply selection" for button in app.button)
+        else:
+            assert "does not query application services in M2" in _visible_text(app)
+    assert spy.catalog_calls == 3
 
 
 def test_unexpected_service_error_is_sanitized() -> None:
