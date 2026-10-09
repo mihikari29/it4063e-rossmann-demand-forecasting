@@ -278,8 +278,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   origin-anchored prefixes only.
 - Phase 9: **COMPLETE**; the accepted generator creates exogenous synthetic scenario inputs only.
   See the [completed plan](plans/completed/phase-9-synthetic-inventory.md).
-- Phase 10: [completed design, implementation and closeout record](plans/completed/phase-10-inventory-simulation.md);
-  its implementation and corrective PR are integrated, with completion effective on this closeout PR.
+- Phase 10: COMPLETE following integration of closeout PR #25 into `main`; its [completed design,
+  implementation and closeout record](plans/completed/phase-10-inventory-simulation.md) is preserved
+  in the completed plan.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
@@ -288,7 +289,7 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and formally
 closed. Phase 9 implements only the approved scenario generator. Phase 10's reviewed stateful simulator
-is formally closed when this closeout PR integrates. Later phases require separate authorization.
+is formally closed following integration of closeout PR #25. Later phases require separate authorization.
 The final holdout remains protected.
 
 ## Quality and repository layout
