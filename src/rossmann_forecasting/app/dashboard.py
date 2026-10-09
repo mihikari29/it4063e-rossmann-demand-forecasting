@@ -978,9 +978,12 @@ def _model_metric_axis_label(metric: str) -> str:
 
 
 def _render_model_comparison_error(error: Exception) -> None:
-    if isinstance(error, ModelComparisonTooLargeError) or (
-        isinstance(error, ArtifactReadError) and error.code is ArtifactErrorCode.INVALID_REQUEST
-    ):
+    if isinstance(error, ModelComparisonTooLargeError):
+        st.error("The saved comparison exceeded its presentation limit. Narrow the selection.")
+        st.caption("Error code: `comparison_too_large`")
+        st.caption("Logical resource: `phase7_model_comparison`")
+        return
+    if isinstance(error, ArtifactReadError) and error.code is ArtifactErrorCode.INVALID_REQUEST:
         st.error("The saved comparison is too large for this selection. Narrow the selection.")
         st.caption(f"Error code: `{error.code.value}`")
         st.caption("Logical resource: `phase7_model_comparison`")

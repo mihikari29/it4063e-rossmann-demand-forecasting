@@ -422,6 +422,7 @@ class _DashboardSpy:
         self.catalog_calls = 0
         self.model_queries: list[ModelComparisonQuery] = []
         self.model_error: Exception | None = None
+        self.model_factory = None
         self.model_corruption: str | None = None
         self.inventory_queries: list[InventoryComparisonQuery] = []
         self.inventory_error: Exception | None = None
@@ -435,6 +436,8 @@ class _DashboardSpy:
         self.model_queries.append(query)
         if self.model_error is not None:
             raise self.model_error
+        if self.model_factory is not None:
+            return self.model_factory(query)
         view = _model_view(_rows_for_query(query))
         if self.model_corruption == "row":
             view = replace(
@@ -521,6 +524,15 @@ def test_model_presenter_rejects_duplicate_dimensions_and_oversized_views() -> N
     too_many = _model_view(tuple(_model_row(candidate) for candidate in MODEL_CANDIDATES))
     with pytest.raises(ModelComparisonTooLargeError):
         model_comparison_records(too_many, query)
+
+
+def test_model_presenter_returns_overflow_error_above_explicit_query_limit() -> None:
+    query = ModelComparisonQuery(
+        population="three_way_common", scope="pooled", metric="mae", limit=2
+    )
+    oversized_view = _model_view(tuple(_model_row(candidate) for candidate in MODEL_CANDIDATES))
+    with pytest.raises(ModelComparisonTooLargeError):
+        model_comparison_records(oversized_view, query)
 
 
 def test_model_screen_compares_all_candidates_and_keeps_weak_h10_charted() -> None:
@@ -624,8 +636,39 @@ def test_model_invalid_request_error_is_narrow_selection_and_clears_prior_result
     visible = _visible_text(app)
     assert not app.exception
     assert "Narrow the selection" in visible
+    assert "invalid_artifact_request" in visible
+    assert "comparison_too_large" not in visible
     assert "Primary comparison" not in visible
     assert not app.dataframe
+
+
+def test_model_oversized_view_is_sanitized_and_clears_prior_results_and_charts() -> None:
+    from rossmann_forecasting.app import dashboard
+
+    services = _DashboardSpy()
+    captured = []
+    with patch.object(
+        dashboard.st, "pyplot", side_effect=lambda figure, **_: captured.append(figure)
+    ):
+        app = _apply(_app(services, "Model Comparison"))
+        assert "Primary comparison" in _visible_text(app)
+        assert captured
+        captured.clear()
+        services.model_factory = lambda query: _model_view(
+            tuple(_model_row(MODEL_CANDIDATES[0]) for _ in range(query.limit + 1))
+        )
+        app = _apply(app)
+
+    visible = _visible_text(app)
+    assert not app.exception
+    assert "Narrow the selection." in visible
+    assert "comparison_too_large" in visible
+    assert "invalid_artifact_request" not in visible
+    assert "Primary comparison" not in visible
+    assert "Comparison artifact provenance" not in visible
+    assert "internal_error" not in visible
+    assert not app.dataframe
+    assert captured == []
 
 
 def test_model_scope_controls_submit_exact_window_and_store_queries() -> None:
