@@ -1,13 +1,14 @@
 # Phase 12 — Streamlit Dashboard Design
 
-**Phase status:** PLANNED. M1 design and implementation scope are APPROVED / AUTHORIZED;
-M1 is IMPLEMENTED / UNDER REVIEW with evidence in §11. M2–M4 remain PLANNED / NOT AUTHORIZED.
-**Date:** 2026-10-09. **Authority:** The original design task authorized documentation and a draft
-PR. The subsequent Technical Lead task authorizes M1 implementation, a compatible optional
-Streamlit dependency, commit, push and a draft PR; it does not authorize merge, deployment,
-artifact distribution, M2–M4 or Phase 13.
-**Implementation branch:** `feat/phase-12-streamlit-m1`, directly from fetched `origin/main`
-`9b4ab7f54abff0ca1abfe8b6c547de960c8be8b1`; no stacked integration dependency.
+**Phase status:** M1 ACCEPTED / INTEGRATED; M2 IMPLEMENTED / UNDER REVIEW. M3/M4 remain
+PLANNED / NOT AUTHORIZED, Phase 12 is not complete, deployment is pending, and Phase 13 remains
+protected. **Date:** 2026-10-09. **Authority:** PR #29 was accepted and squash-merged into `main`
+at `cb508a0bbdefe6afeba6e1ea8ebad5a0614a03f6`; its reviewed head was
+`2460b3d59ef1fce90702719c59501e84dd5f36af`. The M2 task authorized implementation only after that
+merge, then authorized commit, push and one draft PR targeting `main`. Do not merge this M2 PR or
+start M3/M4, deployment or Phase 13.
+**Implementation branch:** `feat/phase-12-streamlit-m2`, created directly from the verified
+`origin/main` merge SHA above, with no stacked integration dependency.
 
 ## 1. Verified baseline and design boundary
 
@@ -90,7 +91,8 @@ M1 may implement the application shell, overview/readiness screen, pure presenta
 sanitized UI errors and fixture-backed tests. Other four screens stay honest, data-free placeholders;
 their service queries are out of scope. The proposal's interactive stock/lead-time/service-level
 what-if behavior is excluded from M1–M3. Phase 13 holdout access is not authorized. Deployment
-remains undecided; LAN is only a candidate. M2–M4 remain PLANNED / NOT AUTHORIZED.
+remains undecided; LAN is only a candidate. At the M1 checkpoint M2–M4 remained PLANNED / NOT
+AUTHORIZED; the M2 task's merge gate has since been met. See §13 for the M2 execution checkpoint.
 
 ## 3. Actual Phase 11 interfaces
 
@@ -726,3 +728,74 @@ Focused dashboard/presenter pytest: **24 passed**. Local validation evidence:
 The pushed draft PR carries the GitHub Python 3.12/3.14 Quality result; M1 remains IMPLEMENTED /
 UNDER REVIEW pending independent final review. No model inference, artifact generation, real-data
 run, ledger or protected holdout access occurred.
+
+The M1 status above is a dated implementation/review checkpoint. PR #29 was later accepted and
+integrated as recorded in §13; it does not imply acceptance of M2 or completion of Phase 12.
+
+## 13. M1 integration and M2 implementation checkpoint — 2026-10-09
+
+PR #29 is merged into `main` at `cb508a0bbdefe6afeba6e1ea8ebad5a0614a03f6`. The accepted M1
+reviewed head `2460b3d59ef1fce90702719c59501e84dd5f36af` has the same Git tree as that squash merge.
+The M2 branch, `feat/phase-12-streamlit-m2`, starts directly from that main SHA. The conditional
+authorization gate is satisfied. M2 implements only §§4.2–4.4 through `catalog()`,
+`sales_history(HistoryQuery)`, `forecast_issuance(ForecastQuery)` and
+`forecast_uncertainty(UncertaintyQuery)`, using the existing typed views and canonical readers.
+No service, producer, artifact, model, metric, inventory assumption, dependency or lockfile changed.
+
+Historical Sales now has a Store/date Apply form, pre-dispatch catalog/date/duration validation,
+retrospective development-only labeling, a monetary Sales plot with plotting-only date gaps, a
+separate source Open table, bounded source rows and empty/missing/integrity error states. The
+Forecast Explorer submits one saved H14 query for the selected Store/origin; H7 filters only the
+visible daily rows. It distinguishes raw and saved operational values/availability, labels the
+applied query and frozen candidate, and shows exact rows and provenance. The uncertainty panel
+derives only Fit A/June 5 or Fit B/June 19 from `catalog.phase8_fits`; May 22 is rejected without a
+request. Daily bands preserve available segments, nulls and reasons. Cumulative output selects
+saved k/p rows and preserves signed quantiles, completeness and provenance. Error panels clear on
+failed submissions, and no result DTO cache or background work was added.
+
+The interface retains the scientific boundaries: Sales is monetary turnover, not physical demand;
+operational routing is a conditional historical replay, not a known future schedule; empirical
+nominal intervals do not guarantee 95% coverage; Fit A has documented unavailable horizons; Fit B
+has sparse weekday support and below-nominal development coverage; unknown schedules affect
+operational interpretation; and cumulative buffers are origin-anchored. The July 4–31 holdout stays
+protected. M3/M4 remain NOT AUTHORIZED, deployment remains pending, and Phase 12 remains open.
+
+Validation: 64 focused dashboard/presenter/M2 tests passed. The whole suite passed 495 tests on
+Python 3.12 and 495 on Python 3.14; each run reported the existing Starlette/httpx
+deprecation warning. Whole-repository Ruff lint and format passed (103 files formatted),
+`uv lock --check` resolved 109 packages, and `uv pip check` found 93 compatible packages. The docs
+link checker passed with 259 local destinations/anchors across 27 Markdown files, and
+`git diff --check` passed. Git emitted only configured LF-to-CRLF normalization notices for the
+modified files.
+
+A read-only smoke against local accepted development artifacts returned 15 bounded history rows
+through 2015-07-03, 14 saved forecast rows for Store 1/origin 2015-06-19, and Fit B uncertainty
+tables with 28 daily and 42 cumulative rows. The forecast view reported 14 raw and 14 operational
+available rows. It read no Phase 10 ledger and no July 4–31 outcomes; it did not modify or regenerate
+artifacts. No manual browser, performance, deployment or real-data fitting test was performed.
+
+## 14. M2 independent review corrections — 2026-10-09
+
+The focused corrective task addresses M2-01 and M2-02 on the existing PR #30 branch. M2 remains
+IMPLEMENTED / UNDER REVIEW; PR #30 stays draft and unmerged. M3/M4, deployment and Phase 13 remain
+outside this authorization.
+
+| Finding | Resolution |
+|---|---|
+| M2-01 — atomic presentation preparation | Historical Sales, forecast issuance, and daily/cumulative uncertainty results now convert and validate every relevant row, chart record, exact table and provenance record before rendering analytical result content. Invalid DTOs produce only the fixed `internal_error` for that panel. Provenance accepts explicitly typed, path-free identifiers and nonnegative counts; arbitrary objects and local path strings are rejected. A failing uncertainty panel does not remove the already validated forecast panel. |
+| M2-02 — singleton empirical interval visibility | Contiguous available segments with at least two horizons still use `fill_between()`. A one-horizon segment now uses a vertical saved lower-to-upper range with endpoint markers and the label “Saved empirical interval”. The saved point estimate is plotted independently, including when outside its interval. Unavailable or absent horizons continue to split segments; no values or dates are added. |
+
+AppTests inject malformed historical rows, forecast rows and provenance, daily interval rows,
+cumulative rows and uncertainty provenance. They assert sanitized errors, no partial failing-panel
+tables/charts, no private path or object representation, and forecast retention after uncertainty
+failure. An Agg chart test checks singleton vertical ranges and endpoints, a filled adjacent segment,
+separated segments, an out-of-range point, exact saved bounds, null/reason values and an all-
+unavailable case.
+
+Validation for the corrective head: 71 focused dashboard/presenter/M2 tests passed; the full suite
+passed 502 tests on Python 3.12 and 502 on Python 3.14, each with one existing Starlette/httpx
+deprecation warning. Ruff lint and format passed; `uv lock --check` resolved 109 packages;
+`uv pip check` passed for both locked environments (91 packages on Python 3.12, 93 on Python 3.14).
+The Markdown link checker passed with 259 local destinations/anchors across 27 files. No service,
+producer, artifact, model, metric, dependency or lockfile changed. No new real-data run, ledger or
+protected outcome access, manual browser, performance or deployment test was performed.
