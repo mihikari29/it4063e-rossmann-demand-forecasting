@@ -12,7 +12,7 @@
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
-| Phase 11 — Application Services & Thin API | **M1-M3 ACCEPTED; M3-01 RESOLVED; M4 ACCEPTED WITH MINOR CHANGES; M4-01 RESOLVED; FINAL PR REVIEW PENDING** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; PR #26 remains open, draft and unmerged; [active plan](../plans/active/phase-11-application-services.md) |
+| Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -36,11 +36,40 @@ are recorded below and were not regenerated. Phase 10 methodology is accepted un
 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; corrective PR #24 integrated the B1-B3 fixes at
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Final focused independent external/model-assisted review
 accepted the implementation and numerical evidence. Closeout PR #25 was squash-merged into `main`
-at `d437269b9f0cf36a842cdfd496ad50a310804768`; Phase 10 is COMPLETE. Phase 11 architecture is
-approved. M1, M2 and M3 are formally accepted; M3-01 is resolved; M4 is accepted with minor changes
-and M4-01 is resolved by this documentation correction. The final PR integration and merge-readiness
-review and formal Phase 11 closeout remain pending. PR #26 remains open, draft and unmerged. The
-protected final holdout remains unreleased.
+at `d437269b9f0cf36a842cdfd496ad50a310804768`; Phase 10 is COMPLETE. Phase 11 is COMPLETE after
+PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; M1-M4 are accepted,
+M3-01, M4-01 and FR-01 are resolved, and post-merge Quality #81 passed. The [completed Phase 11
+plan](../plans/completed/phase-11-application-services.md) preserves its acceptance and handoff
+record. The protected final holdout remains unreleased.
+
+### Phase 11 formal closeout — 2026-10-09
+
+The Technical Lead authorized documentation-only formal closeout after verifying PR #26's squash
+merge into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`. The original feature branch was
+`feat/phase-11-application-services`, and the final reviewed PR head was
+`77128a3b589cbe662833962cd20aacb03241dd55`. M1-M4 are accepted; independent reviews returned M1
+`ACCEPT`, M2 `ACCEPT`, M3 `ACCEPT_WITH_MINOR_CHANGES`, M4 `ACCEPT_WITH_MINOR_CHANGES`, and the final
+full-PR merge-readiness review returned `READY_WITH_MINOR_CHANGES`. Findings M3-01, M4-01 and FR-01
+were resolved before merge. All implementation and integration gates are satisfied.
+
+Post-merge GitHub Quality [#81](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37902479835)
+passed at the squash merge SHA on Python 3.12 and 3.14. The previously accepted baselines were 431
+full-suite tests and 151 focused application tests. For this closeout, the full suite was rerun and
+431 passed; the 151-test focused subset was not rerun. The nonblocking Starlette TestClient
+deprecation warning remains. Earlier accepted Quality #80 evidence and milestone checkpoints remain
+recorded in the archived plan and historical entries below.
+
+The application serves saved development forecasts without new inference. Historical access ends on
+2015-07-03 and projects only Store, Date, Sales and Open; Customers are not exposed. Sales are
+monetary turnover; saved uncertainty is empirical without guaranteed coverage; inventory outputs
+are conditional synthetic monetary simulations, not observed physical inventory, actual stockouts,
+proven savings or validated optimal policies. Positive forecast-minus-baseline simulated cost is
+adverse: the accepted reference difference is +1,842,931.0502027555 and `buffer_090` is
++2,657,553.7797287568, both existing results and not new calculations. The protected July 4-31
+holdout remains unreleased. The Phase 10 simulation ledger and canonical artifacts were not read,
+hashed, regenerated or changed. No real-data forecast fit, final-holdout evaluation, recalibration
+or canonical simulation/artifact regeneration was performed; the closeout repository test run used
+the fixture suite. Phase 12 and Phase 13 remain outside this authorization.
 
 ## Immediate next boundary
 
@@ -82,9 +111,11 @@ are integrated at the SHAs in the current-state table. Phase 10's final closeout
 completed plan; Phase 10 is COMPLETE after closeout PR #25 merged into `main` at
 `d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1, M2 and M3 are formally accepted;
 M3-01 is resolved; M4 is accepted with minor changes; and M4-01 is resolved by this correction.
-The accepted implementation milestones await a separate final PR integration and merge-readiness
-review and explicit formal closeout. PR #26 remains open, draft and unmerged. No final-holdout release
-is authorized.
+Phase 11 is COMPLETE following PR #26 squash merge at
+`725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; its [completed plan](../plans/completed/phase-11-application-services.md)
+records formal acceptance. Phase 12 remains planned and unimplemented; Phase 13 still requires a
+separate frozen protocol and explicit authorization to release holdout outcomes. The holdout remains
+unreleased.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -211,7 +242,7 @@ the PR remains draft and unmerged. M1 and M2 are REVIEWED / ACCEPTED on the feat
 
 The Technical Lead separately authorized M3 implementation on the same branch and PR. M3 is
 AUTHORIZED / IN IMPLEMENTATION pending independent review. The HTTP route, query, response and
-sanitized error contract was frozen in the [active Phase 11 plan](../plans/active/phase-11-application-services.md)
+sanitized error contract was frozen in the [completed Phase 11 plan](../plans/completed/phase-11-application-services.md)
 before adapter implementation. M4, merge and Phase 11 closeout remain outside this authorization.
 The Phase 10 ledger and protected final holdout remain excluded.
 
