@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-08
+## Current implementation and Git state — 2026-10-09
 
 | Scope | State | Integration |
 |---|---|---|
@@ -11,8 +11,8 @@
 | Phase 7 — model selection | COMPLETE | [PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13) merged at `89bcb861642ee28259e4a402e8e8ee98a999a6e5`; [completed plan](../plans/completed/phase-7-model-selection.md); selected LightGBM identity and ADR-020 remain intact |
 | Phase 8 - forecast uncertainty | COMPLETE | PR #15 merged at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`; PR #16 merged at `4dd7717fed57ff3b1f14789b980772c1968f3cba`; accepted Fit B freeze; [completed plan](../plans/completed/phase-8-forecast-uncertainty.md) |
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
-| Phase 10 - inventory simulation | **COMPLETE on integration of this closeout PR** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; final external review accepted; [completed plan](../plans/completed/phase-10-inventory-simulation.md); canonical run and manifest below |
-| Phase 11 and later | PLANNED / NOT STARTED / NOT AUTHORIZED | Separate authorization required |
+| Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
+| Phase 11 — Application Services & Thin API | **M1-M3 ACCEPTED; M3-01 RESOLVED; M4 ACCEPTED WITH MINOR CHANGES; M4-01 RESOLVED; FINAL PR REVIEW PENDING** | `feat/phase-11-application-services` from `d437269b9f0cf36a842cdfd496ad50a310804768`; PR #26 remains open, draft and unmerged; [active plan](../plans/active/phase-11-application-services.md) |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -35,9 +35,12 @@ implementation and numerical review, and formal closeout. Its accepted canonical
 are recorded below and were not regenerated. Phase 10 methodology is accepted under ADR-023. PR #23 integrated the implementation at
 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; corrective PR #24 integrated the B1-B3 fixes at
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. Final focused independent external/model-assisted review
-accepted the implementation and numerical evidence. The completed plan records formal closeout;
-Phase 10 becomes COMPLETE when this closeout PR is integrated. Phase 11 remains NOT STARTED / NOT
-AUTHORIZED, and the protected holdout remains unreleased.
+accepted the implementation and numerical evidence. Closeout PR #25 was squash-merged into `main`
+at `d437269b9f0cf36a842cdfd496ad50a310804768`; Phase 10 is COMPLETE. Phase 11 architecture is
+approved. M1, M2 and M3 are formally accepted; M3-01 is resolved; M4 is accepted with minor changes
+and M4-01 is resolved by this documentation correction. The final PR integration and merge-readiness
+review and formal Phase 11 closeout remain pending. PR #26 remains open, draft and unmerged. The
+protected final holdout remains unreleased.
 
 ## Immediate next boundary
 
@@ -76,8 +79,12 @@ record the methodology and lifecycle. The current canonical development run is
 `phase10-dev-20261008-validator-fix`, manifest SHA-256
 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`. PR #23 and corrective PR #24
 are integrated at the SHAs in the current-state table. Phase 10's final closeout is recorded in the
-completed plan and becomes COMPLETE when this closeout PR integrates. Phase 11 remains NOT STARTED /
-NOT AUTHORIZED; the protected holdout remains unreleased.
+completed plan; Phase 10 is COMPLETE after closeout PR #25 merged into `main` at
+`d437269b9f0cf36a842cdfd496ad50a310804768`. Phase 11 M1, M2 and M3 are formally accepted;
+M3-01 is resolved; M4 is accepted with minor changes; and M4-01 is resolved by this correction.
+The accepted implementation milestones await a separate final PR integration and merge-readiness
+review and explicit formal closeout. PR #26 remains open, draft and unmerged. No final-holdout release
+is authorized.
 
 The current forecasting firewall excludes July 4–31 from tuning/selection/calibration and has
 produced no final-holdout forecasts/metrics; final-holdout evaluation remains unreleased. Earlier
@@ -85,6 +92,207 @@ full-source validation and descriptive EDA
 did include those labels; [EDA_FINDINGS](EDA_FINDINGS.md) records that exposure. Do not claim an
 entirely never-inspected test set or reuse those full-period cohorts for modeling. ADR-015 defers
 the single authorized sequential final evaluation until model, intervals and policies are frozen.
+
+### Phase 11 M1 implementation and review-fix checkpoint — 2026-10-08
+
+M1 provides typed contracts and fixed, read-only readers for the accepted Phase 7–10 canonical
+outputs, plus a bounded historical Sales reader. Phase 7/8 projected Parquet fields are checked
+against their accepted Arrow types; Phase 9/10 artifacts are checked against producer schemas and
+mandatory manifest descriptors, including field nullability. CSV fields are read with nullable
+string, integer, float and boolean types; malformed numeric/boolean values and missing required
+identifiers are rejected while documented unavailable values remain null. Model-comparison nulls
+are allowed only in optional grouping-key fields. Output hash memoization remains process-local under
+the immutable, locally trusted artifact assumption: fingerprint changes trigger rehashing, while
+matching metadata does not prove byte immutability. There is no selector for the Phase 10 ledger and
+no `current.json` fallback.
+
+The history reader accepts one Store and at most 366 days from 2013-01-01 through 2015-07-03. It
+rejects unsupported query dates before opening the dataset and accepts only the prepared source's
+timezone-naive `timestamp[ns]` Date schema. The fixed `Store`, `Date`, `Sales`, `Open` projection and
+Store/date predicate are applied in Arrow before materialization. Fixtures cover extreme dates,
+timezone-aware schemas/requests, sanitized conversion errors, and the protected cutoff. Selection-
+driven case/Store reads from Phase 10 summaries remain an M2 prerequisite; M1 retains fixed
+projections. A read-only smoke read passed for all ten registered outputs (including Phase 10 summary
+and target tables); the simulation ledger was not read. No forecast or inventory output was
+regenerated, and no protected July 4–31 outcome rows were inspected.
+
+Validation on the existing Python 3.14.5 environment: the full pytest suite passed (332 tests),
+including the focused app-reader suite; Ruff lint and format, documentation links, `git diff --check`,
+`uv lock --check` (84 resolved packages), and `uv pip check` (62 compatible installed packages)
+passed. No dependency or lockfile changed. M1 remains **IMPLEMENTED / UNDER REVIEW** pending
+independent acceptance; Phase 11 is not complete, and M2–M4, final-holdout access and merge remain
+outside this authorization.
+
+The targeted M1 correctness fix rejects any CSV source containing an embedded NUL before pandas
+tokenization. The bounded 1 MiB byte scan runs in the same pass as output SHA-256 verification;
+matching verified fingerprints reuse that result under the documented immutable local-artifact
+assumption, and changed fingerprints trigger a fresh hash and scan. Public-reader fixtures cover
+all three reproduced integer-token bypasses, NUL bytes in string columns across all four CSV
+selectors, a NUL outside field data, and unchanged values, UTF-8, nullable `Int64`, row counts and
+source bytes for valid CSVs. Focused reader tests passed (80 tests), and the full suite passed (360
+tests). Ruff, formatting, documentation links, `git diff --check`, lock consistency (84 packages)
+and installed dependency compatibility (62 packages) passed. Read-only smoke reads passed for all
+ten registered canonical development outputs; output, manifest and binding sizes and modification
+times were unchanged. The Phase 10 ledger and final holdout were not read. M1 remains
+**IMPLEMENTED / UNDER REVIEW**; M2–M4 remained unauthorized at that checkpoint.
+
+### Phase 11 M1 acceptance and M2 implementation checkpoint — 2026-10-08
+
+The Technical Lead formally accepted M1 after the final independent targeted review returned
+`ACCEPT` on exact PR #26 head `1fef9c7f27cb27068f8fcb415378771b878d4aed`. The PR remains open,
+draft and unmerged; `main` remains at Phase 10 closeout commit
+`d437269b9f0cf36a842cdfd496ad50a310804768`. This records M1 review acceptance, not phase completion
+or integration.
+
+The Technical Lead authorized M2 on the same branch and PR. M2 is in implementation and remains
+pending independent review. Before code changes, the active plan froze supported selectors, query
+bounds, service response whitelists, selective-read integrity behavior and comparison semantics
+against the producer contracts. M2 is limited to shared read-only services and fixture tests;
+M3–M4 remain unauthorized, PR #26 must stay draft/unmerged, and no final-holdout outcome, inference,
+or Phase 10 ledger artifact is part of this work.
+
+### Phase 11 M2 initial implementation checkpoint — 2026-10-08
+
+M2 adds closed typed queries and bounded shared services for readiness/catalog, forecast issuance,
+saved uncertainty, model comparisons, policy comparisons and the existing cutoff-safe history reader.
+Parquet selection uses Arrow predicates after full-file hash, footer schema and global manifest-row
+verification; selected rows have independent bounds. Large CSV comparisons stream exact matches and
+never materialize the complete Phase 7 comparison frame. Service DTOs whitelist response fields,
+preserve unavailable values and provenance, reject non-finite JSON numbers, and do not expose artifact
+paths. The corrective checkpoint below fixes the initial `pd.NaT` serialization edge case. Policy
+cost differences are shown only for valid complete matched pairs; producer case-level comparisons,
+denominators and signed adverse results remain unchanged.
+
+Initial implementation validation on Python 3.14.5: focused app-reader/service tests passed (**98**);
+full pytest passed (**379**). Ruff lint and format, documentation links (**229** local destinations/anchors),
+`git diff --check`, and the environment's `pip check` passed. The `uv` executable was not available
+in this shell, so `uv lock --check` could not run; no dependency or lockfile changed. A read-only
+canonical service smoke covered 10 registered non-ledger resources, 82 scenario entries, 172 case
+IDs, all service views, and 1,115 matched Store pairs. Responses were JSON-safe and cutoff-safe;
+canonical output and manifest sizes/modification times were unchanged. No final-holdout outcomes,
+Phase 10 ledger, or raw historical source data were read; no artifact was generated or mutated.
+
+M2 is **IMPLEMENTED / UNDER REVIEW** pending independent review. M1 remains reviewed/accepted on the
+unmerged feature branch. PR #26 stays draft and unmerged; M3–M4 remain unauthorized and Phase 11 is
+not complete.
+
+### Phase 11 M2 corrective review-fix checkpoint — 2026-10-09
+
+The targeted correction separates target unavailability from episode failure in each policy DTO and
+allows baseline and forecast validity/availability to differ. A pair is comparable only when both
+episodes are complete, both targets are available with saved values, both matched-comparison flags
+are true, and both saved costs exist. For a non-comparable pair, the stable reason priority is:
+first incomplete episode (using that policy's summary reason), then unavailable target (using that
+policy's target reason), then invalid matched comparison, then unavailable saved cost. Available
+targets with null values and unavailable targets with non-null values are rejected as integrity
+failures. `json_safe` now converts `pd.NaT` and `pd.NA` to JSON null before date handling.
+
+The earlier test counts above are the initial implementation checkpoint. Corrective validation on
+Python 3.14.5: focused app-reader/service tests passed (**107**); full pytest passed (**387**).
+Ruff lint and format, documentation links (**229** local destinations/anchors), `git diff --check`,
+`uv lock --check` (**84** resolved packages) and installed dependency compatibility (`pip check`)
+passed. A read-only canonical service smoke opened all ten registered non-ledger outputs and
+confirmed their output hashes, schemas and manifest identities. The base reference and buffer-090
+sensitivity case-level forecast-minus-baseline cost differences remained positive (+1,842,931.05
+and +2,657,553.78 respectively); all 1,115 Store pairs were comparable for each case. These are
+synthetic simulated monetary costs, not observed inventory or proven savings. No Phase 10 ledger,
+final-holdout outcome or raw historical source data was read; no producer, canonical artifact or
+manifest was changed.
+
+M2 is formally accepted as recorded in the 2026-10-09 review/authorization checkpoint below. M1
+remains accepted on the unmerged feature branch; PR #26 stays open, draft and unmerged. M3–M4 were
+unauthorized at this historical checkpoint, and Phase 11 was not complete.
+
+### Phase 11 M2 formal acceptance and M3 authorization — 2026-10-09
+
+The Technical Lead formally accepted M2 following the independent `ACCEPT` review of exact PR #26
+head `cd7d3319760379716244e4db6c0cf0cb96ec6cbd`. This records the project acceptance checkpoint;
+the PR remains draft and unmerged. M1 and M2 are REVIEWED / ACCEPTED on the feature branch.
+
+The Technical Lead separately authorized M3 implementation on the same branch and PR. M3 is
+AUTHORIZED / IN IMPLEMENTATION pending independent review. The HTTP route, query, response and
+sanitized error contract was frozen in the [active Phase 11 plan](../plans/active/phase-11-application-services.md)
+before adapter implementation. M4, merge and Phase 11 closeout remain outside this authorization.
+The Phase 10 ledger and protected final holdout remain excluded.
+
+### Phase 11 M3 implementation checkpoint — 2026-10-09
+
+Implemented the frozen seven-route, read-only FastAPI adapter in `src/rossmann_forecasting/app/api.py`
+over the accepted M2 services. Added fixture-backed endpoint, selector, bound, error-sanitization,
+serialization and mutation-method tests in `tests/test_app_api.py`; added optional API dependencies,
+locked them, enabled that extra in CI and documented local use. The routes expose only accepted
+development artifacts and the M1 bounded Sales history view. No inference, simulation, producer
+changes, ledger access or holdout access was added.
+
+The full fixture suite passed: 424 tests on Python 3.14.5 in 119.56 seconds. The M1/M2/M3 focused
+suite passed 144 tests. Ruff lint and formatting, Markdown-link validation (230 destinations across
+26 files), `uv lock --check`, `pip check` and `git diff --check` passed. The full test run emitted one
+upstream Starlette deprecation warning because its TestClient currently uses `httpx`; no test failed.
+
+A canonical-data API smoke returned 200 for all seven routes, including forecast, uncertainty,
+comparison, inventory and history. The 82 scenario entries, 172 cases and 1,115 policy pairs were
+available as expected. Before/after snapshots confirmed 15 registered non-ledger canonical files
+were unchanged. The smoke did not read the simulation ledger, protected holdout or raw historical
+source beyond the authorized bounded-history route.
+
+M3 is **IMPLEMENTED / UNDER REVIEW**, pending independent review. GitHub Quality run [#75 /
+37882356772](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37882356772)
+passed on exact implementation head `8ee9c0639b8598dfe7f79ad6175f4f87a1b030f1` for Python 3.12
+and 3.14. PR #26 remains draft and unmerged. M4 remains unauthorized; Phase 11 is not complete.
+
+
+### Phase 11 M3 formal acceptance and M4 authorization — 2026-10-09
+
+The Technical Lead formally accepted M3 with the single minor follow-up M3-01 after the independent
+`ACCEPT_WITH_MINOR_CHANGES` review of exact PR #26 head
+`6169e850d824e3f6eccc1faa57b3d4a311646bd6`. M3-01 is the omitted framework-provided `Allow`
+header on HTTP 405 responses. The Technical Lead authorized M4 implementation on the same branch
+and draft PR. M4 is limited to that correction, cross-layer fixture integration evidence, and
+reproducible startup/use guidance and handoff. M1 and M2 remain accepted; Phase 11 remains
+incomplete; PR #26 remains draft and unmerged.
+
+
+### Phase 11 M4 implementation and local verification — 2026-10-09
+
+M4 resolves M3-01 by preserving only Starlette's framework-provided `Allow` header on sanitized
+HTTP 405 responses. New fixture-backed HTTP-to-reader tests exercise the shared service chain,
+validated artifact provenance, null/unavailable results, Store versus case-level inventory views,
+the history cutoff, and process-only health. The tests use synthetic fixtures and do not require
+canonical artifacts or Kaggle credentials.
+
+The locked full repository suite passed **431 tests** with one existing Starlette TestClient
+deprecation warning. GitHub Quality run #77 passed on exact pushed M4 head
+`6f5eaccd7b0f5f11574c4c60e278dc72c0819980` for Python 3.12 and 3.14. The focused
+application suites passed **151 tests**; the locked API and integration invocation passed **44 tests**. Ruff, repository formatting (96 Python files), the docs
+link/anchor check (232 local targets across 26 documents), locked dependency sync, lock check, and
+installed dependency compatibility check passed. The documented local Uvicorn command was started
+on `127.0.0.1`; health, catalog, forecast, and inventory reference requests returned 200.
+
+A read-only canonical API smoke made seven successful requests across health, catalog, forecast,
+uncertainty, model comparison, and both inventory cases. It returned the pinned 14-point forecast,
+28 daily intervals, 42 cumulative prefixes, four comparison rows, and 1,115 policy pairs per case.
+Reference and `buffer_090` signed differences remained respectively +1,842,931.0502027555 and
++2,657,553.7797287568. All 15 registered canonical file snapshots were unchanged; the smoke read
+no ledger, history source, or holdout. No inference, simulation, or canonical artifact generation
+was performed. M4 remains implemented / under independent review; PR #26 remains draft and
+unmerged, and Phase 11 remains incomplete.
+
+
+### Phase 11 M4 acceptance and M4-01 correction - 2026-10-09
+
+The independent M4 review of expected PR #26 head
+`db2d8ce47e7704e7beb11f7c7b08fd846ac1619c` returned `ACCEPT_WITH_MINOR_CHANGES`. It confirmed
+M3-01 is resolved and identified M4-01 as the sole remaining finding: the current "Immediate next
+boundary" paragraph still described M3 as under review and M4 as unauthorized. This documentation-
+only correction updates that status; no product finding remains. The Technical Lead formally
+accepted M4 with minor changes.
+
+M1, M2 and M3 are formally accepted; M3-01 and M4-01 are resolved; M4 is accepted with minor
+changes. The implementation milestones are accepted, but the separate final PR integration and
+merge-readiness review and formal Phase 11 closeout remain pending. PR #26 remains open, draft and
+unmerged. No final-holdout release is authorized. Prior implementation test totals and canonical
+results remain recorded in the preceding M4 checkpoint.
+
 
 ## Branch cleanup inventory
 

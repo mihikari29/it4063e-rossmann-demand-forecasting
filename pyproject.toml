@@ -27,6 +27,11 @@ dev = [
     "pytest>=8,<10",
     "ruff>=0.12,<0.17",
 ]
+api = [
+    "fastapi>=0.115,<1",
+    "httpx>=0.27,<1",
+    "uvicorn>=0.34,<1",
+]
 
 [project.scripts]
 rossmann-acquire = "rossmann_forecasting.data.acquisition:cli_main"

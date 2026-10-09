@@ -21,8 +21,12 @@ boundary stays explicit. Phase 8 is COMPLETE following accepted results and expl
 Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/phase-9-synthetic-inventory.md)
 preserves the design, implementation and review record. Phase 10's [completed plan](../plans/completed/phase-10-inventory-simulation.md)
 and ADR-023 record the accepted methodology, integrated implementation, corrective review and formal
-closeout. Phase 10 becomes COMPLETE when this closeout PR integrates, as recorded in
-[PROGRESS](PROGRESS.md). Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+closeout. Phase 10 is COMPLETE on `main` after PR #25 merged at
+`d437269b9f0cf36a842cdfd496ad50a310804768`, as recorded in [PROGRESS](PROGRESS.md). Phase 11's
+read-only application architecture is approved; M1-M3 are accepted; M3-01 and M4-01 are
+resolved; and M4 is accepted with minor changes. The separate final PR integration and
+merge-readiness review and formal Phase 11 closeout remain pending. PR #26 remains draft and
+unmerged; Phase 11 is not complete.
 No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
 policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
 (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
@@ -143,7 +147,8 @@ for the accepted canonical development run. Phase 9 is formally closed as COMPLE
 methodology is accepted under ADR-023; its implementation and B1-B3 corrections are integrated, final
 external/model-assisted review is accepted, and formal closeout is recorded in the
 [completed plan](../plans/completed/phase-10-inventory-simulation.md) and [PROGRESS](PROGRESS.md).
-Phase 10 becomes COMPLETE when this closeout PR integrates. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+Phase 10 is COMPLETE on `main` after closeout PR #25 merged at
+`d437269b9f0cf36a842cdfd496ad50a310804768`.
 
 ## Phase 9 — Synthetic Supply-Chain / Inventory Layer
 
@@ -175,7 +180,8 @@ implement inventory policies or establish physical inventory, observed stockouts
 ## Phase 10 - Inventory Simulation & Sensitivity Analysis
 
 **Objective:** Compare simple replenishment policies under stated assumptions.
-**Status:** COMPLETE (effective when this formal closeout PR is integrated).
+**Status:** COMPLETE. Formal closeout PR #25 merged into `main` at
+`d437269b9f0cf36a842cdfd496ad50a310804768`.
 **Design:** [Completed Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md) and accepted
 ADR-023. Human methodology approval, corrective implementation review, integration and formal closeout
 are recorded in the plan and [PROGRESS](PROGRESS.md).
@@ -195,18 +201,28 @@ stockout, ending-stock inventory and simulated holding-plus-shortfall cost. Use 
 completed positive-demand receipt-cycle service rate, with policy-dependent denominator/censoring; no
 guaranteed CSL. Retain terminal orders/exposure with identical treatment. Negative cost comparisons
 remain part of the accepted evidence; no actual inventory, stockout, savings or optimality claim.
-No final holdout evaluation or release occurred. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+No final holdout evaluation or release occurred. At the Phase 10 closeout checkpoint, Phase 11 had
+not started; its current M1 implementation/review state is maintained in [PROGRESS](PROGRESS.md).
 
 ## Phase 11 — Application Services & Thin API
 
-**Status:** PLANNED / NOT STARTED; separate authorization required.
+**Status:** M1, M2 and M3 ACCEPTED; M3-01 RESOLVED; M4 ACCEPTED WITH MINOR CHANGES (M4-01
+RESOLVED); final PR integration and merge-readiness review pending. Phase 11 is not complete;
+PR #26 remains draft and unmerged.
+**Execution plan:** [Phase 11 active plan](../plans/active/phase-11-application-services.md).
 **Objective:** Expose the frozen analytics through reusable Python services and a small HTTP adapter.
 **Dependencies:** Phases 7–10.
-**Deliverables:** Forecast/uncertainty/inventory service functions, thin FastAPI request/response
-adapter, input/error tests and local startup instructions.
+**Deliverables:** Forecast/uncertainty/inventory services, thin FastAPI adapter, fixture-backed
+cross-layer integration evidence, and reproducible local startup/handoff guidance.
 **Acceptance / boundary:** No notebook dependency, duplicated model logic or microservice system.
-Cache only with keys containing origin/configuration/scenario identity. Separate API hosting is
-optional; service/API implementation does not authorize new model/policy tuning.
+M1 safe readers, M2 DTO services, and M3 HTTP routes remain the shared chain; M3-01 was
+resolved by preserving Starlette's `Allow` header on sanitized 405 responses. Future Streamlit calls
+`ApplicationServices` directly. No new model/policy tuning, inference, simulation or artifact
+packaging is authorized. Ignored canonical artifacts are local prerequisites for demo data routes;
+fixture tests and process health require no Rossmann data or Kaggle credentials. M4 is accepted with
+minor changes, including the resolved M4-01 documentation correction. The separate final PR
+integration and merge-readiness review remains pending; Phase 11 is not complete and merge is not
+authorized.
 
 ## Phase 12 — Streamlit Dashboard
 

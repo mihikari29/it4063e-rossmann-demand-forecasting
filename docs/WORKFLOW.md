@@ -74,8 +74,10 @@ Do not mark COMPLETE in advance of a verified merge merely to avoid a later stat
 
 `pyproject.toml` is the only hand-maintained dependency source; `uv.lock` is generated.
 The reference Python is 3.14; the supported range is 3.12–3.14 (ADR-018).
-Use pinned uv 0.12.23, then `uv sync --locked --extra dev --python 3.14`; optionally add
-`--extra acquisition` for Kaggle. See [README setup](../README.md#environment-and-quick-start).
+Use pinned uv 0.12.23, then `uv sync --locked --extra dev --extra api --python 3.14` to install the
+fixture-test and local API extras; optionally add `--extra acquisition` for Kaggle. The API extra
+keeps FastAPI, its ASGI server, and its HTTP test client out of the core forecasting dependencies.
+See [README setup](../README.md#environment-and-quick-start).
 
 After changing dependency bounds, run `uv lock`, review the resolved diff, and check
 `uv lock --check`. Do not hand-edit the lock, copy an unfiltered pip freeze, or maintain a second

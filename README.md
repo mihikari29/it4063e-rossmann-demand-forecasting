@@ -6,8 +6,12 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` has Phases 0–9 formally complete and the reviewed Phase 10 implementation integrated.
-Phases 0–10 are complete after this closeout PR integrates into `main`. Phase 5 additive Holt-Winters
+`main` has Phases 0–10 formally complete following Phase 10 closeout PR #25, merged at
+`d437269b9f0cf36a842cdfd496ad50a310804768`. The Phase 11 read-only application architecture is
+approved; M1, M2 and M3 are formally accepted; M3-01 is resolved; M4 is formally accepted
+with minor changes and M4-01 is resolved. The separate final PR integration and merge-readiness
+review remains pending; Phase 11 is not complete.
+PR #26 remains draft and unmerged. Phase 5 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
@@ -52,9 +56,11 @@ Phase 10 was implemented under ADR-023. PR #23 integrated the implementation at
 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The final independent external/model-assisted review
 accepted the corrective implementation and numerical evidence. The [completed plan](plans/completed/phase-10-inventory-simulation.md)
 records formal closeout. The accepted canonical run is `phase10-dev-20261008-validator-fix`
-(manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0-10
-are complete after this closeout PR is integrated into `main`; Phase 11 remains NOT STARTED / NOT
-AUTHORIZED. The protected final holdout remains unreleased.
+(manifest SHA-256 `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Phases 0–10
+are complete on `main` after PR #25 integration. Phase 11 M1, M2 and M3 are formally accepted;
+M3-01 is resolved; M4 is formally accepted with minor changes and M4-01 is resolved. Final PR
+integration and merge-readiness review and formal closeout remain pending. The protected final
+holdout remains unreleased.
 
 ## Environment and quick start
 
@@ -62,16 +68,18 @@ Python **3.12–3.14** is supported; **3.14** is the reference environment. Inst
 [uv 0.12.23](https://docs.astral.sh/uv/getting-started/installation/) and run from the repo root:
 
 ```powershell
-uv sync --locked --extra dev --python 3.14
+uv sync --locked --extra dev --extra api --python 3.14
 .\.venv\Scripts\Activate.ps1
 python -m pytest
 ```
 
 On macOS/Linux use `source .venv/bin/activate`. Both Python 3.12 and 3.14 passed the fixture suite
 in isolated locked Windows environments. `pyproject.toml` is the hand-maintained dependency source;
-`uv.lock` pins resolved packages/hashes. Add `--extra acquisition` to sync only if using Kaggle API;
-manual acquisition needs no credentials in this repo. See [workflow](docs/WORKFLOW.md) for lock
-updates, CI, branch lifecycle and contribution authority.
+`uv.lock` pins resolved packages/hashes. The optional `api` extra installs FastAPI, Uvicorn and the
+HTTP test client for the local adapter and its fixture tests; none are core forecasting dependencies.
+Add `--extra acquisition` to sync only if using Kaggle API; manual acquisition needs no credentials
+in this repo. See [workflow](docs/WORKFLOW.md) for lock updates, CI, branch lifecycle and contribution
+authority.
 
 ## Data setup and commands
 
@@ -205,8 +213,53 @@ This simulated inventory-value policy comparison reports higher simulated holdin
 cost under these assumptions for the synthetic-base and historical reference cases. It does not
 establish real inventory, physical demand, real stockouts, savings, universal forecast performance,
 statistical superiority, optimality, calibrated synthetic service guarantees or production readiness.
-Phase 10 is COMPLETE when this closeout PR is integrated into `main`; no final holdout evaluation
-occurred. Phase 11 remains NOT STARTED / NOT AUTHORIZED.
+Phase 10 is **COMPLETE** after closeout PR #25 merged into `main` at
+`d437269b9f0cf36a842cdfd496ad50a310804768`; no final-holdout evaluation occurred. Phase 11 M1,
+M2 and M3 are formally accepted; M3-01 is resolved; M4 is formally accepted with minor changes;
+M4-01 is resolved by this documentation correction. Final PR integration, merge-readiness review
+and formal closeout remain pending. Phase 11 is incomplete and PR #26 remains draft and unmerged.
+
+## Phase 11 local/demo API
+
+The read-only FastAPI adapter exposes the accepted M2 services through seven GET routes. Fixture
+tests need no canonical local artifacts or Kaggle credentials. For a clean checkout, install the
+locked development and API extras and run the fixture suite:
+
+```powershell
+uv sync --locked --extra dev --extra api --python 3.14
+uv run --locked --extra dev --extra api python -m pytest
+```
+
+Start the local server from the repository root:
+
+```powershell
+uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.app.api:app --host 127.0.0.1 --port 8000
+```
+
+In PowerShell, check process health, list supported cases, and try a bounded forecast or the
+canonical reference inventory case:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/catalog
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/forecasts?store_id=1&forecast_origin=2015-06-19"
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/inventory?case_id=synthetic_base-20150605-r00--reference"
+```
+
+Portable shells can use `curl` with the same URLs. Stop Uvicorn with **Ctrl+C**.
+
+The routes are `/health`, `/api/v1/catalog`, `/api/v1/forecasts`, `/api/v1/uncertainty`,
+`/api/v1/model-comparison`, `/api/v1/inventory`, and `/api/v1/history`. They read pinned
+development results or bounded historical Sales through the shared services; the adapter adds no
+inference or simulation. Inventory values remain synthetic monetary comparisons, and historical
+access ends 2015-07-03. Error bodies use stable sanitized JSON codes. Health `200` reports only that
+the process responds; it does not certify artifact integrity. If ignored canonical Phase 7–10
+outputs or manifests are absent, catalog reports unavailable resources and a request requiring a
+missing artifact returns sanitized `503`; fixture tests still work from a clean checkout. Canonical
+local artifacts are not included in Git. Rossmann Sales are monetary turnover, not physical demand;
+simulated costs do not establish observed inventory or savings. The server binds to `127.0.0.1`;
+public hosting is outside scope. See the [Phase 11 handoff](plans/active/phase-11-application-services.md#phase-11-m4-integration-handoff)
+for service interfaces, artifact requirements and limitations.
 
 ## Architecture and remaining work
 
@@ -225,8 +278,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   origin-anchored prefixes only.
 - Phase 9: **COMPLETE**; the accepted generator creates exogenous synthetic scenario inputs only.
   See the [completed plan](plans/completed/phase-9-synthetic-inventory.md).
-- Phase 10: [completed design, implementation and closeout record](plans/completed/phase-10-inventory-simulation.md);
-  its implementation and corrective PR are integrated, with completion effective on this closeout PR.
+- Phase 10: COMPLETE following integration of closeout PR #25 into `main`; its [completed design,
+  implementation and closeout record](plans/completed/phase-10-inventory-simulation.md) is preserved
+  in the completed plan.
 - Phases 11–13: shared Python services, thin FastAPI adapter, Streamlit and one frozen sequential
   final evaluation. Streamlit calls the same services directly; separate API hosting and Evidently
   are optional.
@@ -235,7 +289,7 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and formally
 closed. Phase 9 implements only the approved scenario generator. Phase 10's reviewed stateful simulator
-is formally closed when this closeout PR integrates. Later phases require separate authorization.
+is formally closed following integration of closeout PR #25. Later phases require separate authorization.
 The final holdout remains protected.
 
 ## Quality and repository layout
