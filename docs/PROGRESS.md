@@ -256,8 +256,9 @@ the history cutoff, and process-only health. The tests use synthetic fixtures an
 canonical artifacts or Kaggle credentials.
 
 The locked full repository suite passed **431 tests** with one existing Starlette TestClient
-deprecation warning. The focused application suites passed **151 tests**; the locked API and
-integration invocation passed **44 tests**. Ruff, repository formatting (96 Python files), the docs
+deprecation warning. GitHub Quality run #77 passed on exact pushed M4 head
+`6f5eaccd7b0f5f11574c4c60e278dc72c0819980` for Python 3.12 and 3.14. The focused
+application suites passed **151 tests**; the locked API and integration invocation passed **44 tests**. Ruff, repository formatting (96 Python files), the docs
 link/anchor check (232 local targets across 26 documents), locked dependency sync, lock check, and
 installed dependency compatibility check passed. The documented local Uvicorn command was started
 on `127.0.0.1`; health, catalog, forecast, and inventory reference requests returned 200.
