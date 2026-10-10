@@ -2447,3 +2447,20 @@ PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/3
 passed both Python 3.12 and 3.14 jobs on published PR head `5f095c12f9b0ad9dec9ffc877457915f62ff0985`.
 The final head is rechecked after this documentation-only update. No Phase 10 daily ledger or
 protected July 4–31 outcomes were accessed; no artifact was regenerated or changed.
+
+### Phase 12 M4-01 corrective review - 2026-10-10
+
+M4-01 on the existing Draft PR #32 is corrected in the dashboard source: the saved MAE heading
+renders `Saved MAE by horizon · h1–h14`, and standalone coverage renders
+`Standalone forecast coverage · separate population`. AppTests assert each exact rendered
+subheader. A scan of dashboard application Python files found no additional common mojibake
+markers. The correction changes no service, query, metric, saved result, dependency or security
+configuration.
+
+The focused dashboard/M2/M3/config suite passed 79 tests on Python 3.14; the full fixture suite
+passed 536 tests on both Python 3.12 and 3.14, with the existing Starlette/httpx deprecation warning.
+Ruff lint/format, lock consistency, both installed-environment dependency checks, documentation
+links, and whitespace checks passed. GitHub Quality for the corrected head is pending. Deployment
+remains bound to `127.0.0.1` under the localhost-only audience approval. Independent LAN viewer and
+manual LAN acceptance remain blocked; Phase 12 remains open and no Phase 10 ledger or Phase 13
+holdout was accessed.

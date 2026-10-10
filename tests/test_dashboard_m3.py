@@ -649,6 +649,7 @@ def test_model_screen_horizon_view_keeps_weak_h10_charted() -> None:
 
     visible = _visible_text(app)
     assert not app.exception
+    assert app.subheader[0].value == "Saved MAE by horizon \u00b7 h1\u2013h14"
     assert "h1" in visible and "99.0" in visible
     assert len(captured) == 1
     horizon_lines = captured[0].axes[0].lines
@@ -687,6 +688,7 @@ def test_model_screen_loads_standalone_coverage_as_a_separate_population_view() 
 
     visible = _visible_text(app)
     assert not app.exception
+    assert app.subheader[0].value == "Standalone forecast coverage \u00b7 separate population"
     assert "Standalone forecast coverage" in visible
     assert "50% (saved fraction 0.5)" in visible
     assert "three_way_common" not in visible

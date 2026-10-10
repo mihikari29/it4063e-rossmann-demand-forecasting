@@ -787,7 +787,7 @@ def _render_model_comparison(services: _DashboardServices) -> None:
             )
             horizon_figure = _horizon_mae_figure(horizon_records)
             try:
-                st.subheader("Saved MAE by horizon Â· h1â€“h14")
+                st.subheader("Saved MAE by horizon · h1–h14")
                 st.caption(
                     "Three-way common population. Every returned horizon is retained, including "
                     "weaker horizons such as h2, h9 and h10; absent or unavailable rows are not "
@@ -814,7 +814,7 @@ def _render_model_comparison(services: _DashboardServices) -> None:
             provenance_records = _model_provenance_records(
                 {"standalone_coverage": query}, {"standalone_coverage": view}
             )
-            st.subheader("Standalone forecast coverage Â· separate population")
+            st.subheader("Standalone forecast coverage · separate population")
             st.caption(
                 "These saved coverage rows use the standalone population and must not be "
                 "compared as if they shared the primary common-population denominator."
