@@ -2,7 +2,7 @@
 
 **Phase status:** M1–M3 ACCEPTED / INTEGRATED at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 IMPLEMENTED / UNDER REVIEW and BLOCKED PENDING ACCEPTANCE EVIDENCE. Phase 12 remains open; Phase 13 is unauthorized and the final holdout remains protected. **Date:** 2026-10-10. **Authority:** M3 PR #31 was merged into `main` at that SHA; main Quality [run #37966506688](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37966506688) passed on Python 3.12 and 3.14. The M4 task authorizes integration, localhost browser validation, measurement, documentation, commit/push and one draft PR. It does not authorize merge or Phase 12 closeout.
 
-**Implementation branch:** `feat/phase-12-streamlit-m4`, created directly from `origin/main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; no stacked integration dependency. The M4 draft PR is recorded in the checkpoint below after publication.
+**Implementation branch:** `feat/phase-12-streamlit-m4`, created directly from `origin/main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; no stacked integration dependency. M4 implementation commit `32df3ba4a48530bce556659d856991e134813e47` is in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32), targeting `main` and still open/draft.
 
 ## 1. Verified baseline and design boundary
 
@@ -830,7 +830,9 @@ Validation for this correction: focused dashboard/M2/presenter pytest passed 100
 ## 17. M4 integration and localhost validation - 2026-10-10
 
 M4 is IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m4`, based directly on accepted M3
-main SHA `28aa42fdb2186dbbc340bef72917ce2e2ec06425`. M3 PR #31 and main Quality #37966506688
+main SHA `28aa42fdb2186dbbc340bef72917ce2e2ec06425`. Implementation commit
+`32df3ba4a48530bce556659d856991e134813e47` is in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32).
+M3 PR #31 and main Quality #37966506688
 passed before M4. The attached task authorizes implementation, validation, documentation, commit,
 push and one Draft PR; merge and Phase 12 closeout remain unauthorized.
 

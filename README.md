@@ -239,7 +239,8 @@ uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.a
 
 ## Phase 12 dashboard
 
-The five-screen Streamlit dashboard is implemented under review on `feat/phase-12-streamlit-m4`.
+The five-screen Streamlit dashboard is implemented under review on `feat/phase-12-streamlit-m4` in
+[draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32).
 It presents bounded historical Sales, saved forecasts and uncertainty, accepted model comparisons,
 and synthetic inventory comparisons from the existing services. Its current approved launch is
 localhost only; see the [deployment runbook](docs/DEPLOYMENT_LAN.md) for startup, local artifact
@@ -304,7 +305,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   records the shared Python services and thin local/demo FastAPI adapter. Streamlit calls the same
   services directly; separate API hosting and Evidently are optional.
 - Phase 12: M1–M3 are integrated on `main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`.
-  M4 is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-12-streamlit-m4`; localhost integration is
+  M4 is **IMPLEMENTED / UNDER REVIEW** in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32)
+  on `feat/phase-12-streamlit-m4`; localhost integration is
   validated, while independent LAN access remains blocked by the audience and Public network
   profile. See the [active plan](plans/active/phase-12-streamlit-dashboard.md) and
   [deployment runbook](docs/DEPLOYMENT_LAN.md).

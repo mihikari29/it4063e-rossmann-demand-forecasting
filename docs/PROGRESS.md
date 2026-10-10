@@ -13,7 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | M1–M3 ACCEPTED / INTEGRATED; M4 IMPLEMENTED / UNDER REVIEW; BLOCKED PENDING ACCEPTANCE EVIDENCE | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality run [#37966506688](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37966506688) passed on Python 3.12 and 3.14. M4 branch `feat/phase-12-streamlit-m4` is based directly on that SHA; draft PR link is recorded after publication. Localhost integration is validated. No independent LAN viewer is approved or tested: audience is localhost only and active Wi-Fi profile is Public. See [active plan](../plans/active/phase-12-streamlit-dashboard.md) and [deployment runbook](DEPLOYMENT_LAN.md). Phase 13 remains unauthorized. |
+| Phase 12 - Streamlit Dashboard | M1–M3 ACCEPTED / INTEGRATED; M4 IMPLEMENTED / UNDER REVIEW; BLOCKED PENDING ACCEPTANCE EVIDENCE | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality run [#37966506688](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37966506688) passed on Python 3.12 and 3.14. M4 branch `feat/phase-12-streamlit-m4` is based directly on that SHA; implementation commit `32df3ba4a48530bce556659d856991e134813e47` is in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32). Localhost integration is validated. No independent LAN viewer is approved or tested: audience is localhost only and active Wi-Fi profile is Public. See [active plan](../plans/active/phase-12-streamlit-dashboard.md) and [deployment runbook](DEPLOYMENT_LAN.md). Phase 13 remains unauthorized. |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -2441,5 +2441,7 @@ compatible packages on Python 3.12 and 93 on Python 3.14; the Markdown checker p
 local destinations/anchors across 28 Markdown files; and `git diff --check` passed. The locked
 environment uses Python 3.14.5 / uv 0.12.23, Streamlit 1.65.0 and `uv.lock` SHA-256
 `151cd5a2a868b219d315d8333d75d54e8c1f7efa43afa0869933a5682852dbd5`. No package or lockfile
-changed. Final branch commit and GitHub Quality evidence are recorded after publication. No Phase 10
-daily ledger or protected July 4–31 outcomes were accessed; no artifact was regenerated or changed.
+changed. The M4 implementation commit is `32df3ba4a48530bce556659d856991e134813e47` in [draft
+PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32). GitHub Quality
+for the final pushed PR head is checked before handoff. No Phase 10 daily ledger or protected July
+4–31 outcomes were accessed; no artifact was regenerated or changed.

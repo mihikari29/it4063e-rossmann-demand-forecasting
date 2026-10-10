@@ -230,7 +230,9 @@ performance checks passed, while independent LAN acceptance is blocked because t
 audience is localhost only and the host Wi-Fi profile is Public. See the
 [active plan](../plans/active/phase-12-streamlit-dashboard.md),
 [deployment runbook](DEPLOYMENT_LAN.md) and [M4 evidence](PROGRESS.md#phase-12-m4-integration-browser-and-local-performance-2026-10-10).
-Do not treat M4 implementation or a draft PR as Phase 12 completion.
+The implementation commit is `32df3ba4a48530bce556659d856991e134813e47` in
+[draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32). Do not
+treat M4 implementation or a draft PR as Phase 12 completion.
 **Objective:** Provide an understandable course demonstration.
 **Dependencies:** Accepted Phase 11 shared services (see the [completed Phase 11 plan](../plans/completed/phase-11-application-services.md)); it need not call FastAPI over HTTP.
 **Deliverables:** Store/scenario controls, history/forecast/interval views, inventory assumptions and
