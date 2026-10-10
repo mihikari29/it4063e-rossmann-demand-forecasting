@@ -1,8 +1,8 @@
 # Phase 12 - Streamlit Dashboard Design
 
-**Phase status:** M1-M3 ACCEPTED / INTEGRATED at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 IMPLEMENTED / UNDER REVIEW under the authorized localhost-only scope in ADR-024. Automated, browser, security and performance evidence is recorded; human visual review and independent final review remain pending. Phase 12 remains open; Phase 13 is unauthorized and the final holdout remains protected. **Date:** 2026-10-10. **Authority:** M3 PR #31 was merged into `main` at that SHA. The user scope decision supersedes the earlier private-LAN proposal and does not authorize merge or Phase 12 closeout.
+**Historical status at the M4 review checkpoint (2026-10-10):** M1-M3 ACCEPTED / INTEGRATED at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 IMPLEMENTED / UNDER REVIEW under the authorized localhost-only scope in ADR-024. At that checkpoint automated, browser, security and performance evidence was recorded; human visual and independent final review were pending, Phase 12 remained open, and Phase 13 was unauthorized. The later formal closeout is recorded in Section 19 below. **Authority at that checkpoint:** M3 PR #31 was merged into `main` at that SHA. The user scope decision superseded the earlier private-LAN proposal.
 
-**Implementation branch:** `feat/phase-12-streamlit-m4`, created directly from `origin/main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; no stacked integration dependency. M4 implementation commit `32df3ba4a48530bce556659d856991e134813e47` is in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32), targeting `main` and still open/draft.
+**M4 implementation checkpoint:** Branch `feat/phase-12-streamlit-m4` was created directly from `origin/main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`, with no stacked integration dependency. Implementation commit `32df3ba4a48530bce556659d856991e134813e47` began PR #32; the PR was Draft at the review checkpoints below and was later squash-merged as recorded in Section 19.
 
 ## 1. Verified baseline and design boundary
 
@@ -852,13 +852,34 @@ listener, firewall rule or independent LAN test was created.
 See the [deployment runbook](../../docs/DEPLOYMENT_LAN.md) and the detailed [M4 evidence in
 PROGRESS](../../docs/PROGRESS.md#phase-12-m4-integration-browser-and-local-performance-2026-10-10)
 for provenance, browser and two-session results, performance samples, validation and final PR head.
-The plan remains active for human visual and independent final review. Phase 13 and protected
-holdout access remain out of scope.
+At that historical checkpoint the plan remained active for human visual and independent final
+review. Phase 13 and protected holdout access remained out of scope.
 
 ## 18. User scope decision: localhost-only M4 acceptance - 2026-10-10
 
 The user explicitly selected a dashboard for local development, analysis and live demonstration on the user's Windows computer. This authorized scope clarification is recorded in ADR-024 in [DECISIONS](../../docs/DECISIONS.md). It supersedes the earlier private-LAN deployment proposal and any draft M4 criteria that required an independent LAN viewer, trusted-network profile, LAN URL or firewall rule. Earlier LAN comparisons remain historical design material only.
 
+The following acceptance paragraph records the scope decision before integration and closeout; Section 19 records the later completion of its review gates.
+
 The approved target is `http://127.0.0.1:8501`, with Streamlit bound to `127.0.0.1`. LAN access, changing Windows network profiles, firewall changes, public tunnels, cloud deployment and public hosting are outside this phase's M4 scope. No LAN testing was performed or is required by this decision; prior reports that such testing did not occur remain accurate.
 
 M4 acceptance for this scope requires the existing accepted development evidence and bounded services, verified localhost startup and failure behavior, unchanged artifact/security boundaries, the recorded automated test/CI, browser, provenance and performance evidence, and a human visual review of the dashboard in a real local browser. The previous Edge interactions were automated on the host; they do not establish that a human visual review occurred. A final independent review of PR #32 remains pending. Keep the PR Draft and unmerged until that review; do not close Phase 12 as part of this task. Phase 13 and the protected holdout remain unauthorized.
+
+## 19. Phase 12 formal closeout - 2026-10-10
+
+**Status: Phase 12 COMPLETE.** M1-M4 are ACCEPTED / INTEGRATED. PR #32 was squash-merged into `main` at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; this merge contains the reviewed M4 implementation from head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`. The closeout was authorized after the following integration and acceptance evidence was verified:
+
+| Milestone | Integration | Review and main-branch Quality |
+|---|---|---|
+| M1 | PR #29, merge `cb508a0bbdefe6afeba6e1ea8ebad5a0614a03f6` | ACCEPTED / INTEGRATED; recorded in the M1 integration checkpoint. |
+| M2 | PR #30, merge `327a274bfdad0bb97cdd614a36dc04cbbf8291a2` | ACCEPTED / INTEGRATED; M3 authorization Quality gate passed both supported Python jobs. |
+| M3 | PR #31, merge `28aa42fdb2186dbbc340bef72917ce2e2ec06425` | ACCEPTED / INTEGRATED; main Quality [run #96](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37966506688) passed on Python 3.12 and 3.14 at this exact merge SHA. Finding M3-01 was resolved before integration. |
+| M4 | PR #32, reviewed head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`, squash merge `5527e780d1a59108c041bb4ca33a32dbb3bc3aca` | The Technical Lead independently ACCEPTED M4 on the exact reviewed head. Post-merge main Quality [run #103](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38031584298) passed on Python 3.12 and 3.14 at the merge SHA. Finding M4-01 was resolved before integration. |
+
+**CI result distinction:** GitHub PR-head Quality [run #102](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38030547822) on the reviewed M4 head reported **535 passed, 1 skipped, 1 warning** in each Python job. The distinct post-merge main run #103 also reported 535 passed, 1 skipped and 1 warning per job. These CI counts are not the separate local pytest result. Existing functional, security, automated browser and performance evidence and measurements remain in [PROGRESS](../../docs/PROGRESS.md#phase-12-m4-integration-browser-and-local-performance-2026-10-10); no new browser or performance measurements were made for this closeout.
+
+The user personally reported **PASS** after visually reviewing all five dashboard screens at `http://127.0.0.1:8501`, including layout, interactions and data boundaries. This is user-attested human acceptance; it is not an agent-run manual browser test. The approved deployment remains localhost-only under ADR-024. The earlier private-LAN alternatives remain historical design; no LAN, cloud, tunnel, firewall or public exposure was performed or is in scope.
+
+Scientific and operational limits remain: Sales is monetary turnover, not physical demand or SKU quantities; model selection is offline development evidence through the accepted cutoff, not a final-holdout result; raw and operational forecast paths remain distinct, with future Open unknown; uncertainty intervals are empirical and do not guarantee nominal coverage; and inventory results are conditional synthetic monetary simulations, not observed stock or actual stockouts. Positive forecast-minus-baseline simulated cost is adverse; negative is favorable only under the assumptions. Neither proves savings or optimal policies. Displayed saved values retain their accepted provenance and interpretation.
+
+No Phase 10 daily ledger was accessed. No protected July 4-31 holdout outcome was read, hashed or evaluated; no accepted artifact or manifest was changed or regenerated, and no model was fitted or recalibrated. Phase 13 remains PLANNED / NOT AUTHORIZED and the holdout remains protected. **Phase 12 is explicitly COMPLETE after accepted review, integration, quality checks and this formal closeout.**
