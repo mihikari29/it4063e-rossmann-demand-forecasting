@@ -2443,5 +2443,7 @@ environment uses Python 3.14.5 / uv 0.12.23, Streamlit 1.65.0 and `uv.lock` SHA-
 `151cd5a2a868b219d315d8333d75d54e8c1f7efa43afa0869933a5682852dbd5`. No package or lockfile
 changed. The M4 implementation commit is `32df3ba4a48530bce556659d856991e134813e47` in [draft
 PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32). GitHub Quality
-for the final pushed PR head is checked before handoff. No Phase 10 daily ledger or protected July
-4–31 outcomes were accessed; no artifact was regenerated or changed.
+[run #98](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38024243400)
+passed both Python 3.12 and 3.14 jobs on published PR head `5f095c12f9b0ad9dec9ffc877457915f62ff0985`.
+The final head is rechecked after this documentation-only update. No Phase 10 daily ledger or
+protected July 4–31 outcomes were accessed; no artifact was regenerated or changed.
