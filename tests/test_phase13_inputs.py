@@ -21,6 +21,7 @@ from rossmann_forecasting.phase13.contracts import (
     FutureCovariates,
     OriginCensoredTrainingInputs,
     Phase13InputError,
+    ProtectedDailyOutcomeProjection,
     RecursiveHistoryInputs,
     RequestedForecastGrid,
     SourceProvenance,
@@ -31,6 +32,7 @@ from rossmann_forecasting.phase13.providers import (
     ISSUANCE_CAPABILITIES,
     ProviderRole,
     SourceBinding,
+    SyntheticBlock1ReleaseBundle,
     SyntheticFrameStore,
     SyntheticInputProvider,
     SyntheticOutcomeAuthorization,
@@ -154,7 +156,7 @@ def _input_provider(
     grid: RequestedForecastGrid,
     *,
     prior_covariates: FutureCovariates | None = None,
-    prior_outcomes=(),
+    prior_release_bundle: SyntheticBlock1ReleaseBundle | None = None,
     outcome_decoy: pd.DataFrame | None = None,
 ) -> tuple[SyntheticInputProvider, SyntheticFrameStore]:
     train_ref = "memory://phase13/train-base"
@@ -189,7 +191,7 @@ def _input_provider(
             "weekly-synthetic-open", AvailabilityAssumption.SYNTHETIC_RULE
         ),
         prior_block1_covariates=prior_covariates,
-        prior_block1_outcomes=prior_outcomes,
+        prior_block1_release_bundle=prior_release_bundle,
     )
     return provider, reader
 
@@ -394,6 +396,21 @@ def test_synthetic_planned_open_uses_weekday_rule_and_keeps_unknown_unknown():
         )
 
 
+@pytest.mark.parametrize(
+    ("day", "planned_open"),
+    [(date(2015, 7, 5), True), (date(2015, 7, 6), False)],
+)
+def test_synthetic_planned_open_rejects_values_outside_weekly_rule(day, planned_open):
+    grid = RequestedForecastGrid(ORIGIN_1, store_ids=(1,))
+    invalid = pd.DataFrame([(1, pd.Timestamp(day), planned_open)], columns=PLANNED_OPEN_COLUMNS)
+    with pytest.raises(Phase13InputError, match="weekly rule"):
+        SyntheticPlannedOpen(
+            invalid,
+            grid=grid,
+            provenance=_provenance("bad-weekly-rule", AvailabilityAssumption.SYNTHETIC_RULE),
+        )
+
+
 def test_issuance_provider_cannot_read_outcomes_and_uses_only_bound_inputs():
     decoy = pd.DataFrame(
         [(1, pd.Timestamp(day), 999.0, 0, 77) for day in PROTECTED_DATES],
@@ -490,13 +507,20 @@ def test_block2_history_uses_only_authorized_block1_outcomes():
     assert set(released_history["Date"].dt.date) == set(BLOCK1_DATES)
     assert not released_history["Date"].gt(pd.Timestamp(ORIGIN_2)).any()
     assert len(released) == 14
+    released[0].provider_id = "caller-mutated-copy"
+    caller_frame = released[0].to_frame()
+    caller_frame.loc[:, "Sales"] = -999.0
+    stored_first = outcomes.released_projections[0]
+    assert stored_first.provider_id == "synthetic-outcome-provider"
+    assert stored_first.to_frame()["Sales"].item() == 11.0
 
     block1, _ = _input_provider(RequestedForecastGrid(ORIGIN_1, store_ids=STORES))
     prior_covariates = block1.read_future_covariates()
+    bundle = outcomes.create_block1_release_bundle(prior_covariates)
     block2, _ = _input_provider(
         RequestedForecastGrid(ORIGIN_2, store_ids=STORES),
         prior_covariates=prior_covariates,
-        prior_outcomes=released,
+        prior_release_bundle=bundle,
     )
     history = block2.read_recursive_history_inputs().to_frame()
     assert history["Date"].max() == pd.Timestamp(ORIGIN_2)
@@ -510,6 +534,26 @@ def test_block2_history_uses_only_authorized_block1_outcomes():
         BLOCK1_DATES
     )
     assert "Customers" not in training
+
+
+def test_block2_handoff_rejects_different_covariate_identity():
+    outcomes, _, tokens = _outcome_provider()
+    _release_block1(outcomes, tokens)
+    block1, _ = _input_provider(RequestedForecastGrid(ORIGIN_1, store_ids=STORES))
+    prior_covariates = block1.read_future_covariates()
+    bundle = outcomes.create_block1_release_bundle(prior_covariates)
+    mismatched_covariates = FutureCovariates(
+        prior_covariates.to_frame().assign(Promo=1),
+        grid=RequestedForecastGrid(ORIGIN_1, store_ids=STORES),
+        provenance=prior_covariates.provenance,
+    )
+
+    with pytest.raises(Phase13InputError, match="covariate identity and provenance"):
+        _input_provider(
+            RequestedForecastGrid(ORIGIN_2, store_ids=STORES),
+            prior_covariates=mismatched_covariates,
+            prior_release_bundle=bundle,
+        )
 
 
 def test_unreleased_block2_outcomes_remain_inaccessible_after_block1_release():
@@ -530,18 +574,89 @@ def test_unreleased_block2_outcomes_remain_inaccessible_after_block1_release():
 def test_block2_provider_rejects_missing_or_out_of_order_prior_release_before_read():
     provider1, provider1_reader = _input_provider(RequestedForecastGrid(ORIGIN_1, store_ids=STORES))
     prior_covariates = provider1.read_future_covariates()
-    outcomes, _, tokens = _outcome_provider()
-    released = _release_block1(outcomes, tokens)
-    with pytest.raises(Phase13InputError, match="chronological order"):
+    outcomes, outcome_reader, tokens = _outcome_provider()
+    with pytest.raises(Phase13InputError, match="all 14 dates released chronologically"):
+        outcomes.create_block1_release_bundle(prior_covariates)
+    assert outcome_reader.read_calls == ()
+
+    with pytest.raises(Phase13InputError, match="verified Block 1 release handoff"):
         _input_provider(
             RequestedForecastGrid(ORIGIN_2, store_ids=STORES),
             prior_covariates=prior_covariates,
-            prior_outcomes=released[::-1],
         )
+
+    released = _release_block1(outcomes, tokens)
+    assert tuple(item.outcome_date for item in released) == BLOCK1_DATES
+    before_handoff = outcome_reader.read_calls
+    bundle = outcomes.create_block1_release_bundle(prior_covariates)
+    assert outcome_reader.read_calls == before_handoff
+    assert all("2015-07-18" not in ref for ref in outcome_reader.read_calls)
+    block2, _ = _input_provider(
+        RequestedForecastGrid(ORIGIN_2, store_ids=STORES),
+        prior_covariates=prior_covariates,
+        prior_release_bundle=bundle,
+    )
+    assert len(block2.read_recursive_history_inputs().to_frame()) == 17
 
     with pytest.raises(Phase13InputError, match="origin"):
         provider1.read_training_inputs(origin=ORIGIN_2)
     assert provider1_reader.read_calls == ("memory://phase13/covariates-2015-07-03",)
+
+
+def test_forged_block1_projection_collection_is_not_a_verified_handoff():
+    grid1 = RequestedForecastGrid(ORIGIN_1, store_ids=STORES)
+    provider1, _ = _input_provider(grid1)
+    prior_covariates = provider1.read_future_covariates()
+    forged = tuple(
+        ProtectedDailyOutcomeProjection(
+            _outcome_frame(day),
+            outcome_date=day,
+            provider_id="synthetic-outcome-provider",
+            authorization_token_id=f"fixture-token-{day.isoformat()}",
+            store_ids=STORES,
+            provenance=_provenance("forged-projection", AvailabilityAssumption.SYNTHETIC_RULE),
+        )
+        for day in BLOCK1_DATES
+    )
+
+    with pytest.raises(Phase13InputError, match="verified Block 1 release handoff"):
+        outcomes, _, _ = _outcome_provider()
+        forged_bundle = SyntheticBlock1ReleaseBundle(
+            _issuer=outcomes,
+            _outcome_identities=tuple(item.identity for item in forged),
+            provider_id="synthetic-outcome-provider",
+            store_ids=STORES,
+            covariate_identity=prior_covariates.identity,
+            covariate_grid_identity=prior_covariates.grid_identity,
+            covariate_store_ids=prior_covariates.store_ids,
+            covariate_provenance=prior_covariates.provenance,
+        )
+        _input_provider(
+            RequestedForecastGrid(ORIGIN_2, store_ids=STORES),
+            prior_covariates=prior_covariates,
+            prior_release_bundle=forged_bundle,
+        )
+
+
+@pytest.mark.parametrize(
+    ("role", "requested_fields"),
+    [
+        (
+            ProviderRole.TRAINING,
+            (*TRAINING_INPUT_COLUMNS[:-2], "Customers", *TRAINING_INPUT_COLUMNS[-2:]),
+        ),
+        (ProviderRole.FUTURE_COVARIATES, (*FUTURE_COVARIATE_COLUMNS, "Open")),
+        (ProviderRole.FUTURE_COVARIATES, (*FUTURE_COVARIATE_COLUMNS, "Open_resolved")),
+        (ProviderRole.FUTURE_COVARIATES, (*FUTURE_COVARIATE_COLUMNS, "ScenarioOpen")),
+    ],
+)
+def test_input_provider_rejects_unapproved_field_projection_before_reader(role, requested_fields):
+    provider, reader = _input_provider(RequestedForecastGrid(ORIGIN_1, store_ids=STORES))
+
+    with pytest.raises(Phase13InputError):
+        provider._read(role, requested_fields=requested_fields)
+
+    assert reader.read_calls == ()
 
 
 def test_provider_guards_unknown_role_path_and_field_before_fake_reader():

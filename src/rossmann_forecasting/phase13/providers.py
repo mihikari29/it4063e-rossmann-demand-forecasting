@@ -7,6 +7,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Protocol
 
 import pandas as pd
@@ -15,6 +16,7 @@ from rossmann_forecasting.phase13.contracts import (
     BLOCK1_DATES,
     FUTURE_COVARIATE_COLUMNS,
     OUTCOME_PROJECTION_COLUMNS,
+    PLANNED_OPEN_COLUMNS,
     PROTECTED_DATES,
     RECURSIVE_HISTORY_COLUMNS,
     TRAINING_INPUT_COLUMNS,
@@ -53,6 +55,15 @@ OUTCOME_CAPABILITIES = frozenset({ProviderRole.PROTECTED_OUTCOME})
 _MEMORY_REFERENCE = re.compile(r"memory://phase13/[a-z0-9][a-z0-9._-]*\Z")
 _DEVELOPMENT_CUTOFF = date(2015, 7, 3)
 _JULY17_ORIGIN = date(2015, 7, 17)
+_ROLE_FIELDS: Mapping[ProviderRole, tuple[str, ...]] = MappingProxyType(
+    {
+        ProviderRole.TRAINING: TRAINING_INPUT_COLUMNS,
+        ProviderRole.RECURSIVE_HISTORY: RECURSIVE_HISTORY_COLUMNS,
+        ProviderRole.FUTURE_COVARIATES: FUTURE_COVARIATE_COLUMNS,
+        ProviderRole.PLANNED_OPEN: PLANNED_OPEN_COLUMNS,
+        ProviderRole.PROTECTED_OUTCOME: OUTCOME_PROJECTION_COLUMNS,
+    }
+)
 
 
 def _role(value: ProviderRole | str) -> ProviderRole:
@@ -142,6 +153,9 @@ def _guarded_synthetic_read(
 
     role = _role(requested_role)
     allowed = _capability_set(capabilities)
+    if not isinstance(binding, SourceBinding):
+        _memory_reference(getattr(binding, "reference", None))
+        raise Phase13InputError("Synthetic source must be a typed role-bound SourceBinding.")
     if role not in allowed or role != binding.role:
         raise Phase13InputError(f"Provider lacks the required {role.value!r} capability.")
     reference = _memory_reference(binding.reference)
@@ -194,7 +208,7 @@ class SyntheticInputProvider:
         capabilities: Iterable[ProviderRole | str],
         planned_open_provenance: SourceProvenance,
         prior_block1_covariates: FutureCovariates | None = None,
-        prior_block1_outcomes: Iterable[ProtectedDailyOutcomeProjection] = (),
+        prior_block1_release_bundle: SyntheticBlock1ReleaseBundle | None = None,
     ) -> None:
         self.grid = grid
         self._reader = reader
@@ -242,7 +256,8 @@ class SyntheticInputProvider:
         self._bindings = bindings
         self._planned_open_provenance = planned_open_provenance
         self._prior_covariates = prior_block1_covariates
-        self._prior_outcomes = tuple(prior_block1_outcomes)
+        self._prior_release_bundle = prior_block1_release_bundle
+        self._prior_outcomes: tuple[ProtectedDailyOutcomeProjection, ...] = ()
         self._validate_prior_release_inputs()
 
     def _validate_origin(self, origin: ForecastOrigin | date | str | pd.Timestamp | None) -> None:
@@ -252,20 +267,37 @@ class SyntheticInputProvider:
 
     def _read(
         self,
-        role: ProviderRole,
+        role: ProviderRole | str,
         *,
         requested_fields: Sequence[str],
     ) -> pd.DataFrame:
-        binding = self._bindings.get(role)
+        normalized_role = _role(role)
+        expected_fields = _ROLE_FIELDS.get(normalized_role)
+        if expected_fields is None:
+            raise Phase13InputError(f"No fixed field contract exists for {normalized_role.value}.")
+        if normalized_role not in self.capabilities:
+            raise Phase13InputError(
+                f"Provider lacks the required {normalized_role.value!r} capability."
+            )
+        binding = self._bindings.get(normalized_role)
         if binding is None:
-            raise Phase13InputError(f"Provider has no source binding for {role.value}.")
+            raise Phase13InputError(f"Provider has no source binding for {normalized_role.value}.")
+        if not isinstance(binding, SourceBinding) or binding.role != normalized_role:
+            raise Phase13InputError(
+                f"Provider source binding does not match the {normalized_role.value} role."
+            )
+        _memory_reference(binding.reference)
+        if tuple(requested_fields) != expected_fields:
+            raise Phase13InputError(
+                f"Requested fields do not match the {normalized_role.value} source contract."
+            )
         return _guarded_synthetic_read(
             self._reader,
             binding,
-            requested_role=role,
+            requested_role=normalized_role,
             capabilities=self.capabilities,
             requested_fields=requested_fields,
-            expected_fields=requested_fields,
+            expected_fields=expected_fields,
         )
 
     def read_training_inputs(
@@ -399,7 +431,7 @@ class SyntheticInputProvider:
 
     def _validate_prior_release_inputs(self) -> None:
         if self.grid.origin.value == _DEVELOPMENT_CUTOFF:
-            if self._prior_covariates is not None or self._prior_outcomes:
+            if self._prior_covariates is not None or self._prior_release_bundle is not None:
                 raise Phase13InputError(
                     "Block 1 issuance cannot receive later outcomes or prior-block inputs."
                 )
@@ -408,6 +440,8 @@ class SyntheticInputProvider:
             raise Phase13InputError("Unsupported issuance origin.")
         if self._prior_covariates is None:
             raise Phase13InputError("Block 2 requires separately issued Block 1 covariates.")
+        if not isinstance(self._prior_covariates, FutureCovariates):
+            raise Phase13InputError("Block 2 prior covariates require typed issued provenance.")
         expected_grid = RequestedForecastGrid(_DEVELOPMENT_CUTOFF, self.grid.store_ids)
         if (
             self._prior_covariates.origin.value != _DEVELOPMENT_CUTOFF
@@ -417,20 +451,62 @@ class SyntheticInputProvider:
             raise Phase13InputError(
                 "Block 2 prior covariates must be the matching Block 1 grid input."
             )
+        bundle = self._prior_release_bundle
+        if not isinstance(bundle, SyntheticBlock1ReleaseBundle):
+            raise Phase13InputError("Block 2 requires a provider-verified Block 1 release handoff.")
+        if (
+            bundle.covariate_identity != self._prior_covariates.identity
+            or bundle.covariate_grid_identity != self._prior_covariates.grid_identity
+            or bundle.covariate_store_ids != self._prior_covariates.store_ids
+            or bundle.covariate_provenance != self._prior_covariates.provenance
+        ):
+            raise Phase13InputError(
+                "Block 1 release handoff does not match the issued covariate "
+                "identity and provenance."
+            )
+        self._prior_outcomes = bundle._verified_projections()
         dates = tuple(projection.outcome_date for projection in self._prior_outcomes)
         if dates != BLOCK1_DATES:
             raise Phase13InputError(
-                "Block 2 requires all 14 Block 1 dates in authorized chronological order."
+                "Block 2 release handoff must contain all 14 exact Block 1 dates chronologically."
             )
         if any(projection.store_ids != self.grid.store_ids for projection in self._prior_outcomes):
             raise Phase13InputError(
                 "Released Block 1 outcomes do not match the requested Store allowlist."
             )
         provider_ids = {projection.provider_id for projection in self._prior_outcomes}
-        if len(provider_ids) != 1:
+        if len(provider_ids) != 1 or bundle.provider_id not in provider_ids:
             raise Phase13InputError(
-                "Block 1 released outcomes must share one synthetic provider identity."
+                "Block 1 release handoff must match one synthetic provider identity."
             )
+        if bundle.store_ids != self.grid.store_ids:
+            raise Phase13InputError("Block 1 release handoff Store roster does not match Block 2.")
+        if any(
+            not isinstance(projection.provenance, SourceProvenance)
+            or projection.provenance.availability_assumption
+            != AvailabilityAssumption.SYNTHETIC_RULE
+            for projection in self._prior_outcomes
+        ):
+            raise Phase13InputError("Block 1 outcomes require full synthetic provenance.")
+
+
+@dataclass(frozen=True, slots=True)
+class SyntheticBlock1ReleaseBundle:
+    """In-memory handoff tied to one outcome provider's verified Block 1 release state."""
+
+    _issuer: SyntheticOutcomeProvider
+    _outcome_identities: tuple[str, ...]
+    provider_id: str
+    store_ids: tuple[int, ...]
+    covariate_identity: str
+    covariate_grid_identity: str
+    covariate_store_ids: tuple[int, ...]
+    covariate_provenance: SourceProvenance
+
+    def _verified_projections(self) -> tuple[ProtectedDailyOutcomeProjection, ...]:
+        if not isinstance(self._issuer, SyntheticOutcomeProvider):
+            raise Phase13InputError("Block 2 requires a provider-verified Block 1 release handoff.")
+        return self._issuer._verify_block1_release_bundle(self)
 
 
 class SyntheticOutcomeProvider:
@@ -485,10 +561,82 @@ class SyntheticOutcomeProvider:
         self._tokens = tokens
         self._next_index = 0
         self._released: list[ProtectedDailyOutcomeProjection] = []
+        self._issued_block1_bundle: SyntheticBlock1ReleaseBundle | None = None
 
     @property
     def released_projections(self) -> tuple[ProtectedDailyOutcomeProjection, ...]:
-        return tuple(self._released)
+        return tuple(_copy_outcome_projection(item) for item in self._released)
+
+    def create_block1_release_bundle(
+        self, covariates: FutureCovariates
+    ) -> SyntheticBlock1ReleaseBundle:
+        """Bind released Block 1 outcomes to the exact issued Block 1 covariates."""
+
+        released_dates = tuple(item.outcome_date for item in self._released)
+        if released_dates != BLOCK1_DATES:
+            raise Phase13InputError(
+                "A verified Block 1 release handoff requires all 14 dates released "
+                "chronologically and no Block 2 outcomes."
+            )
+        if not isinstance(covariates, FutureCovariates):
+            raise Phase13InputError("Block 1 handoff requires typed issued covariates.")
+        expected_grid = RequestedForecastGrid(_DEVELOPMENT_CUTOFF, self.store_ids)
+        if (
+            covariates.origin.value != _DEVELOPMENT_CUTOFF
+            or covariates.grid_identity != expected_grid.identity
+            or covariates.store_ids != self.store_ids
+        ):
+            raise Phase13InputError(
+                "Block 1 handoff covariates must match this provider's exact Store grid."
+            )
+        if self._issued_block1_bundle is not None:
+            if (
+                self._issued_block1_bundle.covariate_identity != covariates.identity
+                or self._issued_block1_bundle.covariate_provenance != covariates.provenance
+            ):
+                raise Phase13InputError(
+                    "This outcome provider already issued a different Block 1 handoff."
+                )
+            return self._issued_block1_bundle
+        bundle = SyntheticBlock1ReleaseBundle(
+            _issuer=self,
+            _outcome_identities=tuple(item.identity for item in self._released),
+            provider_id=self.provider_id,
+            store_ids=self.store_ids,
+            covariate_identity=covariates.identity,
+            covariate_grid_identity=covariates.grid_identity,
+            covariate_store_ids=covariates.store_ids,
+            covariate_provenance=covariates.provenance,
+        )
+        self._issued_block1_bundle = bundle
+        return bundle
+
+    def _verify_block1_release_bundle(
+        self, bundle: SyntheticBlock1ReleaseBundle
+    ) -> tuple[ProtectedDailyOutcomeProjection, ...]:
+        if bundle is not self._issued_block1_bundle:
+            raise Phase13InputError("Block 2 requires a provider-verified Block 1 release handoff.")
+        released_dates = tuple(item.outcome_date for item in self._released)
+        if released_dates != BLOCK1_DATES:
+            raise Phase13InputError(
+                "Verified Block 1 handoff state no longer matches its exact release sequence."
+            )
+        expected_identities = tuple(item.identity for item in self._released)
+        bundle_identities = bundle._outcome_identities
+        if (
+            bundle._issuer is not self
+            or bundle.provider_id != self.provider_id
+            or bundle.store_ids != self.store_ids
+            or bundle_identities != expected_identities
+            or any(
+                item.authorization_token_id != self._tokens[day]
+                for item, day in zip(self._released, BLOCK1_DATES, strict=True)
+            )
+            or any(item.store_ids != self.store_ids for item in self._released)
+            or any(item.provider_id != self.provider_id for item in self._released)
+        ):
+            raise Phase13InputError("Block 2 requires a provider-verified Block 1 release handoff.")
+        return tuple(_copy_outcome_projection(item) for item in self._released)
 
     def read_day(
         self,
@@ -542,7 +690,7 @@ class SyntheticOutcomeProvider:
             store_ids=self.store_ids,
             provenance=provenance,
         )
-        self._released.append(projection)
+        self._released.append(_copy_outcome_projection(projection))
         self._next_index += 1
         return projection
 
@@ -590,3 +738,21 @@ def _provider_date(value: date | str | pd.Timestamp) -> date:
     if pd.isna(timestamp) or timestamp.tz is not None or timestamp != timestamp.normalize():
         raise Phase13InputError("Provider date must be a timezone-naive midnight date.")
     return timestamp.date()
+
+
+def _copy_outcome_projection(
+    projection: ProtectedDailyOutcomeProjection,
+) -> ProtectedDailyOutcomeProjection:
+    """Copy the sealed outcome frame and metadata without recomputing its identity."""
+
+    if not isinstance(projection, ProtectedDailyOutcomeProjection):
+        raise Phase13InputError("Only typed outcome projections can be copied into a handoff.")
+    copied = object.__new__(ProtectedDailyOutcomeProjection)
+    copied.outcome_date = projection.outcome_date
+    copied.provider_id = projection.provider_id
+    copied.authorization_token_id = projection.authorization_token_id
+    copied.store_ids = projection.store_ids
+    copied.provenance = projection.provenance
+    copied._frame = projection.to_frame()
+    copied._identity = projection.identity
+    return copied

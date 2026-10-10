@@ -316,6 +316,12 @@ acceptance remain pending. Source/preparation provenance, operator, resource, re
 and analytical release gates remain open. M2 is NOT AUTHORIZED; STOP here pending Technical Lead
 review.
 
+### PR #38 Technical Lead corrections P38-01–03 — 2026-10-11
+
+M1 corrections on the existing Draft PR branch harden the synthetic provider boundary. `SyntheticInputProvider._read()` now checks role, capability, typed source binding, safe memory reference, and a fixed role-to-column schema before calling the injected reader; requested columns cannot define their own expected schema. The synthetic Block 1 handoff is now created only by `SyntheticOutcomeProvider` after the exact 14 Block 1 dates have been successfully authorized and read in order. It is registered to that provider's in-memory release state and bound to the matching Block 1 Store grid, covariate identity, and provenance. A handoff rejects forged projection collections and cannot include Block 2 outcomes; projection frames are returned as independent copies. `SyntheticPlannedOpen` validates each supplied non-null value against Monday–Saturday open/Sunday closed while preserving nullable unknowns, missing rows, independent actual Open, and positive observed Sales.
+
+The focused Phase 13 input suite passed **30 tests**; the repository suite passed **566 tests** on Python 3.14.5 with one existing Starlette/httpx deprecation warning. Ruff lint and format, documentation checks, `git diff --check`, and `uv lock --check` passed. These tests exercise logical in-memory behavior with artificial fixtures and do not establish physical isolation. No real or protected Rossmann data was read, loaded, staged, extracted, or hashed; no model fit, protected-source operation, M2 work, or canonical artifact operation occurred. The correction is for Technical Lead re-review on Draft PR #38; Phase 13 remains PLANNED / NOT APPROVED and M2 remains NOT AUTHORIZED.
+
 ## Historical implementation checkpoints (preserved)
 
 The following next-boundary notes are historical checkpoints; the current state is recorded at

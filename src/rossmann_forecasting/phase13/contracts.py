@@ -488,6 +488,14 @@ class SyntheticPlannedOpen(_FrameSnapshot):
                 "planned_open must be Boolean or missing; no fallback is allowed."
             )
         data["planned_open"] = pd.array(values, dtype="boolean")
+        expected_open = pd.Series(pd.to_datetime(data["Date"]).dt.weekday.ne(6), index=data.index)
+        planned_open = data["planned_open"]
+        mismatch = planned_open.notna() & planned_open.ne(expected_open).fillna(False)
+        if mismatch.any():
+            raise Phase13InputError(
+                "Non-null planned_open values must follow the Monday–Saturday open, "
+                "Sunday closed weekly rule."
+            )
         identity = _canonical_identity(
             data,
             provenance=provenance,
