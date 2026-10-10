@@ -87,14 +87,21 @@ The input contract distinguishes:
    target labels, Customers, actual future Open, or future outcome-derived values.
 4. **Optional planned Open:** a separately versioned nullable operational schedule, if supplied
    under an approved availability assumption. It is never inferred from future actual Open.
-5. **Unreleased outcomes:** an isolated provider view of protected target projections that the
-   issuance path cannot request. No outcome projection is read to prepare, filter, hash, or
-   stage another view before its separately authorized release.
-6. **Released outcomes:** a separate provider view exposing only the day projection authorized
-   after a matching immutable issuance and persisted release intent. Evaluation uses released
-   Sales and source Open; Customers remains excluded. Block 1's released rows can enter the July 17
-   training-label and recursive-history views only after the ordered release through July 17 is
-   complete. This requires no access to Block 2 outcomes.
+5. **Unreleased outcomes:** protected target projections are unavailable to issuance and general
+   preparation. For a newly staged outcome partition, the default sequence is: complete and persist
+   that block's issuance; persist the next chronological date's `release_intent`; separately
+   authorize mechanical staging; then create/read only that date's projection. The staging read is
+   protected-data access, but it is not analytical outcome revelation. Any mechanical reads or
+   partitions from earlier custody work must have documented authorization and provenance; such
+   historical reads are not day-level analytical releases and authorize no new access. For a
+   pre-existing partition, verify authorization/provenance records without opening its projection;
+   after the matching per-day intent and analytical release, access only that date's projection.
+6. **Released outcomes:** a separate provider view exposing only the date projection authorized
+   for analytical release after a matching immutable issuance and persisted release intent, and,
+   for new projections, separate staging authorization. Evaluation uses released Sales and source
+   Open; Customers remains excluded. Block 1's released rows can enter the July 17 training-label
+   and recursive-history views only after the ordered release through July 17 is complete. This
+   requires no access to Block 2 outcomes.
 
 At the July 17 origin, the training and recursive-history views may therefore include actual
 Block 1 Sales/Open rows already revealed in order, while their date guard remains `Date <=
@@ -122,18 +129,21 @@ under A2.
 and custodian-controlled staged projections may further constrain accidental reads. A1 is an
 optional hardening arrangement, not the minimum architecture.
 
-Analytical release and mechanical staging are distinct actions. **Analytical release** grants the
-evaluation provider access to one already staged target-date projection, after issuance and a
-persisted release intent. **Mechanical staging** reads protected source content to partition,
-copy, filter, or hash it into a projection; that read is itself protected-data access even if the
-evaluation layer cannot yet see the result. Any mechanical staging of protected outcomes needs a
-separate future authorization. This task performs no protected-data staging, extraction, access,
-or hash. An approved future protocol must authorize the staging mechanism separately from the
-analytical day-release gate.
+Analytical release and mechanical staging are distinct actions. For a new outcome projection,
+complete the block issuance, persist the date-specific `release_intent`, separately authorize
+mechanical staging, and create/read only that date's projection. **Mechanical staging** reads
+protected source content to partition, copy, or filter it; that is protected-data access, but not
+analytical revelation. Then separately authorize **analytical release** of only that date's
+projection to the evaluation provider, evaluate and checkpoint it, and only then advance to the
+next date. If a projection already exists from earlier custody work, verify its documented staging
+authorization and provenance from records without opening its contents; the same per-day intent and
+analytical-release sequence still applies. Record earlier mechanical reads separately from analytical
+releases. This task performs no protected-data staging, extraction, access, or hash.
 
-Under A2, an operator-enforced boundary is the stated evidence limit; local clock values alone do
-not prove chronology. The chosen custody model and trusted-operator assumption remain subject to
-Technical Lead/owner approval.
+Under A2, an operator-enforced boundary is the stated evidence limit; it does not establish strict
+physical isolation from the trusted operator, machine owner, or administrator, and local clock
+values alone do not prove chronology. The chosen custody model and trusted-operator assumption
+remain subject to Technical Lead/owner approval.
 
 ## 4. Exact two-origin evaluation chronology
 
@@ -278,23 +288,49 @@ The accepted Fit B governance record supersedes the manifest's publication-time
 `fit_b_quantiles_frozen=false` field for these exact identities. Preserve that historical manifest;
 do not regenerate or rewrite it.
 
-Retain ADR-021's exact estimators: for each daily horizon, sort signed residuals and use
-1-indexed ranks `floor((n+1)/40)` and `ceil(39*(n+1)/40)`, with `n >= 40`, no interpolation, no
-rank clamping, and no borrowing across horizons. For a complete cumulative operational prefix
-`k`, use signed residual-path quantiles at `p ∈ {0.90, 0.95, 0.98}` with upper rank
-`ceil((n+1)*p)`, `n >= 50`, no interpolation, and no rank clamping. Apply the exact frozen Fit B
-table entries and availability/reason fields; do not recompute them from July observations.
+**A. Fit B calibration evidence (historical observations).** ADR-021's daily calibration residuals
+are signed `actual_sales_h - raw_forecast_h` on its accepted observed-Open=1 population. Partial
+paths contribute eligible individual observations, pooled equally across Store-origin rows at each
+exact horizon; do not borrow across horizons, stores, or candidate models or substitute the
+raw-complete H14 subset. For each exact horizon, sort those historical signed residuals and use
+1-indexed ranks `floor((n+1)/40)` and `ceil(39*(n+1)/40)`, requiring `n >= 40` and both ranks in
+`1..n`. Use no interpolation or rank clamping, and do not borrow across horizons. For each
+Store-origin's complete historical cumulative operational prefix `k`, define the signed calibration
+error as `E_k^cal = sum_{h=1..k}(actual_sales_h^cal - operational_forecast_h^cal)`, using only
+complete valid components. Missing later components do not invalidate a shorter prefix, and missing
+components are never filled with zero. Pool complete calibration prefixes at the same exact `k`,
+preserving paths and within-path dependence. For `p ∈ {0.90, 0.95, 0.98}`, Fit B's saved signed
+`q_{k,p}` uses the 1-indexed upper rank `ceil((n+1)*p)`, with at least 50 complete calibration
+prefixes and a valid rank; use no interpolation or rank clamping. These `n >= 40` and `n >= 50`
+floors apply to historical calibration evidence for each exact horizon or prefix. Unsupported
+calibration strata remain unavailable with their saved reasons. Fit B's calibration actuals are
+not July outcomes; the frozen identities above and exact saved entries remain authoritative.
 
-For a daily point `yhat_h`, emit endpoints as `max(0, yhat_h + q_low,h)` and
+**B. Final issuance.** For daily bounds, use the issued raw point forecasts with the exact frozen
+Fit B daily entries `q_low,h` and `q_high,h`. For cumulative bounds, use only the issued
+operational forecasts with the exact frozen Fit B cumulative entry `q_{k,p}`, subject to the
+saved identities, matching fit/horizon/prefix/source conditions, and frozen availability/reason
+fields. For a daily issued raw point `yhat_h`, emit endpoints `max(0, yhat_h + q_low,h)` and
 `max(0, yhat_h + q_high,h)`, retaining signed quantiles, pre-clipping endpoints/flags, availability,
-and the accepted unsupported reason. Do not refit quantiles, tune them, recalibrate them, use
-final labels before issuance, or transfer a cumulative prefix quantile to a later-review suffix.
-For a complete cumulative operational prefix `k`, retain
-`E_k = sum_{h=1..k}(actual_sales_h - operational_forecast_h)`,
+and the accepted unsupported reason. For a complete cumulative operational prefix `k`, use
 `D_k = sum_{h=1..k} operational_forecast_h`,
-`U_k = max(0, D_k + q_p(E_k))`,
+`U_k = max(0, D_k + q_{k,p})`,
 `SafetyStock_k = max(0, U_k - D_k)`, and `Target_k = max(D_k, U_k)`.
-Never sum daily upper bounds or force the point inside its daily interval.
+No July actual Sales, July residual, or newly fitted quantile is needed or used to issue these
+uncertainty bounds. Do not refit, tune, or recalibrate quantiles, transfer a cumulative prefix
+quantile to a later-review suffix, sum daily upper bounds, or force a point inside its daily
+interval.
+
+**C. Final evaluation after authorized chronological revelation.** Only after the matching July
+date has been authorized and revealed through the ordered procedure in Section 9 may its actual
+Sales enter post-issuance evaluation. Define the signed July error
+`e_h^eval = actual_sales_h^July - issued_operational_forecast_h`; for a complete valid revealed
+prefix, define
+`E_k^eval = sum_{h=1..k} e_h^eval`. Use these revealed errors to assess cumulative error and the
+empirical coverage of the already-issued bounds under the accepted evaluation population and
+denominators. They do not change the issuance, frozen quantiles, or bounds. Incomplete or
+unsupported prefixes retain their prescribed unavailable status. Never use July outcomes before
+their authorized chronological revelation.
 
 June Fit B was calibrated on a different fit state and development period; applying it to either
 July fresh fit is an explicit transport assumption. Transport validity and July coverage are
@@ -310,15 +346,20 @@ is not final coverage.
 
 ## 9. Controlled daily outcome revelation
 
-After verifying a block issuance receipt, persist and durably flush an immutable
-`release_intent` journal event naming the next date, block, sequence, issuance receipt/hash,
-provider, and expected projection identity **before any authorized provider or staging process
-accesses that date's protected outcome content**. The event records intended access, not proof
-that content was read or analytically released. Then the trusted operator authorizes only that
-date's analytical release. If preparing the projection requires reading a combined protected
-source, that mechanical staging read separately requires prior authorization, as described in
-Section 3. Validate date, store keys, schema and source identity before evaluation; append an
-immutable release receipt referencing the intent and issuance hash.
+After the complete block issuance receipt is verified and persisted, durably flush an immutable
+`release_intent` for the next chronological date, naming the block, sequence, issuance receipt/hash,
+provider, and expected projection identity **before any process accesses that date's protected
+outcome content**. The event records intended access, not proof that content was mechanically read
+or analytically released. If the date projection must be newly created, a separate authorization
+for mechanical staging is required after the intent and before the source read; stage only that
+date's projection. This mechanical read is protected-data access, but is not analytical outcome
+revelation. If a projection already exists from earlier custody work, verify its documented staging
+authorization and provenance from records without opening the projection; an earlier mechanical
+read is still not an analytical release and does not authorize current evaluation access. Then
+separately authorize analytical release of only that date's projection to the evaluation provider,
+and only then access its contents. Validate date, store keys, schema, source identity, and projection
+provenance before evaluation; append an immutable release receipt referencing the intent and
+issuance hash. Evaluate and checkpoint that date before advancing chronologically.
 Retain missing rows as missing. Actual Open is joined only after release for eligibility and
 post hoc diagnostics. Sales is joined only to the matching already-issued key. Customers is not
 needed for this evaluation and remains excluded.
@@ -452,12 +493,15 @@ the same frozen configuration and input identities. After publication, never ref
 that issuance; resume from the verified issuance receipt and last complete daily checkpoint.
 If a crash occurs after a `release_intent` is durably persisted but before evaluation and its
 checkpoint complete, treat that date as potentially accessed; the intent cannot be silently
-rolled back and does not prove whether content was opened. Block all later releases. On restart,
-reconcile the same block/date/sequence, issuance, provider, and projection identity with the
-trusted operator. Resume evaluation idempotently only from that exact authorized projection and
-intent; if its identity or exposure state cannot be established, mark the run incomplete and
-require a new explicit recovery decision before any further release. Never infer that access did
-not occur merely because no checkpoint exists.
+rolled back and does not prove whether content was mechanically read or analytically revealed.
+Block all later dates. On restart, reconcile the same block/date/sequence, issuance, provider, any
+separate staging authorization, and projection identity/provenance with the trusted operator. For
+an existing partition, verify its documented prior staging authorization and provenance from
+records without opening its contents. Resume evaluation idempotently only from that exact authorized
+projection and intent, after the per-day intent and separate analytical-release authorization; if
+its identity or exposure state cannot be established, mark the run incomplete and require a new
+explicit recovery decision before any further release. Never infer that access did not occur merely
+because no checkpoint exists.
 
 Release/evaluation failure stops the next outcome release until reconciled. Idempotent replay of
 the same authorized date identity returns the existing checkpoint; changed duplicate or
@@ -574,16 +618,21 @@ choice is PENDING APPROVAL; none is ACCEPTED by this document.**
 2. **Implementation:** A separate task authorizes M1 onward within the approved scope. M1 is
    limited to synthetic fixtures. No implementation starts from this documentation authorization
    alone.
-3. **Protected-source staging:** Any mechanical operation that reads protected source content to
-   partition, copy, filter, or hash it needs its own future explicit authorization. No such
-   operation is performed here.
+3. **Protected-source staging:** For newly created outcome projections, issue and persist the whole
+   block first; then persist that date's `release_intent`; then obtain separate explicit
+   authorization before mechanically reading protected source content to create/access only that
+   date's projection. Existing partitions from earlier custody work require documented prior
+   authorization and provenance before use. Document any earlier mechanical reads as protected-data
+   access, separate from analytical outcome revelation; they do not authorize new staging or
+   evaluation access. No staging, source read, or release is authorized or performed by this task.
 4. **Implementation review:** Fixture tests, quality checks, provenance, A2 custody/recovery
    evidence (or an approved alternative), and independent review pass. Phase 7–10 evidence remains
    unchanged.
 5. **Analytical release:** A separate explicit authorization names the reviewed commit,
-   configuration, approved provider, exact block, trusted operator, and release procedure. A
-   verified immutable issuance and a durable per-day release-intent event must precede access to
-   each authorized outcome projection.
+   configuration, approved provider, exact block/date, trusted operator, and release procedure.
+   For each date, the verified complete-block issuance and durable `release_intent` precede any
+   source/projection access; newly staged projections also require the separate staging authorization
+   in Gate 3. Release only that date to evaluation, then finish its checkpoint before advancing.
 6. **Closeout:** Only after the authorized run, independent result review, acceptance of remaining
    scope adjustments, and explicit phase closeout may Phase 13 be called COMPLETE. Phase 14 remains
    outside this plan.
