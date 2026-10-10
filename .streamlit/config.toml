@@ -1,2 +1,12 @@
 [client]
 showErrorDetails = "none"
+
+[server]
+address = "127.0.0.1"
+enableCORS = true
+enableStaticServing = false
+enableXsrfProtection = true
+fileWatcherType = "none"
+
+[browser]
+gatherUsageStats = false

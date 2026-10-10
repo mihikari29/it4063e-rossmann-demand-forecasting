@@ -44,6 +44,7 @@ from rossmann_forecasting.app.dashboard_presenters import (
     forecast_table_records,
     history_chart_records,
     history_source_records,
+    horizon_mae_query_preset,
     interval_band_segments,
     interval_table_records,
     inventory_case_ids,
@@ -54,6 +55,7 @@ from rossmann_forecasting.app.dashboard_presenters import (
     model_comparison_records,
     resource_status_records,
     scenario_catalog_records,
+    standalone_coverage_query_preset,
     validate_history_selection,
 )
 from rossmann_forecasting.app.services import (
@@ -97,7 +99,7 @@ def run_dashboard(services: _DashboardServices | None = None) -> None:
         page_title="Rossmann Forecasting | Business Analytics",
         page_icon="📈",
         layout="wide",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="auto",
     )
     provider = ApplicationServices() if services is None else services
     st.sidebar.title("Rossmann Forecasting")
@@ -705,38 +707,68 @@ def _render_model_comparison(services: _DashboardServices) -> None:
         "Saved development comparisons only. MAE on the three-way common, source-Open eligible "
         "population is primary; standalone coverage is a separate population."
     )
-    catalog = _load_catalog(services)
-    if catalog is None:
-        return
-    try:
-        stores = inventory_store_ids(catalog)
-    except Exception:
-        _render_internal_error()
-        return
-    if not stores:
-        st.info("The catalog has no supported Store selection.")
-        return
-
+    stores: tuple[int, ...] = ()
     with st.form("model_comparison_form"):
-        scope = st.selectbox("Scope", MODEL_SCOPES, key="model_comparison_scope")
-        metric = st.selectbox(
-            "Metric",
-            MODEL_METRICS,
-            index=MODEL_METRICS.index("mae"),
-            key="model_comparison_metric",
-            help="MAE is primary; MAPE values are saved percentages and WAPE values are fractions.",
+        population_view = st.radio(
+            "Evidence view",
+            (
+                "Three-way common comparison",
+                "Saved MAE by horizon",
+                "Standalone forecast coverage",
+            ),
+            horizontal=True,
+            key="model_comparison_population_view",
         )
         validation_window = None
         store_id = None
-        if scope == "validation_window":
-            validation_window = st.selectbox(
-                "Validation window",
-                MODEL_VALIDATION_WINDOWS,
-                key="model_comparison_window",
+        if population_view == "Three-way common comparison":
+            scope = st.selectbox("Scope", MODEL_SCOPES, key="model_comparison_scope")
+            metric = st.selectbox(
+                "Metric",
+                MODEL_METRICS,
+                index=MODEL_METRICS.index("mae"),
+                key="model_comparison_metric",
+                help=(
+                    "MAE is primary; MAPE values are saved percentages and WAPE values are "
+                    "fractions."
+                ),
             )
-        elif scope == "store":
-            store_id = st.selectbox("Store", stores, key="model_comparison_store")
-        submitted = st.form_submit_button("Apply selection")
+            if scope == "validation_window":
+                validation_window = st.selectbox(
+                    "Validation window",
+                    MODEL_VALIDATION_WINDOWS,
+                    key="model_comparison_window",
+                )
+            elif scope == "store":
+                catalog = _load_catalog(services)
+                if catalog is not None:
+                    try:
+                        stores = inventory_store_ids(catalog)
+                    except Exception:
+                        _render_internal_error()
+                if stores:
+                    store_id = st.selectbox("Store", stores, key="model_comparison_store")
+                else:
+                    st.info("The catalog has no supported Store selection.")
+        elif population_view == "Saved MAE by horizon":
+            st.caption(
+                "Saved h1-h14 MAE rows for the three-way common population, including weaker "
+                "horizons."
+            )
+        else:
+            st.caption(
+                "Coverage uses saved validation-window denominators from the standalone "
+                "population, separate from the three-way common comparison."
+            )
+        submitted = st.form_submit_button(
+            "Apply selection",
+            disabled=(
+                population_view == "Three-way common comparison" and scope == "store" and not stores
+            ),
+        )
+
+    if population_view == "Three-way common comparison" and scope == "store" and not stores:
+        return
 
     if not submitted:
         st.info("Choose a comparison scope and metric, then apply the selection.")
@@ -745,6 +777,56 @@ def _render_model_comparison(services: _DashboardServices) -> None:
     primary_figure = None
     horizon_figure = None
     try:
+        if population_view == "Saved MAE by horizon":
+            query = horizon_mae_query_preset()
+            with _SERVICE_LOCK:
+                view = services.model_comparison(query)
+            horizon_records = model_comparison_records(view, query)
+            provenance_records = _model_provenance_records(
+                {"horizon_mae": query}, {"horizon_mae": view}
+            )
+            horizon_figure = _horizon_mae_figure(horizon_records)
+            try:
+                st.subheader("Saved MAE by horizon · h1–h14")
+                st.caption(
+                    "Three-way common population. Every returned horizon is retained, including "
+                    "weaker horizons such as h2, h9 and h10; absent or unavailable rows are not "
+                    "filled."
+                )
+                if horizon_records:
+                    st.dataframe(horizon_records, hide_index=True, width="stretch")
+                else:
+                    st.info("No saved common-population horizon MAE rows are available.")
+                if horizon_figure is not None:
+                    st.pyplot(horizon_figure, clear_figure=True, width="stretch")
+                st.subheader("Comparison artifact provenance")
+                st.dataframe(provenance_records, hide_index=True, width="stretch")
+            finally:
+                if horizon_figure is not None:
+                    plt.close(horizon_figure)
+            return
+
+        if population_view == "Standalone forecast coverage":
+            query = standalone_coverage_query_preset()
+            with _SERVICE_LOCK:
+                view = services.model_comparison(query)
+            coverage_records = model_comparison_records(view, query)
+            provenance_records = _model_provenance_records(
+                {"standalone_coverage": query}, {"standalone_coverage": view}
+            )
+            st.subheader("Standalone forecast coverage · separate population")
+            st.caption(
+                "These saved coverage rows use the standalone population and must not be "
+                "compared as if they shared the primary common-population denominator."
+            )
+            if coverage_records:
+                st.dataframe(coverage_records, hide_index=True, width="stretch")
+            else:
+                st.info("No standalone coverage rows were returned for this selection.")
+            st.subheader("Comparison artifact provenance")
+            st.dataframe(provenance_records, hide_index=True, width="stretch")
+            return
+
         queries = model_comparison_query_presets(
             scope,
             metric,
@@ -760,13 +842,21 @@ def _render_model_comparison(services: _DashboardServices) -> None:
         records = {
             name: model_comparison_records(views[name], query) for name, query in queries.items()
         }
+        if "scope_metrics" in queries:
+            scope_records = records["scope_metrics"]
+            records["primary"] = [row for row in scope_records if row["metric"] == metric]
+            records["wape"] = [row for row in scope_records if row["metric"] == "wape"]
+            if metric == "mape":
+                for diagnostic in MODEL_MAPE_DIAGNOSTICS:
+                    records[diagnostic] = [
+                        row for row in scope_records if row["metric"] == diagnostic
+                    ]
         candidate_states = [
             {"candidate_id": candidate, "availability": state}
             for candidate, state in model_candidate_labels(records["primary"]).items()
         ]
         provenance_records = _model_provenance_records(queries, views)
         primary_figure = _model_comparison_figure(records["primary"], scope, metric)
-        horizon_figure = _horizon_mae_figure(records["horizon_mae"])
     except Exception as error:
         if primary_figure is not None:
             plt.close(primary_figure)
@@ -789,28 +879,6 @@ def _render_model_comparison(services: _DashboardServices) -> None:
             st.info("No saved rows are available for this common-population selection.")
         if primary_figure is not None:
             st.pyplot(primary_figure, clear_figure=True, width="stretch")
-
-        st.subheader("Saved MAE by horizon · h1–h14")
-        st.caption(
-            "Three-way common population. Every returned horizon is retained, including weaker "
-            "horizons such as h2, h9 and h10; absent or unavailable rows are not filled."
-        )
-        if records["horizon_mae"]:
-            st.dataframe(records["horizon_mae"], hide_index=True, width="stretch")
-        else:
-            st.info("No saved common-population horizon MAE rows are available.")
-        if horizon_figure is not None:
-            st.pyplot(horizon_figure, clear_figure=True, width="stretch")
-
-        st.subheader("Standalone forecast coverage · separate population")
-        st.caption(
-            "These saved coverage rows use the standalone population and must not be compared "
-            "as if they shared the primary common-population denominator."
-        )
-        if records["standalone_coverage"]:
-            st.dataframe(records["standalone_coverage"], hide_index=True, width="stretch")
-        else:
-            st.info("No standalone coverage rows were returned for this saved selection.")
 
         st.subheader("Saved WAPE values and denominators")
         st.caption(

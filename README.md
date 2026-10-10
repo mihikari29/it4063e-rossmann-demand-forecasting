@@ -237,19 +237,27 @@ Start the local server from the repository root:
 uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.app.api:app --host 127.0.0.1 --port 8000
 ```
 
-## Phase 12 M1 dashboard
+## Phase 12 dashboard
 
-The M1 Streamlit shell is implemented under review. Its overview shows static project context and
-saved catalog/readiness when local artifacts are available; the other four screens remain
-data-free placeholders. Install the optional dashboard extra and run from the repository root:
+The five-screen Streamlit dashboard is implemented under review on `feat/phase-12-streamlit-m4` in
+[draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32).
+It presents bounded historical Sales, saved forecasts and uncertainty, accepted model comparisons,
+and synthetic inventory comparisons from the existing services. The approved use is local
+development, analysis and live demonstration on the user's Windows computer at
+`http://127.0.0.1:8501`; see the [localhost deployment runbook](docs/DEPLOYMENT_LAN.md) for startup,
+local artifact requirements, security settings and error recovery. LAN, network and cloud exposure
+are out of scope under ADR-024 in [DECISIONS](docs/DECISIONS.md).
 
 ```powershell
-uv sync --locked --extra dashboard --python 3.14
+uv sync --locked --extra dev --extra api --extra dashboard --python 3.14
 uv run --locked --extra dashboard streamlit run streamlit_app.py
 ```
 
-The dashboard does not train or infer forecasts, run inventory simulation, access the Phase 10
-ledger, or evaluate the protected final holdout. Deployment remains undecided.
+The dashboard binds to `127.0.0.1:8501`. It does not train or infer forecasts, run inventory
+simulation, access the Phase 10 ledger, or evaluate the protected final holdout. M4's approved scope
+is localhost only; LAN access, network-profile changes, firewall rules, tunnels, cloud and public
+hosting are out of scope. Automated local evidence is recorded; human visual review and independent
+final review remain pending, and PR #32 stays Draft and unmerged.
 
 In PowerShell, check process health, list supported cases, and try a bounded forecast or the
 canonical reference inventory case:
@@ -299,8 +307,12 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 - Phase 11: **COMPLETE**; the [completed plan](plans/completed/phase-11-application-services.md)
   records the shared Python services and thin local/demo FastAPI adapter. Streamlit calls the same
   services directly; separate API hosting and Evidently are optional.
-- Phase 12: M1 is **IMPLEMENTED / UNDER REVIEW** on the feature branch; M2–M4 remain unauthorized.
-  The [active plan](plans/active/phase-12-streamlit-dashboard.md) records the boundary and evidence.
+- Phase 12: M1-M3 are integrated on `main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`.
+  M4 is **IMPLEMENTED / UNDER REVIEW** in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32)
+  on `feat/phase-12-streamlit-m4`; its approved target is `http://127.0.0.1:8501` under ADR-024.
+  LAN, network and cloud exposure are out of scope. Human visual review and independent final review
+  remain pending. See the [active plan](plans/active/phase-12-streamlit-dashboard.md) and
+  [localhost deployment runbook](docs/DEPLOYMENT_LAN.md).
 - Phase 13: one frozen sequential final evaluation remains future work requiring separate
   authorization. The protected holdout remains unreleased.
 - Phase 14: recorded results, report, slides and demonstration.

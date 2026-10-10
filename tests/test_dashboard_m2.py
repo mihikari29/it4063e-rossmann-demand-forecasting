@@ -741,7 +741,7 @@ def test_active_screen_dispatch_and_uncertainty_error_do_not_keep_uncertainty_pa
 
     app.sidebar.radio[0].set_value("Model Comparison").run()
     app.sidebar.radio[0].set_value("Inventory Comparison").run()
-    assert services.catalog_calls == 3
+    assert services.catalog_calls == 2
     assert not services.forecast_queries and not services.history_queries
 
     app.sidebar.radio[0].set_value("Forecast Explorer").run()

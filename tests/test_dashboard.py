@@ -267,7 +267,7 @@ def test_m3_screens_wait_for_apply_before_comparison_queries(fixture_store) -> N
             "Inventory Comparison",
         ):
             assert any(button.label == "Apply selection" for button in app.button)
-    assert spy.catalog_calls == 5
+    assert spy.catalog_calls == 4
     assert not spy.model_queries
     assert not spy.inventory_queries
 

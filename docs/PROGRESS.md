@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-09
+## Current implementation and Git state — 2026-10-10
 
 | Scope | State | Integration |
 |---|---|---|
@@ -13,7 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | M1 ACCEPTED / INTEGRATED; M2 ACCEPTED / INTEGRATED; M3 IMPLEMENTED / UNDER REVIEW | M2 PR #30 merged at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`. M3 branch `feat/phase-12-streamlit-m3` starts directly from that `main` SHA and is in [draft PR #31](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/31), open and unmerged; [active plan](../plans/active/phase-12-streamlit-dashboard.md). M4 NOT AUTHORIZED; deployment undecided; Phase 13 unauthorized. |
+| Phase 12 - Streamlit Dashboard | M1-M3 ACCEPTED / INTEGRATED; M4 IMPLEMENTED / UNDER REVIEW under ADR-024's localhost-only contract; human visual and independent final review pending | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 remains in Draft PR #32. Approved URL `http://127.0.0.1:8501`. Existing automated functional, browser, security, performance and quality evidence is retained. LAN, network and cloud exposure are out of scope; no LAN tests are claimed. Phase 13 remains unauthorized. See the [active plan](../plans/active/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -2329,3 +2329,160 @@ M3 remains under review; no merge or Phase 12 closeout is authorized. M4 is NOT 
 M3-01 is resolved on the existing `feat/phase-12-streamlit-m3` branch and Draft PR #31. `_render_model_comparison_error()` now handles presenter `ModelComparisonTooLargeError` separately from `ArtifactReadError`, shows the fixed "Narrow the selection." message with UI identifier `comparison_too_large`, and never reads a nonexistent `.code` attribute. Genuine `InvalidArtifactRequestError` continues to show its `invalid_artifact_request` code. No raw exception, path, traceback or partial result is displayed; service contracts and query limits are unchanged.
 
 The presenter overflow test verifies a view above the explicit query limit returns `ModelComparisonTooLargeError`. The AppTest injects oversized views after a successful screen render and verifies the sanitized message/identifier, no uncaught error, and no result table, chart, provenance or stale result. The existing invalid-request test pins its original stable code. Focused dashboard/M2/presenter tests passed 100; full pytest passed 531 tests on Python 3.12 and 531 on Python 3.14, each with one existing Starlette/httpx deprecation warning. Ruff, format, link, lock, dependency and whitespace checks passed. M3 remains IMPLEMENTED / UNDER REVIEW; PR #31 remains draft and unmerged. No ledger or protected holdout access occurred; M4 and Phase 13 remain unauthorized.
+
+## Phase 12 M4 integration browser and local performance 2026-10-10
+
+**State:** M4 is IMPLEMENTED / UNDER REVIEW. M1–M3 were independently accepted and integrated at
+`28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality run #37966506688 passed both supported
+Python jobs. M4 branch `feat/phase-12-streamlit-m4` starts directly from that base. The attached
+task authorizes a commit, push and one Draft PR to `main`, but no merge or formal Phase 12 closeout.
+The deployment strategy is Option A (private LAN on the artifact-owning Windows host). The actual
+authorized audience for this session is localhost only. The active Wi-Fi network profile is Public,
+so the app stays bound to loopback. No firewall rule or LAN URL was created. The machine remains
+powered and the course accepts a temporary session-only URL; neither fact grants LAN exposure.
+
+The five screens use the existing `ApplicationServices` and verified `_ArtifactReader`; no service
+contract, API, inference, simulation, result cache, dependency or lockfile change was introduced.
+The Model Comparison evidence selector issues one bounded query per view: a common comparison,
+saved MAE by horizon, or standalone coverage. AppTest and actual Edge interactions cover those views
+and two independent browser session states. The inventory view preserves all ten saved whole-case
+metrics separately from an optional Store pair and retains the accepted adverse whole-case results.
+
+The read-only canonical service smoke found 82 scenario entries and 172 registered case IDs. All
+required Phase 7–10 runtime outputs were present and validated through public services. Optional
+Phase 8 daily/cumulative quantile resources were present and manifest-validated; their output hashes
+were not needed by the dashboard and were not verified. The selected historical query returned 14
+Store 1 rows for 2015-06-01 through 2015-06-14; the screen's default selection displayed 56 source
+rows ending no later than 2015-07-03. The 2015-06-19 Store 1 issuance returned 14 saved raw and 14
+operational points. Fit B returned 28 daily and 42 cumulative rows. No Phase 10 ledger, protected
+July 4–31 outcome, full prepared-source hash, model fit, simulation or artifact generation was
+performed. Canonical values and files were unchanged.
+
+**Service-returned provenance** (SHA-256 values come from service DTOs; this is not an independent
+full-file audit):
+
+| View / selector | Run and manifest | Output and selected rows |
+|---|---|---|
+| Forecast issuance, `phase7_selected_forecasts` | Run `365f22d4c3f94722a594ab934a22c4f6`; manifest `03a1f26ba5855fd0576667bf280df938664c196a802de0a71e696a600b281cdc` | `72566349b233ef26c8de5b4f9c1623ac66df8676ad0370ad63b192ed4c1b5b09`; 14 selected / 46,830 manifest rows |
+| Model comparison, `phase7_model_comparison` | Same Phase 7 run and manifest above | `c648e8e407dc367e56f26cb421656dabc8d742a9a3cd3d3b092b746a84b10357`; model views selected 42 horizon rows and 9 standalone coverage rows / 190,680 manifest rows |
+| Daily uncertainty | Run `phase8-impl-20261006-provenance-review`; manifest `63a00fc8c50ccff99360cd8790498e977e08ec6a9846780a4e1a8ab3498d71c2` | `160e68f4dd0237b61e60d20d041e06d0760fd94b006f7e89730e24e96b601fd2`; 28 selected / 62,440 manifest rows |
+| Cumulative uncertainty | Same Phase 8 run and manifest above | `f338ff7189d652e64c8aa27f3d03c205c313185fb205f9f8a50b9776d59c0a0e`; 42 selected / 93,660 manifest rows |
+| Inventory comparison, `phase10_comparison` | Run `phase10-dev-20261008-validator-fix`; manifest `1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16` | `8d4b519e87677e04ff0f5e75404c37671c22c9b7ed0b229728bf17444a61e7be`; 10 selected / 1,720 manifest rows |
+| Inventory policy summary, `phase10_policy_summary` | Same Phase 10 run and manifest above | `93d2e36e286be7c36c33c383b07d73569637f70de5d96378a0a72e85f60f9cb0`; 2 / 383,560 manifest rows |
+| Inventory policy targets, `phase10_policy_targets` | Same Phase 10 run and manifest above | `e8ba96d12ecd307df8d8c21368f448ff3a45dca1ed6f21be6bba22b2c66a95ba`; 2 / 383,560 manifest rows |
+
+The registered output sizes were inspected with filesystem metadata, without hashing the history
+source or ledger: selected forecasts 3,036,226 bytes; model comparison 20,955,918; daily
+uncertainty 2,434,227; cumulative uncertainty 3,687,518; optional quantile outputs 21,434 and
+25,838; scenario catalog 4,236; Phase 10 comparison 427,485; policy summary 44,481,689; and
+policy targets 17,329,746 bytes. Optional quantile outputs are not in the service provenance table
+because the dashboard does not query them.
+
+**Browser and concurrency evidence:** Microsoft Edge on the host was driven with Playwright at
+1365×900 and 390×844. This is actual browser interaction, but automated rather than a human manual
+review. All five screens, navigation, refresh/apply, saved origins and metrics, forecast/uncertainty
+labels, inventory case selectors and model evidence views rendered from local accepted evidence;
+the browser reported no page or console errors. Five mobile screens retained 390-pixel document
+width after collapsing the sidebar. Inventory grids expose internal horizontal scrolling (measured
+content widths up to 3,319 pixels inside 356-pixel viewports); data remain individually scrollable.
+Keyboard Tab traversal reached controls and headings, and an interactive control showed a visible
+focus box-shadow. A nonexistent benign private-resource URL returned only the generic app shell.
+Screenshots stayed in the local temporary directory and were not committed.
+
+Screen results: Overview showed the project purpose, saved-resource readiness and Refresh control.
+Historical Sales rendered Store 1's default 2015-05-09 through 2015-07-03 selection (56 source
+rows), displayed the development cutoff, kept source Open distinct from monetary Sales and did not
+show the protected period. Forecast Explorer offered only the three accepted origins; the selected
+issuance remained H14 while H7 changed only the display, and raw and operational values stayed
+separate. The 2015-06-19 Fit B panel showed saved daily/cumulative evidence and provenance with
+empirical-coverage caveats. Model Comparison rendered all three evidence views; saved MAE retained
+the weak h10 row, common-population WAPE/MAPE labels preserved saved denominators and units, and
+standalone coverage stayed separate. Inventory Comparison rendered the reference and
+`synthetic_base-20150605-r00--buffer_090` cases, all ten saved case aggregates and the optional
+Store 1 pair; choosing a Store did not replace whole-case values, and positive cost difference was
+labeled adverse. Monetary and synthetic-assumption caveats remained visible.
+
+Two independent browser contexts submitted the common model view and standalone coverage view
+concurrently; both completed, then context A changed to saved horizon MAE while context B retained
+standalone coverage. Measured concurrent completion was 2.45 seconds. Session state passed and the
+browser reported no page/console errors. This verifies two sessions on one host process, not an
+independent LAN device or external concurrency beyond the existing service lock.
+
+**Performance method and results:** Windows 11 build 10.0.26300 x64; Ryzen 5 5600H, 6 cores / 12
+threads; 16 GiB installed RAM; Python 3.14.5; Streamlit 1.65.0; uv 0.12.23. Lock SHA-256 is
+`151cd5a2a868b219d315d8333d75d54e8c1f7efa43afa0869933a5682852dbd5`. A cold visit was timed from
+navigation to the Overview readiness content after starting a fresh process and browser. Warm
+latency was measured from each button click until the Streamlit websocket reported the submitted
+script run complete; each analytical screen used its representative bounded query. Twenty samples
+per screen; p95 uses nearest-rank ordering. All 20 samples for every screen were at or below 3
+seconds. Cold visit was 2.114 seconds. Peak process working set was 323.3 MiB for one session and
+328.2 MiB for two sessions, below the 1 GiB budget.
+
+| Screen | 20 warm click-to-complete samples (seconds) | p50 | p95 | ≤3s |
+|---|---|---:|---:|---:|
+| Overview & Evidence | 0.242, 0.214, 0.212, 0.207, 0.211, 0.208, 0.190, 0.206, 0.205, 0.215, 0.198, 0.219, 0.204, 0.202, 0.216, 0.210, 0.216, 0.209, 0.217, 0.225 | 0.210 | 0.225 | 20/20 |
+| Historical Sales | 0.618, 0.561, 0.655, 0.556, 0.629, 0.598, 0.532, 0.527, 0.518, 0.538, 0.546, 0.569, 0.645, 0.528, 0.552, 0.518, 0.505, 0.517, 0.484, 0.505 | 0.542 | 0.645 | 20/20 |
+| Forecast Explorer | 0.569, 0.539, 0.533, 0.515, 0.546, 0.550, 0.573, 0.545, 0.592, 0.552, 0.557, 0.575, 0.587, 0.571, 0.587, 0.559, 0.567, 0.584, 0.545, 0.597 | 0.563 | 0.592 | 20/20 |
+| Model Comparison | 1.273, 1.219, 1.162, 1.267, 1.232, 1.371, 1.562, 1.524, 1.351, 1.278, 1.282, 1.197, 1.157, 1.286, 1.349, 1.308, 1.231, 1.294, 1.343, 1.244 | 1.280 | 1.524 | 20/20 |
+| Inventory Comparison | 0.703, 0.729, 0.728, 0.719, 0.702, 0.799, 0.915, 0.885, 0.932, 0.943, 0.880, 0.983, 1.112, 1.083, 1.157, 1.029, 1.195, 1.059, 1.173, 1.025 | 0.938 | 1.173 | 20/20 |
+
+**Historical acceptance assessment before the user scope change:** The earlier private-LAN draft
+required an independent viewer and trusted network. At that time the audience was localhost only,
+the observed Wi-Fi profile was Public, and no LAN URL, listener, firewall rule or separate reviewer
+device test existed. These facts remain historical and no LAN test is claimed. The user's later
+localhost-only decision supersedes the LAN gate; see the current M4 scope addendum below.
+
+Validation on the locked Windows environments passed: the focused dashboard/M2/M3/config suite
+passed 79 tests on Python 3.12 and 79 on Python 3.14; the full fixture suite passed 536 tests on
+each interpreter, with one existing Starlette/httpx deprecation warning per run. Ruff lint and
+format passed (106 Python files); `uv lock --check` resolved 109 packages; `uv pip check` found 91
+compatible packages on Python 3.12 and 93 on Python 3.14; the Markdown checker passed with 268
+local destinations/anchors across 28 Markdown files; and `git diff --check` passed. The locked
+environment uses Python 3.14.5 / uv 0.12.23, Streamlit 1.65.0 and `uv.lock` SHA-256
+`151cd5a2a868b219d315d8333d75d54e8c1f7efa43afa0869933a5682852dbd5`. No package or lockfile
+changed. The M4 implementation commit is `32df3ba4a48530bce556659d856991e134813e47` in [draft
+PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32). GitHub Quality
+[run #98](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38024243400)
+passed both Python 3.12 and 3.14 jobs on published PR head `5f095c12f9b0ad9dec9ffc877457915f62ff0985`.
+The final head is rechecked after this documentation-only update. No Phase 10 daily ledger or
+protected July 4–31 outcomes were accessed; no artifact was regenerated or changed.
+
+### Phase 12 M4-01 corrective review - 2026-10-10
+
+M4-01 on the existing Draft PR #32 is corrected in the dashboard source: the saved MAE heading
+renders `Saved MAE by horizon · h1–h14`, and standalone coverage renders
+`Standalone forecast coverage · separate population`. AppTests assert each exact rendered
+subheader. A scan of dashboard application Python files found no additional common mojibake
+markers. The correction changes no service, query, metric, saved result, dependency or security
+configuration.
+
+The focused dashboard/M2/M3/config suite passed 79 tests on Python 3.14; the full fixture suite
+passed 536 tests on both Python 3.12 and 3.14, with the existing Starlette/httpx deprecation warning.
+Ruff lint/format, lock consistency, both installed-environment dependency checks, documentation
+links, and whitespace checks passed. GitHub Quality run #100 passed both Python 3.12 and 3.14 jobs
+on corrected head `4477ff69951f863a1a0eb4441d4cc15db3615d78`. Deployment remains bound to
+`127.0.0.1` under the localhost-only scope decision. No LAN acceptance is required or claimed;
+LAN/network/cloud exposure is out of scope. Phase 12 remains open pending human visual review and
+independent final review. No Phase 10 ledger or Phase 13 holdout was accessed.
+
+### Phase 12 M4 localhost-only acceptance scope - 2026-10-10
+
+The user explicitly selected local development, analysis and live demonstration on the user's own
+Windows computer. This decision is recorded in ADR-024 in [DECISIONS](DECISIONS.md) and supersedes
+the earlier private-LAN option and independent-LAN-viewer acceptance gate. The
+historical LAN assessment above remains a record of what was not performed; it is not a current
+blocker. The approved target is `http://127.0.0.1:8501`. LAN access, network-profile changes,
+firewall rules, tunnels, cloud deployment and public hosting are outside scope. No LAN tests are
+claimed or required.
+
+M4 remains IMPLEMENTED / UNDER REVIEW. Exact rendered-heading AppTests passed in the focused
+dashboard/M2/M3/config suite (79 tests on Python 3.14). The full fixture suite passed 536 tests on
+both Python 3.12 and 3.14, each with the existing Starlette/httpx deprecation warning. Ruff lint and
+format passed; `uv lock --check` resolved 109 packages; `uv pip check` passed for 91 packages on
+Python 3.12 and 93 on Python 3.14; Markdown validation passed with 275 local destinations/anchors
+across 28 files; `git diff --check` passed. The existing browser, security and performance evidence
+remains recorded. The current configuration still binds to `127.0.0.1`, disables static serving,
+and keeps CORS and XSRF protection enabled. Human visual review of all five screens in a real
+localhost browser and independent final review of Draft PR #32 remain pending. Keep the PR Draft and
+unmerged; do not close Phase 12. Analytical services and accepted artifacts are unchanged, and no
+Phase 10 ledger or Phase 13 holdout was accessed.

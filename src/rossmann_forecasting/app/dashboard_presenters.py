@@ -74,6 +74,18 @@ MODEL_COMMON_POPULATION = "three_way_common"
 MODEL_STANDALONE_POPULATION = "standalone"
 MODEL_COVERAGE_METRIC = "open_label_forecast_coverage_rate"
 MODEL_MAPE_DIAGNOSTICS = ("mape_rows", "zero_actual_rows_excluded_from_mape")
+MODEL_SAVED_METRICS = (
+    *MODEL_METRICS,
+    *MODEL_MAPE_DIAGNOSTICS,
+    "eligible_rows",
+    "forecast_available_rows",
+    "observed_target_rows",
+    "open_label_rows",
+    "open_label_forecast_available_rows",
+    "raw_forecast_coverage_rate",
+    MODEL_COVERAGE_METRIC,
+    "wape_actual_denominator",
+)
 INVENTORY_POLICY_IDS = (
     "historical_mean_standing_target",
     "lightgbm_buffer_standing_target",
@@ -581,23 +593,33 @@ def model_comparison_query_presets(
         "validation_window": validation_window,
         "store_id": store_id,
     }
-    queries = {
-        "primary": ModelComparisonQuery(metric=metric, limit=limit, **base),
-        "horizon_mae": ModelComparisonQuery(
-            population=MODEL_COMMON_POPULATION, scope="horizon", metric="mae", limit=42
-        ),
-        "standalone_coverage": ModelComparisonQuery(
-            population=MODEL_STANDALONE_POPULATION,
-            scope="validation_window",
-            metric=MODEL_COVERAGE_METRIC,
-            limit=200,
-        ),
-        "wape": ModelComparisonQuery(metric="wape", limit=limit, **base),
-    }
-    if metric == "mape":
-        for diagnostic in MODEL_MAPE_DIAGNOSTICS:
-            queries[diagnostic] = ModelComparisonQuery(metric=diagnostic, limit=limit, **base)
+    if scope == "horizon":
+        queries = {}
+        queries["primary"] = ModelComparisonQuery(metric=metric, limit=limit, **base)
+        queries["wape"] = ModelComparisonQuery(metric="wape", limit=limit, **base)
+        if metric == "mape":
+            for diagnostic in MODEL_MAPE_DIAGNOSTICS:
+                queries[diagnostic] = ModelComparisonQuery(metric=diagnostic, limit=limit, **base)
+    else:
+        queries = {"scope_metrics": ModelComparisonQuery(metric=None, limit=500, **base)}
     return queries
+
+
+def horizon_mae_query_preset() -> ModelComparisonQuery:
+    """Build the fixed bounded common-population query for the saved h1-h14 MAE rows."""
+    return ModelComparisonQuery(
+        population=MODEL_COMMON_POPULATION, scope="horizon", metric="mae", limit=42
+    )
+
+
+def standalone_coverage_query_preset() -> ModelComparisonQuery:
+    """Build the fixed bounded query for the distinct standalone coverage population."""
+    return ModelComparisonQuery(
+        population=MODEL_STANDALONE_POPULATION,
+        scope="validation_window",
+        metric=MODEL_COVERAGE_METRIC,
+        limit=200,
+    )
 
 
 def model_comparison_records(
@@ -639,6 +661,8 @@ def _validate_model_comparison_row(
     scope = _safe_identifier(row.scope)
     window = _nullable_identifier(row.validation_window)
     metric = _safe_identifier(row.metric)
+    if query.metric is None and metric not in MODEL_SAVED_METRICS:
+        raise ValueError("Unexpected saved model comparison metric.")
     if population not in (MODEL_COMMON_POPULATION, MODEL_STANDALONE_POPULATION):
         raise ValueError("Unexpected model comparison population.")
     if scope not in MODEL_SCOPES:
@@ -675,7 +699,7 @@ def _validate_model_comparison_row(
     if (
         population != query.population
         or scope != query.scope
-        or metric != query.metric
+        or (query.metric is not None and metric != query.metric)
         or (query.validation_window is not None and window != query.validation_window)
         or (query.horizon is not None and row.horizon != query.horizon)
         or (query.store_id is not None and row.store_id != query.store_id)
