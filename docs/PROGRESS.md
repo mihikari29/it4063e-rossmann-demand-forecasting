@@ -208,9 +208,22 @@ was performed.
 ## Current boundary
 
 Phases 0–12 are COMPLETE; Phase 13 is PLANNED / NOT AUTHORIZED; the protected July 4–31
-holdout remains unreleased. The [M0 Phase 13 design proposal](../plans/active/phase-13-sequential-final-evaluation.md)
-is **PROPOSED / NOT APPROVED** and requests Technical Lead review. It authorizes neither Phase
-13 implementation nor holdout access. Phase 14 has not started.
+holdout remains unreleased. The [M0.1 Phase 13 design proposal](../plans/active/phase-13-sequential-final-evaluation.md)
+incorporates methodology-review corrections and remains **PROPOSED / NOT APPROVED**, pending
+Technical Lead and owner approval. It authorizes neither Phase 13 implementation, protected-source
+staging, nor holdout access. Phase 14 has not started.
+
+### Phase 13 M0.1 methodology review checkpoint — 2026-10-10
+
+PR #34 merged the initial documentation proposal into `main` at
+`4f2f9dc407109efea8401ff3b19894e104ad764e`; this SHA is the verified `origin/main` base for the
+current methodology-review branch. The independent Sol 6.1 review covering P13-01–P13-09 is
+incorporated into the active M0.1 design proposal. This remains a review checkpoint, not a
+methodology acceptance: P13-01–P13-08 remain pending approval, Option B is only a Technical Lead
+recommendation with owner approval pending, and no accepted ADR or normative Proposal/Project Plan
+change is made. Phase 13 remains PLANNED / NOT AUTHORIZED. This documentation task did not
+implement or run Phase 13, stage/extract/hash protected source content, access July 4–31 outcomes,
+or perform future-data extraction.
 
 ## Historical implementation checkpoints (preserved)
 
