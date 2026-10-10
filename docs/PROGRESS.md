@@ -208,10 +208,10 @@ was performed.
 ## Current boundary
 
 Phases 0–12 are COMPLETE; Phase 13 is PLANNED / NOT AUTHORIZED; the protected July 4–31
-holdout remains unreleased. The [M0.1 Phase 13 design proposal](../plans/active/phase-13-sequential-final-evaluation.md)
-incorporates methodology-review corrections and remains **PROPOSED / NOT APPROVED**, pending
-Technical Lead and owner approval. It authorizes neither Phase 13 implementation, protected-source
-staging, nor holdout access. Phase 14 has not started.
+holdout remains unreleased. The [M0.2 Phase 13 design proposal](../plans/active/phase-13-sequential-final-evaluation.md)
+records the Option A-bounded feasibility recommendation and remains **PROPOSED / NOT APPROVED**,
+pending explicit methodology and acceptance approval. It authorizes neither Phase 13 implementation,
+protected-source staging, nor holdout access. Phase 14 has not started.
 
 ### Phase 13 M0.1 methodology review checkpoint — 2026-10-10
 
@@ -224,6 +224,22 @@ recommendation with owner approval pending, and no accepted ADR or normative Pro
 change is made. Phase 13 remains PLANNED / NOT AUTHORIZED. This documentation task did not
 implement or run Phase 13, stage/extract/hash protected source content, access July 4–31 outcomes,
 or perform future-data extraction.
+
+### Phase 13 M0.2 Option A-bounded feasibility checkpoint — 2026-10-10
+
+The owner prefers including simulated inventory evaluation in Phase 13. The independent Sol 6.1
+feasibility review recommends Option A-bounded: two independent July H14 origin-frozen standing-
+target episodes on the July 3 and July 17 primary origins, retaining the accepted Phase 10 policy
+pair and full precommitted scenario/sensitivity panel. This is a recommendation, not methodology
+or acceptance approval. Two fixed targets do not provide fresh forecast-supported protection
+coverage for every later daily review and do not demonstrate continuous calibrated 28-day inventory
+operation. The active plan records the required roadmap acceptance clarification, proposed schedule
+and Fit B transport decisions, context provenance, panel volumes/resource gate, fixture oracles,
+and separate rehearsal/release gates. No accepted ADR, Proposal, or Project Plan is changed.
+Phase 13 remains PLANNED / NOT AUTHORIZED; no implementation, real-data modeling or simulation,
+July context generation, protected-source staging, holdout access/hash, or outcome release occurred
+in this checkpoint. P35-01/P35-02 corrections remain in the existing PR head; Technical Lead
+acceptance is pending.
 
 ## Historical implementation checkpoints (preserved)
 
