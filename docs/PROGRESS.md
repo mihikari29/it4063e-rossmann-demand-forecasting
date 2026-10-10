@@ -208,10 +208,11 @@ was performed.
 ## Current boundary
 
 Phases 0–12 are COMPLETE; Phase 13 is PLANNED / NOT AUTHORIZED; the protected July 4–31
-holdout remains unreleased. The [M0.3 Phase 13 design proposal](../plans/active/phase-13-sequential-final-evaluation.md)
-records the owner's A-bounded inventory scope approval under ADR-025 and remains **PROPOSED / NOT
-APPROVED** as a complete methodology. The scope decision does not authorize implementation,
-development rehearsal, protected-source staging, or holdout access. Phase 14 has not started.
+holdout remains unreleased. The [M0.4 Phase 13 method-freeze proposal](../plans/active/phase-13-sequential-final-evaluation.md)
+records the selected methods under ADR-026 and the owner's A-bounded inventory scope under ADR-025.
+Source/preparation preflight remains pending; M1 is NOT AUTHORIZED. Method selection does not
+authorize implementation, rehearsal, protected-source staging, or holdout access. Phase 14 has not
+started.
 
 ### Phase 13 M0.1 methodology review checkpoint — 2026-10-10
 
@@ -260,6 +261,31 @@ release retain separate authorizations. Phase 13 remains PLANNED / NOT IMPLEMENT
 AUTHORIZED. No model fit, simulation, July context generation, protected-data access, staging,
 holdout release, or canonical artifact operation occurred for M0.3. The scope-only ADR does not
 approve remaining Phase 13 methodology.
+
+### Phase 13 M0.4 selected methodology checkpoint — 2026-10-10
+
+M0.4 records the delegated Technical Lead's selected Phase 13 methods in new ADR-026 on branch
+`docs/phase-13-m04-methodology-freeze`, created from verified `origin/main` SHA
+`66b2019ad19958e414e51bd9c5799d08809f0424` (PR #36 merge;
+post-merge Quality #113 passed). The selected protocol retains two complete H14 blocks, the
+1,115-store/29-feature input schema, conditional origin-safe covariates and synthetic weekly
+planning schedule, A2 logical/operator-enforced custody, unchanged frozen June Fit B transport as
+unvalidated, ADR-025 A-bounded inventory, descriptive monitoring with deterministic integrity/data
+alerts only, the pinned Windows/Python 3.14 tolerance, and LightGBM with frozen Seasonal Naive
+contextual issuance. The M0.4 plan records exact statuses and gates; PROPOSAL and PROJECT_PLAN were
+updated where needed to reflect selected monitoring and input/custody methods and remove
+contradictions.
+
+Source identity, historical-availability provenance, safe acquisition/preparation, operator and
+prior-partition provenance, and full-panel resource approval remain execution preconditions. If
+required covariates exist only in a combined source containing protected Sales/Open, a separately
+reviewed safe-preparation/custody procedure is required before any source access; column projection
+alone is not physical isolation. M1, development rehearsal, mechanical staging, and analytical
+release each remain separately authorized gates. Phase 13 remains PLANNED / NOT IMPLEMENTED, M1 is
+NOT AUTHORIZED, and the final holdout remains UNRELEASED. No implementation, fit, simulation, July
+covariate extraction, protected-source/outcome access or hashing, staging, analytical release, or
+canonical artifact regeneration occurred for M0.4. The method-freeze Draft PR is pending Technical
+Lead review.
 
 ## Historical implementation checkpoints (preserved)
 

@@ -1368,43 +1368,32 @@ follow the sequential reveal while each policy continues to use its original fro
 daily state transitions are not new calibrated rolling forecast decisions, and unsupported
 later-review protection coverage is not scored. No new rolling operational forecast origin or
 daily suffix recalibration is introduced. The inventory scope does not imply continuous
-rolling 28-day validation. ADR-025 does not approve July forecast-input provenance, retrospective
-conditional extraction, planned Open, Fit B transport, custody, runtime, or monitoring methods;
-their separate decisions and release gates remain pending.
+rolling 28-day validation. ADR-025 approves inventory scope only. ADR-026 records the selected
+forecast-input/availability assumptions, synthetic planned-Open schedule, Fit B transport, A2
+custody, runtime/reproducibility, monitoring, and score/comparator methods. Source identity,
+provenance, safe preparation, operator/partition provenance, resource approval, and separate
+implementation, rehearsal, staging, and analytical-release gates remain pending.
 
-The existing forecast and synthetic-inventory inputs are used only under separately approved
-availability assumptions. Scope approval does not itself authorize a source, covariate, schedule,
-extraction, protected-data staging, or analytical release.
+The selected Phase 13 methods are recorded in ADR-026. Source identity, covariate provenance,
+historical availability assumptions, safe acquisition and authorized preparation remain preflight
+requirements. Scope and method selection do not authorize a source read, extraction, protected-data
+staging, or analytical release. If required covariates exist only in a combined source containing
+protected Sales/Open, a separately reviewed safe-preparation/custody procedure is required before
+any access to that source; column projection alone does not establish physical isolation.
 
 ---
 
 ## 24.1. Monitoring Alert Rules
 
-For example:
-
-$$
-RollingMAE
->
-1.2\times BaselineValidationMAE
-$$
-
-for two consecutive monitoring windows,
-
-or when:
-
-- substantial data drift is detected;
-- interval coverage declines significantly;
-- service level falls below an acceptable range.
-
-Thresholds and monitoring-window definitions must be fixed using development evidence before
-the final replay. These examples are candidate alert rules, not established requirements or proof
-that a 28-day historical replay supports robust drift detection. Evidently is optional; simple
-summaries must remain usable without it.
-
-**Phase 13 status:** Monitoring windows and alert methods remain PENDING methodology approval
-(P13-06). ADR-025 approves the bounded inventory scope only; it does not accept statistical drift
-thresholds, service-alert thresholds, or other alert rules. Do not treat these examples as approved
-or use unsupported forecast inputs to construct alerts.
+**Selected Phase 13 method (ADR-026):** report descriptive daily, trailing 7-calendar-day, and
+trailing 14-calendar-day summaries, stratified by forecast origin and horizon. Show descriptive
+feature-distribution shifts and post-release forecast errors and interval coverage with their
+populations and denominators. Precommit deterministic integrity and data-quality alerts only.
+Statistical drift, forecast-performance, interval-coverage, and service-level alarm thresholds are
+not selected. Alert definitions must be independent of final outcomes. ADR-021 calibration sample
+floors do not establish monitoring reliability, and this short replay does not support claims of
+statistically reliable drift or service detection. Simple summaries remain sufficient; Evidently is
+optional only for a demonstrated unmet need.
 
 ---
 
@@ -1470,14 +1459,11 @@ without requiring manual notebook execution.
 
 ## Monitoring
 
-The Phase 13 monitoring and alert methodology remains PENDING approval (P13-06). ADR-025 does not
-approve monitoring windows, statistical drift criteria, service thresholds, or alert rules. The
-following are proposed success criteria only and remain subject to a separately reviewed method:
-
-- drift detection;
-- rolling performance monitoring;
-- business monitoring;
-- alert rules derived from development evidence.
+The Phase 13 monitoring method is selected in ADR-026: descriptive daily/trailing 7/14-day windows
+stratified by origin/horizon; descriptive feature shifts and post-release errors/coverage; and
+deterministic integrity/data-quality alerts only. No arbitrary numeric drift, performance,
+coverage, or service threshold is selected. Report denominators and partial windows; do not claim
+statistically reliable drift or service detection from this replay.
 
 ---
 

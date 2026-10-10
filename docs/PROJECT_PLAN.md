@@ -26,9 +26,10 @@ closeout. Phase 10 is COMPLETE on `main` after PR #25 merged at
 COMPLETE: M1-M4 are accepted, findings M3-01, M4-01 and FR-01 are resolved, and PR #26 was
 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`. Its
 [completed plan](../plans/completed/phase-11-application-services.md) records formal closeout.
-No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration, inventory
-policy/scenarios, and monitoring thresholds must all be frozen before authorized Phase 13 replay
-(ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase 6 is complete on `main` through
+No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration,
+inventory policy/scenarios, and monitoring windows/deterministic alert conditions must all be frozen
+before authorized Phase 13 replay (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase
+6 is complete on `main` through
 PR #10. Phase 7 is complete on `main` through PR #13, preserving ADR-020's selected LightGBM
 trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021; implementation PR
 [#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) was squash-merged
@@ -245,25 +246,51 @@ importance and limitations suffice.
 
 ## Phase 13 — Monitoring & Sequential Final Evaluation
 
-**Design proposal:** [M0.3 Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
-— PROPOSED / NOT APPROVED as a complete methodology. ADR-025 accepts the A-bounded inventory
-scope and its stated acceptance limitation only; neither this link nor that scope decision
-authorizes implementation, development rehearsal, protected-source staging, or holdout access.
+**Design proposal:** [M0.4 Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
+— METHOD SELECTED under ADR-026; the owner's A-bounded inventory scope remains recorded in
+ADR-025. Source/preparation preflight and authorization gates remain pending. Neither ADR-026 nor
+this plan authorizes implementation, development rehearsal, protected-source staging, or holdout
+access. M1 remains NOT AUTHORIZED; the final holdout remains unreleased.
 
 **Objective:** Evaluate the frozen system once and demonstrate historical monitoring.
-**Dependencies:** Phases 7–12 frozen choices, resolution of the remaining Phase 13 methodology
-dependencies, and separate authorization for each applicable rehearsal and data-release gate.
+**Dependencies:** Phases 7–12 frozen choices; source identity, provenance, availability, safe
+acquisition and authorized preparation preflight; reviewed custody/provenance for any existing
+partitions; an approved full-panel host resource budget; and separate authorization for M1,
+development rehearsal, mechanical staging, and each analytical data-release gate.
 **Deliverables:** Auditable forecast-before-reveal ledger, final point/interval/KPI summaries,
-simulated inventory policy comparison, proposed monitoring summaries/alerts, and
+simulated inventory policy comparison, descriptive monitoring summaries/alerts, and
 protocol/environment identity.
 
-**Primary forecast evaluation:** Use exactly two non-overlapping 14-day blocks: origin 2015-07-03
+**Selected methods (ADR-026):** Use exactly two non-overlapping 14-day blocks: origin 2015-07-03
 for July 4–17, then origin 2015-07-17 for July 18–31. Issue each complete block forecast before
 revealing its targets and reveal observations in chronological daily order. The second origin may
-use only already-revealed history under the precommitted refitting recipe. Configuration,
+use only Block 1 history already authorized and released through July 17 under the precommitted
+refitting recipe. Configuration,
 calibration, and policy changes and adaptive retraining remain prohibited during the final test.
 Scheduled model/preprocessing refits may update fitted state only as required by that fixed recipe,
 on eligible already-revealed training rows; no interval recalibration or recipe selection.
+
+Retain the 1,115-store grid and exact 29-feature schema. Use separately versioned origin-safe
+covariates with documented retrospective assumed-known availability where historical availability
+is unverified, plus the conditional synthetic Monday–Saturday-open / Sunday-closed planning schedule
+for scenario and observed-Sales-reference simulations. Keep actual Open post-release and separate
+from planned Open and `ScenarioOpen`; report schedule mismatches after release and preserve positive
+observed Sales. Source identity, provenance, safe preparation, and authorized acquisition remain
+preconditions. If required covariates exist only in a combined source containing protected Sales or
+Open, a separately reviewed safe preparation/custody procedure is required before any source access.
+Do not infer physical isolation from column projection.
+
+Use A2 logical/operator-enforced custody with separately staged default-deny views, immutable issue,
+durable per-date intents, journals, and idempotent checkpoints; disclose the trusted-operator
+assumption and do not claim strict physical isolation. A1 Windows identities/NTFS ACLs are optional
+hardening. Mechanical staging and analytical revelation are distinct and separately authorized.
+Apply the frozen June Fit B tables unchanged to July fresh fits only as an explicitly unvalidated
+transport assumption, preserving ADR-021 identities, signed formulas, sample floors, availability,
+and clipping; no recalibration, retuning, suffix borrowing, or coverage guarantee. Preserve the
+ADR-025 A-bounded inventory scope and full-panel resource gate. Use descriptive daily/trailing
+7/14-day monitoring by origin/horizon and deterministic integrity/data-quality alerts only, with no
+arbitrary statistical or service thresholds. LightGBM is primary; issue the frozen Seasonal Naive
+H14 contextual baseline and preserve standalone/common-row populations without new selection.
 
 **Approved inventory scope — A-bounded (ADR-025, scope only):** Run two independent origin-frozen
 H14 inventory episodes on those same July 3 and July 17 origins. Each episode sets the accepted
@@ -281,14 +308,13 @@ extra independent primary tests. The full precommitted scenario/sensitivity pane
 subject to a measured resource-feasibility gate; stop for an explicit scope/resource decision if
 it exceeds the declared budget, without silent sampling.
 
-**Pending methodology and release boundary:** ADR-025 does not approve forecast input provenance,
-retrospective conditional extraction, a planned-Open source or schedule, Fit B transport, custody
-arrangement, runtime tolerances, monitoring/alert methods, or the comparator/score protocol. These
-remain explicit Phase 13 decisions. A-full rolling inventory capability remains unapproved.
-Development rehearsal, protected-source staging, and analytical outcome release retain separate
-written authorization gates. This is one sequential final evaluation, not a second unseen dataset
-after earlier holdout scoring. Simple pandas summaries/plots suffice; Evidently is optional only for
-a demonstrated unmet need.
+**Selected-method and release boundary:** P13 methods are selected in ADR-026, while source identity,
+availability/provenance, safe preparation, operator/partition provenance, host resource approval,
+and all execution authorizations remain outstanding preconditions. A-full rolling inventory
+capability remains unapproved. Development rehearsal, protected-source staging, and analytical
+outcome release retain separate written authorization gates. This is one sequential final
+evaluation, not a second unseen dataset after earlier holdout scoring. Simple pandas
+summaries/plots suffice; Evidently is optional only for a demonstrated unmet need.
 
 ## Phase 14 — Final Documentation, Report & Demo
 
