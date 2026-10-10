@@ -737,3 +737,48 @@ final holdout evaluation or access was part of Phase 10 or this closeout.
 **Decision:** M4's approved deployment target is localhost at `http://127.0.0.1:8501`. Preserve the Streamlit settings `server.address = "127.0.0.1"`, `server.enableStaticServing = false`, `server.enableCORS = true` and `server.enableXsrfProtection = true`. Private-LAN access, network-profile changes, firewall rules, port forwarding, public tunnels, cloud deployment and public hosting are out of scope. Independent LAN-viewer testing is not a mandatory acceptance criterion and has not been performed.
 
 **Acceptance and consequences:** Retain the accepted analytical services, data boundaries and canonical results without modification. M4 still requires automated checks and CI, the existing browser/security/performance evidence, a human visual review of the localhost application, and an independent final review of PR #32. Automated browser interactions do not substitute for human visual review. Keep PR #32 Draft and unmerged until independent final review; this ADR did not itself authorize Phase 12 closeout, data/artifact regeneration or Phase 13 access. The earlier LAN proposal remains historical design in the Phase 12 plan, now archived under `plans/completed/`.
+
+## ADR-025 — Phase 13 A-bounded Inventory Evaluation Scope
+
+**Status:** ACCEPTED — SCOPE ONLY by the owner's explicit decision on 2026-10-10. The decision
+was recorded after PR #35 merged into `main` at
+`2d34e20d5ae9fdb29af610dd28aefd3b80023946`.
+
+**Clarifies:** The Phase 13 inventory deliverable and its acceptance boundary in
+`PROJECT_PLAN.md`. This scope record does not revise the accepted forecasting, uncertainty,
+synthetic-generation, or Phase 10 simulation methods in ADR-015, ADR-020, ADR-021, ADR-022, or
+ADR-023.
+
+**Decision:** Include the following bounded simulated inventory evaluation in Phase 13:
+
+- Run two independent H14 episodes at the existing July 3 and July 17 origins, for July 4–17 and
+  July 18–31 respectively. Each episode freezes its two Phase 10 standing targets at its origin:
+  `historical_mean_standing_target` and `lightgbm_buffer_standing_target`.
+- Retain the full precommitted Phase 10 scenario and sensitivity panel as the requested scope,
+  subject to a measured resource-feasibility gate before a full-panel run. If the declared host
+  budget is exceeded, stop for an explicit scope/resource decision; do not silently sample stores,
+  cases, replicates, policies, or overlays.
+- Replay daily inventory state and KPIs in chronological order as each matching outcome is
+  separately authorized for evaluation. Later daily reviews execute the existing origin-frozen
+  targets; they do not add rolling operational forecast origins, issue new forecasts, or perform
+  daily suffix recalibration or calibrated protection-period recommendations.
+- Accept for this bounded scope the explicit exception to the earlier Phase 13 requirement for
+  complete fresh forecast-supported protection coverage at every daily inventory review. Do not
+  score unsupported later-review protection coverage as evidence. The two independent H14 episodes
+  make no claim of continuous rolling 28-day inventory validation.
+- Preserve paired Phase 10 policy comparison and its common finite-window event and terminal
+  accounting. Retain the existing adverse Phase 10 development evidence recorded in
+  `PROGRESS.md`; this decision does not select a winning policy or imply favorable July results.
+
+The inventory quantities remain simulated retail-equivalent monetary proxies. This scope does not
+claim actual Rossmann inventory, physical demand, real service levels, causal improvement, or
+business savings.
+
+**Approval boundary:** This decision approves inventory scope and its stated acceptance limitation
+only. It does not approve July predictor/covariate provenance or retrospective conditional input
+extraction; a planned-Open schedule for the observed-Sales reference; Fit B transport to July fits
+or synthetic cases; A2 versus A1 custody controls; runtime save/load tolerances; monitoring windows,
+statistics, or alert thresholds; a comparator/score protocol; or M1 implementation. None of those
+approvals may be inferred from the A-bounded scope decision. Implementation, development rehearsal,
+mechanical protected-source staging, and analytical outcome release each retain their separate
+authorization gates. Phase 13 as a whole remains PLANNED / NOT AUTHORIZED.

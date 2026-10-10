@@ -208,10 +208,10 @@ was performed.
 ## Current boundary
 
 Phases 0–12 are COMPLETE; Phase 13 is PLANNED / NOT AUTHORIZED; the protected July 4–31
-holdout remains unreleased. The [M0.2 Phase 13 design proposal](../plans/active/phase-13-sequential-final-evaluation.md)
-records the Option A-bounded feasibility recommendation and remains **PROPOSED / NOT APPROVED**,
-pending explicit methodology and acceptance approval. It authorizes neither Phase 13 implementation,
-protected-source staging, nor holdout access. Phase 14 has not started.
+holdout remains unreleased. The [M0.3 Phase 13 design proposal](../plans/active/phase-13-sequential-final-evaluation.md)
+records the owner's A-bounded inventory scope approval under ADR-025 and remains **PROPOSED / NOT
+APPROVED** as a complete methodology. The scope decision does not authorize implementation,
+development rehearsal, protected-source staging, or holdout access. Phase 14 has not started.
 
 ### Phase 13 M0.1 methodology review checkpoint — 2026-10-10
 
@@ -240,6 +240,26 @@ Phase 13 remains PLANNED / NOT AUTHORIZED; no implementation, real-data modeling
 July context generation, protected-source staging, holdout access/hash, or outcome release occurred
 in this checkpoint. P35-01/P35-02 corrections remain in the existing PR head; Technical Lead
 acceptance is pending.
+
+### Phase 13 M0.3 owner scope approval — 2026-10-10
+
+PR #35 merged into `main` at `2d34e20d5ae9fdb29af610dd28aefd3b80023946`; post-merge Quality
+[#111](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38059767105)
+passed on Python 3.12 and 3.14. On 2026-10-10 the owner explicitly approved Option A-bounded
+inventory scope and its daily-protection limitation only. New ADR-025 records that scope-only
+decision. The M0.3 revision synchronizes the Phase 13 acceptance boundary in PROJECT_PLAN and
+PROPOSAL: two independent H14 origin-frozen episodes use the July 3 and July 17 origins; later
+daily reviews execute the existing targets without claiming fresh calibrated protection coverage;
+the episodes do not establish continuous rolling 28-day inventory operation. The full
+precommitted scenario/sensitivity panel remains subject to a resource-feasibility gate.
+
+P13-05 inventory scope is approved by the owner; detailed execution methodology remains pending.
+P13-01's detailed issue/release protocol and P13-02/03/04/06/07/08 remain pending Technical Lead
+review/approval. Implementation, development rehearsal, protected-source staging, and analytical
+release retain separate authorizations. Phase 13 remains PLANNED / NOT IMPLEMENTED; M1 is NOT
+AUTHORIZED. No model fit, simulation, July context generation, protected-data access, staging,
+holdout release, or canonical artifact operation occurred for M0.3. The scope-only ADR does not
+approve remaining Phase 13 methodology.
 
 ## Historical implementation checkpoints (preserved)
 

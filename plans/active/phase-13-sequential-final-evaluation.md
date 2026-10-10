@@ -1,27 +1,29 @@
 # Phase 13 — Sequential Final Evaluation Design Proposal
 
-**State: PROPOSED / NOT APPROVED.** This is M0.1 documentation for Technical Lead and owner
-review. Every material choice remains pending approval. It authorizes neither implementation nor
-access to protected July 4–31 outcomes. Phase 13 remains PLANNED / NOT AUTHORIZED; Phase 14 has
-not started.
+**State: PROPOSED / NOT APPROVED as a complete Phase 13 methodology.** This M0.3 revision records
+the owner's A-bounded inventory scope approval under ADR-025; only that scope and its explicit
+daily-protection limitation are accepted. Other material methodology choices remain pending.
+This plan authorizes neither implementation nor access to protected July 4–31 outcomes. Phase 13
+remains PLANNED / NOT AUTHORIZED; Phase 14 has not started.
 
 ## 1. Objective, scope, and non-goals
 
 Propose one reproducible, leakage-controlled final evaluation of the accepted Rossmann
 Store × Date monetary Sales forecast, with two non-overlapping H14 blocks issued before
-their outcomes are revealed. Propose lightweight historical monitoring and resolve whether
-the inventory deliverable can be evaluated within those same bounded episodes.
+their outcomes are revealed. Record the owner's approved A-bounded inventory scope on those
+origins while resolving the remaining execution methodology and lightweight monitoring choices.
 
 This plan does not implement the protocol, inspect final outcomes, select another model,
 change accepted features/metrics/calibration/policies, add forecast origins or horizons,
-generate final forecasts, or authorize a final-data release. No ADR is added: this proposal
-contains unresolved choices and does not supersede accepted ADRs.
+generate final forecasts, or authorize a final-data release. ADR-025 records the approved
+inventory scope only; this plan does not otherwise supersede accepted ADRs and retains unresolved
+methodology decisions.
 
 ## 2. Current accepted evidence and dependencies
 
-**FACT:** PR #34 merged the initial M0 design into `main` at
-`4f2f9dc407109efea8401ff3b19894e104ad764e`, verified as the current `origin/main` base for this
-review. PR #34 did not approve the methodology. Phases 0–12 are integrated and complete; the
+**FACT:** PR #35 merged into `main` at
+`2d34e20d5ae9fdb29af610dd28aefd3b80023946`, verified as the current `origin/main` base for this
+review. The merge did not approve the full Phase 13 methodology. Phases 0–12 are integrated and complete; the
 selected point model is
 `global_lightgbm_gbdt_regression_l1`, trial A at 180 rounds. ADR-015 requires a separately
 authorized final protocol. ADR-020 freezes the model recipe. ADR-021 freezes the development
@@ -29,9 +31,12 @@ uncertainty method and the accepted Fit B values for the identified canonical ru
 freeze the synthetic assumptions and Phase 10 standing-policy simulation. ADR-024 sets the
 Phase 12 demonstration boundary to localhost.
 
-M0.1 incorporated the independent Sol 6.1 review of P13-01 through P13-09. This M0.2 revision
-records the follow-up Option A-bounded inventory feasibility review. It remains an approval
-proposal: all material methodology choices below are PENDING APPROVAL.
+M0.1 incorporated the independent Sol 6.1 review of P13-01 through P13-09; M0.2 recorded the
+Option A-bounded feasibility review. On 2026-10-10 the owner explicitly approved A-bounded
+inventory scope and its daily-protection limitation only. ADR-025 records that scope-only decision;
+this M0.3 revision synchronizes the Phase 13 acceptance language. The complete methodology remains
+PROPOSED / NOT APPROVED, and detailed execution choices and independent implementation/data gates
+remain pending.
 There is no pending code integration dependency. The origin-parameterized training and recursive
 functions can represent authorized July 3 and July 17 fits when given safe inputs; no such fit has
 been run. The current development runner rejects reads after July 3 and is not the final replay
@@ -61,10 +66,11 @@ through them unchanged.
 (91.26%), below nominal 95%; sparse Sunday support remains fragile. This is development
 evidence and is not a final coverage promise. Phase 10's accepted forecast-policy simulated
 holding-plus-shortfall cost was higher than baseline in both recorded populations; preserve
-the unfavorable result. The owner prefers including inventory evaluation (Option A). The
-Technical Lead's independent feasibility review recommends the bounded two-episode Option A
-design below. This is a recommendation only: methodology, roadmap acceptance, schedules,
-uncertainty transport, implementation, and release remain pending approval. Earlier full-source
+the unfavorable result. The owner has approved Option A-bounded inventory scope only: two
+independent H14 origin-frozen episodes, subject to the full-panel resource gate, with no fresh
+calibrated protection forecast at every later daily review and no continuous rolling 28-day claim.
+This does not approve detailed methodology, input sources, schedules, uncertainty transport,
+custody, implementation, or release. Earlier full-source
 descriptive EDA included the protected period, as disclosed in
 [EDA findings](../../docs/EDA_FINDINGS.md). Do not call the holdout pristine or reuse full-period
 EDA tiers/cohorts for modeling or monitoring.
@@ -430,15 +436,15 @@ For each window, report its exact population and numerator/denominator: requeste
 
 Every released record retains its block origin and forecast horizon. A 7/14-day window spanning July 17 is labeled multi-origin and keeps origin/horizon breakdowns. Recursive lag-feature differences as forecasts replace actual history remain descriptive.
 
-Alerts are limited to deterministic integrity and data-quality violations, such as changed identities, duplicate/missing keys, invalid schema/value, blocked-path attempt, out-of-order event, or incomplete provider response. An unavailable prediction or unknown planned Open remains explicit with its reason. ADR-021's 40-row daily and 50-prefix cumulative floors define calibration estimators only; they do not establish monitoring reliability. Under proposed Option A-bounded, update inventory state and descriptive KPIs after each authorized daily release; label episode-to-date values partial through H14. Rolling 7/14-day inventory summaries retain block origin, episode reset, released-day count, and partial-window status; do not present the reset episodes as continuous inventory. Receipt-cycle service uses its accepted completed-cycle denominator and triggers no alert. No numeric service threshold or adaptive policy change is proposed. Do not claim statistically reliable drift from two forecast blocks or 28 days.
+Alerts are limited to deterministic integrity and data-quality violations, such as changed identities, duplicate/missing keys, invalid schema/value, blocked-path attempt, out-of-order event, or incomplete provider response. An unavailable prediction or unknown planned Open remains explicit with its reason. ADR-021's 40-row daily and 50-prefix cumulative floors define calibration estimators only; they do not establish monitoring reliability. Under the owner-approved A-bounded inventory scope, update inventory state and descriptive KPIs after each authorized daily release; label episode-to-date values partial through H14. Rolling 7/14-day inventory summaries retain block origin, episode reset, released-day count, and partial-window status; do not present the reset episodes as continuous inventory. Receipt-cycle service uses its accepted completed-cycle denominator and triggers no alert. No numeric service threshold or adaptive policy change is proposed. Do not claim statistically reliable drift from two forecast blocks or 28 days.
 
 ## 12. Inventory scope decision and alternatives
 
-### Owner preference and Technical Lead recommendation
+### Owner approval — scope only
 
-**Owner preference: Option A — include inventory evaluation in the final Phase 13 replay.** **Technical Lead recommendation: Option A-bounded — two independent H14 origin-frozen standing-target episodes.** **Status: PENDING EXPLICIT METHODOLOGY AND ACCEPTANCE APPROVAL.** The owner's scope preference does not approve the precise protocol, schedule assumptions, Fit B transport, roadmap exception, implementation, or outcome release. A-bounded is a recommendation, not an accepted method.
+**Owner decision, 2026-10-10: Option A-bounded inventory scope APPROVED — SCOPE ONLY.** ADR-025 records two independent H14 origin-frozen standing-target episodes at the July 3 and July 17 origins, the full precommitted scenario/sensitivity panel subject to its resource-feasibility gate, daily chronological simulated state/KPI evaluation under Phase 10 mechanics, and the accepted limitation that later reviews have no fresh calibrated protection-period forecast. The owner also explicitly accepts that these episodes do not demonstrate continuous rolling 28-day inventory validation. Detailed execution methodology and the remaining input, custody, uncertainty, monitoring, runtime, and release decisions remain pending; this is not approval of complete Phase 13 methodology or implementation.
 
-### Recommended bounded episodes
+### Approved bounded episodes
 
 | Block | Inventory/model origin | Target and reveal dates | History allowed at origin |
 |---|---|---|---|
@@ -468,7 +474,7 @@ The explicit coverage limitation is:
 - Not every later review has complete forecast-supported protection-period coverage.
 - The episodes do not demonstrate continuous calibrated 28-day inventory operation.
 
-The simulation evaluates the precommitted standing policy's daily state transitions and paired H14 outcomes. It cannot describe each later order as a newly forecast, calibrated protection-period recommendation. This bounded interpretation requires explicit Phase 13 roadmap acceptance before implementation; it does not silently redefine the current requirement.
+The simulation evaluates the precommitted standing policy's daily state transitions and paired H14 outcomes. It cannot describe each later order as a newly forecast, calibrated protection-period recommendation. The owner accepted this explicit Phase 13 scope exception in ADR-025, and M0.3 synchronizes the Project Plan and Proposal language. Other methodology and execution gates still apply before implementation.
 
 ### July contexts, schedules and uncertainty
 
@@ -505,14 +511,14 @@ Use bounded-memory case/store partitions, deterministic key ordering, atomic pai
 
 A-full would add precommitted operational origins and protection horizons to refresh daily recommendations. It is not recommended or included in this proposal's implementation scope. It requires a separately approved rolling-policy and calibration design, origin-safe covariate/schedule rules at each added origin, and supported uncertainty for each decision. Frozen origin-prefix q values cannot be borrowed as calibrated later-review suffix bounds. July-only outcomes also cannot fully assess protection horizons extending beyond July 31. Extra overlapping forecasts remain dependent operational decisions, not additional independent primary tests.
 
-### Required acceptance clarification before implementation
+### Remaining methodology decisions before implementation
 
-The owner/Technical Lead must explicitly accept the bounded daily-protection limitation above and resolve the relevant normative passages before implementation:
+The owner has accepted the A-bounded scope and daily-protection limitation only. ADR-025 and the M0.3 edits to the Project Plan and Proposal record that limited decision. The Technical Lead must still review the integrated design, and the unresolved P13 decisions in Section 18 must be resolved or explicitly deferred before their dependent implementation or release gate.
 
-- PROJECT_PLAN.md Phase 13 acceptance, which currently calls for additional operational origins, issue-before-reveal decisions, and scoring decisions only with complete supported protection coverage.
-- PROPOSAL.md §17's daily-review protection-period requirement and stored-H14 coverage warning; §24's daily inventory-KPI update; §24.1's candidate service alert example; §26 Business and Monitoring success criteria; and §25's inventory trade-off deliverable.
+- PROJECT_PLAN.md Phase 13 acceptance now distinguishes the unchanged two-block primary forecast evaluation from two inventory episodes with frozen standing targets. The accepted exception does not permit unsupported daily-review coverage to be scored.
+- PROPOSAL.md §17's stored-H14 coverage warning; §24's daily inventory-KPI update; §24.1's candidate service alert example; and §26 Business and Monitoring criteria now identify the A-bounded scope and retain monitoring decisions as pending.
 
-Under the proposed bounded scope, keep the two-origin primary forecast evaluation unchanged and state that inventory results describe two independent standing-target episodes, with no fresh calibrated bound at every daily review. Preserve existing adverse Phase 10 results and canonical artifacts. Canonical development evidence reports forecast-minus-baseline simulated holding-plus-shortfall costs of +23,142,547.537968 for synthetic-base reference and +4,276,098.731339 for historical conditional replay. Those unfavorable findings remain part of the record; July results may be adverse, favorable, or inconclusive. Sales remains monetary turnover, and inventory, service, shortage and cost quantities remain simulated proxies. No real physical inventory, causal improvement, guaranteed service or savings is inferred.
+Under the approved scope, keep the two-origin primary forecast evaluation unchanged and state that inventory results describe two independent standing-target episodes, with no fresh calibrated bound at every later review. Preserve existing adverse Phase 10 results and canonical artifacts. Canonical development evidence reports forecast-minus-baseline simulated holding-plus-shortfall costs of +23,142,547.537968 for synthetic-base reference and +4,276,098.731339 for historical conditional replay. Those unfavorable findings remain part of the record; July results may be adverse, favorable, or inconclusive. Sales remains monetary turnover, and inventory, service, shortage and cost quantities remain simulated proxies. No real physical inventory, causal improvement, guaranteed service or savings is inferred.
 
 ## 13. Failure handling, restart, and recovery
 
@@ -555,7 +561,7 @@ Before release, fixtures must demonstrate:
 
 ## 16. Proposed M1–M8 implementation milestones
 
-These are reviewable tasks for a later, separately authorized Luna 6 implementation assignment. They are not authorized by this M0.2 proposal.
+These are reviewable tasks for a later, separately authorized Luna 6 implementation assignment. They are not authorized by this M0.3 proposal.
 
 | Milestone | Inputs → output | Tests and dependency gate |
 |---|---|---|
@@ -572,7 +578,7 @@ These are reviewable tasks for a later, separately authorized Luna 6 implementat
 
 | Area | Proposed acceptance evidence | Release prerequisite? |
 |---|---|---|
-| Phase and scope | M0 decisions explicit; proposal remains PROPOSED / NOT APPROVED until approval; implementation, development rehearsal, staging, analytical release and closeout are distinct | Yes |
+| Phase and scope | A-bounded scope and limitation accepted in ADR-025; complete Phase 13 methodology remains PROPOSED / NOT APPROVED; implementation, rehearsal, staging, analytical release and closeout are distinct | Yes |
 | Git/artifacts | Branch based on verified origin/main; Phase 7–10 artifacts/manifests unchanged; new outputs immutable and identified | Yes |
 | Recipe/forecast | Two exact trial-A fits; ordered 29 predictors; fixed params, cutoffs, categories, seeds; complete H14 grids; raw/operational separation | Yes |
 | Chronology/custody | Two forecast origins; immutable block issue before outcome access; A2 provider boundary or approved alternative; durable per-day intent; chronological release | Yes |
@@ -591,23 +597,23 @@ M1 begins with synthetic fixtures only after separate authorization. A full deve
 
 ## 18. Open decisions requiring Technical Lead and owner review
 
-The following table tracks independent audit findings P13-01 through P13-09. **Every material choice is PENDING APPROVAL; none is ACCEPTED by this document.** Owner preference for A and the Technical Lead recommendation for A-bounded do not change this status.
+The following table tracks independent audit findings P13-01 through P13-09. A-bounded inventory scope and its daily-protection limitation are accepted by the owner in ADR-025. **The complete Phase 13 methodology remains PENDING APPROVAL; no other table item is accepted by that scope decision.**
 
 | ID | Recommended choice | Approval status | Remaining input needed | Exact acceptance implications |
 |---|---|---|---|---|
-| P13-01 Protocol/release | Keep two primary H14 blocks and separate design, implementation, rehearsal, staging, analytical-release and closeout gates. Recommend A-bounded inventory on these origins, with explicit limitation and roadmap clarification. | PENDING METHODOLOGY AND ACCEPTANCE APPROVAL | Approve chronology, bounded exception to daily complete-protection scoring, and each later gate. | No implementation until M0 approval. Two standing-target episodes do not supply fresh complete bounds at every review. Clarify exception; no additional independent primary tests. |
+| P13-01 Protocol/release | Keep two primary H14 forecast blocks and separate design, implementation, rehearsal, staging, analytical-release and closeout gates; record the owner-approved A-bounded inventory scope on those origins. | SCOPE APPROVED; DETAILED PROTOCOL AND RELEASE PENDING | Technical Lead review of the integrated chronology and the remaining implementation, rehearsal, staging and release gates. | The accepted inventory episodes do not supply fresh complete bounds at every later review. The owner-approved exception does not approve input sources or outcome release. Preserve exactly two primary forecast tests. |
 | P13-02 Inputs/population and schedules | Fixed 1,115-store requested grid; origin-safe providers; unchanged 29 predictors; new July contexts; separate ScenarioOpen, nullable planned operational Open, and post-release observed Open. | PENDING APPROVAL | Approve roster, sources/availability, context contract, synthetic schedule, and use of Monday–Saturday/Sunday schedule for observed-Sales reference. | Never use future actual Open as planned Open. Unknown planned Open leaves dependent targets unavailable. Preserve positive Sales despite planned closure. Retain unavailable stores/cases; no feasibility-based selection. |
 | P13-03 Custody/ledger | Recommend A2 provider-scoped default-deny views, immutable issue, chronological journal and trusted operator; A1 account/NTFS controls optional. | PENDING APPROVAL | Accept A2's logical/operator-enforced limit and trusted-operator assumption or choose A1. Separately authorize future mechanical reads. | A2 does not promise physical isolation from operator/admin. Mechanical staging differs from analytical revelation. No access is authorized here. |
 | P13-04 Frozen uncertainty | Preserve exact Fit B identities and ADR-021 estimators; no refit/recalibration; distinguish calibration-fit from July model-fit origin and disclose transport. | PENDING APPROVAL | Approve or reject applying saved June entries to both July fits/schedules. | Preserve signed values, floors, clipping and reasons. Unsupported entries remain unavailable. June transport is no July/synthetic service guarantee. No prefix-to-suffix borrowing. |
-| P13-05 Inventory | Owner prefers A. Technical Lead recommends A-bounded: two independent July H14 origin-frozen standing-target episodes, accepted policies and full precommitted panel. | PENDING EXPLICIT METHODOLOGY AND ACCEPTANCE APPROVAL | Approve protocol, contexts, schedules, transport, resource gate and bounded daily-protection limitation. | Preference is not approval. Clarify Project Plan Phase 13 protection-coverage scoring and Proposal §§17, 24, 24.1, 25, 26. Targets stay fixed; later reviews have no fresh suffix bound; episodes do not represent continuous calibrated 28-day operation. Preserve ADR-022/023 and adverse Phase 10 evidence. M6 remains gated. |
-| P13-06 Monitoring | Daily plus descriptive 7/14-day windows, exact populations, partial flags, origin/horizon/reset labels, deterministic integrity/data-quality alerts only. | PENDING APPROVAL | Approve windows/populations and confirm no numeric performance/drift/coverage/service thresholds. | Inventory KPIs update after authorized releases; partial summaries are descriptive. No adaptive change or service-threshold alert. ADR-021 floors do not establish monitoring reliability. Clarify Proposal §24.1/§26 as needed. |
+| P13-05 Inventory | Two independent July H14 origin-frozen standing-target episodes, the accepted Phase 10 policy pair and full precommitted scenario/sensitivity panel subject to resource feasibility. | SCOPE APPROVED BY OWNER; DETAILED EXECUTION METHODOLOGY PENDING | Technical Lead review; resolve contexts, schedules, input availability, Fit B transport, resource measurement/configuration, and paired-result details before dependent implementation. | The owner accepted the daily-protection limitation and no continuous rolling 28-day claim. Normative scope language is synchronized in ADR-025, PROJECT_PLAN and PROPOSAL. Preserve ADR-022/023 and adverse Phase 10 evidence. Scope approval is not implementation or data-release authorization. |
+| P13-06 Monitoring | Daily inventory KPI updates follow the approved A-bounded simulation scope; monitor windows, populations, and alert method remain proposals pending separate approval. | PENDING APPROVAL | Approve monitoring windows/populations and alert methodology; determine whether any numeric performance, drift, interval-coverage, or service thresholds are supportable. | P13-05 scope approval does not accept alert rules or thresholds. ADR-021 sample floors do not establish monitoring reliability. Do not use unsupported inputs or imply reliable drift/service detection. |
 | P13-07 Runtime/repro | Locked Windows/Python 3.14; exact identities; proposed save/load tolerances rtol=1e-12 and atol=1e-9. | PENDING APPROVAL | Approve environment, tolerances, rehearsal host resource budgets. | Tolerances are proposals. Claims bounded to pinned environment. If panel exceeds resources, stop for scope review, do not sample. |
 | P13-08 Scores/comparator | LightGBM primary; frozen Seasonal Naive contextual comparator; separate common-row reporting; no renewed selection or Holt-Winters final comparator. | PENDING APPROVAL | Approve exact Seasonal Naive issuance and common-row protocol. | Report standalone/common-row ADR-013 populations; no renewed model selection. |
-| P13-09 Status/docs | Record PR #34 merge at 4f2f9dc407109efea8401ff3b19894e104ad764e; keep M0.2 PROPOSED / NOT APPROVED and Phase 13 PLANNED / NOT AUTHORIZED. | PENDING TECHNICAL LEAD REVIEW | Review M0.2 and resolve/defer P13-01–P13-08. | No ADR, implementation status or completion claim follows. Preserve prior checkpoints. No Proposal/Project Plan edit in this task. |
+| P13-09 Status/docs | Record PR #35 merge at 2d34e20d5ae9fdb29af610dd28aefd3b80023946; record ADR-025 and synchronized M0.3 scope clarification while keeping the complete methodology proposed. | SCOPE DECISION RECORDED; TECHNICAL LEAD REVIEW PENDING | Review M0.3 and resolve or defer remaining protocol/methodology items P13-01–P13-04 and P13-06–P13-08. | The owner-approved inventory scope does not approve overall Phase 13 methodology, implementation status, or completion. Preserve the dated M0.1 and M0.2 checkpoints as historical records. |
 
 ## 19. Explicit implementation and release authorization gates
 
-1. **M0 review:** Technical Lead/owner explicitly approve or defer every choice, including A-bounded, its limitation, schedule assumptions, Fit B transport, panel resource gate and later gates. This draft PR does not approve the design.
+1. **M0 review:** Technical Lead reviews the integrated M0.3 design and the owner-approved A-bounded scope recorded in ADR-025. Resolve or explicitly defer the remaining P13 methodology choices, including inputs, custody, Fit B transport, monitoring, runtime and comparator, before dependent work. This draft PR does not approve the complete methodology.
 2. **Implementation:** A separate task authorizes M1 onward. M1 remains synthetic-fixture-only under its own authorization. This documentation correction authorizes no implementation.
 3. **Implementation review:** Fixture tests, quality checks, resource measurements, provenance, A2 custody/recovery (or an approved alternative), and independent review pass. Preserve Phase 7–10 methods/evidence.
 4. **Development rehearsal:** After M7 fixture and independent implementation review, obtain separate written authorization naming origin-safe development inputs/run config. The rehearsal cannot read protected outcomes or rewrite canonical artifacts.
@@ -615,4 +621,4 @@ The following table tracks independent audit findings P13-01 through P13-09. **E
 6. **Analytical release:** Separate explicit authorization names reviewed commit, config, provider, block/date, trusted operator and procedure. Complete issue and durable per-day intent precede access; new staging has Gate 5 authorization. Release only that date and complete its paired state/forecast checkpoint before advancing.
 7. **Closeout:** Only after authorized run, independent review, acceptance of scope adjustments and explicit phase closeout may Phase 13 be COMPLETE. Phase 14 remains outside this plan.
 
-**Current boundary: STOP at M0.2 pending Technical Lead and owner methodology/acceptance approval.**
+**Current boundary: STOP at M0.3 pending Technical Lead review of the scope-only decision and the remaining methodology approvals. M1 remains NOT AUTHORIZED.**
