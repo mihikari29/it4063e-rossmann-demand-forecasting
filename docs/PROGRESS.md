@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-10
+## Current implementation and Git state — 2026-10-11
 
 | Scope | State | Integration |
 |---|---|---|
@@ -13,7 +13,8 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 remains PLANNED / NOT AUTHORIZED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
+| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1 is IMPLEMENTED / UNDER REVIEW; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
+| Phase 13 — Sequential final evaluation | **M1 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | `feat/phase-13-m1-safe-providers` based on verified PR #37 merge `3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`; [Draft PR #38](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/38) is open and unmerged. M2, source preparation, rehearsal, staging and release remain unauthorized. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -286,6 +287,40 @@ NOT AUTHORIZED, and the final holdout remains UNRELEASED. No implementation, fit
 covariate extraction, protected-source/outcome access or hashing, staging, analytical release, or
 canonical artifact regeneration occurred for M0.4. The method-freeze Draft PR is pending Technical
 Lead review.
+
+### Phase 13 M1 synthetic input contracts and providers — 2026-10-11
+
+The owner authorized M1 only, using synthetic fixtures, on a fresh branch from the verified PR #37
+merge SHA `3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`. The branch is
+`feat/phase-13-m1-safe-providers`. PR #37 is merged; post-merge Quality #116 passed on Python 3.12
+and 3.14. This does not change the selected ADR-026 method or approve Phase 13; M2 remains
+unauthorized.
+
+M1 adds typed contracts for the two origins and H14 grids, origin-censored training rows, sparse
+recursive history, exact frozen future covariates, calendar-generated synthetic planned Open, and
+one-date outcome projections. The input provider exposes only bound training/history/covariate
+sources and the separate synthetic schedule. A distinct outcome provider requires a matching
+synthetic date token and chronological access. Block 2 views can include only ordered released
+Block 1 fixtures with the matching issued covariates. The in-memory reader accepts only recognized
+`memory://phase13/...` fixture references; returned frames are copies and missing keys are not
+filled.
+
+Focused M1 tests passed **22 tests**; the repository fixture suite passed **558 tests** on Python
+3.14.5 with one existing Starlette/httpx deprecation warning. Ruff lint and format, the documentation
+checker (298 local destinations/anchors across 29 Markdown files), `uv lock --check` (109 packages),
+and `git diff --check` passed. Draft PR #38 is open and unmerged pending independent review. No
+model fit or forecast issuance, July context generation, real-data provider, filesystem source, staging, outcome release, or
+canonical artifact operation was implemented or run. No real or protected Rossmann data was read,
+loaded, staged, extracted, or hashed. M1 is IMPLEMENTED / UNDER REVIEW; independent review and
+acceptance remain pending. Source/preparation provenance, operator, resource, rehearsal, staging,
+and analytical release gates remain open. M2 is NOT AUTHORIZED; STOP here pending Technical Lead
+review.
+
+### PR #38 Technical Lead corrections P38-01–03 — 2026-10-11
+
+M1 corrections on the existing Draft PR branch harden the synthetic provider boundary. `SyntheticInputProvider._read()` now checks role, capability, typed source binding, safe memory reference, and a fixed role-to-column schema before calling the injected reader; requested columns cannot define their own expected schema. The synthetic Block 1 handoff is now created only by `SyntheticOutcomeProvider` after the exact 14 Block 1 dates have been successfully authorized and read in order. It is registered to that provider's in-memory release state and bound to the matching Block 1 Store grid, covariate identity, and provenance. A handoff rejects forged projection collections and cannot include Block 2 outcomes; projection frames are returned as independent copies. `SyntheticPlannedOpen` validates each supplied non-null value against Monday–Saturday open/Sunday closed while preserving nullable unknowns, missing rows, independent actual Open, and positive observed Sales.
+
+The focused Phase 13 input suite passed **30 tests**; the repository suite passed **566 tests** on Python 3.14.5 with one existing Starlette/httpx deprecation warning. Ruff lint and format, documentation checks, `git diff --check`, and `uv lock --check` passed. These tests exercise logical in-memory behavior with artificial fixtures and do not establish physical isolation. No real or protected Rossmann data was read, loaded, staged, extracted, or hashed; no model fit, protected-source operation, M2 work, or canonical artifact operation occurred. The correction is for Technical Lead re-review on Draft PR #38; Phase 13 remains PLANNED / NOT APPROVED and M2 remains NOT AUTHORIZED.
 
 ## Historical implementation checkpoints (preserved)
 
