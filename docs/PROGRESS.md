@@ -14,7 +14,7 @@
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
 | Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1 is IMPLEMENTED / UNDER REVIEW; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
-| Phase 13 — Sequential final evaluation | **M1 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | `feat/phase-13-m1-safe-providers` based on verified PR #37 merge `3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`; M1 Draft PR publication/review pending. M2, source preparation, rehearsal, staging and release remain unauthorized. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
+| Phase 13 — Sequential final evaluation | **M1 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | `feat/phase-13-m1-safe-providers` based on verified PR #37 merge `3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`; [Draft PR #38](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/38) is open and unmerged. M2, source preparation, rehearsal, staging and release remain unauthorized. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -308,8 +308,8 @@ filled.
 Focused M1 tests passed **22 tests**; the repository fixture suite passed **558 tests** on Python
 3.14.5 with one existing Starlette/httpx deprecation warning. Ruff lint and format, the documentation
 checker (298 local destinations/anchors across 29 Markdown files), `uv lock --check` (109 packages),
-and `git diff --check` passed. CI for the M1 Draft PR is pending. No model fit or forecast issuance,
-July context generation, real-data provider, filesystem source, staging, outcome release, or
+and `git diff --check` passed. Draft PR #38 is open and unmerged pending independent review. No
+model fit or forecast issuance, July context generation, real-data provider, filesystem source, staging, outcome release, or
 canonical artifact operation was implemented or run. No real or protected Rossmann data was read,
 loaded, staged, extracted, or hashed. M1 is IMPLEMENTED / UNDER REVIEW; independent review and
 acceptance remain pending. Source/preparation provenance, operator, resource, rehearsal, staging,

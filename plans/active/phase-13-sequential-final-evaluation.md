@@ -162,7 +162,8 @@ remain subject to Technical Lead/owner approval.
 ### M1 synthetic input contract checkpoint — 2026-10-11
 
 M1 is implemented on `feat/phase-13-m1-safe-providers`, based on the verified PR #37 merge SHA
-`3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`. The `phase13.contracts` module defines the two
+`3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`; [Draft PR #38](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/38)
+is open and unmerged pending independent review. The `phase13.contracts` module defines the two
 precommitted origins, complete H14 Store × Date request identity, origin-censored training rows,
 sparse recursive history, exact frozen future-covariate fields, calendar-only synthetic planned
 Open, and a separate one-date outcome projection. The `phase13.providers` module uses only injected
