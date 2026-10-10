@@ -3,7 +3,7 @@
 The filename is retained for existing links. This runbook now covers the approved localhost-only
 demonstration; LAN instructions from the earlier design have been removed from the operational
 procedure. The private-LAN proposal remains historical design in the
-[active Phase 12 plan](../plans/active/phase-12-streamlit-dashboard.md)
+[completed Phase 12 plan](../plans/completed/phase-12-streamlit-dashboard.md)
 and is superseded by ADR-024 in [DECISIONS](DECISIONS.md).
 
 ## Current deployment target
@@ -70,9 +70,9 @@ interaction, two-session state-isolation evidence, latency/memory measurements a
 review. The two browser contexts ran on the same host process; they were not an independent LAN
 viewer. No LAN/network/cloud exposure was tested or is required.
 
-A human visual review in a real local browser remains outstanding. Review the five screens at the
-approved URL, including chart/table legibility, desktop and narrow-window layout, labels and caveats,
-keyboard focus, sanitized missing/corrupt-resource states, and consistency with saved evidence.
-Automated Edge interaction and screenshots do not by themselves count as human review. An
-independent final review of PR #32 is also pending. Keep the PR Draft and unmerged until that review;
-Phase 12 closeout requires separate authorization.
+The user reported PASS after personally reviewing all five screens in a real local browser at the
+approved URL, including layout, interactions and data boundaries. This is user-attested visual
+acceptance, not an agent-run manual browser test. The Technical Lead independently accepted M4 on
+reviewed head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; PR #32 was squash-merged and Phase 12
+was formally closed. The recorded automated Edge checks remain separate evidence and do not replace
+the user's visual review. No LAN/network/cloud exposure was tested or is required.

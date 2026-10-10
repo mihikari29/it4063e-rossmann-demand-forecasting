@@ -13,7 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | M1-M3 ACCEPTED / INTEGRATED; M4 IMPLEMENTED / UNDER REVIEW under ADR-024's localhost-only contract; human visual and independent final review pending | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 remains in Draft PR #32. Approved URL `http://127.0.0.1:8501`. Existing automated functional, browser, security, performance and quality evidence is retained. LAN, network and cloud exposure are out of scope; no LAN tests are claimed. Phase 13 remains unauthorized. See the [active plan](../plans/active/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
+| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 remains PLANNED / NOT AUTHORIZED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -80,7 +80,7 @@ on the already merged `docs/phase-11-closeout` branch. Fetch and live GitHub met
 merge; all 27 existing PRs were merged and none open. The new `docs/phase-12-streamlit-design`
 branch starts directly from that main SHA. Phase 11 remains COMPLETE.
 
-The [active Phase 12 plan](../plans/active/phase-12-streamlit-dashboard.md) audits the existing
+The [Phase 12 plan](../plans/completed/phase-12-streamlit-dashboard.md) audits the existing
 reader/service/API contracts and tests, proposes five screens using direct `ApplicationServices`
 calls, and separates the seven candidate content sections into implementation-ready specifications.
 Four proposed milestones have bounded Luna 6 task/review boundaries. Public service DTO omissions
@@ -248,7 +248,7 @@ M3-01 is resolved; M4 is accepted with minor changes; and M4-01 is resolved by t
 Phase 11 is COMPLETE following PR #26 squash merge at
 `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; its [completed plan](../plans/completed/phase-11-application-services.md)
 records formal acceptance. Phase 12 M1 is IMPLEMENTED / UNDER REVIEW on the feature branch, as
-recorded in the [active plan](../plans/active/phase-12-streamlit-dashboard.md); the current
+recorded in the [Phase 12 plan](../plans/completed/phase-12-streamlit-dashboard.md); the current
 checkpoint below supersedes that earlier M1-only state: M1 is ACCEPTED / INTEGRATED and M2 is
 IMPLEMENTED / UNDER REVIEW. M3/M4 remain unauthorized. Phase 13 still requires a
 separate frozen protocol and explicit authorization to release holdout outcomes. The holdout remains
@@ -2318,7 +2318,7 @@ not complete.
 
 ## Phase 12 M3 implementation checkpoint - 2026-10-09
 
-M2 is accepted and integrated by PR #30 at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`. Main-branch Quality [run #37955545881](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37955545881) passed for Python 3.12 and 3.14, satisfying the M3 authorization gate. M3 is IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m3`, based directly on that main SHA, in [draft PR #31](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/31), open and unmerged. Its model/inventory behavior, exact read-only smoke queries, row counts and service provenance are recorded in the [active Phase 12 plan](../plans/active/phase-12-streamlit-dashboard.md).
+M2 is accepted and integrated by PR #30 at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`. Main-branch Quality [run #37955545881](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37955545881) passed for Python 3.12 and 3.14, satisfying the M3 authorization gate. M3 is IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m3`, based directly on that main SHA, in [draft PR #31](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/31), open and unmerged at that checkpoint. Its model/inventory behavior, exact read-only smoke queries, row counts and service provenance are preserved in the [Phase 12 plan](../plans/completed/phase-12-streamlit-dashboard.md).
 
 The focused dashboard/M2/presenter suite passed 98 tests. The full fixture suite passed 529 tests on each of Python 3.12 and 3.14, each with one existing Starlette/httpx deprecation warning. Ruff lint/format, Markdown links, lock consistency, the locked Python 3.14 dependency check and `git diff --check` passed. M3 smoke used only public application services and confirmed the adverse whole-case reference and `buffer_090` cost differences already recorded above remain visible. Store 1 policy pairs were comparable in that smoke; no noncomparable canonical pair was observed. No Phase 10 daily ledger, protected July outcome, producer, simulation, fit, or canonical artifact mutation was part of the work.
 
@@ -2331,6 +2331,9 @@ M3-01 is resolved on the existing `feat/phase-12-streamlit-m3` branch and Draft 
 The presenter overflow test verifies a view above the explicit query limit returns `ModelComparisonTooLargeError`. The AppTest injects oversized views after a successful screen render and verifies the sanitized message/identifier, no uncaught error, and no result table, chart, provenance or stale result. The existing invalid-request test pins its original stable code. Focused dashboard/M2/presenter tests passed 100; full pytest passed 531 tests on Python 3.12 and 531 on Python 3.14, each with one existing Starlette/httpx deprecation warning. Ruff, format, link, lock, dependency and whitespace checks passed. M3 remains IMPLEMENTED / UNDER REVIEW; PR #31 remains draft and unmerged. No ledger or protected holdout access occurred; M4 and Phase 13 remain unauthorized.
 
 ## Phase 12 M4 integration browser and local performance 2026-10-10
+
+This records the pre-scope-change implementation checkpoint; the later localhost-only decision and
+formal closeout below supersede its then-current deployment and lifecycle status.
 
 **State:** M4 is IMPLEMENTED / UNDER REVIEW. M1–M3 were independently accepted and integrated at
 `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality run #37966506688 passed both supported
@@ -2449,6 +2452,9 @@ protected July 4–31 outcomes were accessed; no artifact was regenerated or cha
 
 ### Phase 12 M4-01 corrective review - 2026-10-10
 
+This is the pre-closeout review checkpoint; its pending-review status is superseded by the formal
+closeout below.
+
 M4-01 on the existing Draft PR #32 is corrected in the dashboard source: the saved MAE heading
 renders `Saved MAE by horizon · h1–h14`, and standalone coverage renders
 `Standalone forecast coverage · separate population`. AppTests assert each exact rendered
@@ -2465,7 +2471,7 @@ on corrected head `4477ff69951f863a1a0eb4441d4cc15db3615d78`. Deployment remains
 LAN/network/cloud exposure is out of scope. Phase 12 remains open pending human visual review and
 independent final review. No Phase 10 ledger or Phase 13 holdout was accessed.
 
-### Phase 12 M4 localhost-only acceptance scope - 2026-10-10
+### Phase 12 M4 localhost-only acceptance scope - pre-merge checkpoint 2026-10-10
 
 The user explicitly selected local development, analysis and live demonstration on the user's own
 Windows computer. This decision is recorded in ADR-024 in [DECISIONS](DECISIONS.md) and supersedes
@@ -2486,3 +2492,49 @@ and keeps CORS and XSRF protection enabled. Human visual review of all five scre
 localhost browser and independent final review of Draft PR #32 remain pending. Keep the PR Draft and
 unmerged; do not close Phase 12. Analytical services and accepted artifacts are unchanged, and no
 Phase 10 ledger or Phase 13 holdout was accessed.
+
+### Phase 12 formal closeout - 2026-10-10
+
+**Phase 12 is COMPLETE.** M1-M4 are ACCEPTED / INTEGRATED. M3 PR #31 is merged at
+`28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality [run #96](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37966506688)
+passed on Python 3.12 and 3.14 at that merge SHA. M4 PR #32 was squash-merged at
+`5527e780d1a59108c041bb4ca33a32dbb3bc3aca`, containing the independently accepted reviewed head
+`8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; main Quality [run #103](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38031584298)
+passed both Python jobs at the exact merge SHA. Findings M3-01 and M4-01 are resolved.
+
+M3-01 added a dedicated sanitized overflow-exception path for `ModelComparisonTooLargeError`.
+M4-01 corrected the headings to `Saved MAE by horizon · h1–h14` and
+`Standalone forecast coverage · separate population`; AppTests assert each exact subheader.
+
+For precision, PR-head Quality [run #102](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38030547822)
+reported **535 passed, 1 skipped, 1 warning per Python job** on the reviewed M4 head. The distinct
+post-merge main run #103 also reported 535 passed, 1 skipped and 1 warning per job. The separate
+local full pytest result recorded for the M4 finalization task was 536 passed per interpreter.
+Existing automated functional, browser, security and performance evidence remains in the M4
+checkpoint above; no new measurements were made for closeout.
+
+The user personally reported PASS after visually reviewing all five screens at
+`http://127.0.0.1:8501`, including layout, interactions and data boundaries. This is user-attested
+human acceptance, not an agent-run manual test. The localhost-only boundary remains in force under
+ADR-024; no LAN test is claimed or required, and LAN, network, firewall, tunnel, cloud and public
+exposure remain out of scope.
+
+Known scientific and operational limits remain: Sales is monetary turnover, not physical demand or
+SKU quantities;
+development model selection is not final-holdout evaluation; raw and operational forecast paths
+remain distinct and future Open is unknown; empirical uncertainty intervals do not guarantee
+nominal coverage; and inventory results are conditional synthetic monetary simulations, not
+observed stock or actual stockouts. Positive forecast-minus-baseline simulated cost is adverse;
+negative is favorable only under the assumptions. Neither proves savings or optimal policies. Saved
+artifact provenance and existing analytical service contracts are unchanged.
+
+No Phase 10 daily ledger was accessed. No protected July 4-31 outcome was read, hashed or evaluated;
+no accepted artifact or manifest was modified or regenerated, and no model was fitted or
+recalibrated. Phase 13 remains PLANNED / NOT AUTHORIZED and the holdout remains protected.
+
+Closeout validation used the locked Python environments: full pytest passed 536 tests on Python
+3.12 and 536 on Python 3.14, each with one existing Starlette/httpx deprecation warning; Ruff lint
+and format passed; `scripts/check_docs.py` passed with 277 local destinations/anchors across 28
+Markdown files; `uv lock --check` resolved 109 packages; `uv pip check` passed with 91 compatible
+packages on Python 3.12 and 93 on Python 3.14; `git diff --check` passed. These local counts are
+separate from the GitHub CI run counts recorded above.

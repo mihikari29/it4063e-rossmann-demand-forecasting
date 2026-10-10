@@ -224,18 +224,20 @@ merge-readiness review are complete; Quality #81 passed on the merge SHA for Pyt
 
 ## Phase 12 — Streamlit Dashboard
 
-**Status:** M1-M3 are integrated into `main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`.
-M4 is IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m4` in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32).
-The user selected localhost-only use under ADR-024 in [DECISIONS](DECISIONS.md),
-at `http://127.0.0.1:8501`; LAN, network and cloud exposure are out of scope. Automated, browser,
-security, performance and CI evidence is retained. Human visual review and independent final review
-remain pending. See the [active plan](../plans/active/phase-12-streamlit-dashboard.md),
+**Status: COMPLETE.** M1-M4 are accepted and integrated. M3 PR #31 is merged at
+`28aa42fdb2186dbbc340bef72917ce2e2ec06425`, with main Quality #96 passing both Python jobs.
+M4 PR #32 is squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103
+passed Python 3.12 and 3.14. The Technical Lead independently accepted the exact reviewed M4 head
+`8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user reported PASS on human visual review of all
+five screens, recorded as user-attested. The approved localhost-only use remains
+`http://127.0.0.1:8501` under ADR-024; LAN, network, tunnel, firewall, cloud and public exposure
+are out of scope. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md),
 [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](PROGRESS.md#phase-12-m4-integration-browser-and-local-performance-2026-10-10).
-Do not treat implementation or a Draft PR as Phase 12 completion.
 **Objective:** Provide an understandable course demonstration.
 **Dependencies:** Accepted Phase 11 shared services (see the [completed Phase 11 plan](../plans/completed/phase-11-application-services.md)); it need not call FastAPI over HTTP.
 **Deliverables:** Store/scenario controls, history/forecast/interval views, inventory assumptions and
-alerts; one localhost-only Streamlit demonstration at `http://127.0.0.1:8501` under ADR-024.
+alerts; one localhost-only Streamlit demonstration at `http://127.0.0.1:8501` under ADR-024,
+now integrated and formally closed.
 **Acceptance / boundary:** UI claims match supported inputs and clearly label synthetic quantities,
 unknown future Open and empirical interval limitations. A 7-day view is a subset of the 14-day
 path; 28-day capability requires separate design/evaluation. SHAP is optional if ordinary feature

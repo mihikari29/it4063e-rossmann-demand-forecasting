@@ -239,14 +239,14 @@ uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.a
 
 ## Phase 12 dashboard
 
-The five-screen Streamlit dashboard is implemented under review on `feat/phase-12-streamlit-m4` in
-[draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32).
-It presents bounded historical Sales, saved forecasts and uncertainty, accepted model comparisons,
-and synthetic inventory comparisons from the existing services. The approved use is local
-development, analysis and live demonstration on the user's Windows computer at
-`http://127.0.0.1:8501`; see the [localhost deployment runbook](docs/DEPLOYMENT_LAN.md) for startup,
-local artifact requirements, security settings and error recovery. LAN, network and cloud exposure
-are out of scope under ADR-024 in [DECISIONS](docs/DECISIONS.md).
+The five-screen Streamlit dashboard is integrated, and Phase 12 is **COMPLETE**. It presents
+bounded historical Sales, saved forecasts and uncertainty, accepted model comparisons, and
+synthetic inventory comparisons through the existing services. The approved use remains local
+development, analysis and live demonstration at `http://127.0.0.1:8501`. LAN, network, tunnel,
+firewall, cloud and public exposure are out of scope under ADR-024 in [DECISIONS](docs/DECISIONS.md).
+The [completed Phase 12 plan](plans/completed/phase-12-streamlit-dashboard.md) records the merge,
+review and acceptance evidence; the [localhost deployment runbook](docs/DEPLOYMENT_LAN.md) covers
+startup, local artifact requirements, security settings and recovery.
 
 ```powershell
 uv sync --locked --extra dev --extra api --extra dashboard --python 3.14
@@ -254,10 +254,9 @@ uv run --locked --extra dashboard streamlit run streamlit_app.py
 ```
 
 The dashboard binds to `127.0.0.1:8501`. It does not train or infer forecasts, run inventory
-simulation, access the Phase 10 ledger, or evaluate the protected final holdout. M4's approved scope
-is localhost only; LAN access, network-profile changes, firewall rules, tunnels, cloud and public
-hosting are out of scope. Automated local evidence is recorded; human visual review and independent
-final review remain pending, and PR #32 stays Draft and unmerged.
+simulation, access the Phase 10 ledger, or evaluate the protected final holdout. The user reported
+PASS on human visual review of all five screens; this acceptance is recorded as user-attested.
+Phase 12 integration and closeout evidence is in the [completed plan](plans/completed/phase-12-streamlit-dashboard.md).
 
 In PowerShell, check process health, list supported cases, and try a bounded forecast or the
 canonical reference inventory case:
@@ -307,11 +306,10 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 - Phase 11: **COMPLETE**; the [completed plan](plans/completed/phase-11-application-services.md)
   records the shared Python services and thin local/demo FastAPI adapter. Streamlit calls the same
   services directly; separate API hosting and Evidently are optional.
-- Phase 12: M1-M3 are integrated on `main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`.
-  M4 is **IMPLEMENTED / UNDER REVIEW** in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32)
-  on `feat/phase-12-streamlit-m4`; its approved target is `http://127.0.0.1:8501` under ADR-024.
-  LAN, network and cloud exposure are out of scope. Human visual review and independent final review
-  remain pending. See the [active plan](plans/active/phase-12-streamlit-dashboard.md) and
+- Phase 12: **COMPLETE**. PR #32 integrated M4 at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`;
+  main Quality #103 passed Python 3.12 and 3.14. The approved target remains
+  `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of
+  scope. See the [completed plan](plans/completed/phase-12-streamlit-dashboard.md) and
   [localhost deployment runbook](docs/DEPLOYMENT_LAN.md).
 - Phase 13: one frozen sequential final evaluation remains future work requiring separate
   authorization. The protected holdout remains unreleased.
