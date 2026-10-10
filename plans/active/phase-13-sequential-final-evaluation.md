@@ -301,9 +301,9 @@ rewritten after outcomes become available.
 ## 8. Frozen Fit B uncertainty application
 
 **SELECTED METHOD — UNVALIDATED transport assumption:** apply the already accepted frozen Fit B
-daily residual quantiles and cumulative-prefix quantiles unchanged to both blocks, subject to
-matching selected-model, feature, fit, horizon/prefix, and source identities. Pin these accepted
-identities recorded in [PROGRESS](../../docs/PROGRESS.md):
+daily residual quantiles and cumulative-prefix quantiles unchanged to both July blocks, subject to
+the exact-identity and transport-compatibility requirements below. Pin these accepted identities
+recorded in [PROGRESS](../../docs/PROGRESS.md):
 
 | Fit B identity | SHA-256 / value |
 |---|---|
@@ -317,6 +317,30 @@ identities recorded in [PROGRESS](../../docs/PROGRESS.md):
 The accepted Fit B governance record supersedes the manifest's publication-time
 `fit_b_quantiles_frozen=false` field for these exact identities. Preserve that historical manifest;
 do not regenerate or rewrite it.
+
+**Identity and transport compatibility.** Require exact equality to the pinned frozen Fit B daily
+and cumulative quantile-table identities and hashes, and to the accepted calibration policy/config
+identity, including the `calibration_config.json` hash. Each July fit must use the accepted selected
+model recipe and ordered feature contract. Apply only the exact matching horizon or cumulative
+prefix and probability-level entry. Preserve the saved signed values, rank definitions and sample
+floors, availability/reason semantics, and clipping rules verbatim; a July fit does not create or
+replace a calibration identity.
+
+Record distinct identities and complete provenance for (1) the historical June Fit B calibration
+source and calibration fit/run, (2) each July fresh model fit at origin 2015-07-03 or 2015-07-17,
+and (3) that origin's origin-safe forecast-input and schedule sources. Complete provenance is
+required for both the historical calibration side and, if separately authorized for use, the July
+application side, including its fresh fit and input/schedule sources. Do not require literal equality
+between the June calibration fit-run ID and a July fresh-fit ID, or between the historical
+calibration source identity and a newly authorized July source identity. Instead, verify that the
+separately identified July fit, inputs, and schedule satisfy the selected recipe, feature,
+availability, schedule-compatibility, and other conditions of the approved transport contract.
+
+If an exact identity or required compatibility condition fails, or either side's provenance is
+incomplete, preserve the applicable unavailable status and saved reason semantics; do not silently
+substitute another table, source, horizon, or model. This check establishes conformance to the
+declared UNVALIDATED transport contract only. It is not evidence that June quantiles transport
+statistically to July or that empirical coverage will be achieved.
 
 **A. Fit B calibration evidence (historical observations).** ADR-021's daily calibration residuals
 are signed `actual_sales_h - raw_forecast_h` on its accepted observed-Open=1 population. Partial
@@ -339,10 +363,11 @@ not July outcomes; the frozen identities above and exact saved entries remain au
 **B. Final issuance.** For daily bounds, use the issued raw point forecasts with the exact frozen
 Fit B daily entries `q_low,h` and `q_high,h`. For cumulative bounds, use only the issued
 operational forecasts with the exact frozen Fit B cumulative entry `q_{k,p}`, subject to the
-saved identities, matching fit/horizon/prefix/source conditions, and frozen availability/reason
-fields. For a daily issued raw point `yhat_h`, emit endpoints `max(0, yhat_h + q_low,h)` and
-`max(0, yhat_h + q_high,h)`, retaining signed quantiles, pre-clipping endpoints/flags, availability,
-and the accepted unsupported reason. For a complete cumulative operational prefix `k`, use
+saved identities and the identity-and-transport-compatibility requirements above, and frozen
+availability/reason fields. For a daily issued raw point `yhat_h`, emit endpoints
+`max(0, yhat_h + q_low,h)` and `max(0, yhat_h + q_high,h)`, retaining signed quantiles,
+pre-clipping endpoints/flags, availability, and the accepted unsupported reason. For a complete
+cumulative operational prefix `k`, use
 `D_k = sum_{h=1..k} operational_forecast_h`,
 `U_k = max(0, D_k + q_{k,p})`,
 `SafetyStock_k = max(0, U_k - D_k)`, and `Target_k = max(D_k, U_k)`.
@@ -365,9 +390,11 @@ their authorized chronological revelation.
 June Fit B was calibrated on a different fit state and development period; applying it to either
 July fresh fit is an explicit transport assumption. Transport validity and July coverage are
 unknown, so do not present transferred intervals/buffers as reliable, nominally calibrated, or
-guaranteed. If an exact table identity, horizon/prefix, sample-floor, fit, or schedule condition
-is unsupported, preserve the accepted unavailable reason. Keep raw forecasts/intervals distinct
-from planned-Open-routed operational forecasts/intervals and cumulative outputs.
+guaranteed. If the exact frozen table or calibration policy/configuration identity, selected recipe
+or feature contract, horizon/prefix/probability, sample floor, availability/reason semantics,
+provenance, or required schedule compatibility is unsupported, preserve the applicable unavailable
+status and saved reason semantics. Keep raw forecasts/intervals distinct from planned-Open-routed
+operational forecasts/intervals and cumulative outputs.
 
 Preserve exact-horizon/prefix availability, signed residual quantiles, pre-clipping endpoints and
 flags, point-containment behavior, valid-rank/sample-floor rules, and explicit unsupported
