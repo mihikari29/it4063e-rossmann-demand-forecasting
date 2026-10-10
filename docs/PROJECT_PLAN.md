@@ -245,6 +245,9 @@ importance and limitations suffice.
 
 ## Phase 13 — Monitoring & Sequential Final Evaluation
 
+**Design proposal:** [M0 sequential final evaluation plan](../plans/active/phase-13-sequential-final-evaluation.md)
+— PROPOSED / NOT APPROVED; this link authorizes neither implementation nor holdout access.
+
 **Objective:** Evaluate the frozen system once and demonstrate historical monitoring.
 **Dependencies:** Phases 7–12 frozen choices and explicit authorization to release holdout labels.
 **Deliverables:** Auditable forecast-before-reveal ledger, final point/interval/KPI summaries,

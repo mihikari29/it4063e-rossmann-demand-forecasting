@@ -205,9 +205,18 @@ provenance. No source values were printed, no artifact was changed or regenerate
 ledger and protected holdout were not accessed. No manual browser, performance or deployment test
 was performed.
 
-## Immediate next boundary
+## Current boundary
 
-Phase 5 is formally COMPLETE following PR #7 integration and PR #8 closeout. Phase 6 is **COMPLETE**:
+Phases 0–12 are COMPLETE; Phase 13 is PLANNED / NOT AUTHORIZED; the protected July 4–31
+holdout remains unreleased. The [M0 Phase 13 design proposal](../plans/active/phase-13-sequential-final-evaluation.md)
+is **PROPOSED / NOT APPROVED** and requests Technical Lead review. It authorizes neither Phase
+13 implementation nor holdout access. Phase 14 has not started.
+
+## Historical implementation checkpoints (preserved)
+
+The following next-boundary notes are historical checkpoints; the current state is recorded at
+the top of this file. Phase 5 was formally COMPLETE following PR #7 integration and PR #8
+closeout. Phase 6 is **COMPLETE**:
 ADR-019 remains accepted, and [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
 was merged into `main` at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; its completed plan is
 archived.
