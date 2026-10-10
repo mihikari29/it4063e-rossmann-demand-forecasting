@@ -312,7 +312,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   scope. See the [completed plan](plans/completed/phase-12-streamlit-dashboard.md) and
   [localhost deployment runbook](docs/DEPLOYMENT_LAN.md).
 - Phase 13: one frozen sequential final evaluation remains future work requiring separate
-  authorization. The protected holdout remains unreleased.
+  authorization. The [M0 design proposal](plans/active/phase-13-sequential-final-evaluation.md)
+  is under Technical Lead review only; it does not authorize implementation or outcome release.
+  The protected holdout remains unreleased.
 - Phase 14: recorded results, report, slides and demonstration.
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
