@@ -727,3 +727,13 @@ The accepted canonical development run and formal closeout are recorded in the c
 and PROGRESS. At approval, implementation had not started; that historical checkpoint is preserved
 above. Phase 9 remains COMPLETE. Phase 11 remains NOT STARTED / NOT AUTHORIZED. No
 final holdout evaluation or access was part of Phase 10 or this closeout.
+
+## ADR-024 - Phase 12 Localhost-Only Demonstration Boundary
+
+**Status:** Accepted for Phase 12 M4 by the user's explicit scope decision on 2026-10-10.
+
+**Context:** The initial Phase 12 design compared private-LAN and hosted alternatives. M4's earlier draft acceptance language treated an independent LAN viewer and trusted network as deployment gates. The user clarified that the dashboard is for local development, analysis and live demonstration on the user's own Windows computer; remote viewers and network exposure are not required.
+
+**Decision:** M4's approved deployment target is localhost at `http://127.0.0.1:8501`. Preserve the Streamlit settings `server.address = "127.0.0.1"`, `server.enableStaticServing = false`, `server.enableCORS = true` and `server.enableXsrfProtection = true`. Private-LAN access, network-profile changes, firewall rules, port forwarding, public tunnels, cloud deployment and public hosting are out of scope. Independent LAN-viewer testing is not a mandatory acceptance criterion and has not been performed.
+
+**Acceptance and consequences:** Retain the accepted analytical services, data boundaries and canonical results without modification. M4 still requires automated checks and CI, the existing browser/security/performance evidence, a human visual review of the localhost application, and an independent final review of PR #32. Automated browser interactions do not substitute for human visual review. Keep PR #32 Draft and unmerged until independent final review; this ADR does not authorize Phase 12 closeout, data/artifact regeneration or Phase 13 access. The earlier LAN proposal remains historical design in the active Phase 12 plan.

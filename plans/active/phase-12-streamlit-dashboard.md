@@ -1,6 +1,6 @@
 # Phase 12 - Streamlit Dashboard Design
 
-**Phase status:** M1–M3 ACCEPTED / INTEGRATED at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 IMPLEMENTED / UNDER REVIEW and BLOCKED PENDING ACCEPTANCE EVIDENCE. Phase 12 remains open; Phase 13 is unauthorized and the final holdout remains protected. **Date:** 2026-10-10. **Authority:** M3 PR #31 was merged into `main` at that SHA; main Quality [run #37966506688](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37966506688) passed on Python 3.12 and 3.14. The M4 task authorizes integration, localhost browser validation, measurement, documentation, commit/push and one draft PR. It does not authorize merge or Phase 12 closeout.
+**Phase status:** M1-M3 ACCEPTED / INTEGRATED at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 IMPLEMENTED / UNDER REVIEW under the authorized localhost-only scope in ADR-024. Automated, browser, security and performance evidence is recorded; human visual review and independent final review remain pending. Phase 12 remains open; Phase 13 is unauthorized and the final holdout remains protected. **Date:** 2026-10-10. **Authority:** M3 PR #31 was merged into `main` at that SHA. The user scope decision supersedes the earlier private-LAN proposal and does not authorize merge or Phase 12 closeout.
 
 **Implementation branch:** `feat/phase-12-streamlit-m4`, created directly from `origin/main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; no stacked integration dependency. M4 implementation commit `32df3ba4a48530bce556659d856991e134813e47` is in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32), targeting `main` and still open/draft.
 
@@ -562,12 +562,15 @@ distribution/provider contract before expanding implementation scope. A code-onl
 with absent artifacts or a fixture-only site is not an accepted analytical demo. This task performs
 no packaging, transfer, provisioning or deployment.
 
+**Historical deployment proposal:** Sections 1-6 preserve the original deployment alternatives, including a private-LAN option. That proposal was design history, not a requirement to expose this dashboard. The user decision recorded in ADR-024 supersedes any LAN deployment or independent-LAN-viewer acceptance condition.
+
 ## 7. Milestones and independent Luna 6 task boundaries
 
-M1 is APPROVED / AUTHORIZED only under the checkpoint above. M2–M4 remain PLANNED / NOT
-AUTHORIZED. Assign each future milestone only after its separate authorization; passing M1 tests
-does not start later work. Record exact reviewed heads and independent acceptance in this same
-active plan. A future feature branch must start from then-current main, or explicitly record any
+**Historical proposal-time authorization checkpoint:** M1 was APPROVED / AUTHORIZED under the
+checkpoint above; M2-M4 were then PLANNED / NOT AUTHORIZED. Later approvals integrated M1-M3 and the
+user's current M4 localhost-only scope decision is recorded in Section 18. This historical paragraph
+does not describe current authorization. Record exact reviewed heads and independent acceptance in
+this active plan. A future feature branch must start from then-current main, or explicitly record any
 unmerged integration dependency. No agent delegation occurred in this task.
 
 | Milestone | Luna 6 implementation boundary and dependencies | Required review / acceptance evidence |
@@ -575,7 +578,7 @@ unmerged integration dependency. No agent delegation occurred in this task.
 | M1 — Shell and presentation boundary | Authorized scope. Add dashboard extra/lock, thin entrypoint, five-screen shell, pure presentation helpers, safe errors and fixture injection. Implement static overview/provenance and clean-checkout states only. No forecasting/history/comparison screens, hosting or service extension. | Locked install on Python 3.12/3.14; missing/corrupt catalog AppTest; accurate readiness; conversion/null/error tests; no file paths/raw exception echo or HTTP/model dispatch. Independent review accepts shell before M2. |
 | M2 — History, forecast and uncertainty | Accepted M1. Implement §§4.2–4.4 using exactly current services and DTOs. Source/date/fit/form validation, sparse plots, raw/operational distinction, cumulative table and caveats. No metrics/simulation/deployment or new quantile/coverage reader. | Fixture UI→services→reader tests, cutoff-before-open assertions, all origin/fit cases, H7 display subset, partial/all-unavailable intervals and negative-q cases. Read-only non-ledger development smoke only after implementation authorization. Independent methodology/UI review before M3. |
 | M3 — Model and inventory comparisons | Accepted M2. Implement §§4.5–4.6 and proposed bounded query presets; exact producer tables/denominators, case vs Store scope and adverse-result display. No sliders, ratio aggregation, daily ledger or service changes. | All candidates/horizons and coverage preserved; bounded-query fixtures and canonical service smoke; positive/negative/null/asymmetric pair UI tests; unchanged aggregates under Store selection; scientific-language review. Independent review before M4. |
-| M4 — Integration and one authorized deployment | Accepted M3, explicit host/audience approval and distribution-contract approval if B/C replaces A. Run full fixture/quality matrix, manual browser layout and two-session checks, benchmark selected host, document real deployment startup/failure behavior and obtain final independent review. The approval must name any extra B/C work before assigning it to Luna 6. | One audience-accessible URL showing accepted development evidence; absent/corrupt-resource behavior; no publicly served raw/ignored files/holdout; measured latency/memory evidence; code/lock/run provenance; Technical Lead acceptance, authorized merge and explicit Phase 12 closeout. Stop there. |
+| M4 - Localhost integration and demonstration | Accepted M3 and explicit localhost-only scope decision (ADR-024). Run full fixture/quality matrix, validate the real saved-evidence app in the local browser, review startup/failure behavior, retain bounded service/query contracts, and document security/performance evidence. | App available at `http://127.0.0.1:8501`; saved development evidence; absent/corrupt-resource behavior; security configuration; no source/raw/holdout downloads; measured latency/memory; code/lock/run provenance; human visual review on the host; independent final review. LAN, network-profile changes, firewall rules, tunnels and cloud/public exposure are out of scope. Keep PR draft and unmerged until final review; phase closeout is separate. |
 
 Do not spawn or implement these Luna tasks in this proposal. M4 cannot be declared complete from a
 localhost screenshot, a health endpoint, fixture-only evidence or a successful build without data.
@@ -613,11 +616,14 @@ cumulative prefixes, synthetic costs, signed adverse cost differences, saved den
 dependent cycles and separate terminal exposure. No superiority, service guarantee, savings,
 observed stockout or current order claim. No hidden unfavorable candidate/horizon/case values.
 
-**Deployment/performance:** Check the chosen approved host from an independent viewer device;
-confirm access restrictions, sanitized framework errors, static-serving disabled, source files not
-downloadable, no automatic data regeneration/fallback, dependency installation and measured budgets
-in §5. Record cold/warm behavior and resource failures. Filesystem/operator trust is a deliberate
-limit, not protection against a compromised host. Configuration reference:
+**Deployment/performance:** Validate the approved local host at `http://127.0.0.1:8501`; confirm
+the loopback bind, sanitized errors, static serving disabled, source files not downloadable, no
+automatic data regeneration/fallback, dependency installation and measured budgets in Section 5.
+Retain the existing cold/warm latency, memory, browser and security evidence. A human visual review
+of desktop/mobile presentation remains required; the earlier automated Edge interactions are not a
+substitute. LAN, network, tunnel, cloud or public exposure is outside the M4 contract. Record
+cold/warm behavior and resource failures. Filesystem/operator trust remains a deliberate limit.
+Configuration reference:
 [Streamlit config](https://docs.streamlit.io/develop/api-reference/configuration/config.toml).
 
 Phase 12 is done only after all four authorized milestones are implemented, independently reviewed,
@@ -631,7 +637,7 @@ completion does not approve or complete Phase 12.
 | Decision / risk | Required resolution before dependent work |
 |---|---|
 | Narrowed proposal §22 experience | Accept saved-case comparisons and bounded Sales/Open history as the Phase 12 minimum; otherwise request a separate scoped service extension design. |
-| Deployment audience and course requirement | Confirm private LAN A qualifies, name host/audience and approve exposure for M4; otherwise choose B/C with reviewed distribution authority. No persistent public URL is currently promised. |
+| Deployment scope | The user chose localhost-only use for local development, analysis and live demonstration at `http://127.0.0.1:8501` (ADR-024). LAN access, network changes, firewall rules, tunnels, cloud and public hosting are out of scope. Human visual and independent final review remain required. |
 | Missing ignored files | Operator confirms runtime closure exists; absent files are explicit unavailable state, not a reason to change pins or regenerate. Design audit has not certified current artifact readiness. |
 | Wider hosting / distribution rights | Review any later artifact/snapshot publication and protected-source exclusion. No uploads or cloud provisioning are authorized now. |
 | Missing calibration/case metadata | Approve omission from the core; any extension adds typed public DTOs and independent tests before UI consumption. Existing small quantile readers are not a public service shortcut. |
@@ -827,7 +833,7 @@ Regression coverage adds an explicit presenter overflow test and a Streamlit App
 
 Validation for this correction: focused dashboard/M2/presenter pytest passed 100 tests. Full pytest passed 531 tests on Python 3.12 and 531 on Python 3.14, each with one existing Starlette/httpx deprecation warning. Ruff lint and format passed (104 files already formatted); `uv lock --check` resolved 109 packages; locked Python 3.14 `uv pip check` passed with 93 compatible packages. Markdown links and `git diff --check` are recorded after the documentation update. The branch and PR remain draft/unmerged for final independent review; M4 and Phase 13 were not started.
 
-## 17. M4 integration and localhost validation - 2026-10-10
+## 17. M4 integration and localhost validation - historical pre-scope-change checkpoint
 
 M4 is IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m4`, based directly on accepted M3
 main SHA `28aa42fdb2186dbbc340bef72917ce2e2ec06425`. Implementation commit
@@ -838,13 +844,21 @@ push and one Draft PR; merge and Phase 12 closeout remain unauthorized.
 
 The five screens and their bounded existing-service queries were validated on the host in Microsoft
 Edge browser sessions. The app remains bound to `127.0.0.1`; no service, analytical, reader, lock or
-canonical artifact behavior changed. The selected deployment strategy remains Option A, but the
-operator-approved audience is localhost only and the active Wi-Fi profile is Public. No LAN URL,
-listener or firewall rule exists. Independent LAN-viewer and trusted-network acceptance are blocked;
-M4 must not be closed.
+canonical artifact behavior changed. At this checkpoint the draft still treated Option A as private
+LAN and therefore recorded independent LAN-viewer/trusted-network acceptance as blocked. The user's
+later localhost-only scope decision supersedes that deployment gate; see Section 18. No LAN URL,
+listener, firewall rule or independent LAN test was created.
 
 See the [deployment runbook](../../docs/DEPLOYMENT_LAN.md) and the detailed [M4 evidence in
 PROGRESS](../../docs/PROGRESS.md#phase-12-m4-integration-browser-and-local-performance-2026-10-10)
 for provenance, browser and two-session results, performance samples, validation and final PR head.
-The plan remains active for independent review. Phase 13 and protected holdout access remain out of
-scope.
+The plan remains active for human visual and independent final review. Phase 13 and protected
+holdout access remain out of scope.
+
+## 18. User scope decision: localhost-only M4 acceptance - 2026-10-10
+
+The user explicitly selected a dashboard for local development, analysis and live demonstration on the user's Windows computer. This authorized scope clarification is recorded in ADR-024 in [DECISIONS](../../docs/DECISIONS.md). It supersedes the earlier private-LAN deployment proposal and any draft M4 criteria that required an independent LAN viewer, trusted-network profile, LAN URL or firewall rule. Earlier LAN comparisons remain historical design material only.
+
+The approved target is `http://127.0.0.1:8501`, with Streamlit bound to `127.0.0.1`. LAN access, changing Windows network profiles, firewall changes, public tunnels, cloud deployment and public hosting are outside this phase's M4 scope. No LAN testing was performed or is required by this decision; prior reports that such testing did not occur remain accurate.
+
+M4 acceptance for this scope requires the existing accepted development evidence and bounded services, verified localhost startup and failure behavior, unchanged artifact/security boundaries, the recorded automated test/CI, browser, provenance and performance evidence, and a human visual review of the dashboard in a real local browser. The previous Edge interactions were automated on the host; they do not establish that a human visual review occurred. A final independent review of PR #32 remains pending. Keep the PR Draft and unmerged until that review; do not close Phase 12 as part of this task. Phase 13 and the protected holdout remain unauthorized.

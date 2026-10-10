@@ -13,7 +13,7 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | M1–M3 ACCEPTED / INTEGRATED; M4 IMPLEMENTED / UNDER REVIEW; BLOCKED PENDING ACCEPTANCE EVIDENCE | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality run [#37966506688](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37966506688) passed on Python 3.12 and 3.14. M4 branch `feat/phase-12-streamlit-m4` is based directly on that SHA; implementation commit `32df3ba4a48530bce556659d856991e134813e47` is in [draft PR #32](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/32). Localhost integration is validated. No independent LAN viewer is approved or tested: audience is localhost only and active Wi-Fi profile is Public. See [active plan](../plans/active/phase-12-streamlit-dashboard.md) and [deployment runbook](DEPLOYMENT_LAN.md). Phase 13 remains unauthorized. |
+| Phase 12 - Streamlit Dashboard | M1-M3 ACCEPTED / INTEGRATED; M4 IMPLEMENTED / UNDER REVIEW under ADR-024's localhost-only contract; human visual and independent final review pending | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 remains in Draft PR #32. Approved URL `http://127.0.0.1:8501`. Existing automated functional, browser, security, performance and quality evidence is retained. LAN, network and cloud exposure are out of scope; no LAN tests are claimed. Phase 13 remains unauthorized. See the [active plan](../plans/active/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -2426,12 +2426,11 @@ seconds. Cold visit was 2.114 seconds. Peak process working set was 323.3 MiB fo
 | Model Comparison | 1.273, 1.219, 1.162, 1.267, 1.232, 1.371, 1.562, 1.524, 1.351, 1.278, 1.282, 1.197, 1.157, 1.286, 1.349, 1.308, 1.231, 1.294, 1.343, 1.244 | 1.280 | 1.524 | 20/20 |
 | Inventory Comparison | 0.703, 0.729, 0.728, 0.719, 0.702, 0.799, 0.915, 0.885, 0.932, 0.943, 0.880, 0.983, 1.112, 1.083, 1.157, 1.029, 1.195, 1.059, 1.173, 1.025 | 0.938 | 1.173 | 20/20 |
 
-**Remaining acceptance blockers:** An independent LAN viewer cannot connect under the explicit
-localhost-only audience restriction. The host's active Wi-Fi profile is Public, so the trusted
-Private-profile LAN prerequisite is absent. No approved remote IP/subnet or LAN URL exists, no
-firewall rule was added, and no separate reviewer device was tested. Therefore the independent
-viewer/host-network gates and manual third-party LAN acceptance remain BLOCKED. The application
-remains local-only pending review; no Phase 12 closeout is claimed.
+**Historical acceptance assessment before the user scope change:** The earlier private-LAN draft
+required an independent viewer and trusted network. At that time the audience was localhost only,
+the observed Wi-Fi profile was Public, and no LAN URL, listener, firewall rule or separate reviewer
+device test existed. These facts remain historical and no LAN test is claimed. The user's later
+localhost-only decision supersedes the LAN gate; see the current M4 scope addendum below.
 
 Validation on the locked Windows environments passed: the focused dashboard/M2/M3/config suite
 passed 79 tests on Python 3.12 and 79 on Python 3.14; the full fixture suite passed 536 tests on
@@ -2462,6 +2461,28 @@ passed 536 tests on both Python 3.12 and 3.14, with the existing Starlette/httpx
 Ruff lint/format, lock consistency, both installed-environment dependency checks, documentation
 links, and whitespace checks passed. GitHub Quality run #100 passed both Python 3.12 and 3.14 jobs
 on corrected head `4477ff69951f863a1a0eb4441d4cc15db3615d78`. Deployment remains bound to
-`127.0.0.1` under the localhost-only audience approval. Independent LAN viewer and
-manual LAN acceptance remain blocked; Phase 12 remains open and no Phase 10 ledger or Phase 13
-holdout was accessed.
+`127.0.0.1` under the localhost-only scope decision. No LAN acceptance is required or claimed;
+LAN/network/cloud exposure is out of scope. Phase 12 remains open pending human visual review and
+independent final review. No Phase 10 ledger or Phase 13 holdout was accessed.
+
+### Phase 12 M4 localhost-only acceptance scope - 2026-10-10
+
+The user explicitly selected local development, analysis and live demonstration on the user's own
+Windows computer. This decision is recorded in ADR-024 in [DECISIONS](DECISIONS.md) and supersedes
+the earlier private-LAN option and independent-LAN-viewer acceptance gate. The
+historical LAN assessment above remains a record of what was not performed; it is not a current
+blocker. The approved target is `http://127.0.0.1:8501`. LAN access, network-profile changes,
+firewall rules, tunnels, cloud deployment and public hosting are outside scope. No LAN tests are
+claimed or required.
+
+M4 remains IMPLEMENTED / UNDER REVIEW. Exact rendered-heading AppTests passed in the focused
+dashboard/M2/M3/config suite (79 tests on Python 3.14). The full fixture suite passed 536 tests on
+both Python 3.12 and 3.14, each with the existing Starlette/httpx deprecation warning. Ruff lint and
+format passed; `uv lock --check` resolved 109 packages; `uv pip check` passed for 91 packages on
+Python 3.12 and 93 on Python 3.14; Markdown validation passed with 275 local destinations/anchors
+across 28 files; `git diff --check` passed. The existing browser, security and performance evidence
+remains recorded. The current configuration still binds to `127.0.0.1`, disables static serving,
+and keeps CORS and XSRF protection enabled. Human visual review of all five screens in a real
+localhost browser and independent final review of Draft PR #32 remain pending. Keep the PR Draft and
+unmerged; do not close Phase 12. Analytical services and accepted artifacts are unchanged, and no
+Phase 10 ledger or Phase 13 holdout was accessed.
