@@ -237,19 +237,23 @@ Start the local server from the repository root:
 uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.app.api:app --host 127.0.0.1 --port 8000
 ```
 
-## Phase 12 M1 dashboard
+## Phase 12 dashboard
 
-The M1 Streamlit shell is implemented under review. Its overview shows static project context and
-saved catalog/readiness when local artifacts are available; the other four screens remain
-data-free placeholders. Install the optional dashboard extra and run from the repository root:
+The five-screen Streamlit dashboard is implemented under review on `feat/phase-12-streamlit-m4`.
+It presents bounded historical Sales, saved forecasts and uncertainty, accepted model comparisons,
+and synthetic inventory comparisons from the existing services. Its current approved launch is
+localhost only; see the [deployment runbook](docs/DEPLOYMENT_LAN.md) for startup, local artifact
+requirements, error recovery and the unapproved LAN procedure.
 
 ```powershell
-uv sync --locked --extra dashboard --python 3.14
+uv sync --locked --extra dev --extra api --extra dashboard --python 3.14
 uv run --locked --extra dashboard streamlit run streamlit_app.py
 ```
 
-The dashboard does not train or infer forecasts, run inventory simulation, access the Phase 10
-ledger, or evaluate the protected final holdout. Deployment remains undecided.
+The dashboard binds to `127.0.0.1:8501`. It does not train or infer forecasts, run inventory
+simulation, access the Phase 10 ledger, or evaluate the protected final holdout. LAN exposure is
+blocked for this session: the allowed audience is localhost only and the host Wi-Fi profile is
+Public. M4 is under review and blocked pending independent LAN acceptance evidence.
 
 In PowerShell, check process health, list supported cases, and try a bounded forecast or the
 canonical reference inventory case:
@@ -299,8 +303,11 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
 - Phase 11: **COMPLETE**; the [completed plan](plans/completed/phase-11-application-services.md)
   records the shared Python services and thin local/demo FastAPI adapter. Streamlit calls the same
   services directly; separate API hosting and Evidently are optional.
-- Phase 12: M1 is **IMPLEMENTED / UNDER REVIEW** on the feature branch; M2–M4 remain unauthorized.
-  The [active plan](plans/active/phase-12-streamlit-dashboard.md) records the boundary and evidence.
+- Phase 12: M1–M3 are integrated on `main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`.
+  M4 is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-12-streamlit-m4`; localhost integration is
+  validated, while independent LAN access remains blocked by the audience and Public network
+  profile. See the [active plan](plans/active/phase-12-streamlit-dashboard.md) and
+  [deployment runbook](docs/DEPLOYMENT_LAN.md).
 - Phase 13: one frozen sequential final evaluation remains future work requiring separate
   authorization. The protected holdout remains unreleased.
 - Phase 14: recorded results, report, slides and demonstration.

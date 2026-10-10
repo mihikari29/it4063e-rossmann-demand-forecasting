@@ -35,11 +35,14 @@ from rossmann_forecasting.app.dashboard_presenters import (
     MODEL_CANDIDATES,
     MODEL_COVERAGE_METRIC,
     MODEL_MAPE_DIAGNOSTICS,
+    MODEL_SAVED_METRICS,
     ModelComparisonTooLargeError,
+    horizon_mae_query_preset,
     inventory_comparison_records,
     inventory_cost_direction,
     model_comparison_query_presets,
     model_comparison_records,
+    standalone_coverage_query_preset,
 )
 from rossmann_forecasting.app.services import (
     ApplicationCatalog,
@@ -226,6 +229,49 @@ def _rows_for_query(query: ModelComparisonQuery) -> tuple[ModelComparisonRow, ..
             for candidate in MODEL_CANDIDATES
             for window in ("validation_1", "validation_2", "validation_3")
         )
+    if query.metric is None:
+        rows = []
+        windows = (
+            ("validation_1", "validation_2", "validation_3")
+            if query.scope == "validation_window" and query.validation_window is None
+            else (query.validation_window,)
+        )
+        for candidate_index, candidate in enumerate(MODEL_CANDIDATES):
+            for window in windows:
+                for metric in MODEL_SAVED_METRICS:
+                    row = _model_row(
+                        candidate,
+                        population=query.population or "three_way_common",
+                        scope=query.scope or "pooled",
+                        metric=metric,
+                        window=window,
+                        store_id=query.store_id,
+                        value=(
+                            15.0
+                            if metric == "mape"
+                            else 0.21
+                            if metric == "wape"
+                            else 75.0
+                            if metric == "mape_rows"
+                            else 4.0
+                            if metric == "zero_actual_rows_excluded_from_mape"
+                            else 2.0 + candidate_index
+                        ),
+                    )
+                    if query.scope == "week_block":
+                        rows.extend(
+                            (
+                                row,
+                                replace(
+                                    row,
+                                    week_block_start_horizon=8,
+                                    week_block_end_horizon=14,
+                                ),
+                            )
+                        )
+                    else:
+                        rows.append(row)
+        return tuple(rows)
     if query.scope == "horizon":
         return tuple(
             _model_row(
@@ -464,22 +510,32 @@ def test_model_query_presets_are_bounded_and_use_fixed_filters() -> None:
     assert horizon["primary"] == ModelComparisonQuery(
         population="three_way_common", scope="horizon", metric="mae", limit=42
     )
-    assert horizon["horizon_mae"].limit == 42
-    assert horizon["standalone_coverage"].population == "standalone"
-    assert horizon["standalone_coverage"].metric == MODEL_COVERAGE_METRIC
+    assert horizon_mae_query_preset() == ModelComparisonQuery(
+        population="three_way_common", scope="horizon", metric="mae", limit=42
+    )
     assert all(query.limit <= 500 for query in horizon.values())
 
-    store = model_comparison_query_presets("store", "wape", store_id=9)
-    assert store["primary"].store_id == 9
-    assert store["primary"].limit == 200
-    assert "mape_rows" not in store
-    mape = model_comparison_query_presets("pooled", "mape")
-    assert set(MODEL_MAPE_DIAGNOSTICS).issubset(mape)
-    assert all(
-        query.metric in ("mape_rows", "zero_actual_rows_excluded_from_mape")
-        for key, query in mape.items()
-        if key in MODEL_MAPE_DIAGNOSTICS
+    pooled = model_comparison_query_presets("pooled", "mae")
+    assert pooled["scope_metrics"] == ModelComparisonQuery(
+        population="three_way_common", scope="pooled", metric=None, limit=500
     )
+    assert "wape" not in pooled
+    assert len(pooled) == 1
+    assert standalone_coverage_query_preset() == ModelComparisonQuery(
+        population="standalone",
+        scope="validation_window",
+        metric=MODEL_COVERAGE_METRIC,
+        limit=200,
+    )
+
+    store = model_comparison_query_presets("store", "wape", store_id=9)
+    assert store["scope_metrics"].store_id == 9
+    assert store["scope_metrics"].limit == 500
+    mape = model_comparison_query_presets("pooled", "mape")
+    assert mape["scope_metrics"].metric is None
+    horizon_mape = model_comparison_query_presets("horizon", "mape")
+    assert set(MODEL_MAPE_DIAGNOSTICS).issubset(horizon_mape)
+    assert all(horizon_mape[key].metric == key for key in MODEL_MAPE_DIAGNOSTICS)
     with pytest.raises(ValueError):
         model_comparison_query_presets("validation_window", "mae")
     with pytest.raises(ValueError):
@@ -514,6 +570,24 @@ def test_model_presenter_preserves_exact_values_nulls_denominators_and_units() -
     assert null_records[0]["unavailable_reason"] == "no_rows"
 
 
+def test_model_presenter_accepts_only_registered_metrics_for_broad_scope_query() -> None:
+    query = ModelComparisonQuery(
+        population="three_way_common", scope="pooled", metric=None, limit=500
+    )
+    rows = tuple(
+        _model_row(candidate, metric=metric, value=0.21 if metric == "wape" else 15.0)
+        for candidate in MODEL_CANDIDATES
+        for metric in ("mae", "wape", "mape")
+    )
+    records = model_comparison_records(_model_view(rows), query)
+    assert len(records) == 9
+    assert [record["metric"] for record in records[:3]] == ["mae", "wape", "mape"]
+    with pytest.raises(ValueError, match="Unexpected saved model comparison metric"):
+        model_comparison_records(
+            _model_view((_model_row(MODEL_CANDIDATES[0], metric="unregistered_metric"),)), query
+        )
+
+
 def test_model_presenter_rejects_duplicate_dimensions_and_oversized_views() -> None:
     query = ModelComparisonQuery(
         population="three_way_common", scope="pooled", metric="mae", limit=2
@@ -535,7 +609,7 @@ def test_model_presenter_returns_overflow_error_above_explicit_query_limit() -> 
         model_comparison_records(oversized_view, query)
 
 
-def test_model_screen_compares_all_candidates_and_keeps_weak_h10_charted() -> None:
+def test_model_screen_common_view_compares_all_candidates_and_saved_wape() -> None:
     from rossmann_forecasting.app import dashboard
 
     services = _DashboardSpy()
@@ -547,21 +621,40 @@ def test_model_screen_compares_all_candidates_and_keeps_weak_h10_charted() -> No
 
     visible = _visible_text(app)
     assert not app.exception
+    assert services.catalog_calls == 1
     assert all(candidate in visible for candidate in MODEL_CANDIDATES)
     assert "three_way_common" in visible
     assert "standalone" in visible
-    assert "h1–h14" in visible
-    assert "99.0" in visible
-    assert len(captured) == 2
+    assert "Saved WAPE values and denominators" in visible
+    assert len(captured) == 1
     assert [bar.get_height() for bar in captured[0].axes[0].patches] == [2.0, 3.0, 4.0]
-    horizon_lines = captured[1].axes[0].lines
+    assert all(query.limit <= 500 for query in services.model_queries)
+    assert not any(query.population == "standalone" for query in services.model_queries)
+    assert any(query.metric is None and query.limit == 500 for query in services.model_queries)
+    assert not any(query.metric == "wape" for query in services.model_queries)
+    assert len(services.model_queries) == 1
+
+
+def test_model_screen_horizon_view_keeps_weak_h10_charted() -> None:
+    from rossmann_forecasting.app import dashboard
+
+    services = _DashboardSpy()
+    captured = []
+    with patch.object(
+        dashboard.st, "pyplot", side_effect=lambda figure, **_: captured.append(figure)
+    ):
+        app = _app(services, "Model Comparison")
+        _widget(app, "radio", "Evidence view").set_value("Saved MAE by horizon")
+        app = _apply(app)
+
+    visible = _visible_text(app)
+    assert not app.exception
+    assert "h1" in visible and "99.0" in visible
+    assert len(captured) == 1
+    horizon_lines = captured[0].axes[0].lines
     assert len(horizon_lines) == 3
     assert [line.get_ydata()[9] for line in horizon_lines] == [20.0, 20.0, 99.0]
-    assert all(query.limit <= 500 for query in services.model_queries)
-    assert any(
-        query.metric == "open_label_forecast_coverage_rate" for query in services.model_queries
-    )
-    assert any(query.metric == "wape" for query in services.model_queries)
+    assert services.model_queries == [horizon_mae_query_preset()]
 
 
 def test_model_screen_mape_diagnostics_and_separate_coverage_keep_denominators() -> None:
@@ -574,21 +667,56 @@ def test_model_screen_mape_diagnostics_and_separate_coverage_keep_denominators()
     assert not app.exception
     assert "15% (percentage points)" in visible
     assert "21% (saved fraction 0.21)" in visible
-    assert "50% (saved fraction 0.5)" in visible
     assert "mape_rows" in visible
     assert "zero_actual_rows_excluded_from_mape" in visible
     assert "denominator" in visible
-    primary_queries = [query for query in services.model_queries if query.metric == "mape"]
-    coverage_queries = [
-        query for query in services.model_queries if query.metric == MODEL_COVERAGE_METRIC
-    ]
+    primary_queries = [query for query in services.model_queries if query.metric is None]
     assert primary_queries and all(
         query.population == "three_way_common" for query in primary_queries
     )
-    assert coverage_queries and all(query.population == "standalone" for query in coverage_queries)
-    assert {query.metric for query in services.model_queries}.issuperset(
-        {"mape_rows", "zero_actual_rows_excluded_from_mape"}
-    )
+    assert any(query.metric is None and query.limit == 500 for query in services.model_queries)
+    assert not any(query.population == "standalone" for query in services.model_queries)
+    assert len(services.model_queries) == 1
+
+
+def test_model_screen_loads_standalone_coverage_as_a_separate_population_view() -> None:
+    services = _DashboardSpy()
+    app = _app(services, "Model Comparison")
+    _widget(app, "radio", "Evidence view").set_value("Standalone forecast coverage")
+    app = _apply(app)
+
+    visible = _visible_text(app)
+    assert not app.exception
+    assert "Standalone forecast coverage" in visible
+    assert "50% (saved fraction 0.5)" in visible
+    assert "three_way_common" not in visible
+    assert len(services.model_queries) == 1
+    assert services.model_queries[0] == standalone_coverage_query_preset()
+
+
+def test_dashboard_sessions_keep_independent_model_metric_selections() -> None:
+    session_a_services = _DashboardSpy()
+    session_b_services = _DashboardSpy()
+    session_a = _app(session_a_services, "Model Comparison")
+    session_b = _app(session_b_services, "Model Comparison")
+
+    _widget(session_a, "selectbox", "Metric").set_value("wape")
+    session_a = _apply(session_a)
+    _widget(session_b, "selectbox", "Metric").set_value("rmse")
+    session_b = _apply(session_b)
+
+    assert _widget(session_a, "selectbox", "Metric").value == "wape"
+    assert _widget(session_b, "selectbox", "Metric").value == "rmse"
+    assert "Primary comparison" in _visible_text(session_a)
+    assert "WAPE" in _visible_text(session_a)
+    assert "Primary comparison" in _visible_text(session_b)
+    assert "RMSE" in _visible_text(session_b)
+
+    _widget(session_a, "selectbox", "Metric").set_value("mape")
+    session_a = _apply(session_a)
+    assert _widget(session_a, "selectbox", "Metric").value == "mape"
+    assert _widget(session_b, "selectbox", "Metric").value == "rmse"
+    assert "RMSE" in _visible_text(session_b)
 
 
 @pytest.mark.parametrize("corruption", ("row", "provenance"))
@@ -676,17 +804,28 @@ def test_model_scope_controls_submit_exact_window_and_store_queries() -> None:
     app = _app(services, "Model Comparison")
     _widget(app, "selectbox", "Scope").set_value("validation_window")
     app = _apply(app)
-    query = next(query for query in services.model_queries if query.scope == "validation_window")
+    query = next(
+        query
+        for query in services.model_queries
+        if query.scope == "validation_window" and query.metric is None
+    )
     assert query.validation_window == "validation_1"
     assert query.store_id is None
     _widget(app, "selectbox", "Validation window").set_value("validation_3")
     app = _apply(app)
-    query = [query for query in services.model_queries if query.scope == "validation_window"][-1]
+    query = [
+        query
+        for query in services.model_queries
+        if query.scope == "validation_window" and query.metric is None
+    ][-1]
     assert query.validation_window == "validation_3"
 
     _widget(app, "selectbox", "Scope").set_value("store")
     app = _apply(app)
-    query = [query for query in services.model_queries if query.scope == "store"][-1]
+    assert services.catalog_calls == 2
+    query = [
+        query for query in services.model_queries if query.scope == "store" and query.metric is None
+    ][-1]
     assert query.store_id == 1
     assert query.validation_window is None
 
@@ -1092,10 +1231,10 @@ def test_real_services_model_screen_reads_only_bounded_saved_comparison_fixtures
 
     visible = _visible_text(app)
     assert not app.exception
-    assert "99.0" in visible
+    assert "4.0" in visible
     assert all(candidate in visible for candidate in MODEL_CANDIDATES)
     assert set(reader.selectors) == {ArtifactSelector.PHASE7_MODEL_COMPARISON}
-    assert reader.selectors.count(ArtifactSelector.PHASE7_MODEL_COMPARISON) <= 4
+    assert reader.selectors.count(ArtifactSelector.PHASE7_MODEL_COMPARISON) <= 1
     assert path.read_bytes() == before
 
 

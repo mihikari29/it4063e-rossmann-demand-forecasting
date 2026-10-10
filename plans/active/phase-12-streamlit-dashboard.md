@@ -1,8 +1,8 @@
 # Phase 12 - Streamlit Dashboard Design
 
-**Phase status:** M1 ACCEPTED / INTEGRATED; M2 ACCEPTED / INTEGRATED; M3 IMPLEMENTED / UNDER REVIEW. M4 remains PLANNED / NOT AUTHORIZED. Phase 12 is open, deployment is undecided, Phase 13 is unauthorized, and the final holdout remains protected. **Date:** 2026-10-09. **Authority:** M2 PR #30 was accepted and merged into `main` at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`; main-branch Quality [run #37955545881](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37955545881) passed on Python 3.12 and 3.14. The M3 task authorizes only sections 4.5-4.6, commit/push and a draft PR targeting `main`. Do not merge M3 or start M4, deployment or Phase 13.
+**Phase status:** M1–M3 ACCEPTED / INTEGRATED at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; M4 IMPLEMENTED / UNDER REVIEW and BLOCKED PENDING ACCEPTANCE EVIDENCE. Phase 12 remains open; Phase 13 is unauthorized and the final holdout remains protected. **Date:** 2026-10-10. **Authority:** M3 PR #31 was merged into `main` at that SHA; main Quality [run #37966506688](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37966506688) passed on Python 3.12 and 3.14. The M4 task authorizes integration, localhost browser validation, measurement, documentation, commit/push and one draft PR. It does not authorize merge or Phase 12 closeout.
 
-**Implementation branch:** `feat/phase-12-streamlit-m3`, created directly from `origin/main` at `327a274bfdad0bb97cdd614a36dc04cbbf8291a2`; no stacked integration dependency. Draft PR [#31](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/31) targets `main` and remains open/unmerged.
+**Implementation branch:** `feat/phase-12-streamlit-m4`, created directly from `origin/main` at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; no stacked integration dependency. The M4 draft PR is recorded in the checkpoint below after publication.
 
 ## 1. Verified baseline and design boundary
 
@@ -826,3 +826,23 @@ Resolution: the presenter overflow exception now has a separate handler branch w
 Regression coverage adds an explicit presenter overflow test and a Streamlit AppTest that first renders a successful comparison, then injects oversized `ModelComparisonView` results through the model service spy. The rerun asserts no uncaught exception, the fixed message and identifier, and removal of result tables, charts, provenance and prior results. The existing invalid-request AppTest now pins the original stable code. Successful model and inventory paths remain covered by the focused suite.
 
 Validation for this correction: focused dashboard/M2/presenter pytest passed 100 tests. Full pytest passed 531 tests on Python 3.12 and 531 on Python 3.14, each with one existing Starlette/httpx deprecation warning. Ruff lint and format passed (104 files already formatted); `uv lock --check` resolved 109 packages; locked Python 3.14 `uv pip check` passed with 93 compatible packages. Markdown links and `git diff --check` are recorded after the documentation update. The branch and PR remain draft/unmerged for final independent review; M4 and Phase 13 were not started.
+
+## 17. M4 integration and localhost validation - 2026-10-10
+
+M4 is IMPLEMENTED / UNDER REVIEW on `feat/phase-12-streamlit-m4`, based directly on accepted M3
+main SHA `28aa42fdb2186dbbc340bef72917ce2e2ec06425`. M3 PR #31 and main Quality #37966506688
+passed before M4. The attached task authorizes implementation, validation, documentation, commit,
+push and one Draft PR; merge and Phase 12 closeout remain unauthorized.
+
+The five screens and their bounded existing-service queries were validated on the host in Microsoft
+Edge browser sessions. The app remains bound to `127.0.0.1`; no service, analytical, reader, lock or
+canonical artifact behavior changed. The selected deployment strategy remains Option A, but the
+operator-approved audience is localhost only and the active Wi-Fi profile is Public. No LAN URL,
+listener or firewall rule exists. Independent LAN-viewer and trusted-network acceptance are blocked;
+M4 must not be closed.
+
+See the [deployment runbook](../../docs/DEPLOYMENT_LAN.md) and the detailed [M4 evidence in
+PROGRESS](../../docs/PROGRESS.md#phase-12-m4-integration-browser-and-local-performance-2026-10-10)
+for provenance, browser and two-session results, performance samples, validation and final PR head.
+The plan remains active for independent review. Phase 13 and protected holdout access remain out of
+scope.
