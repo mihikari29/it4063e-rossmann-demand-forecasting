@@ -782,3 +782,92 @@ statistics, or alert thresholds; a comparator/score protocol; or M1 implementati
 approvals may be inferred from the A-bounded scope decision. Implementation, development rehearsal,
 mechanical protected-source staging, and analytical outcome release each retain their separate
 authorization gates. Phase 13 as a whole remains PLANNED / NOT AUTHORIZED.
+
+## ADR-026 — Phase 13 Selected Sequential Evaluation Methodology
+
+**Status:** ACCEPTED — METHOD SELECTION ONLY under the delegated Technical Lead decision on
+2026-10-10. This ADR records the selected technical method. It does not authorize implementation,
+rehearsal, source access, protected-data staging, analytical release, or Phase 13 completion.
+
+**Supersedes:** The M0.3 proposal's pending-method recommendations for P13-01 through P13-08,
+including the detailed execution method for P13-05. ADR-025's owner-approved A-bounded inventory
+scope and its daily-protection limitation remain unchanged. Accepted ADR-013, ADR-015, ADR-020,
+ADR-021, ADR-022, and ADR-023 remain in force; this ADR selects their Phase 13 application without
+changing their methods or historical evidence.
+
+**Selected decisions:**
+
+1. **Protocol and release order (P13-01).** Issue exactly two complete, frozen H14 forecast blocks:
+   origin 2015-07-03 for July 4–17, then origin 2015-07-17 for July 18–31. Finish, validate, and
+   persist each block before any outcome in that block is analytically revealed. Release each date
+   chronologically and checkpoint it before advancing. The second scheduled fresh fit may use only
+   Block 1 history already authorized and released through July 17. No post-outcome model, interval,
+   target, or policy adaptation is allowed.
+2. **Inputs, roster, and operating schedule (P13-02).** Retain the 1,115-store requested grid and
+   exact ordered 29-feature schema. The selected input method uses separately versioned,
+   origin-safe covariates and records retrospective assumed-known availability where historical
+   availability is unverified. A Monday–Saturday-open / Sunday-closed schedule is a conditional,
+   explicitly synthetic planning assumption for scenario and observed-Sales-reference simulations.
+   Keep calendar values, static metadata, conditionally assumed future covariates, planned Open,
+   `ScenarioOpen`, and post-release actual Open distinct. Preserve positive observed Sales even when
+   the synthetic planned schedule says closed; after release, report planned-versus-actual schedule
+   mismatches. Never use future actual Open as planned Open, a predictor, or an issuance-time input.
+   Source identity, provenance, safe acquisition, and authorized preparation remain execution
+   preconditions, not permissions granted by this method selection. If needed covariates exist only
+   in a combined source containing protected Sales/Open, require a separately reviewed safe
+   preparation and custody procedure before any access to that source. Column projection alone is
+   not physical isolation. Fail closed when provenance cannot be established.
+3. **Custody and chronology (P13-03).** Select A2 logical/operator-enforced custody: separately
+   staged provider views, default-deny provider/path/date/field guards, immutable issuance, durable
+   per-date release intents, append-only journals, and idempotent checkpoints. A1 Windows identities
+   and NTFS ACLs are optional hardening. Disclose the trusted-operator assumption; A2 does not claim
+   strict physical isolation from an operator, machine owner, or administrator. For a new partition,
+   complete and persist issuance, persist the next date's intent, separately authorize mechanical
+   staging, and create/access only that date's projection. Existing partitions require documented
+   staging authorization and provenance. Mechanical reads are protected-data access but are distinct
+   from analytical outcome revelation; prior reads authorize no new access. Staging and analytical
+   release require separate authorizations.
+4. **Uncertainty (P13-04).** Apply the exact frozen June Fit B tables unchanged to each July fresh
+   fit as an explicitly **UNVALIDATED transport assumption**. Preserve accepted identities, signed
+   residual values, exact horizon/prefix semantics, sample floors, availability/reason fields,
+   endpoint clipping, and ADR-021 formulas. Do not recalibrate, refit or retune quantiles; do not
+   borrow origin-prefix quantiles for later-review suffixes; and make no July or synthetic coverage
+   guarantee. July actuals may assess error and empirical coverage only after their authorized
+   chronological revelation; they never enter issuance.
+5. **Inventory (P13-05).** Preserve ADR-025 Option A-bounded: two independent H14 standing-target
+   episodes and the full precommitted scenario/sensitivity panel, subject to an explicitly measured
+   and approved resource-feasibility gate. Preserve the accepted Phase 10 paired policies, event
+   order, metrics, costs, and common finite-window terminal accounting. The episodes do not claim
+   fresh calibrated protection coverage at each daily review or continuous rolling 28-day operation.
+6. **Monitoring (P13-06).** Use descriptive daily, trailing 7-calendar-day, and trailing
+   14-calendar-day summaries, stratified by forecast origin and horizon. Show descriptive
+   feature-distribution shifts and post-release forecast errors and interval coverage. Precommit
+   deterministic integrity and data-quality alerts only. Do not set arbitrary statistical drift,
+   performance, interval-coverage, or service-level alarm thresholds; alert definitions must not
+   depend on final outcomes.
+7. **Runtime and reproducibility (P13-07).** Use the locked Windows x64 / Python 3.14 reference
+   environment and exact frozen LightGBM recipe. Require exact configuration, feature, category,
+   identity, and hash checks. For same-environment booster save/load predictions, use the
+   precommitted comparison `rtol=1e-12`, `atol=1e-9`. A fixture failure stops work for a new reviewed
+   tolerance decision; tolerances are never loosened after protected results are seen. Record full
+   environment, native build, and runtime identity. Measure the full-panel host memory/runtime
+   budget and obtain explicit approval before execution.
+8. **Scores and comparator (P13-08).** LightGBM is the primary final system. Include the existing
+   frozen Seasonal Naive as a contextual baseline with immutable H14 issuance before outcome
+   revelation. Preserve exact standalone and common-row metrics and populations. Do not perform
+   new model selection, add a candidate, or use Holt-Winters as a final comparator.
+
+**Unresolved execution preconditions:** The selected method does not identify or authorize a real
+source, prove any covariate's historical availability, authorize source preparation/acquisition,
+name the trusted staging/release operator, establish provenance for existing partitions, approve a
+host resource budget, or authorize implementation. A separately reviewed safe-preparation and
+custody procedure is required before any access if model covariates share a combined source with
+protected Sales/Open. No source/outcome access, hashing, extraction, staging, rehearsal, or analytical
+release is authorized by this ADR. M1 remains NOT AUTHORIZED, and the protected July holdout remains
+unreleased. Record prior mechanical reads separately from analytical releases; neither category
+alone authorizes any new access.
+
+**Consequences:** Phase 13 can proceed to a separately authorized synthetic-fixture implementation
+only after Technical Lead review of this documentation proposal and explicit M1 authorization.
+Development rehearsal, mechanical staging, and each analytical daily release remain separate gates.
+This method selection does not mark Phase 13 APPROVED for implementation, REVIEWED, or COMPLETE.

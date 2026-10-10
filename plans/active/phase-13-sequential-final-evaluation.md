@@ -1,29 +1,30 @@
 # Phase 13 — Sequential Final Evaluation Design Proposal
 
-**State: PROPOSED / NOT APPROVED as a complete Phase 13 methodology.** This M0.3 revision records
-the owner's A-bounded inventory scope approval under ADR-025; only that scope and its explicit
-daily-protection limitation are accepted. Other material methodology choices remain pending.
-This plan authorizes neither implementation nor access to protected July 4–31 outcomes. Phase 13
-remains PLANNED / NOT AUTHORIZED; Phase 14 has not started.
+**State: METHOD SELECTED under ADR-026; M1 NOT AUTHORIZED.** M0.4 records the delegated Technical
+Lead's selected methodology and the owner's previously approved A-bounded scope under ADR-025.
+Source/preparation preflight, provenance, operator, resource, implementation, rehearsal, staging,
+and analytical-release preconditions remain open. This plan authorizes none of those actions and
+does not authorize access to protected July 4–31 outcomes. Phase 13 remains PLANNED / NOT
+IMPLEMENTED; Phase 14 has not started.
 
 ## 1. Objective, scope, and non-goals
 
-Propose one reproducible, leakage-controlled final evaluation of the accepted Rossmann
-Store × Date monetary Sales forecast, with two non-overlapping H14 blocks issued before
-their outcomes are revealed. Record the owner's approved A-bounded inventory scope on those
-origins while resolving the remaining execution methodology and lightweight monitoring choices.
+Record the selected reproducible, leakage-controlled final evaluation of the accepted Rossmann
+Store × Date monetary Sales forecast, with two non-overlapping H14 blocks issued before their
+outcomes are revealed. The selected method includes the owner's approved A-bounded inventory scope
+and the monitoring protocol; execution preconditions and authorization gates remain open.
 
 This plan does not implement the protocol, inspect final outcomes, select another model,
 change accepted features/metrics/calibration/policies, add forecast origins or horizons,
-generate final forecasts, or authorize a final-data release. ADR-025 records the approved
-inventory scope only; this plan does not otherwise supersede accepted ADRs and retains unresolved
-methodology decisions.
+generate final forecasts, or authorize a final-data release. ADR-025 records the owner-approved
+inventory scope and ADR-026 records the selected Phase 13 method; neither changes accepted
+historical ADRs or authorizes implementation or data access.
 
 ## 2. Current accepted evidence and dependencies
 
-**FACT:** PR #35 merged into `main` at
-`2d34e20d5ae9fdb29af610dd28aefd3b80023946`, verified as the current `origin/main` base for this
-review. The merge did not approve the full Phase 13 methodology. Phases 0–12 are integrated and complete; the
+**FACT:** PR #36 merged into `main` at
+`66b2019ad19958e414e51bd9c5799d08809f0424`, verified as the current `origin/main` base for M0.4.
+Phases 0–12 are integrated and complete; the
 selected point model is
 `global_lightgbm_gbdt_regression_l1`, trial A at 180 rounds. ADR-015 requires a separately
 authorized final protocol. ADR-020 freezes the model recipe. ADR-021 freezes the development
@@ -32,11 +33,11 @@ freeze the synthetic assumptions and Phase 10 standing-policy simulation. ADR-02
 Phase 12 demonstration boundary to localhost.
 
 M0.1 incorporated the independent Sol 6.1 review of P13-01 through P13-09; M0.2 recorded the
-Option A-bounded feasibility review. On 2026-10-10 the owner explicitly approved A-bounded
-inventory scope and its daily-protection limitation only. ADR-025 records that scope-only decision;
-this M0.3 revision synchronizes the Phase 13 acceptance language. The complete methodology remains
-PROPOSED / NOT APPROVED, and detailed execution choices and independent implementation/data gates
-remain pending.
+Option A-bounded feasibility review; M0.3 recorded the owner's scope approval in ADR-025. Under
+delegated authority on 2026-10-10, the Technical Lead selected the methods for P13-01 through
+P13-08; ADR-026 records that method selection. M0.4 does not authorize implementation or access:
+data identity/provenance/safe-preparation preflight, staging provenance, operator designation,
+resource-budget approval, and separate M1, rehearsal, staging, and release gates remain open.
 There is no pending code integration dependency. The origin-parameterized training and recursive
 functions can represent authorized July 3 and July 17 fits when given safe inputs; no such fit has
 been run. The current development runner rejects reads after July 3 and is not the final replay
@@ -96,8 +97,9 @@ The input contract distinguishes:
    feature-source view used to assemble the existing `phase-3-v1` ordered 29-predictor schema.
    Dynamic Sales-lag/window predictors are rebuilt from recursive history. This view contains no
    target labels, Customers, actual future Open, or future outcome-derived values.
-4. **Optional planned Open:** a separately versioned nullable operational schedule, if supplied
-   under an approved availability assumption. It is never inferred from future actual Open.
+4. **Synthetic planned Open:** a separately versioned operational schedule generated from the
+   selected Monday–Saturday-open / Sunday-closed rule and calendar keys. This is a conditional
+   planning assumption, not observed operation, and is never inferred from future actual Open.
 5. **Unreleased outcomes:** protected target projections are unavailable to issuance and general
    preparation. For a newly staged outcome partition, the default sequence is: complete and persist
    that block's issuance; persist the next chronological date's `release_intent`; separately
@@ -127,14 +129,15 @@ misuse. Never hash sealed or unreleased outcome contents. These controls do **no
 process never opened a combined source file or that an administrator could not bypass a local
 guard. A date filter on a Parquet scan is not physical isolation.
 
-**Recommended A2 — independently staged inputs with provider-scoped access:** give each input
+**Selected A2 — independently staged inputs with provider-scoped access:** give each input
 view its own staged projection and provider. Default-deny every unlisted provider, file, path,
 field, and date; reject unsafe paths and dates before content access; keep issued outputs immutable;
 and record durable, chronological release-intent, release, and evaluation-checkpoint events. A
-trusted operator controls staging and day release and is part of the trust assumption. This is a
-logical/operator-enforced boundary; it does not claim protection from that operator, a hostile
-machine owner, or an administrator. Separate Windows accounts and NTFS ACLs are not mandatory
-under A2.
+trusted operator controls staging and day release and is part of the trust assumption. A2 is a
+logical/operator-enforced boundary and does not provide strict physical isolation from that
+operator, a hostile machine owner, or an administrator. Separate Windows accounts and NTFS ACLs
+are optional hardening under A2. Design and operation still require explicit separate
+authorizations for mechanical staging and analytical release.
 
 **Optional A1 — stronger local isolation:** separate Windows identities, restrictive NTFS ACLs,
 and custodian-controlled staged projections may further constrain accidental reads. A1 is an
@@ -227,18 +230,19 @@ schema, cutoff, category, or origin mismatch. Assert the fitted model origin equ
 issuance origin; the current recursive API does not make that assertion itself.
 
 Record requested rounds and actual tree count. Persist the booster and all prediction adapter
-state. Recommend the locked Windows x64 / Python 3.14 reference environment from ADR-018, using
+state. Use the selected locked Windows x64 / Python 3.14 reference environment from ADR-018, using
 the repository `uv.lock` and pinned uv version; record the LightGBM native build and environment
 identity. Require exact equality for frozen recipe/configuration, ordered feature schema,
 categories, input/output identities, requested keys, and pinned Fit B table identities. For
-same-input booster save/load prediction comparison, propose `rtol=1e-12` and `atol=1e-9`.
-Those tolerances are a proposal, not an accepted prior result. Do not claim bitwise identity
-across operating systems, compilers, or LightGBM builds.
+same-environment booster save/load prediction comparison, require `rtol=1e-12` and `atol=1e-9`.
+If fixture verification fails, stop for a new reviewed tolerance decision; never loosen these
+tolerances after protected results are observed. Record full environment, native build, and runtime
+identity. Do not claim bitwise identity across operating systems, compilers, or LightGBM builds.
 
 ## 6. Origin-known covariates and planned Open
 
-Propose a versioned table keyed by Store × Date with schema version, source/version, extraction
-time, availability assumption, null policy, content identity, and approved use. Keep the exact
+Use separately versioned tables keyed by Store × Date with schema version, source/version,
+extraction time, availability assumption, null policy, content identity, and approved use. Keep the exact
 existing ordered 29-predictor `phase-3-v1` model schema; this proposal adds no predictor or derived
 feature. The exogenous covariate table supplies origin-known sources only; dynamic Sales history
 predictors are rebuilt from the separate recursive-history view. It contains no target labels or
@@ -250,22 +254,23 @@ future outcome-derived fields.
   version and distinguish snapshot values from historically verified availability.
 - **Holiday/promotion schedules:** StateHoliday, SchoolHoliday, Promo, Promo2 and associated
   schedule fields require source/version and an explicit origin-known provenance decision.
-  Retrospective schedule covariates from the historical source may be proposed only under an
-  explicitly approved conditional assumption that they were known at the origin; a stored value
-  does not prove that availability. Do not derive them from Sales, Customers, or target outcomes.
-- **Planned Open:** a separately supplied, nullable schedule with provenance. Do not infer it
-  from actual future Open, target labels, future customer counts, or later closure records.
+  Retrospective schedule covariates from the historical source use an explicitly documented
+  conditional assumed-known-at-origin availability assumption; a stored value does not prove
+  historical availability. Do not derive them from Sales, Customers, or target outcomes. The source
+  identity, provenance, safe acquisition, and authorized preparation remain preflight requirements.
+- **Planned Open:** a separately versioned schedule generated from the selected weekly planning
+  rule and calendar keys, with its rule identity and conditional-assumption provenance. Do not infer
+  it from actual future Open, target labels, future customer counts, or later closure records.
 
 Keep these schedule concepts distinct. Deterministic Date/weekday values come from the calendar.
 Static Store metadata and conditional future covariates require their own source/version and
-origin-availability assumptions. `ScenarioOpen` is the Phase 9 synthetic schedule used for its
-synthetic demand case; the Monday–Saturday-open/Sunday-closed pattern is an invented synthetic
-assumption, not observed or historically proven Rossmann operation. Optional planned operational
-Open is a separate nullable schedule used to route raw forecasts. Whether to use that same invented
-weekly schedule for the observed-Sales-reference case is an explicit pending approval decision.
-Observed source `Open` is available only after the matching date is authorizedly revealed, for
-eligibility and diagnostics. It never fills planned Open. A planned closure never overwrites
-positive observed Sales or synthetic demand.
+origin-availability assumptions. Use the selected Monday–Saturday-open/Sunday-closed pattern as a
+conditional synthetic planning schedule for scenario and observed-Sales-reference simulations; it
+is not observed or historically proven Rossmann operation. `ScenarioOpen` remains the Phase 9
+scenario schedule, and planned operational Open is a distinct schedule field for routing issued raw
+forecasts. Observed source `Open` is available only after the matching date is authorizedly
+revealed, for eligibility, diagnostics, and schedule-mismatch reporting. It never fills planned
+Open. A planned closure never overwrites positive observed Sales or synthetic demand.
 
 Future actual `Open` is never a planned schedule or a predictor. Unknown planned Open remains
 unknown. It is not zero, `Open_resolved`, or a reason to overwrite the raw forecast. Raw
@@ -274,8 +279,11 @@ predictor row/value is absent, use only the accepted native missing-value behavi
 feature contract permits it; otherwise mark the prediction unavailable with a reason. If
 planned Open is absent, raw points may remain available while operational points, routed
 intervals, cumulative operational bounds, and inventory targets that depend on it are null.
-No protected actual value fills a missing covariate. This proposal authorizes no future-data
-extraction, including retrospective promotion/holiday covariate extraction.
+No protected actual value fills a missing covariate. This method selection authorizes no future-data
+extraction, including retrospective promotion/holiday covariate extraction. If required covariates
+exist only in a combined source containing protected Sales/Open, a separately reviewed safe
+preparation and custody procedure is required before any access to that source. Column projection
+alone does not establish physical isolation. Fail closed if input provenance cannot be established.
 
 ## 7. Forecast issuance and immutable persistence
 
@@ -292,7 +300,7 @@ rewritten after outcomes become available.
 
 ## 8. Frozen Fit B uncertainty application
 
-**PROPOSED DEFAULT — Technical Lead approval required:** apply the already accepted frozen Fit B
+**SELECTED METHOD — UNVALIDATED transport assumption:** apply the already accepted frozen Fit B
 daily residual quantiles and cumulative-prefix quantiles unchanged to both blocks, subject to
 matching selected-model, feature, fit, horizon/prefix, and source identities. Pin these accepted
 identities recorded in [PROGRESS](../../docs/PROGRESS.md):
@@ -421,28 +429,44 @@ and observed counts agree.
   Do not let closure-routed zeros inflate the primary raw-forecast metric. Pool ratios from
   numerators/denominators, never by unweighted averaging of subgroup ratios.
 
-Proposed comparator scope: accepted selected LightGBM is the sole primary final point system.
-The frozen Seasonal Naive algorithm may be reported as a contextual comparator under a separately
-precommitted issuance protocol. Report standalone populations and an exact common-row comparison
-as separate results; the common rows are those observed source-Open=1 targets for which both
-issued raw forecasts are available. Do not rank/select a winner, reopen model selection, add a
-candidate, or use Holt-Winters as a final comparator.
+Selected score/comparator protocol: accepted selected LightGBM is the primary final point system.
+Include the existing frozen Seasonal Naive as a contextual comparator with immutable H14 issuance
+before outcome revelation. Report standalone populations and an exact common-row comparison as
+separate results; the common rows are those observed source-Open=1 targets for which both issued raw
+forecasts are available. Do not rank/select a winner, reopen model selection, add a candidate, or
+use Holt-Winters as a final comparator.
 
 ## 11. Monitoring definitions and alert strategy
 
-Use descriptive pandas summaries. Proposed windows are one calendar day, trailing 7 calendar days, and trailing 14 calendar days, recomputed after each authorized daily release. Startup windows are explicitly partial until they contain 7 or 14 released calendar days; record nominal length, actual day count, and partial-window flag. No bootstrap, statistical control limit, numeric drift threshold, or numeric MAE, interval-coverage, or service alarm is proposed.
+Use the selected descriptive daily, trailing 7-calendar-day, and trailing 14-calendar-day summaries,
+recomputed after each authorized daily release and stratified by block origin and forecast horizon.
+Startup windows are explicitly partial until they contain 7 or 14 released calendar days; record
+nominal length, actual day count, and partial-window flag. No bootstrap, statistical control limit,
+or numeric drift, performance, interval-coverage, or service alarm threshold is selected.
 
 For each window, report its exact population and numerator/denominator: requested keys; observed outcome rows; source-Open=1 observed labels; raw forecasts available on requested keys and observed targets; point-evaluation-eligible rows; available issued intervals and interval-eligible labels; and schedule/operational availability. Point errors use the accepted observed source-Open=1 plus available-raw-forecast population. Daily interval coverage uses observed source-Open=1 labels with an available issued interval and reports interval-available and eligible-label counts separately. Feature summaries describe only origin-known covariates and issued raw-path predictors against that fit's origin-safe training reference; use counts, missingness, and descriptive frequencies/quantiles without Sales-derived cohorts or a numeric drift statistic.
 
 Every released record retains its block origin and forecast horizon. A 7/14-day window spanning July 17 is labeled multi-origin and keeps origin/horizon breakdowns. Recursive lag-feature differences as forecasts replace actual history remain descriptive.
 
-Alerts are limited to deterministic integrity and data-quality violations, such as changed identities, duplicate/missing keys, invalid schema/value, blocked-path attempt, out-of-order event, or incomplete provider response. An unavailable prediction or unknown planned Open remains explicit with its reason. ADR-021's 40-row daily and 50-prefix cumulative floors define calibration estimators only; they do not establish monitoring reliability. Under the owner-approved A-bounded inventory scope, update inventory state and descriptive KPIs after each authorized daily release; label episode-to-date values partial through H14. Rolling 7/14-day inventory summaries retain block origin, episode reset, released-day count, and partial-window status; do not present the reset episodes as continuous inventory. Receipt-cycle service uses its accepted completed-cycle denominator and triggers no alert. No numeric service threshold or adaptive policy change is proposed. Do not claim statistically reliable drift from two forecast blocks or 28 days.
+Show descriptive feature-distribution shifts and post-release forecast errors and interval coverage
+with their populations and denominators. Feature summaries use origin-safe references without
+Sales-derived cohorts. Precommit deterministic integrity and data-quality alerts only, such as
+changed identities, duplicate/missing keys, invalid schema/value, blocked-path attempt, out-of-order
+event, or incomplete provider response. Alert definitions remain independent of final outcomes.
+An unavailable prediction or unknown planned Open remains explicit with its reason. ADR-021's
+40-row daily and 50-prefix cumulative floors define calibration estimators only; they do not
+establish monitoring reliability. Under the owner-approved A-bounded inventory scope, update
+inventory state and descriptive KPIs after each authorized daily release; label episode-to-date
+values partial through H14. Rolling 7/14-day inventory summaries retain block origin, episode reset,
+released-day count, and partial-window status; do not present the reset episodes as continuous
+inventory. Receipt-cycle service uses its accepted completed-cycle denominator and triggers no
+alert. Do not claim statistically reliable drift from two forecast blocks or 28 days.
 
 ## 12. Inventory scope decision and alternatives
 
 ### Owner approval — scope only
 
-**Owner decision, 2026-10-10: Option A-bounded inventory scope APPROVED — SCOPE ONLY.** ADR-025 records two independent H14 origin-frozen standing-target episodes at the July 3 and July 17 origins, the full precommitted scenario/sensitivity panel subject to its resource-feasibility gate, daily chronological simulated state/KPI evaluation under Phase 10 mechanics, and the accepted limitation that later reviews have no fresh calibrated protection-period forecast. The owner also explicitly accepts that these episodes do not demonstrate continuous rolling 28-day inventory validation. Detailed execution methodology and the remaining input, custody, uncertainty, monitoring, runtime, and release decisions remain pending; this is not approval of complete Phase 13 methodology or implementation.
+**Owner decision, 2026-10-10: Option A-bounded inventory scope APPROVED — SCOPE ONLY.** ADR-025 records two independent H14 origin-frozen standing-target episodes at the July 3 and July 17 origins, the full precommitted scenario/sensitivity panel subject to its resource-feasibility gate, daily chronological simulated state/KPI evaluation under Phase 10 mechanics, and the accepted limitation that later reviews have no fresh calibrated protection-period forecast. The owner also explicitly accepts that these episodes do not demonstrate continuous rolling 28-day inventory validation. The Technical Lead selected the remaining P13 methods under ADR-026. Method selection is not implementation approval; source/preparation provenance, operator, resource, implementation, rehearsal, staging, and analytical-release preconditions remain open.
 
 ### Approved bounded episodes
 
@@ -453,7 +477,7 @@ Alerts are limited to deterministic integrity and data-quality violations, such 
 
 These are the existing two primary forecast origins; no additional forecast origin or primary forecast test is introduced. Each block is a separate cold-start inventory episode. No inventory, order queue, or target carries between episodes. Report both terminal states and outstanding commitments; the episode reset is an evaluation boundary, not a claim that real stock or orders were canceled.
 
-Retain the accepted Phase 10 policies, historical_mean_standing_target and lightgbm_buffer_standing_target, R=1, L in 2..7, P=L+1 in 3..8, p=.95 reference, accepted paired exogenous inputs, order/receipt timing, lost-sales state, KPI definitions and limitations. Preserve the exact one-factor overlays `buffer_090`, `buffer_098`, `lead_2`, `lead_7`, `holding_010`, `holding_030`, `goodwill_010`, `goodwill_075`, and `coverage_1`. Freeze each policy target at its block origin for all 14 days. No warm start, daily target refresh, suffix calibration, new quantile estimation, policy selection, or outcome-driven adaptation is proposed.
+Retain the accepted Phase 10 policies, historical_mean_standing_target and lightgbm_buffer_standing_target, R=1, L in 2..7, P=L+1 in 3..8, p=.95 reference, accepted paired exogenous inputs, order/receipt timing, lost-sales state, KPI definitions and limitations. Preserve the exact one-factor overlays `buffer_090`, `buffer_098`, `lead_2`, `lead_7`, `holding_010`, `holding_030`, `goodwill_010`, `goodwill_075`, and `coverage_1`. Freeze each policy target at its block origin for all 14 days. The selected method prohibits warm starts, daily target refresh, suffix calibration, new quantile estimation, policy selection, and outcome-driven adaptation.
 
 Preserve the accepted Phase 10 target equations, with `m` the Phase 9 open-day turnover anchor, `z_h` the origin-known open indicator, `operational_point_h` the issued operational LightGBM point forecast, and `q_(p,P)` the exact saved signed Fit B cumulative-error quantile for prefix `P` and level `p`:
 
@@ -474,20 +498,20 @@ The explicit coverage limitation is:
 - Not every later review has complete forecast-supported protection-period coverage.
 - The episodes do not demonstrate continuous calibrated 28-day inventory operation.
 
-The simulation evaluates the precommitted standing policy's daily state transitions and paired H14 outcomes. It cannot describe each later order as a newly forecast, calibrated protection-period recommendation. The owner accepted this explicit Phase 13 scope exception in ADR-025, and M0.3 synchronizes the Project Plan and Proposal language. Other methodology and execution gates still apply before implementation.
+The simulation evaluates the precommitted standing policy's daily state transitions and paired H14 outcomes. It cannot describe each later order as a newly forecast, calibrated protection-period recommendation. The owner accepted this explicit Phase 13 scope exception in ADR-025; the selected execution method is recorded in ADR-026. Method selection does not satisfy implementation or data-access gates.
 
 ### July contexts, schedules and uncertainty
 
-Propose new origin-specific 56-calendar-day Phase 9 contexts using the accepted anchor and generator contracts:
+Use new origin-specific 56-calendar-day Phase 9 contexts under the accepted anchor and generator contracts:
 
 - July 3 origin: May 9–July 3.
 - July 17 origin: May 23–July 17, with released Block 1 observations available only after July 17.
 
 Require at least 28 valid observed Open=1 history rows. Keep missing dates absent, preserve zero anchors and unavailable stores, retain seed 4209, accepted SHA-256 key grammar, ranges, scenario families, common shocks and sensitivity overlays. Create new July context identities; do not redated-copy or regenerate accepted June canonical artifacts.
 
-For each block, finish and verify its complete raw H14 forecast issue, apply only exact saved Fit B entries whose identities and availability conditions match, create the origin-safe inventory context, freeze both policy targets, and persist starting inventory and origin orders before accessing any outcome for that block. Keep historical Fit B calibration-fit identity distinct from fresh July model-fit origin. Retain signed q, clipping, sample floors, unsupported reasons and P35-01 separation. July actuals do not create or change forecasts, quantiles or targets. June Fit B transport to July fresh fits and schedules remains an explicit assumption; neither July nor synthetic service coverage is guaranteed.
+For each block, finish and verify its complete raw H14 forecast issue, apply only exact saved Fit B entries whose identities and availability conditions match, create the origin-safe inventory context, freeze both policy targets, and persist starting inventory and origin orders before accessing any outcome for that block. Keep historical Fit B calibration-fit identity distinct from fresh July model-fit origin. Retain signed q, clipping, sample floors, unsupported reasons and P35-01 separation. July actuals do not create or change forecasts, quantiles or targets. June Fit B transport to July fresh fits and schedules is selected as an explicitly UNVALIDATED assumption; neither July nor synthetic service coverage is guaranteed.
 
-Keep deterministic calendar inputs, authorized conditional future covariates, static Store metadata assumptions, synthetic ScenarioOpen, optional planned operational Open, and post-reveal observed Open as distinct fields and providers (Section 6). The Monday–Saturday-open/Sunday-closed schedule is a synthetic assumption, not historical proof. Its use for operational routing in the observed-Sales-reference case remains pending approval. Never derive planned Open from protected actual Open. Do not route away, replace with zero, or otherwise alter observed positive Sales because planned Open says closed.
+Keep deterministic calendar inputs, authorized conditional future covariates, static Store metadata assumptions, synthetic ScenarioOpen, the selected synthetic Monday–Saturday-open/Sunday-closed planning schedule, and post-release observed Open as distinct fields and providers (Section 6). The selected weekly schedule is a synthetic assumption, not historical proof, and applies to scenario and observed-Sales-reference simulations. Never derive planned Open from protected actual Open. After release report schedule mismatches. Do not route away, replace with zero, or otherwise alter observed positive Sales because planned Open says closed. Source identity, provenance, safe acquisition, and authorized preparation remain preflight requirements; if needed covariates exist only in a combined source containing protected Sales/Open, separately review a safe preparation/custody procedure before any source access.
 
 For the observed-Sales-reference case, consume only each authorized day's unchanged Sales turnover as demand proxy. Actual Open is joined only after release for evaluation eligibility and diagnostics. For synthetic cases, precommit exogenous parameters and generate each daily demand value independently of either policy; expose the same date's value to both policy states only when that simulated day is released. The target builder and order-decision function receive no future synthetic demand values.
 
@@ -503,7 +527,7 @@ Missing target components leave that policy target unavailable without fallback.
 
 ### Precommitted scenario panel and resource gate
 
-Retain the accepted Phase 10 panel: observed-Sales reference, all eight synthetic families and five paired replicates, plus all nine accepted one-factor sensitivity overlays. The proposed catalog contains 172 cases, 383,560 requested policy tracks, and 5,753,400 origin-plus-daily ledger records (15 records per track: origin plus 14 days). These are planned requested volumes, not evidence of available or complete tracks. Report requested, available, complete, unavailable and matched track counts separately; preserve configured stores and all unavailability reasons.
+Retain the accepted Phase 10 panel: observed-Sales reference, all eight synthetic families and five paired replicates, plus all nine accepted one-factor sensitivity overlays. The precommitted catalog contains 172 cases, 383,560 requested policy tracks, and 5,753,400 origin-plus-daily ledger records (15 records per track: origin plus 14 days). These are planned requested volumes, not evidence of available or complete tracks. Report requested, available, complete, unavailable and matched track counts separately; preserve configured stores and all unavailability reasons.
 
 Use bounded-memory case/store partitions, deterministic key ordering, atomic paired daily checkpoints and partitioned immutable outputs. Record worker/chunk limits, peak memory, runtime, output volume and resource use during separately authorized rehearsal. Before full-panel execution, review measurements against declared execution-host budgets. If infeasible, stop and seek an explicit scope/resource decision; never sample stores or cases based on runtime or results. Do not regenerate Phase 9 or modify June artifacts.
 
@@ -511,12 +535,16 @@ Use bounded-memory case/store partitions, deterministic key ordering, atomic pai
 
 A-full would add precommitted operational origins and protection horizons to refresh daily recommendations. It is not recommended or included in this proposal's implementation scope. It requires a separately approved rolling-policy and calibration design, origin-safe covariate/schedule rules at each added origin, and supported uncertainty for each decision. Frozen origin-prefix q values cannot be borrowed as calibrated later-review suffix bounds. July-only outcomes also cannot fully assess protection horizons extending beyond July 31. Extra overlapping forecasts remain dependent operational decisions, not additional independent primary tests.
 
-### Remaining methodology decisions before implementation
+### Selected method and unresolved execution preconditions
 
-The owner has accepted the A-bounded scope and daily-protection limitation only. ADR-025 and the M0.3 edits to the Project Plan and Proposal record that limited decision. The Technical Lead must still review the integrated design, and the unresolved P13 decisions in Section 18 must be resolved or explicitly deferred before their dependent implementation or release gate.
+ADR-025 records the owner's A-bounded inventory scope approval. ADR-026 records the Technical Lead's selection of the methods for P13-01 through P13-08. The following execution preconditions remain unresolved; no source access, implementation, rehearsal, staging or release is authorized by M0.4:
 
-- PROJECT_PLAN.md Phase 13 acceptance now distinguishes the unchanged two-block primary forecast evaluation from two inventory episodes with frozen standing targets. The accepted exception does not permit unsupported daily-review coverage to be scored.
-- PROPOSAL.md §17's stored-H14 coverage warning; §24's daily inventory-KPI update; §24.1's candidate service alert example; and §26 Business and Monitoring criteria now identify the A-bounded scope and retain monitoring decisions as pending.
+- Identify the real sources and document source identity, provenance, availability assumptions, safe acquisition, and authorized preparation for every required covariate. If covariates only exist in a combined source containing protected Sales/Open, obtain a separately reviewed safe-preparation/custody procedure before any source access. A projected column list alone does not establish physical isolation.
+- Establish provenance and prior staging authorization for any pre-existing outcome partitions without opening their contents; name the trusted operator and procedure for any later staging/release decision.
+- Measure and approve the full-panel host memory/runtime/output budget before any full-panel execution. A failed save/load fixture check requires a new reviewed tolerance decision.
+- Obtain separate M1 authorization for synthetic-fixture implementation, separate authorization for any development rehearsal, separate mechanical-staging authorization for new projections, and separate per-date analytical-release authorization.
+
+P13 methods and statuses are summarized in Section 18. The PR review requested for this M0.4 documentation proposal is a review of the recorded method freeze; it does not itself authorize M1 or any later gate.
 
 Under the approved scope, keep the two-origin primary forecast evaluation unchanged and state that inventory results describe two independent standing-target episodes, with no fresh calibrated bound at every later review. Preserve existing adverse Phase 10 results and canonical artifacts. Canonical development evidence reports forecast-minus-baseline simulated holding-plus-shortfall costs of +23,142,547.537968 for synthetic-base reference and +4,276,098.731339 for historical conditional replay. Those unfavorable findings remain part of the record; July results may be adverse, favorable, or inconclusive. Sales remains monetary turnover, and inventory, service, shortage and cost quantities remain simulated proxies. No real physical inventory, causal improvement, guaranteed service or savings is inferred.
 
@@ -561,7 +589,7 @@ Before release, fixtures must demonstrate:
 
 ## 16. Proposed M1–M8 implementation milestones
 
-These are reviewable tasks for a later, separately authorized Luna 6 implementation assignment. They are not authorized by this M0.3 proposal.
+These are reviewable tasks for later, separately authorized work. M1 begins only after explicit M1 authorization and remains synthetic-fixture-only. They are not authorized by this M0.4 proposal.
 
 | Milestone | Inputs → output | Tests and dependency gate |
 |---|---|---|
@@ -578,7 +606,7 @@ These are reviewable tasks for a later, separately authorized Luna 6 implementat
 
 | Area | Proposed acceptance evidence | Release prerequisite? |
 |---|---|---|
-| Phase and scope | A-bounded scope and limitation accepted in ADR-025; complete Phase 13 methodology remains PROPOSED / NOT APPROVED; implementation, rehearsal, staging, analytical release and closeout are distinct | Yes |
+| Phase and scope | A-bounded scope accepted in ADR-025; method selected under ADR-026; implementation, rehearsal, staging, analytical release and closeout remain distinct | Yes |
 | Git/artifacts | Branch based on verified origin/main; Phase 7–10 artifacts/manifests unchanged; new outputs immutable and identified | Yes |
 | Recipe/forecast | Two exact trial-A fits; ordered 29 predictors; fixed params, cutoffs, categories, seeds; complete H14 grids; raw/operational separation | Yes |
 | Chronology/custody | Two forecast origins; immutable block issue before outcome access; A2 provider boundary or approved alternative; durable per-day intent; chronological release | Yes |
@@ -595,30 +623,35 @@ These are reviewable tasks for a later, separately authorized Luna 6 implementat
 
 M1 begins with synthetic fixtures only after separate authorization. A full development-data rehearsal requires its own written authorization after implementation review and before any holdout release decision; it uses origin-safe development inputs and cannot rewrite canonical artifacts. CI remains fixture-only and must not mount protected local artifacts. This proposal and a passing documentation check do not satisfy these gates.
 
-## 18. Open decisions requiring Technical Lead and owner review
+## 18. Method selection and remaining execution preconditions
 
-The following table tracks independent audit findings P13-01 through P13-09. A-bounded inventory scope and its daily-protection limitation are accepted by the owner in ADR-025. **The complete Phase 13 methodology remains PENDING APPROVAL; no other table item is accepted by that scope decision.**
+The following table tracks independent audit findings P13-01 through P13-09. The owner accepted
+A-bounded inventory scope and its daily-protection limitation in ADR-025. The Technical Lead
+selected methods P13-01 through P13-08 under ADR-026. **Method selected does not mean implementation
+approved or Phase 13 complete.** P13-09 records the documentation/status state and this PR's review
+boundary.
 
-| ID | Recommended choice | Approval status | Remaining input needed | Exact acceptance implications |
+| ID | Selected method | Status | Remaining precondition / next gate | Exact acceptance implications |
 |---|---|---|---|---|
-| P13-01 Protocol/release | Keep two primary H14 forecast blocks and separate design, implementation, rehearsal, staging, analytical-release and closeout gates; record the owner-approved A-bounded inventory scope on those origins. | SCOPE APPROVED; DETAILED PROTOCOL AND RELEASE PENDING | Technical Lead review of the integrated chronology and the remaining implementation, rehearsal, staging and release gates. | The accepted inventory episodes do not supply fresh complete bounds at every later review. The owner-approved exception does not approve input sources or outcome release. Preserve exactly two primary forecast tests. |
-| P13-02 Inputs/population and schedules | Fixed 1,115-store requested grid; origin-safe providers; unchanged 29 predictors; new July contexts; separate ScenarioOpen, nullable planned operational Open, and post-release observed Open. | PENDING APPROVAL | Approve roster, sources/availability, context contract, synthetic schedule, and use of Monday–Saturday/Sunday schedule for observed-Sales reference. | Never use future actual Open as planned Open. Unknown planned Open leaves dependent targets unavailable. Preserve positive Sales despite planned closure. Retain unavailable stores/cases; no feasibility-based selection. |
-| P13-03 Custody/ledger | Recommend A2 provider-scoped default-deny views, immutable issue, chronological journal and trusted operator; A1 account/NTFS controls optional. | PENDING APPROVAL | Accept A2's logical/operator-enforced limit and trusted-operator assumption or choose A1. Separately authorize future mechanical reads. | A2 does not promise physical isolation from operator/admin. Mechanical staging differs from analytical revelation. No access is authorized here. |
-| P13-04 Frozen uncertainty | Preserve exact Fit B identities and ADR-021 estimators; no refit/recalibration; distinguish calibration-fit from July model-fit origin and disclose transport. | PENDING APPROVAL | Approve or reject applying saved June entries to both July fits/schedules. | Preserve signed values, floors, clipping and reasons. Unsupported entries remain unavailable. June transport is no July/synthetic service guarantee. No prefix-to-suffix borrowing. |
-| P13-05 Inventory | Two independent July H14 origin-frozen standing-target episodes, the accepted Phase 10 policy pair and full precommitted scenario/sensitivity panel subject to resource feasibility. | SCOPE APPROVED BY OWNER; DETAILED EXECUTION METHODOLOGY PENDING | Technical Lead review; resolve contexts, schedules, input availability, Fit B transport, resource measurement/configuration, and paired-result details before dependent implementation. | The owner accepted the daily-protection limitation and no continuous rolling 28-day claim. Normative scope language is synchronized in ADR-025, PROJECT_PLAN and PROPOSAL. Preserve ADR-022/023 and adverse Phase 10 evidence. Scope approval is not implementation or data-release authorization. |
-| P13-06 Monitoring | Daily inventory KPI updates follow the approved A-bounded simulation scope; monitor windows, populations, and alert method remain proposals pending separate approval. | PENDING APPROVAL | Approve monitoring windows/populations and alert methodology; determine whether any numeric performance, drift, interval-coverage, or service thresholds are supportable. | P13-05 scope approval does not accept alert rules or thresholds. ADR-021 sample floors do not establish monitoring reliability. Do not use unsupported inputs or imply reliable drift/service detection. |
-| P13-07 Runtime/repro | Locked Windows/Python 3.14; exact identities; proposed save/load tolerances rtol=1e-12 and atol=1e-9. | PENDING APPROVAL | Approve environment, tolerances, rehearsal host resource budgets. | Tolerances are proposals. Claims bounded to pinned environment. If panel exceeds resources, stop for scope review, do not sample. |
-| P13-08 Scores/comparator | LightGBM primary; frozen Seasonal Naive contextual comparator; separate common-row reporting; no renewed selection or Holt-Winters final comparator. | PENDING APPROVAL | Approve exact Seasonal Naive issuance and common-row protocol. | Report standalone/common-row ADR-013 populations; no renewed model selection. |
-| P13-09 Status/docs | Record PR #35 merge at 2d34e20d5ae9fdb29af610dd28aefd3b80023946; record ADR-025 and synchronized M0.3 scope clarification while keeping the complete methodology proposed. | SCOPE DECISION RECORDED; TECHNICAL LEAD REVIEW PENDING | Review M0.3 and resolve or defer remaining protocol/methodology items P13-01–P13-04 and P13-06–P13-08. | The owner-approved inventory scope does not approve overall Phase 13 methodology, implementation status, or completion. Preserve the dated M0.1 and M0.2 checkpoints as historical records. |
+| P13-01 Protocol/release | Two complete frozen H14 blocks; issue before reveal; release and checkpoint one date at a time; Block 2 fit uses only released Block 1 history; no post-outcome adaptation. | METHOD SELECTED (ADR-026) | M1 authorization, implementation review, separate staging authorization when needed, and separate analytical release per date. | Preserve exactly two primary forecast blocks and distinct issue/rehearsal/staging/release/closeout gates. |
+| P13-02 Inputs/population and schedules | 1,115-store grid; exact 29 features; versioned origin-safe covariates with documented conditional assumed-known availability; separate synthetic weekly planning schedule and actual Open. | METHOD SELECTED; SOURCE/PREPARATION PREFLIGHT PENDING | Establish source identity, provenance, availability and safe/authorized preparation. For a combined protected source, separately review safe preparation/custody before any access. | Never use future actual Open as planned Open. Preserve positive observed Sales despite planned closure; report mismatches after release; fail closed on unverified provenance. |
+| P13-03 Custody/ledger | A2 separate provider views, default-deny guards, immutable issuance, durable per-date intents, journals and idempotent checkpoints; A1 optional hardening. | METHOD SELECTED (ADR-026) | Name trusted operator; document prior partition provenance; separately authorize new staging and each analytical release. | Logical/operator-enforced custody only; no strict physical-isolation claim. Mechanical reads are protected access but are not analytical revelation. |
+| P13-04 Frozen uncertainty | Exact frozen June Fit B tables unchanged as unvalidated transport; retain ADR-021 identities, signed values, floors, availability, clipping and formulas. | METHOD SELECTED (UNVALIDATED TRANSPORT) | No recalibration. Preserve unsupported reasons; transport validity and July/synthetic coverage remain unknown. | No prefix-to-suffix borrowing, retuning, or coverage guarantee. July errors enter evaluation only after authorized reveal. |
+| P13-05 Inventory | ADR-025 Option A-bounded; two independent H14 episodes and full precommitted panel with the accepted Phase 10 pair and terminal accounting. | SCOPE APPROVED BY OWNER; EXECUTION METHOD SELECTED (ADR-026) | Measure and approve the full-panel resource budget before execution. | Preserve daily-protection limitation; do not imply continuous 28-day coverage. Preserve adverse Phase 10 evidence and simulated-proxy caveats. |
+| P13-06 Monitoring | Descriptive daily/trailing 7/14-day monitoring by origin/horizon; feature shifts and post-release error/coverage summaries; deterministic integrity/data-quality alerts only. | METHOD SELECTED (ADR-026) | Freeze definitions independently of outcomes in implementation; no numeric drift/performance/coverage/service thresholds. | Descriptive only; ADR-021 calibration floors are not monitoring thresholds or reliability guarantees. |
+| P13-07 Runtime/repro | Locked Windows x64/Python 3.14 and exact LightGBM recipe; exact identity checks; save/load tolerance rtol=1e-12, atol=1e-9. | METHOD SELECTED (ADR-026) | Record native build/runtime. If fixtures fail, stop for reviewed tolerance change. Measure and approve host resource budget before full panel. | Never loosen tolerance after protected results. Claims remain tied to recorded environment/build. |
+| P13-08 Scores/comparator | LightGBM primary; frozen Seasonal Naive contextual H14 baseline; standalone and exact common-row populations. | METHOD SELECTED (ADR-026) | Preserve immutable H14 issue and ADR-013 metric populations. | No new selection, candidate, winner claim, or Holt-Winters final comparator. |
+| P13-09 Status/docs | Record ADR-026, method-selected state, unresolved preflight/gates and M0.4 review boundary; preserve M0.1-M0.3 checkpoints. | METHOD FREEZE RECORDED; DRAFT PR REVIEW PENDING | Review this documentation proposal. M1 remains separately unauthorized. | Phase 13 remains PLANNED / NOT IMPLEMENTED; protected holdout remains unreleased. |
 
 ## 19. Explicit implementation and release authorization gates
 
-1. **M0 review:** Technical Lead reviews the integrated M0.3 design and the owner-approved A-bounded scope recorded in ADR-025. Resolve or explicitly defer the remaining P13 methodology choices, including inputs, custody, Fit B transport, monitoring, runtime and comparator, before dependent work. This draft PR does not approve the complete methodology.
-2. **Implementation:** A separate task authorizes M1 onward. M1 remains synthetic-fixture-only under its own authorization. This documentation correction authorizes no implementation.
-3. **Implementation review:** Fixture tests, quality checks, resource measurements, provenance, A2 custody/recovery (or an approved alternative), and independent review pass. Preserve Phase 7–10 methods/evidence.
-4. **Development rehearsal:** After M7 fixture and independent implementation review, obtain separate written authorization naming origin-safe development inputs/run config. The rehearsal cannot read protected outcomes or rewrite canonical artifacts.
-5. **Protected-source staging:** For each new projection, first complete and persist the matching block issue and that date's `release_intent`; then obtain separate explicit authorization before mechanically reading source content to create/access only that date's projection. Existing partitions require documented prior authorization and provenance. Record prior mechanical reads separately from analytical revelation; they authorize no new access. This task authorizes no staging, source read or release.
-6. **Analytical release:** Separate explicit authorization names reviewed commit, config, provider, block/date, trusted operator and procedure. Complete issue and durable per-day intent precede access; new staging has Gate 5 authorization. Release only that date and complete its paired state/forecast checkpoint before advancing.
-7. **Closeout:** Only after authorized run, independent review, acceptance of scope adjustments and explicit phase closeout may Phase 13 be COMPLETE. Phase 14 remains outside this plan.
+1. **M0.4 documentation review:** Review this selected-method record and its synchronization with ADR-025. Method selection is recorded in ADR-026; this Draft PR review does not grant implementation or data-access permission.
+2. **Source/preparation preflight:** Before any real source access, establish source identity, provenance, safe acquisition and authorized preparation. If required covariates exist only in a combined source with protected Sales/Open, obtain a separately reviewed safe-preparation/custody procedure first. Verify pre-existing partition authorization/provenance from records without opening contents. This method selection authorizes no preflight source access.
+3. **M1 implementation:** A separate explicit task authorizes M1. M1 is limited to synthetic fixtures, typed contracts/providers, and default-deny behavior; no local real-data provider, source path, protected path, staging, ACL configuration, real-model fit, July context, or outcome access.
+4. **Implementation review:** Fixture tests, quality checks, resource measurements, documented provenance, A2 custody/recovery, and independent review pass. Preserve Phase 7–10 methods/evidence.
+5. **Development rehearsal:** After M7 fixture and independent implementation review, obtain separate written authorization naming origin-safe development inputs/run config. The rehearsal cannot read protected outcomes or rewrite canonical artifacts.
+6. **Protected-source staging:** For each new projection, first complete and persist the matching block issue and that date's `release_intent`; then obtain separate explicit authorization before mechanically reading source content to create/access only that date's projection. Existing partitions require documented prior authorization and provenance, verified from records without opening contents. Record prior mechanical reads separately from analytical revelation; they authorize no new access.
+7. **Analytical release:** Separate explicit authorization names reviewed commit, config, provider, block/date, trusted operator and procedure. Complete issue and durable per-day intent precede access; any new staging has its own authorization. Release only that date and complete its paired state/forecast checkpoint before advancing.
+8. **Closeout:** Only after authorized run, independent review, acceptance of scope adjustments and explicit phase closeout may Phase 13 be COMPLETE. Phase 14 remains outside this plan.
 
-**Current boundary: STOP at M0.3 pending Technical Lead review of the scope-only decision and the remaining methodology approvals. M1 remains NOT AUTHORIZED.**
+**Current boundary: STOP at M0.4 pending Technical Lead review of this method freeze. Source/preparation preflight remains pending; M1 is NOT AUTHORIZED; the final holdout is UNRELEASED.**
