@@ -1014,10 +1014,20 @@ $S_P=D_P+SafetyStock_P=\max(D_P,U_P)$. Receipt, demand, holding-cost, and order 
 must be frozen in the Phase 10 design so these periods are applied consistently.
 
 That design must also fix forecast-refresh cadence, supported review dates, and terminal-state
-handling. A stored 14-step path does not provide a complete $P$-day forecast for every later daily
-review in its block. Restrict unsupported recommendations or approve a separate origin-safe
-refresh protocol without changing the two-origin primary forecast evaluation or inventing unknown
-future covariates.
+handling. For Phase 13, the owner has approved the A-bounded inventory scope and its explicit
+acceptance limitation under ADR-025: inventory evaluation uses two independent origin-frozen H14
+episodes at the same July 3 and July 17 origins as the primary forecast evaluation. Each episode
+executes the accepted Phase 10 standing-target policies from targets frozen at its origin.
+Subsequent daily reviews advance simulated inventory state against those same targets; they are not
+new forecast-based recommendations or freshly calibrated protection-period decisions. This is the
+accepted Phase 13 scope with no new rolling operational forecast origin or daily suffix
+recalibration. It is the explicit exception to the earlier requirement for complete fresh protection-period
+coverage at every daily review. Do not score or imply unsupported later-review protection coverage.
+The two episodes do not demonstrate continuous rolling 28-day inventory operation. A-full rolling
+inventory capability remains unapproved and would require a separate origin-safe forecasting and
+uncertainty design. Preserve Phase 10 event and paired-policy mechanics and common finite-window
+terminal accounting; the full precommitted scenario/sensitivity panel remains subject to its
+resource-feasibility gate.
 
 ---
 
@@ -1351,6 +1361,21 @@ occurs during this frozen final replay. The second scheduled fit, if specified i
 only history revealed through its origin. A later adaptive retraining demonstration would require
 a separate synthetic or development replay and must not be reported as the same frozen test.
 
+The forecast and inventory scopes are distinct. Primary forecast evaluation retains exactly the
+two non-overlapping H14 issue-before-reveal blocks. The approved A-bounded inventory scope in
+ADR-025 runs two independent origin-frozen H14 episodes on those same origins; daily KPI updates
+follow the sequential reveal while each policy continues to use its original frozen target. Those
+daily state transitions are not new calibrated rolling forecast decisions, and unsupported
+later-review protection coverage is not scored. No new rolling operational forecast origin or
+daily suffix recalibration is introduced. The inventory scope does not imply continuous
+rolling 28-day validation. ADR-025 does not approve July forecast-input provenance, retrospective
+conditional extraction, planned Open, Fit B transport, custody, runtime, or monitoring methods;
+their separate decisions and release gates remain pending.
+
+The existing forecast and synthetic-inventory inputs are used only under separately approved
+availability assumptions. Scope approval does not itself authorize a source, covariate, schedule,
+extraction, protected-data staging, or analytical release.
+
 ---
 
 ## 24.1. Monitoring Alert Rules
@@ -1375,6 +1400,11 @@ Thresholds and monitoring-window definitions must be fixed using development evi
 the final replay. These examples are candidate alert rules, not established requirements or proof
 that a 28-day historical replay supports robust drift detection. Evidently is optional; simple
 summaries must remain usable without it.
+
+**Phase 13 status:** Monitoring windows and alert methods remain PENDING methodology approval
+(P13-06). ADR-025 approves the bounded inventory scope only; it does not accept statistical drift
+thresholds, service-alert thresholds, or other alert rules. Do not treat these examples as approved
+or use unsupported forecast inputs to construct alerts.
 
 ---
 
@@ -1415,6 +1445,13 @@ Compare service and cost proxies under common scenarios, with explicit denominat
 sensitivity analysis. Report whether a policy improves any KPI without unacceptable deterioration
 elsewhere; unfavorable or inconclusive results remain valid project findings.
 
+Phase 13's owner-approved A-bounded scope evaluates paired simulated inventory policies in two
+independent H14 episodes using the accepted Phase 10 standing-target mechanics and full
+precommitted scenario/sensitivity panel, subject to the resource-feasibility gate. The episodes
+have no fresh calibrated protection-period forecast at each later daily review and make no claim
+of continuous rolling 28-day inventory operation. They remain monetary simulations, not actual
+Rossmann stock or demand, causal improvement, guaranteed service, or business savings.
+
 ## Engineering
 
 The application should support the complete workflow:
@@ -1433,7 +1470,9 @@ without requiring manual notebook execution.
 
 ## Monitoring
 
-The system should demonstrate:
+The Phase 13 monitoring and alert methodology remains PENDING approval (P13-06). ADR-025 does not
+approve monitoring windows, statistical drift criteria, service thresholds, or alert rules. The
+following are proposed success criteria only and remain subject to a separately reviewed method:
 
 - drift detection;
 - rolling performance monitoring;

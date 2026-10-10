@@ -245,27 +245,50 @@ importance and limitations suffice.
 
 ## Phase 13 — Monitoring & Sequential Final Evaluation
 
-**Design proposal:** [M0 sequential final evaluation plan](../plans/active/phase-13-sequential-final-evaluation.md)
-— PROPOSED / NOT APPROVED; this link authorizes neither implementation nor holdout access.
+**Design proposal:** [M0.3 Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
+— PROPOSED / NOT APPROVED as a complete methodology. ADR-025 accepts the A-bounded inventory
+scope and its stated acceptance limitation only; neither this link nor that scope decision
+authorizes implementation, development rehearsal, protected-source staging, or holdout access.
 
 **Objective:** Evaluate the frozen system once and demonstrate historical monitoring.
-**Dependencies:** Phases 7–12 frozen choices and explicit authorization to release holdout labels.
+**Dependencies:** Phases 7–12 frozen choices, resolution of the remaining Phase 13 methodology
+dependencies, and separate authorization for each applicable rehearsal and data-release gate.
 **Deliverables:** Auditable forecast-before-reveal ledger, final point/interval/KPI summaries,
-simple drift/error/coverage alerts and protocol/environment identity.
-**Acceptance / boundary:** Primary point evaluation has two non-overlapping 14-day blocks:
-origin 2015-07-03 for July 4–17, then origin 2015-07-17 for July 18–31. Issue each block's
-forecasts before revealing its targets; reveal observations daily. The second origin may use only
-already revealed history with the precommitted refitting recipe. Configuration/calibration/policy
-changes and adaptive retraining are prohibited during the final test; triggers create alerts.
-Scheduled model/preprocessing refits may update fitted state only as required by that fixed
-recipe, on eligible already revealed training rows; no interval recalibration or recipe selection.
-For daily inventory decisions, precommit any additional operational origins/protection horizons,
-issue forecasts before each day's reveal, and score only decisions with complete supported
-protection-period coverage. Apply and report the same terminal censoring across policies; do not
-invent future demand/covariates or count overlapping operational forecasts as extra independent
-primary tests. Development replay tests the protocol before the holdout is released.
-This is one sequential final evaluation, not a second unseen dataset after earlier holdout scoring.
-Simple pandas summaries/plots suffice; Evidently is optional only for a demonstrated unmet need.
+simulated inventory policy comparison, proposed monitoring summaries/alerts, and
+protocol/environment identity.
+
+**Primary forecast evaluation:** Use exactly two non-overlapping 14-day blocks: origin 2015-07-03
+for July 4–17, then origin 2015-07-17 for July 18–31. Issue each complete block forecast before
+revealing its targets and reveal observations in chronological daily order. The second origin may
+use only already-revealed history under the precommitted refitting recipe. Configuration,
+calibration, and policy changes and adaptive retraining remain prohibited during the final test.
+Scheduled model/preprocessing refits may update fitted state only as required by that fixed recipe,
+on eligible already-revealed training rows; no interval recalibration or recipe selection.
+
+**Approved inventory scope — A-bounded (ADR-025, scope only):** Run two independent origin-frozen
+H14 inventory episodes on those same July 3 and July 17 origins. Each episode sets the accepted
+Phase 10 standing-target policy pair once at its origin; subsequent daily reviews execute those
+unchanged targets while the simulated inventory state and daily KPIs advance after authorized
+chronological revelation. A daily review in this scope is not a new forecast issuance or a freshly
+calibrated protection-period recommendation; no new rolling forecast origin or daily suffix
+recalibration is introduced. This is the explicit scope exception to the earlier
+requirement to score only daily decisions with complete fresh protection-period coverage: do not
+score or imply unsupported later-review protection coverage. These episodes do not demonstrate
+continuous rolling 28-day inventory operation. Preserve Phase 10 paired event accounting, common
+finite-window terminal treatment/censoring, and unavailable-decision reporting. Keep model and
+policy behavior frozen; do not invent future demand/covariates or count overlapping forecasts as
+extra independent primary tests. The full precommitted scenario/sensitivity panel is in scope
+subject to a measured resource-feasibility gate; stop for an explicit scope/resource decision if
+it exceeds the declared budget, without silent sampling.
+
+**Pending methodology and release boundary:** ADR-025 does not approve forecast input provenance,
+retrospective conditional extraction, a planned-Open source or schedule, Fit B transport, custody
+arrangement, runtime tolerances, monitoring/alert methods, or the comparator/score protocol. These
+remain explicit Phase 13 decisions. A-full rolling inventory capability remains unapproved.
+Development rehearsal, protected-source staging, and analytical outcome release retain separate
+written authorization gates. This is one sequential final evaluation, not a second unseen dataset
+after earlier holdout scoring. Simple pandas summaries/plots suffice; Evidently is optional only for
+a demonstrated unmet need.
 
 ## Phase 14 — Final Documentation, Report & Demo
 
