@@ -16,7 +16,7 @@
 | Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1–M3 are integrated after PR #40; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
 | Phase 13 — Sequential final evaluation | **M1/M2/M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. PR #40 integrated the M3 adapter and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 | CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | PR #41 was squash-merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; post-merge Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
-| CC-02B — development-only Sales provider | **IMPLEMENTED / UNDER REVIEW** | Fixture-only loader and tests are on `feat/course-cc02b-trusted-development-provider`; a real immutable partition, custodian procedure and real-data approval binding remain absent and separately gated. See the [active plan](../plans/active/cc-02b-trusted-development-provider.md). |
+| CC-02B — development-only Sales provider | **IMPLEMENTED / UNDER REVIEW** | Fixture-only loader and tests are on `feat/course-cc02b-trusted-development-provider`; [Draft PR #42](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/42) targets `main`. A real immutable partition, custodian procedure and real-data approval binding remain absent and separately gated. See the [active plan](../plans/active/cc-02b-trusted-development-provider.md). |
 
 ### CC-02 integration and current data boundary — 2026-10-11
 
@@ -46,9 +46,10 @@ copy-safe three-column frame. Exact Parquet and manifest byte hashes are recorde
 the canonical in-memory projection hash in CC-02 provenance. The existing STL API remains the
 execution target, and the CLI still rejects filesystem execution.
 
-Validation results are recorded below; the branch commit and Draft PR link will be added after
-submission. No Rossmann source, combined prepared train, final-holdout outcome or existing analytical
-artifact was opened or hashed for this provider implementation.
+Validation results are recorded below. [Draft PR #42](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/42)
+was opened against `main` for independent review. No Rossmann source, combined prepared train,
+final-holdout outcome or existing analytical artifact was opened or hashed for this provider
+implementation.
 
 Focused provider plus CC-02 tests passed **61 tests** with **one skip** because this Windows host
 does not grant directory-symlink creation; a separate injected reparse-point test passed. The full
