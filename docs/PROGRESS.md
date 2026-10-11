@@ -43,9 +43,33 @@ was approximately `2.3e-13`. Generated synthetic component/figure/manifest outpu
 temporary directories. No Rossmann source, combined prepared artifact, holdout outcome, EDA pipeline,
 model, or Phase 13 command was read or run.
 
-**State:** CC-02 is IMPLEMENTED / UNDER REVIEW on the focused branch. [Draft PR #41](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/41)
-is open at head `46cb013506a6b2f35335beb07ba0f22f72af74df`; independent review is pending. Merge
-and Phase 13 closeout are not authorized by this task.
+The original CC-02 implementation commit is `46cb013506a6b2f35335beb07ba0f22f72af74df`.
+[Draft PR #41](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/41) is the
+canonical link for its live head and review state; this record does not pin a changing branch head.
+**State:** CC-02 is IMPLEMENTED / UNDER REVIEW on the focused branch. Merge and Phase 13 closeout
+are not authorized by this task.
+
+### CC-02 independent review and focused corrections — 2026-10-11
+
+The independent Sol 6.1 review covered PR #41 at head
+`d5f27e5981fd4303fdf8318aff7074ce6c3b0d8e` and returned `ACCEPT_WITH_MINOR_CHANGES`. On the same
+branch, the exporter now rejects occupied destinations and publishes its manifest by atomic
+replacement; manifest metadata distinguishes direct Python API execution from a caller-supplied
+invocation; and figures label synthetic or development-only inputs. The original implementation
+commit remains identified above. Use [Draft PR #41](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/41)
+for the live head; independent follow-up acceptance is pending.
+
+The focused synthetic suite passed **25 tests**. The full fixture suite passed **676 tests** with
+**one skip** for an artifact-dependent test in a detached worktree without Rossmann source or
+generated artifacts; the existing Starlette/httpx deprecation warning remains. Whole-repository Ruff
+lint/format, documentation links, `uv lock --check`, and `git diff --check` were rerun for these
+corrections. No Rossmann source, protected outcome, EDA pipeline, model, or Phase 13 operation was
+accessed or run. The revised 84-day synthetic figure was rendered and visually inspected; its title
+identifies it as a synthetic fixture, its four panels remain legible, and maximum absolute component
+reconstruction error was approximately `2.3e-13`.
+
+**State:** CC-02 remains IMPLEMENTED / UNDER REVIEW. Merge and Phase 13 closeout remain unauthorized.
+
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
 squash-merge commit reported by GitHub. PR #7 is merged into `main`. The merged tree contains the

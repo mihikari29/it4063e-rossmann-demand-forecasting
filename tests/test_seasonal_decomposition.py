@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 import numpy as np
@@ -206,27 +207,50 @@ def test_frame_is_unchanged_and_repeated_metadata_is_deterministic() -> None:
     assert first.store_status.loc[0, "status"] == "available"
 
 
-def test_figure_has_four_aligned_panels_and_retrospective_note() -> None:
+def test_figure_has_four_aligned_panels_and_retrospective_source_note() -> None:
     run = _run(_sales_frame(days=70))
 
     figure = decomposition.build_decomposition_figure(run, 1)
     assert len(figure.axes) == 4
     assert all(len(axis.lines[0].get_xdata()) == 70 for axis in figure.axes)
     assert "not a forecast" in figure._suptitle.get_text()
+    assert "Synthetic fixture" in figure._suptitle.get_text()
     assert figure.axes[-1].get_xlabel() == "Date"
     assert all(axis.get_ylabel() for axis in figure.axes)
     decomposition.plt.close(figure)
 
 
-def test_synthetic_export_manifest_hashes_outputs_without_real_data_claim(tmp_path) -> None:
+def test_development_figure_has_accurate_source_designation() -> None:
+    run = _run(_sales_frame(days=56))
+    development_provenance = decomposition.InputProvenance(
+        "approved_development_only", "development-fixture", "test-only-preflight-reference"
+    )
+    run = decomposition.DecompositionRun(
+        components=run.components,
+        store_status=run.store_status,
+        input_sha256=run.input_sha256,
+        input_rows=run.input_rows,
+        provenance=development_provenance,
+    )
+
+    figure = decomposition.build_decomposition_figure(run, 1)
+    assert "Development-only input" in figure._suptitle.get_text()
+    assert "not a forecast" in figure._suptitle.get_text()
+    decomposition.plt.close(figure)
+
+
+def test_synthetic_export_manifest_is_truthful_and_hashes_outputs(tmp_path) -> None:
     run = _run(_sales_frame(days=56))
 
-    manifest_path = decomposition.export_decomposition_outputs(
-        run, tmp_path, command=["synthetic-fixture-test"]
-    )
+    manifest_path = decomposition.export_decomposition_outputs(run, tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     assert manifest["designation"] == "synthetic_fixture"
+    assert manifest["execution_mode"] == "python_api"
+    assert manifest["entry_point"] == (
+        "rossmann_forecasting.analysis.seasonal_decomposition.export_decomposition_outputs"
+    )
+    assert manifest["command"] is None
     assert manifest["source"]["identity"] == "cc02-synthetic-weekly-fixture"
     assert manifest["source"]["authorized_in_memory_projection_sha256"] == run.input_sha256
     assert {output["path"] for output in manifest["outputs"]} == {
@@ -234,8 +258,93 @@ def test_synthetic_export_manifest_hashes_outputs_without_real_data_claim(tmp_pa
         "store_status.csv",
         "store_1_stl.png",
     }
-    assert all(len(output["sha256"]) == 64 for output in manifest["outputs"])
+    for output in manifest["outputs"]:
+        output_path = tmp_path / output["path"]
+        assert hashlib.sha256(output_path.read_bytes()).hexdigest() == output["sha256"]
+        assert output_path.stat().st_size == output["bytes"]
     assert "not a forecast" in manifest["interpretation"]
+
+
+def test_caller_supplied_invocation_metadata_is_preserved_deterministically(tmp_path) -> None:
+    run = _run(_sales_frame(days=56))
+    command = ["synthetic-review-runner", "--fixture", "weekly-01"]
+    first_dir = tmp_path / "first"
+    second_dir = tmp_path / "second"
+
+    first_path = decomposition.export_decomposition_outputs(run, first_dir, command=command)
+    second_path = decomposition.export_decomposition_outputs(run, second_dir, command=command)
+    first = json.loads(first_path.read_text(encoding="utf-8"))
+    second = json.loads(second_path.read_text(encoding="utf-8"))
+
+    assert first["execution_mode"] == "caller_supplied"
+    assert first["entry_point"] == (
+        "rossmann_forecasting.analysis.seasonal_decomposition.export_decomposition_outputs"
+    )
+    assert first["command"] == command
+    assert first_path.read_bytes() == second_path.read_bytes()
+    assert first["outputs"] == second["outputs"]
+
+
+def test_export_rejects_occupied_directory_without_changing_existing_run(tmp_path) -> None:
+    output_dir = tmp_path / "existing-run"
+    first_run = _run(_sales_frame(store=1, days=56))
+    manifest_path = decomposition.export_decomposition_outputs(first_run, output_dir)
+    before = {
+        path.relative_to(output_dir).as_posix(): path.read_bytes()
+        for path in output_dir.rglob("*")
+        if path.is_file()
+    }
+
+    second_run = _run(_sales_frame(store=9, days=56, offset=250.0))
+    with pytest.raises(FileExistsError, match="output directory must be empty"):
+        decomposition.export_decomposition_outputs(second_run, output_dir)
+
+    after = {
+        path.relative_to(output_dir).as_posix(): path.read_bytes()
+        for path in output_dir.rglob("*")
+        if path.is_file()
+    }
+    assert after == before
+    saved_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert saved_manifest["source"]["authorized_in_memory_projection_sha256"] == (
+        first_run.input_sha256
+    )
+    assert {output["path"] for output in saved_manifest["outputs"]} == {
+        "components.csv",
+        "store_status.csv",
+        "store_1_stl.png",
+    }
+    assert not (output_dir / "store_9_stl.png").exists()
+
+
+def test_failed_fresh_export_does_not_publish_manifest(tmp_path, monkeypatch) -> None:
+    run = _run(_sales_frame(days=56))
+
+    def fail_figure(*_args, **_kwargs):
+        raise RuntimeError("injected synthetic figure failure")
+
+    monkeypatch.setattr(decomposition, "build_decomposition_figure", fail_figure)
+    with pytest.raises(RuntimeError, match="injected synthetic figure failure"):
+        decomposition.export_decomposition_outputs(run, tmp_path)
+
+    assert (tmp_path / "components.csv").is_file()
+    assert (tmp_path / "store_status.csv").is_file()
+    assert not (tmp_path / "manifest.json").exists()
+    assert not (tmp_path / ".manifest.json.tmp").exists()
+
+
+def test_failed_manifest_replace_does_not_publish_manifest(tmp_path, monkeypatch) -> None:
+    run = _run(_sales_frame(days=56))
+
+    def fail_replace(_path, _target):
+        raise OSError("injected synthetic manifest replace failure")
+
+    monkeypatch.setattr(decomposition.Path, "replace", fail_replace)
+    with pytest.raises(OSError, match="injected synthetic manifest replace failure"):
+        decomposition.export_decomposition_outputs(run, tmp_path)
+
+    assert not (tmp_path / "manifest.json").exists()
+    assert not (tmp_path / ".manifest.json.tmp").exists()
 
 
 def test_real_input_provenance_requires_a_preflight_reference() -> None:

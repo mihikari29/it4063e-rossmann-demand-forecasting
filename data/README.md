@@ -82,6 +82,10 @@ verified findings, and generation instructions rather than datasets or binaries.
 
 The CC-02 seasonal-decomposition exporter uses ignored
 `reports/generated/seasonal_decomposition/` for component/status CSVs, four-panel Store figures,
-and a manifest. Its current CLI has no source-file reader; real execution requires a separately
-reviewed trusted development-only provider and owner approval. Do not create that input by reading
-and filtering the combined prepared train artifact.
+and a manifest. The manifest identifies direct Python API execution or preserves an explicitly
+caller-supplied invocation, while recording the exporter entry point and output hashes. Figures
+label their source as a synthetic fixture or development-only input according to caller provenance.
+Each export requires a new or empty destination and refuses to overwrite an existing run.
+The current CLI has no source-file reader; real execution requires a separately reviewed trusted
+development-only provider and owner approval. Do not create that input by reading and filtering the
+combined prepared train artifact.

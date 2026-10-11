@@ -412,8 +412,13 @@ def build_decomposition_figure(run: DecompositionRun, store: int) -> Figure:
     axes[3].set_xlabel("Date")
     start = dates.min().date().isoformat()
     end = dates.max().date().isoformat()
+    source_designation = (
+        "Synthetic fixture"
+        if run.provenance.source_kind == "synthetic_fixture"
+        else "Development-only input"
+    )
     figure.suptitle(
-        f"Store {store}: weekly STL ({start} to {end})\n"
+        f"Store {store}: weekly STL ({start} to {end}) — {source_designation}\n"
         "Retrospective description of monetary Sales turnover; not a forecast",
         fontsize=12,
     )
@@ -467,6 +472,9 @@ def export_decomposition_outputs(
 
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
+    if any(destination.iterdir()):
+        raise FileExistsError(f"output directory must be empty: {destination}")
+
     components_path = destination / "components.csv"
     status_path = destination / "store_status.csv"
     run.components.to_csv(
@@ -489,7 +497,11 @@ def export_decomposition_outputs(
     code_identity = _code_identity()
     manifest = {
         "schema_version": 1,
-        "command": list(command) if command is not None else ["rossmann-seasonal-decomposition"],
+        "execution_mode": "python_api" if command is None else "caller_supplied",
+        "entry_point": (
+            "rossmann_forecasting.analysis.seasonal_decomposition.export_decomposition_outputs"
+        ),
+        "command": list(command) if command is not None else None,
         "designation": run.provenance.source_kind,
         "source": {
             "identity": run.provenance.source_id,
@@ -517,9 +529,17 @@ def export_decomposition_outputs(
         ),
     }
     manifest_path = destination / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8"
-    )
+    manifest_temp_path = destination / ".manifest.json.tmp"
+    try:
+        manifest_temp_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        manifest_temp_path.replace(manifest_path)
+    except BaseException:
+        manifest_temp_path.unlink(missing_ok=True)
+        raise
     return manifest_path
 
 
