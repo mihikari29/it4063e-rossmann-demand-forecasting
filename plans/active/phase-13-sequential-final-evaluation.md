@@ -1,11 +1,11 @@
 # Phase 13 — Sequential Final Evaluation Design Proposal
 
-**State: METHOD SELECTED under ADR-026; M1 NOT AUTHORIZED.** M0.4 records the delegated Technical
-Lead's selected methodology and the owner's previously approved A-bounded scope under ADR-025.
-Source/preparation preflight, provenance, operator, resource, implementation, rehearsal, staging,
-and analytical-release preconditions remain open. This plan authorizes none of those actions and
-does not authorize access to protected July 4–31 outcomes. Phase 13 remains PLANNED / NOT
-IMPLEMENTED; Phase 14 has not started.
+**State: METHOD SELECTED under ADR-026; M1 IMPLEMENTED / UNDER REVIEW.** M0.4 records the
+delegated Technical Lead's selected methodology and the owner's previously approved A-bounded
+scope under ADR-025. A separate task authorizes synthetic-only M1 implementation and Draft PR
+publication. Source/preparation preflight, operator, resource, rehearsal, staging, analytical
+release, M1 acceptance, and all later milestones remain open. No real-source or protected-outcome
+access is authorized. Phase 13 remains PLANNED / NOT APPROVED; Phase 14 has not started.
 
 ## 1. Objective, scope, and non-goals
 
@@ -158,6 +158,26 @@ Under A2, an operator-enforced boundary is the stated evidence limit; it does no
 physical isolation from the trusted operator, machine owner, or administrator, and local clock
 values alone do not prove chronology. The chosen custody model and trusted-operator assumption
 remain subject to Technical Lead/owner approval.
+
+### M1 synthetic input contract checkpoint — 2026-10-11
+
+M1 is implemented on `feat/phase-13-m1-safe-providers`, based on the verified PR #37 merge SHA
+`3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`; [Draft PR #38](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/38)
+is open and unmerged pending independent review. The `phase13.contracts` module defines the two
+precommitted origins, complete H14 Store × Date request identity, origin-censored training rows,
+sparse recursive history, exact frozen future-covariate fields, calendar-only synthetic planned
+Open, and a separate one-date outcome projection. The `phase13.providers` module uses only injected
+in-memory fixture frames and `memory://phase13/...` references. Its issuance provider has no outcome
+reader; its separate synthetic outcome provider requires a matching date-bound token and enforces
+chronological reads. Block 2 input composition accepts only the ordered Block 1 synthetic
+projections and matching issued covariates. Returned frames are copies; missing keys remain missing.
+
+The fixture tests exercise both origins, sparse and closed-day history, unavailable covariate keys,
+the fixed 1..1115 roster and H14 grid, forbidden fields, future-outcome mutations, planned-Open
+independence, copy safety, token/date/role/path guards, and Block 2's released-history boundary.
+These are logical in-process controls over artificial fixtures, not physical isolation. M1 adds no
+forecast fit or issuance, real-data provider, source path, staging, outcome access, durable release
+journal, model adapter, or later-milestone implementation. M2 remains unauthorized.
 
 ## 4. Exact two-origin evaluation chronology
 
@@ -564,14 +584,14 @@ A-full would add precommitted operational origins and protection horizons to ref
 
 ### Selected method and unresolved execution preconditions
 
-ADR-025 records the owner's A-bounded inventory scope approval. ADR-026 records the Technical Lead's selection of the methods for P13-01 through P13-08. The following execution preconditions remain unresolved; no source access, implementation, rehearsal, staging or release is authorized by M0.4:
+ADR-025 records the owner's A-bounded inventory scope approval. ADR-026 records the Technical Lead's selection of the methods for P13-01 through P13-08. M0.4 did not authorize source access or implementation. A separate task now authorizes synthetic-only M1; the following source, rehearsal, staging, and release preconditions remain unresolved:
 
 - Identify the real sources and document source identity, provenance, availability assumptions, safe acquisition, and authorized preparation for every required covariate. If covariates only exist in a combined source containing protected Sales/Open, obtain a separately reviewed safe-preparation/custody procedure before any source access. A projected column list alone does not establish physical isolation.
 - Establish provenance and prior staging authorization for any pre-existing outcome partitions without opening their contents; name the trusted operator and procedure for any later staging/release decision.
 - Measure and approve the full-panel host memory/runtime/output budget before any full-panel execution. A failed save/load fixture check requires a new reviewed tolerance decision.
-- Obtain separate M1 authorization for synthetic-fixture implementation, separate authorization for any development rehearsal, separate mechanical-staging authorization for new projections, and separate per-date analytical-release authorization.
+- M1 synthetic-fixture implementation is separately authorized and implemented under review. Obtain separate authorization for any development rehearsal, mechanical staging of new projections, and each per-date analytical release.
 
-P13 methods and statuses are summarized in Section 18. The PR review requested for this M0.4 documentation proposal is a review of the recorded method freeze; it does not itself authorize M1 or any later gate.
+P13 methods and statuses are summarized in Section 18. PR #37 reviewed and integrated the M0.4 method freeze; its review did not itself authorize M1 or any later gate. The separate M1 task authorizes only the synthetic implementation and one Draft PR.
 
 Under the approved scope, keep the two-origin primary forecast evaluation unchanged and state that inventory results describe two independent standing-target episodes, with no fresh calibrated bound at every later review. Preserve existing adverse Phase 10 results and canonical artifacts. Canonical development evidence reports forecast-minus-baseline simulated holding-plus-shortfall costs of +23,142,547.537968 for synthetic-base reference and +4,276,098.731339 for historical conditional replay. Those unfavorable findings remain part of the record; July results may be adverse, favorable, or inconclusive. Sales remains monetary turnover, and inventory, service, shortage and cost quantities remain simulated proxies. No real physical inventory, causal improvement, guaranteed service or savings is inferred.
 
@@ -601,6 +621,7 @@ Before release, fixtures must demonstrate:
 - Mutating unreleased Sales/Open/Customers cannot change raw issuance for its block. Block 2 may use only authorized Block 1 actuals released through July 17; Block 2 outcomes cannot affect its issue.
 - Unsafe paths/dates are rejected before content hashing; fitting rejects rows after cutoff; fitted-origin mismatch, warm start, recipe override, or wrong Fit B identity fails.
 - Future covariate/schedule mutations affect only authorized outputs; unknown Open never becomes zero; actual future Open cannot fill planned Open; observed positive Sales is never rewritten by planned closure.
+- M1 synthetic fixtures enforce fixed role-to-column schemas and reject unsafe projections before invoking a reader; reject forged Block 1 projection collections; bind Block 2 to a provider-created in-memory handoff containing exactly 14 chronological authorized Block 1 dates and the matching provider, Store roster, covariate grid/identity, and provenance; and reject any handoff that would include Block 2 outcomes. Handoff and returned frames are copy-safe. Every non-null synthetic planned-Open value follows Monday–Saturday open/Sunday closed; nullable unknowns and missing grid rows remain valid. These are logical synthetic controls, not physical isolation.
 - Recursive H14 feedback, clipping, native missingness, unavailable steps, exact grid/schema/categories, interval signs/ranks/clipping, unsupported strata and complete prefixes match accepted fixture oracles.
 - Outcomes cannot alter an issued block, frozen quantiles, thresholds, targets or prior daily metrics. Daily reveals are strictly ordered and idempotent.
 - Durable release-intent precedes every provider access; crash injection between intent, provider access, analytical release, evaluation and checkpoint follows unresolved-intent recovery and blocks the next date.
@@ -616,11 +637,11 @@ Before release, fixtures must demonstrate:
 
 ## 16. Proposed M1–M8 implementation milestones
 
-These are reviewable tasks for later, separately authorized work. M1 begins only after explicit M1 authorization and remains synthetic-fixture-only. They are not authorized by this M0.4 proposal.
+These milestones remain separately gated. M1 alone has a separate synthetic-only implementation authorization and is under review. This plan and M1 do not authorize M2 or later work, real-data operations, staging, or analytical release.
 
 | Milestone | Inputs → output | Tests and dependency gate |
 |---|---|---|
-| **M1 — Synthetic contract/providers** | After M0 approval and separate M1 authorization, typed contracts and default-deny providers against synthetic fixtures only. | Synthetic-only provider spies, path/date rejection before fixture access, exact grid/config checks. No real source, local data provider, protected path, staging, ACL, or outcome access. |
+| **M1 — Synthetic contract/providers** | Implemented under review on `feat/phase-13-m1-safe-providers`: typed contracts and default-deny providers against synthetic fixtures only. Fixed role-to-field schemas are checked before reads; Block 2 requires an in-memory Block 1 handoff registered by the synthetic outcome provider and bound to the exact covariate identity/provenance; non-null planned Open is checked against the weekly rule. | Synthetic-only spies reject unexpected fields without reads; forged Block 1 collections fail; exact chronological 14-day handoff, provider/store/grid identity, provenance and copy safety are checked; contradictory schedule values fail while unknowns and missing keys remain allowed. No real source, local data provider, protected path, staging, ACL, or real outcome access. |
 | **M2 — Fresh-fit issuer** | Frozen refit recipe and fixtures → serialized model/adapter plus label-free H14 ledgers for the two existing origins. | Exact params, fit origin/cutoff, categories, future-mutation invariance, repeat/save-load. No extra origin. Requires M1. |
 | **M3 — Fit B/schedule/target adapter** | Pinned Fit B, approved covariates and planned-Open contract → distinct raw/operational issues and frozen paired targets. | Golden q application; calibration-fit/model-fit identities separate; no calibration call/suffix borrowing; unknown schedule/unsupported prefix unavailable. Requires M2. |
 | **M4 — Immutable publication/replay state** | Issued blocks and safe inventory inputs → manifest-last publication, receipt, release journal and paired daily checkpoints. | Two-block chronology, A2 boundary (A1 optional), paired atomicity, crash/restart/tamper/idempotency. Requires M3. |
@@ -660,7 +681,7 @@ boundary.
 
 | ID | Selected method | Status | Remaining precondition / next gate | Exact acceptance implications |
 |---|---|---|---|---|
-| P13-01 Protocol/release | Two complete frozen H14 blocks; issue before reveal; release and checkpoint one date at a time; Block 2 fit uses only released Block 1 history; no post-outcome adaptation. | METHOD SELECTED (ADR-026) | M1 authorization, implementation review, separate staging authorization when needed, and separate analytical release per date. | Preserve exactly two primary forecast blocks and distinct issue/rehearsal/staging/release/closeout gates. |
+| P13-01 Protocol/release | Two complete frozen H14 blocks; issue before reveal; release and checkpoint one date at a time; Block 2 fit uses only released Block 1 history; no post-outcome adaptation. | METHOD SELECTED (ADR-026) | M1 independent review, separate staging authorization when needed, and separate analytical release per date. | Preserve exactly two primary forecast blocks and distinct issue/rehearsal/staging/release/closeout gates. |
 | P13-02 Inputs/population and schedules | 1,115-store grid; exact 29 features; versioned origin-safe covariates with documented conditional assumed-known availability; separate synthetic weekly planning schedule and actual Open. | METHOD SELECTED; SOURCE/PREPARATION PREFLIGHT PENDING | Establish source identity, provenance, availability and safe/authorized preparation. For a combined protected source, separately review safe preparation/custody before any access. | Never use future actual Open as planned Open. Preserve positive observed Sales despite planned closure; report mismatches after release; fail closed on unverified provenance. |
 | P13-03 Custody/ledger | A2 separate provider views, default-deny guards, immutable issuance, durable per-date intents, journals and idempotent checkpoints; A1 optional hardening. | METHOD SELECTED (ADR-026) | Name trusted operator; document prior partition provenance; separately authorize new staging and each analytical release. | Logical/operator-enforced custody only; no strict physical-isolation claim. Mechanical reads are protected access but are not analytical revelation. |
 | P13-04 Frozen uncertainty | Exact frozen June Fit B tables unchanged as unvalidated transport; retain ADR-021 identities, signed values, floors, availability, clipping and formulas. | METHOD SELECTED (UNVALIDATED TRANSPORT) | No recalibration. Preserve unsupported reasons; transport validity and July/synthetic coverage remain unknown. | No prefix-to-suffix borrowing, retuning, or coverage guarantee. July errors enter evaluation only after authorized reveal. |
@@ -668,17 +689,17 @@ boundary.
 | P13-06 Monitoring | Descriptive daily/trailing 7/14-day monitoring by origin/horizon; feature shifts and post-release error/coverage summaries; deterministic integrity/data-quality alerts only. | METHOD SELECTED (ADR-026) | Freeze definitions independently of outcomes in implementation; no numeric drift/performance/coverage/service thresholds. | Descriptive only; ADR-021 calibration floors are not monitoring thresholds or reliability guarantees. |
 | P13-07 Runtime/repro | Locked Windows x64/Python 3.14 and exact LightGBM recipe; exact identity checks; save/load tolerance rtol=1e-12, atol=1e-9. | METHOD SELECTED (ADR-026) | Record native build/runtime. If fixtures fail, stop for reviewed tolerance change. Measure and approve host resource budget before full panel. | Never loosen tolerance after protected results. Claims remain tied to recorded environment/build. |
 | P13-08 Scores/comparator | LightGBM primary; frozen Seasonal Naive contextual H14 baseline; standalone and exact common-row populations. | METHOD SELECTED (ADR-026) | Preserve immutable H14 issue and ADR-013 metric populations. | No new selection, candidate, winner claim, or Holt-Winters final comparator. |
-| P13-09 Status/docs | Record ADR-026, method-selected state, unresolved preflight/gates and M0.4 review boundary; preserve M0.1-M0.3 checkpoints. | METHOD FREEZE RECORDED; DRAFT PR REVIEW PENDING | Review this documentation proposal. M1 remains separately unauthorized. | Phase 13 remains PLANNED / NOT IMPLEMENTED; protected holdout remains unreleased. |
+| P13-09 Status/docs | ADR-026 method freeze integrated; preserve M0.1-M0.4 history and record the synthetic-only M1 checkpoint. | METHOD FREEZE INTEGRATED; M1 IMPLEMENTED / UNDER REVIEW | Independent review of M1; preflight and all subsequent gates remain separate. | Phase 13 remains PLANNED / NOT APPROVED; protected holdout remains unreleased. |
 
 ## 19. Explicit implementation and release authorization gates
 
-1. **M0.4 documentation review:** Review this selected-method record and its synchronization with ADR-025. Method selection is recorded in ADR-026; this Draft PR review does not grant implementation or data-access permission.
+1. **M0.4 documentation review — complete:** PR #37 integrated the selected-method record and its synchronization with ADR-025 at `3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`; post-merge Quality #116 passed on Python 3.12 and 3.14. That review selected the method but granted no implementation or data-access permission.
 2. **Source/preparation preflight:** Before any real source access, establish source identity, provenance, safe acquisition and authorized preparation. If required covariates exist only in a combined source with protected Sales/Open, obtain a separately reviewed safe-preparation/custody procedure first. Verify pre-existing partition authorization/provenance from records without opening contents. This method selection authorizes no preflight source access.
-3. **M1 implementation:** A separate explicit task authorizes M1. M1 is limited to synthetic fixtures, typed contracts/providers, and default-deny behavior; no local real-data provider, source path, protected path, staging, ACL configuration, real-model fit, July context, or outcome access.
+3. **M1 implementation — authorized, under review:** The 2026-10-11 task authorizes synthetic fixtures, typed contracts/providers, tests, documentation, and one Draft PR only. M1 adds no local real-data provider, source path, protected path, staging, ACL configuration, real-model fit, July context, or protected-outcome access. M1 acceptance remains pending independent review.
 4. **Implementation review:** Fixture tests, quality checks, resource measurements, documented provenance, A2 custody/recovery, and independent review pass. Preserve Phase 7–10 methods/evidence.
 5. **Development rehearsal:** After M7 fixture and independent implementation review, obtain separate written authorization naming origin-safe development inputs/run config. The rehearsal cannot read protected outcomes or rewrite canonical artifacts.
 6. **Protected-source staging:** For each new projection, first complete and persist the matching block issue and that date's `release_intent`; then obtain separate explicit authorization before mechanically reading source content to create/access only that date's projection. Existing partitions require documented prior authorization and provenance, verified from records without opening contents. Record prior mechanical reads separately from analytical revelation; they authorize no new access.
 7. **Analytical release:** Separate explicit authorization names reviewed commit, config, provider, block/date, trusted operator and procedure. Complete issue and durable per-day intent precede access; any new staging has its own authorization. Release only that date and complete its paired state/forecast checkpoint before advancing.
 8. **Closeout:** Only after authorized run, independent review, acceptance of scope adjustments and explicit phase closeout may Phase 13 be COMPLETE. Phase 14 remains outside this plan.
 
-**Current boundary: STOP at M0.4 pending Technical Lead review of this method freeze. Source/preparation preflight remains pending; M1 is NOT AUTHORIZED; the final holdout is UNRELEASED.**
+**Current boundary: STOP after M1 pending independent Technical Lead review. M1 is IMPLEMENTED / UNDER REVIEW; Phase 13 is PLANNED / NOT APPROVED. M2, source/preparation work, rehearsal, staging, and analytical release remain unauthorized. The final holdout is UNRELEASED.**
