@@ -140,3 +140,32 @@ remain in the ignored machine-readable report. Future work must preserve sparse 
 coverage, exclude future Customers, keep primary modeling/evaluation restricted to actual
 `Open = 1`, and keep the chronological final period excluded from model/feature selection and
 policy calibration under the disclosed firewall.
+
+## CC-02 weekly STL diagnostic
+
+The instructor-required decomposition is implemented as a supplementary, retrospective descriptive
+diagnostic under [ADR-027](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
+It uses `statsmodels.tsa.seasonal.STL` with period 7 and robust fitting, requires at least 56
+finite observations on uninterrupted calendar days, and analyzes at most the most recent 112 days
+of the most recent eligible segment. The fixed store roster is the first three eligible Store IDs
+in ascending order. A segment tie is resolved by latest end date, then latest start date.
+
+Absent dates are not inserted or interpolated. Missing and non-finite numeric Sales rows split a
+candidate segment; finite observed zeros, including closed-day zeros, remain unchanged. The output
+records status and a reason for every Store present in the input, including stores with insufficient
+history and eligible stores outside the three-Store cap. The component table carries observed
+Sales, estimated trend, weekly seasonal, and residual values and is checked to reconstruct observed
+Sales within numerical tolerance. Four-panel figures label the monetary turnover unit and state
+that the result is retrospective, descriptive, and not a forecast or causal explanation.
+
+No Rossmann source was read or used to select stores or parameters for CC-02. Verification is
+fixture-only with synthetic in-memory data; the synthetic figures/manifests used during tests are
+temporary artifacts and are not source findings. The command
+`python scripts/run_seasonal_decomposition.py --describe-input-contract` describes the required
+preflight. Normal command execution currently fails closed and opens no data because no reviewed
+trusted input provider is configured. Real development-only execution requires a separately
+approved provider that proves physical separation from the combined prepared train artifact and
+the protected period before opening or hashing data, verifies the 2015-07-03 ceiling, and records
+an owner-approved preflight reference. A caller-provided reference alone is not proof of isolation.
+The diagnostic does not alter the 29-feature contract and its components are not forecast features,
+model-selection evidence, or an alternative forecasting method.

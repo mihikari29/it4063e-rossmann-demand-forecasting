@@ -79,3 +79,9 @@ For later models, use `data/processed/<model>/` for generated tabular evidence a
 `artifacts/<model>/` for model binaries; both conventions are ignored. These are directory
 conventions, not claims that later-phase outputs already exist. Commit reusable code, concise
 verified findings, and generation instructions rather than datasets or binaries.
+
+The CC-02 seasonal-decomposition exporter uses ignored
+`reports/generated/seasonal_decomposition/` for component/status CSVs, four-panel Store figures,
+and a manifest. Its current CLI has no source-file reader; real execution requires a separately
+reviewed trusted development-only provider and owner approval. Do not create that input by reading
+and filtering the combined prepared train artifact.

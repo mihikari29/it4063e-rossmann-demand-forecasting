@@ -10,7 +10,9 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; M1-M4 are accepted and findings M3-01, M4-01 and
 FR-01 are resolved. See the [completed Phase 11 plan](plans/completed/phase-11-application-services.md)
 and [PROGRESS](docs/PROGRESS.md) for closeout evidence. The protected final holdout remains
-unreleased. Phase 5 additive Holt-Winters
+unreleased. Phase 13 M1–M3 are integrated after PR #40, but Phase 13 remains PLANNED / NOT
+APPROVED; source preparation, rehearsal, staging, and release keep their separate gates. Phase 5
+additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
@@ -130,6 +132,23 @@ descriptive audit, not a development-model gate. That earlier audit included Jul
 [EDA findings](docs/EDA_FINDINGS.md) disclose the exposure. Any new source-wide inspection needs an
 explicit audit scope; model cohorts/statistics must be recomputed from origin training data.
 The current modeling firewall still excludes July 4–31 from selection, tuning and calibration.
+
+CC-02 adds a separate retrospective weekly STL diagnostic. Its reusable API accepts an
+already-authorized in-memory `Store`, `Date`, `Sales` frame; it does not read the combined prepared
+train artifact. The dedicated command currently prints its trusted-input contract and fails closed
+for execution because no separately reviewed development-only provider is configured:
+
+```powershell
+python scripts/run_seasonal_decomposition.py --describe-input-contract
+```
+
+The fixed diagnostic ends by 2015-07-03, uses the first three eligible Store IDs, and writes
+components, status, figures, and a provenance manifest under ignored
+`reports/generated/seasonal_decomposition/` when called through the approved in-memory API. It
+requires a separately reviewed provider with documented physical separation and owner approval
+before any real-data execution. Synthetic fixture verification is not a Rossmann result. The
+components are descriptive and are not forecasting features or model-selection evidence. Details
+are in [EDA findings](docs/EDA_FINDINGS.md#cc-02-weekly-stl-diagnostic).
 
 ## Phase 8 development-only uncertainty
 

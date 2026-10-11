@@ -871,3 +871,38 @@ alone authorizes any new access.
 only after Technical Lead review of this documentation proposal and explicit M1 authorization.
 Development rehearsal, mechanical staging, and each analytical daily release remain separate gates.
 This method selection does not mark Phase 13 APPROVED for implementation, REVIEWED, or COMPLETE.
+
+## ADR-027 — CC-02 Development-Only Weekly STL Diagnostic
+
+**Status:** Accepted for the bounded supplementary EDA implementation under the explicit CC-02
+owner task dated 2026-10-11. Implementation remains **IMPLEMENTED / UNDER REVIEW** until independent
+review and integration.
+
+**Context:** The proposal includes Sales decomposition as an EDA method, while the historical Phase
+2 EDA implemented trends, weekday summaries, autocorrelation and anomaly analysis without an
+explicit Trend/Seasonal/Residual decomposition. The course-compliance remediation requires a
+reproducible weekly decomposition without changing the accepted forecasting system.
+
+**Decision:** Use `statsmodels.tsa.seasonal.STL` with period 7 and robust fitting on finite,
+uninterrupted daily Sales segments ending by 2015-07-03. Require 56 days, select the latest eligible
+segment by end date then start date, trim to its latest 112 rows, and analyze the first three
+eligible Store IDs in ascending order. Retain source zeros. Missing calendar dates and missing or
+non-finite numeric observations split segments; do not interpolate or fill values, or
+smooth/modify observed Sales before fitting.
+Return explicit per-Store availability and reason metadata, check component reconstruction, and
+label figures as retrospective descriptions rather than forecasts or causal explanations.
+
+**Data boundary:** The reusable API accepts an already-authorized in-memory Store/Date/Sales frame
+and rejects any date beyond the development ceiling. The dedicated CLI has no file-path or
+isolation-bypass option and fails closed until a separately approved trusted development-only
+provider exists. Before any real-data run, the provider's physical separation, source lineage and
+date boundary must be independently reviewed and owner-approved before opening or hashing data;
+the provider must supply a reviewable preflight reference. A reference string or column projection
+alone does not prove isolation. This ADR does not authorize real Rossmann access, source partition
+creation, protected-period inspection, EDA execution, or a final-holdout operation.
+
+**Consequences:** Outputs are descriptive-only component tables, figures and provenance manifests
+under the ignored generated-report convention. Synthetic fixtures are the only execution evidence
+for this implementation. The decomposition is not part of `phase-3-v1`, forecast evaluation,
+selection, inventory decisions, or Phase 13; all accepted forecasting methods and release gates
+remain unchanged.
