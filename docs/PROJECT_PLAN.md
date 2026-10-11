@@ -248,15 +248,17 @@ importance and limitations suffice.
 
 **Design proposal:** [M0.4 Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
 — METHOD SELECTED under ADR-026; the owner's A-bounded inventory scope remains recorded in
-ADR-025. Source/preparation preflight and authorization gates remain pending. Neither ADR-026 nor
-this plan authorizes implementation, development rehearsal, protected-source staging, or holdout
-access. M1 remains NOT AUTHORIZED; the final holdout remains unreleased.
+ADR-025. PR #38 integrated M1 at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; post-merge Quality
+#120 passed on Python 3.12 and 3.14. A separate 2026-10-11 task authorizes synthetic-only M2
+implementation and one Draft PR; M2 remains IMPLEMENTED / UNDER REVIEW. Source/preparation
+preflight, development rehearsal, protected-source staging, analytical release, M3 and later work
+remain unauthorized. The final holdout remains unreleased.
 
 **Objective:** Evaluate the frozen system once and demonstrate historical monitoring.
 **Dependencies:** Phases 7–12 frozen choices; source identity, provenance, availability, safe
 acquisition and authorized preparation preflight; reviewed custody/provenance for any existing
-partitions; an approved full-panel host resource budget; and separate authorization for M1,
-development rehearsal, mechanical staging, and each analytical data-release gate.
+partitions; an approved full-panel host resource budget; independent review of M2; and separate
+authorization for development rehearsal, mechanical staging, and each analytical data-release gate.
 **Deliverables:** Auditable forecast-before-reveal ledger, final point/interval/KPI summaries,
 simulated inventory policy comparison, descriptive monitoring summaries/alerts, and
 protocol/environment identity.

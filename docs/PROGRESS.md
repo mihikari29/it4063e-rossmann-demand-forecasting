@@ -13,8 +13,8 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1 is IMPLEMENTED / UNDER REVIEW; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
-| Phase 13 — Sequential final evaluation | **M1 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | `feat/phase-13-m1-safe-providers` based on verified PR #37 merge `3bebca61ea8eb8b1eefadbc752e7d278afc0cc35`; [Draft PR #38](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/38) is open and unmerged. M2, source preparation, rehearsal, staging and release remain unauthorized. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
+| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1 is integrated; M2 is IMPLEMENTED / UNDER REVIEW; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
+| Phase 13 — Sequential final evaluation | **M1 INTEGRATED; M2 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at verified SHA `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; post-merge Quality #120 passed on Python 3.12/3.14. M2 is on `feat/phase-13-m2-fresh-fit-issuer`; [Draft PR #39](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/39) is open against `main`; CI status is tracked there. Source preparation, rehearsal, staging and release remain unauthorized. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -208,12 +208,12 @@ was performed.
 
 ## Current boundary
 
-Phases 0–12 are COMPLETE; Phase 13 is PLANNED / NOT AUTHORIZED; the protected July 4–31
-holdout remains unreleased. The [M0.4 Phase 13 method-freeze proposal](../plans/active/phase-13-sequential-final-evaluation.md)
-records the selected methods under ADR-026 and the owner's A-bounded inventory scope under ADR-025.
-Source/preparation preflight remains pending; M1 is NOT AUTHORIZED. Method selection does not
-authorize implementation, rehearsal, protected-source staging, or holdout access. Phase 14 has not
-started.
+Phases 0–12 are COMPLETE; Phase 13 remains PLANNED / NOT APPROVED; the protected July 4–31
+holdout remains unreleased. The [active Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
+records methods under ADR-026 and the owner's A-bounded scope under ADR-025. M1 is integrated and
+M2 is IMPLEMENTED / UNDER REVIEW under the separate synthetic-only task authorization. Source and
+preparation preflight, development rehearsal, protected-source staging, analytical release, and
+Phase 14 remain outside this authorization.
 
 ### Phase 13 M0.1 methodology review checkpoint — 2026-10-10
 
@@ -321,6 +321,73 @@ review.
 M1 corrections on the existing Draft PR branch harden the synthetic provider boundary. `SyntheticInputProvider._read()` now checks role, capability, typed source binding, safe memory reference, and a fixed role-to-column schema before calling the injected reader; requested columns cannot define their own expected schema. The synthetic Block 1 handoff is now created only by `SyntheticOutcomeProvider` after the exact 14 Block 1 dates have been successfully authorized and read in order. It is registered to that provider's in-memory release state and bound to the matching Block 1 Store grid, covariate identity, and provenance. A handoff rejects forged projection collections and cannot include Block 2 outcomes; projection frames are returned as independent copies. `SyntheticPlannedOpen` validates each supplied non-null value against Monday–Saturday open/Sunday closed while preserving nullable unknowns, missing rows, independent actual Open, and positive observed Sales.
 
 The focused Phase 13 input suite passed **30 tests**; the repository suite passed **566 tests** on Python 3.14.5 with one existing Starlette/httpx deprecation warning. Ruff lint and format, documentation checks, `git diff --check`, and `uv lock --check` passed. These tests exercise logical in-memory behavior with artificial fixtures and do not establish physical isolation. No real or protected Rossmann data was read, loaded, staged, extracted, or hashed; no model fit, protected-source operation, M2 work, or canonical artifact operation occurred. The correction is for Technical Lead re-review on Draft PR #38; Phase 13 remains PLANNED / NOT APPROVED and M2 remains NOT AUTHORIZED.
+
+### Phase 13 M2 synthetic fresh-fit issuer — 2026-10-11
+
+M1 PR #38 merged into `main` at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`. GitHub post-merge
+Quality #120 passed both Python 3.12 and 3.14 jobs on that exact SHA. This satisfied the explicit
+precondition for the owner's M2 authorization. The M2 branch is `feat/phase-13-m2-fresh-fit-issuer`,
+created from that SHA; M2 remains IMPLEMENTED / UNDER REVIEW and Phase 13 remains PLANNED / NOT
+APPROVED.
+
+`rossmann_forecasting.phase13.issuer.Phase13FreshFitIssuer` accepts only M1's typed synthetic input
+provider. It builds historical features from valid observed Sales rows only, preserving exact-date
+closed-day zeros and excluding missing-label rows without filling them. It uses the approved Phase
+3 feature pipeline and Phase 6 LightGBM interfaces, plus `build_refit_recipe` from Phase 7, for a
+fresh exact Trial A fit at each of the two approved origins. Before recursion it checks fit origin,
+parameters, eligible row count, category vocabulary, feature schema, and actual tree count.
+
+The M2 input-validation contract reconciles training and recursive-history Sales only on overlapping
+canonical `(Store, Date)` keys after the M1 contracts' numeric normalization. It requires exactly
+equal observed values and matching observed/missing status; valid zero observations remain intact,
+and non-overlapping sparse history is neither required nor filled from training. It does not
+substitute values between views and retains separate training and history identities. A mismatch
+raises the stable, non-sensitive `Phase13IssuanceError` message before feature construction, dataset
+creation, fitting, recursion, or M2 issuance identity construction. Synthetic tests cover
+non-zero disagreement (including a `1e-9` difference), closed-day zero disagreement, normalized
+matching zero, sparse history, missing training labels, Block 2 handoff inputs, and no new outcome
+reads during the check.
+
+The in-memory, label-free `RawForecastIssuance` retains one record per requested Store × Date key,
+including raw clipped and unclipped values, recursive state, clipping/category diagnostics,
+identities, availability and explicit failure reasons. It accounts for incomplete paths separately
+from all-requested-key coverage. Missing predictions remain null; no fallback or numerical
+fabrication is used. No planned Open, actual future Open, Customers, future outcomes, or release
+provider is read for raw issuance. The result is not a durable or formally published final
+issuance.
+
+The focused issuer suite passed **20 tests**. Block 1's synthetic fixture has 1,098 input rows,
+1,097 valid labels, one excluded missing label, 156 observed closed-day history rows, and 941
+eligible fit rows. Its fresh fit produced 180 trees and 28 available of 28 requested keys. The
+verified Block 2 fixture has 1,126 input rows (including only the 28 released Block 1 outcomes),
+1,125 valid labels, one excluded missing label, 160 observed closed-day history rows, and 965
+eligible fit rows; its fresh fit also produced 180 trees and 28 available of 28 requested keys.
+The incomplete-input adversarial fixture accounted for all 28 keys, with 26 available and two
+explicitly unavailable for a missing key and required covariate. A fit-failure fixture accounted
+for all 28 keys as unavailable with reason `model_fit_failure` and no numeric values. Block 2's
+release provider reads the 14 authorized synthetic Block 1 dates to create its verified handoff;
+issuance itself makes no additional outcome reads, and changing unreleased Block 2 outcomes does not
+change issuance.
+
+The booster save/load test writes only under pytest's temporary directory. It preserves category
+vocabulary and order, recipe/origin/schema identity and 180-tree count; same-input predictions pass
+the frozen `rtol=1e-12`, `atol=1e-9` comparison. The full fixture suite passed **586 tests in
+167.44 seconds** (168.85 seconds measured command wall time), with one existing
+`StarletteDeprecationWarning` about `httpx`/`starlette.testclient`. The focused suite passed 20
+tests. Ruff check and format, `scripts/check_docs.py` (299 local destinations/anchors across 29
+Markdown files), `uv lock --check` (109 locked packages), and `git diff --check` passed.
+
+The measured environment is Windows 11 `10.0.26300-SP0`, AMD64, 12 logical CPUs; Python 3.14.5
+(MSC v.1944 64-bit), LightGBM 4.7.0, NumPy 2.5.3, pandas 3.0.6, and uv 0.12.23. `uv.lock` SHA-256
+is `151CD5A2A868B219D315D8333D75D54E8C1F7EFA43AFA0869933A5682852DBD`; the LightGBM native DLL
+SHA-256 is `7E366D2E49CD061AAC3AB21676B2F99B0C7A758DC3E888D4B23812AF1B7D301C`. Draft PR #39 is open; its GitHub Quality run is tracked on the PR. The base's post-merge Quality #120 on Python 3.12 and
+3.14 passed at the verified M1 merge SHA.
+
+No Rossmann source, protected July outcomes, source file, accepted real-data model, or canonical
+artifact was read, hashed, loaded, or changed. No July covariate extraction, source preparation,
+real-data fit, June Fit B transport, planned-Open routing, inventory work, durable release journal,
+M3, or later milestone was implemented. Source/preparation provenance, operator, rehearsal,
+staging and analytical-release gates remain open.
 
 ## Historical implementation checkpoints (preserved)
 
