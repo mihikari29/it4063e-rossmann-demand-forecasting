@@ -14,7 +14,7 @@
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
 | Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1 is integrated; M2 is IMPLEMENTED / UNDER REVIEW; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
-| Phase 13 — Sequential final evaluation | **M1 INTEGRATED; M2 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at verified SHA `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; post-merge Quality #120 passed on Python 3.12/3.14. M2 is on `feat/phase-13-m2-fresh-fit-issuer`; its Draft PR and CI result will be recorded in the M2 checkpoint below. Source preparation, rehearsal, staging and release remain unauthorized. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
+| Phase 13 — Sequential final evaluation | **M1 INTEGRATED; M2 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at verified SHA `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; post-merge Quality #120 passed on Python 3.12/3.14. M2 is on `feat/phase-13-m2-fresh-fit-issuer` at `0e498af306d1c01baf5f0acdc6f5d3a3e7c1dcb4`; [Draft PR #39](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/39) is open against `main`; CI status is tracked there. Source preparation, rehearsal, staging and release remain unauthorized. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -369,9 +369,9 @@ Markdown files), `uv lock --check` (109 locked packages), and `git diff --check`
 The measured environment is Windows 11 `10.0.26300-SP0`, AMD64, 12 logical CPUs; Python 3.14.5
 (MSC v.1944 64-bit), LightGBM 4.7.0, NumPy 2.5.3, pandas 3.0.6, and uv 0.12.23. `uv.lock` SHA-256
 is `151CD5A2A868B219D315D8333D75D54E8C1F7EFA43AFA0869933A5682852DBD`; the LightGBM native DLL
-SHA-256 is `7E366D2E49CD061AAC3AB21676B2F99B0C7A758DC3E888D4B23812AF1B7D301C`. GitHub CI for M2 is
-pending publication of its Draft PR; the base's post-merge Quality #120 on Python 3.12 and 3.14
-passed at the verified M1 merge SHA.
+SHA-256 is `7E366D2E49CD061AAC3AB21676B2F99B0C7A758DC3E888D4B23812AF1B7D301C`. Draft PR #39 is open at implementation head `0e498af306d1c01baf5f0acdc6f5d3a3e7c1dcb4`; its
+GitHub Quality run is tracked on the PR. The base's post-merge Quality #120 on Python 3.12 and
+3.14 passed at the verified M1 merge SHA.
 
 No Rossmann source, protected July outcomes, source file, accepted real-data model, or canonical
 artifact was read, hashed, loaded, or changed. No July covariate extraction, source preparation,
