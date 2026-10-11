@@ -198,8 +198,13 @@ approved `prepare_training_data`, `make_lightgbm_dataset`, `fit_lightgbm`, and
 `recursive_lightgbm_forecasts` interfaces plus the Phase 7 `build_refit_recipe`. Each fit is fresh,
 uses only source-Open=1 observed labels through its origin, requests exactly frozen Trial A at 180
 rounds, learns categories only from eligible fit rows, and asserts fitted origin equality before
-prediction. Block 2 inputs remain bound to M1's verified, complete Block 1 release bundle; fit
-scheduling has no performance-dependent trigger.
+prediction. Before any feature construction, the M2 input-validation boundary reconciles
+contract-normalized Sales values and observed/missing status on overlapping canonical Store/Date
+keys. It requires exact numeric equality, preserves observed zeroes, leaves non-overlapping sparse
+history untouched, and retains separate training and history identities. A mismatch fails with a
+stable non-sensitive error before fitting, recursion, or issuance identity construction. Block 2
+inputs remain bound to M1's verified, complete Block 1 release bundle; fit scheduling has no
+performance-dependent trigger. Regression evidence is recorded in [PROGRESS](../../docs/PROGRESS.md).
 
 The typed in-memory `RawForecastIssuance` has one label-free record per requested Store × Date key,
 with origin/horizon, model/fit/recipe/schema/input identities, clipped and unclipped raw values,

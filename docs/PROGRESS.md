@@ -337,6 +337,17 @@ closed-day zeros and excluding missing-label rows without filling them. It uses 
 fresh exact Trial A fit at each of the two approved origins. Before recursion it checks fit origin,
 parameters, eligible row count, category vocabulary, feature schema, and actual tree count.
 
+The M2 input-validation contract reconciles training and recursive-history Sales only on overlapping
+canonical `(Store, Date)` keys after the M1 contracts' numeric normalization. It requires exactly
+equal observed values and matching observed/missing status; valid zero observations remain intact,
+and non-overlapping sparse history is neither required nor filled from training. It does not
+substitute values between views and retains separate training and history identities. A mismatch
+raises the stable, non-sensitive `Phase13IssuanceError` message before feature construction, dataset
+creation, fitting, recursion, or M2 issuance identity construction. Synthetic tests cover
+non-zero disagreement (including a `1e-9` difference), closed-day zero disagreement, normalized
+matching zero, sparse history, missing training labels, Block 2 handoff inputs, and no new outcome
+reads during the check.
+
 The in-memory, label-free `RawForecastIssuance` retains one record per requested Store × Date key,
 including raw clipped and unclipped values, recursive state, clipping/category diagnostics,
 identities, availability and explicit failure reasons. It accounts for incomplete paths separately
@@ -345,7 +356,7 @@ fabrication is used. No planned Open, actual future Open, Customers, future outc
 provider is read for raw issuance. The result is not a durable or formally published final
 issuance.
 
-The focused issuer suite passed **14 tests**. Block 1's synthetic fixture has 1,098 input rows,
+The focused issuer suite passed **20 tests**. Block 1's synthetic fixture has 1,098 input rows,
 1,097 valid labels, one excluded missing label, 156 observed closed-day history rows, and 941
 eligible fit rows. Its fresh fit produced 180 trees and 28 available of 28 requested keys. The
 verified Block 2 fixture has 1,126 input rows (including only the 28 released Block 1 outcomes),
@@ -360,9 +371,9 @@ change issuance.
 
 The booster save/load test writes only under pytest's temporary directory. It preserves category
 vocabulary and order, recipe/origin/schema identity and 180-tree count; same-input predictions pass
-the frozen `rtol=1e-12`, `atol=1e-9` comparison. The full fixture suite passed **580 tests in
-163.26 seconds** (164.56 seconds measured command wall time), with one existing
-`StarletteDeprecationWarning` about `httpx`/`starlette.testclient`. The focused suite passed 14
+the frozen `rtol=1e-12`, `atol=1e-9` comparison. The full fixture suite passed **586 tests in
+167.44 seconds** (168.85 seconds measured command wall time), with one existing
+`StarletteDeprecationWarning` about `httpx`/`starlette.testclient`. The focused suite passed 20
 tests. Ruff check and format, `scripts/check_docs.py` (299 local destinations/anchors across 29
 Markdown files), `uv lock --check` (109 locked packages), and `git diff --check` passed.
 

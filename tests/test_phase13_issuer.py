@@ -55,6 +55,8 @@ from rossmann_forecasting.phase13.providers import (
 ORIGIN_1 = date(2015, 7, 3)
 ORIGIN_2 = date(2015, 7, 17)
 STORES = (1, 2)
+TRAINING_REF = "memory://phase13/m2-training"
+HISTORY_REF = "memory://phase13/m2-history"
 
 
 def _provenance(
@@ -146,8 +148,8 @@ def _provider(
     prior_block1_covariates: FutureCovariates | None = None,
     prior_block1_release_bundle: SyntheticBlock1ReleaseBundle | None = None,
 ) -> tuple[SyntheticInputProvider, SyntheticFrameStore, tuple[str, str, str]]:
-    train_ref = "memory://phase13/m2-training"
-    history_ref = "memory://phase13/m2-history"
+    train_ref = TRAINING_REF
+    history_ref = HISTORY_REF
     covariate_ref = f"memory://phase13/m2-future-{grid.origin.value.isoformat()}"
     frames = {
         train_ref: _training_source(),
@@ -265,7 +267,9 @@ def _release_block1(provider: SyntheticOutcomeProvider, tokens: dict[date, str])
         )
 
 
-def _block2_provider(*, block2_shift: float = 0.0):
+def _block2_provider(
+    *, block2_shift: float = 0.0, extra_input_frames: dict[str, pd.DataFrame] | None = None
+):
     block1_grid = RequestedForecastGrid(ORIGIN_1, store_ids=STORES)
     block1_covariates = FutureCovariates(
         _covariates(list(block1_grid.keys)),
@@ -280,6 +284,7 @@ def _block2_provider(*, block2_shift: float = 0.0):
     grid = RequestedForecastGrid(ORIGIN_2, store_ids=STORES)
     provider, input_reader, references = _provider(
         grid,
+        extra_frames=extra_input_frames,
         prior_block1_covariates=block1_covariates,
         prior_block1_release_bundle=bundle,
     )
@@ -291,6 +296,31 @@ def _block2_provider(*, block2_shift: float = 0.0):
         outcome_provider=outcomes,
         references=references,
     )
+
+
+def _forbid_post_validation_work(monkeypatch, *, fit_calls: list[str]) -> None:
+    def fit_spy(*args, **kwargs):
+        fit_calls.append("fit_lightgbm")
+        pytest.fail("model fitting ran before Sales-view consistency validation")
+
+    monkeypatch.setattr(issuer_module, "fit_lightgbm", fit_spy)
+    for name in (
+        "build_training_features",
+        "prepare_training_data",
+        "make_lightgbm_dataset",
+        "recursive_lightgbm_forecasts",
+        "select_requested_raw_forecasts",
+        "_identity",
+        "_model_and_fit_identities",
+        "_records",
+    ):
+        monkeypatch.setattr(
+            issuer_module,
+            name,
+            lambda *args, _name=name, **kwargs: pytest.fail(
+                f"{_name} ran before Sales-view consistency validation"
+            ),
+        )
 
 
 def test_issuer_emits_exact_h14_accounted_grid_and_frozen_fit(block1_issue):
@@ -381,7 +411,125 @@ def test_missing_label_rows_are_excluded_without_losing_closed_history(block1_is
         .loc[_history_source()["Date"].dt.date.eq(sunday_origin), "Sales"]
         .tolist()
     )
+    missing_day = pd.Timestamp("2015-03-02")
+    training = block1_issue.provider.read_training_inputs(origin=ORIGIN_1).to_frame()
+    history = block1_issue.provider.read_recursive_history_inputs(origin=ORIGIN_1).to_frame()
+    missing_training_row = training.loc[
+        training["Store"].eq(1) & training["Date"].eq(missing_day)
+    ].iloc[0]
+    assert pd.isna(missing_training_row["Sales"])
+    assert not missing_training_row["training_label_eligible"]
+    assert not (history["Store"].eq(1) & history["Date"].eq(missing_day)).any()
     assert records["raw_forecast"].notna().all()
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    ("conflicting_nonzero", "closed_zero_conflict", "missing_training_vs_observed_history"),
+)
+def test_overlapping_sales_mismatch_fails_before_any_issuer_work(scenario, monkeypatch):
+    training = _training_source()
+    if scenario == "missing_training_vs_observed_history":
+        store, day = 1, pd.Timestamp("2015-03-02")
+        key_mask = training["Store"].eq(store) & training["Date"].eq(day)
+        history_source = training.copy(deep=True)
+        history_source.loc[key_mask, "Sales"] = 123.0
+        training.loc[key_mask, "Sales"] = np.nan
+        training.loc[key_mask, "training_label_eligible"] = False
+    else:
+        history_source = training.copy(deep=True)
+        store, day = (
+            (1, pd.Timestamp("2015-07-03"))
+            if scenario == "conflicting_nonzero"
+            else (1, pd.Timestamp("2015-06-28"))
+        )
+        key_mask = training["Store"].eq(store) & training["Date"].eq(day)
+        observed_sales = float(training.loc[key_mask, "Sales"].iloc[0])
+        if scenario == "closed_zero_conflict":
+            assert observed_sales == 0.0
+            assert int(training.loc[key_mask, "Open"].iloc[0]) == 0
+        else:
+            assert observed_sales > 0.0
+
+    history = _history_source(history_source)
+    history_mask = history["Store"].eq(store) & history["Date"].eq(day)
+    assert history_mask.any()
+    if scenario == "conflicting_nonzero":
+        # This is deliberately far below ordinary relative tolerances but still conflicts.
+        history.loc[history_mask, "Sales"] += 1e-9
+    elif scenario == "closed_zero_conflict":
+        history.loc[history_mask, "Sales"] = 42.0
+    else:
+        assert pd.isna(training.loc[key_mask, "Sales"].iloc[0])
+        assert pd.notna(history.loc[history_mask, "Sales"].iloc[0])
+
+    grid = RequestedForecastGrid(ORIGIN_1, store_ids=STORES)
+    provider, reader, references = _provider(
+        grid,
+        extra_frames={TRAINING_REF: training, HISTORY_REF: history},
+    )
+    fit_calls: list[str] = []
+    _forbid_post_validation_work(monkeypatch, fit_calls=fit_calls)
+    with pytest.raises(
+        issuer_module.Phase13IssuanceError,
+        match="Training and recursive-history Sales disagree for overlapping Store/Date keys",
+    ):
+        Phase13FreshFitIssuer().issue(provider)
+    assert fit_calls == []
+    assert reader.read_calls == references
+
+
+def test_matching_sales_views_pass_after_numeric_normalization_including_zero():
+    grid = RequestedForecastGrid(ORIGIN_1, store_ids=STORES)
+    training = _training_source()
+    day = pd.Timestamp("2015-06-28")
+    key_mask = training["Store"].eq(1) & training["Date"].eq(day)
+    training["Sales"] = training["Sales"].astype("object")
+    training.loc[key_mask, "Sales"] = "0"
+    history = _history_source(_training_source())
+    history_mask = history["Store"].eq(1) & history["Date"].eq(day)
+    assert training.loc[key_mask, "Sales"].iloc[0] == "0"
+    assert history.loc[history_mask, "Sales"].iloc[0] == 0.0
+
+    provider, _, _ = _provider(
+        grid,
+        extra_frames={TRAINING_REF: training, HISTORY_REF: history},
+    )
+    issuance, _, _ = _issue_and_capture(provider)
+    identities = dict(issuance.input_identities)
+    assert issuance.complete_path_available
+    assert identities["training"] != identities["recursive_history"]
+    assert issuance.training_counts.observed_closed_history_rows > 0
+
+
+def test_sparse_recursive_history_is_not_filled_from_training():
+    grid = RequestedForecastGrid(ORIGIN_1, store_ids=STORES)
+    training = _training_source()
+    history = _history_source(training)
+    sparse_store, sparse_day = 1, pd.Timestamp("2014-01-02")
+    training_mask = training["Store"].eq(sparse_store) & training["Date"].eq(sparse_day)
+    history_mask = history["Store"].eq(sparse_store) & history["Date"].eq(sparse_day)
+    assert training_mask.any() and history_mask.any()
+    history = history.loc[~history_mask].reset_index(drop=True)
+    provider, _, _ = _provider(
+        grid,
+        extra_frames={TRAINING_REF: training, HISTORY_REF: history},
+    )
+
+    captured_history: list[pd.DataFrame] = []
+    original_recursive = issuer_module.recursive_lightgbm_forecasts
+
+    def capture_recursive(*args, **kwargs):
+        captured_history.append(kwargs["actual_history_through_origin"].copy(deep=True))
+        return original_recursive(*args, **kwargs)
+
+    with patch.object(issuer_module, "recursive_lightgbm_forecasts", side_effect=capture_recursive):
+        issuance, _, _ = _issue_and_capture(provider)
+    assert issuance.all_requested_keys_accounted
+    assert len(captured_history) == 1
+    assert not (
+        captured_history[0]["Store"].eq(sparse_store) & captured_history[0]["Date"].eq(sparse_day)
+    ).any()
 
 
 def test_future_open_and_customers_cannot_enter_issuer_inputs(block1_issue, monkeypatch):
@@ -681,3 +829,31 @@ def test_provider_references_are_memory_only_and_no_source_file_reader_is_needed
     result = Phase13FreshFitIssuer().issue(provider)
     assert len(reader.read_calls) == 3
     assert result.all_requested_keys_accounted
+
+
+def test_block2_sales_conflict_stops_before_fit_without_new_outcome_reads(monkeypatch):
+    training = _training_source()
+    history = _history_source(training)
+    day = pd.Timestamp("2014-03-03")
+    key_mask = history["Store"].eq(1) & history["Date"].eq(day)
+    assert key_mask.any()
+    history.loc[key_mask, "Sales"] += 1.0
+
+    block2 = _block2_provider(extra_input_frames={HISTORY_REF: history})
+    outcome_reads_before = block2.outcome_reader.read_calls
+    fit_calls: list[str] = []
+    _forbid_post_validation_work(monkeypatch, fit_calls=fit_calls)
+    with pytest.raises(
+        issuer_module.Phase13IssuanceError,
+        match="Training and recursive-history Sales disagree for overlapping Store/Date keys",
+    ):
+        Phase13FreshFitIssuer().issue(block2.provider)
+
+    assert fit_calls == []
+    assert block2.input_reader.read_calls == block2.references
+    assert block2.outcome_reader.read_calls == outcome_reads_before
+    assert len(outcome_reads_before) == len(BLOCK1_DATES)
+    assert all(
+        date.fromisoformat(reference[-10:]) <= BLOCK1_DATES[-1]
+        for reference in outcome_reads_before
+    )

@@ -43,6 +43,9 @@ from rossmann_forecasting.phase13.providers import SyntheticInputProvider
 NUM_BOOST_ROUND = 180
 SAVE_LOAD_RTOL = 1e-12
 SAVE_LOAD_ATOL = 1e-9
+TRAINING_HISTORY_SALES_MISMATCH = (
+    "Training and recursive-history Sales disagree for overlapping Store/Date keys."
+)
 
 
 class Phase13IssuanceError(ValueError):
@@ -160,6 +163,47 @@ def _schema_identity() -> str:
     )
 
 
+def _validate_training_history_sales_consistency(
+    training: pd.DataFrame,
+    history: pd.DataFrame,
+) -> None:
+    """Require exact normalized Sales agreement only on canonical overlapping keys."""
+
+    training_view = training.loc[:, ["Store", "Date", "Sales"]].rename(
+        columns={"Sales": "training_sales"}
+    )
+    history_view = history.loc[:, ["Store", "Date", "Sales"]].rename(
+        columns={"Sales": "history_sales"}
+    )
+    overlap = training_view.merge(
+        history_view,
+        on=["Store", "Date"],
+        how="inner",
+        validate="one_to_one",
+        sort=False,
+    )
+    if overlap.empty:
+        return
+
+    # The input contracts normalize observed Sales to float64. Exact equality deliberately
+    # avoids reconciling distinct source observations with an arbitrary tolerance.
+    training_sales = pd.to_numeric(overlap["training_sales"], errors="raise").to_numpy(
+        dtype=np.float64, na_value=np.nan
+    )
+    history_sales = pd.to_numeric(overlap["history_sales"], errors="raise").to_numpy(
+        dtype=np.float64, na_value=np.nan
+    )
+    training_missing = np.isnan(training_sales)
+    history_missing = np.isnan(history_sales)
+    same_observation_status = np.array_equal(training_missing, history_missing)
+    both_observed = ~training_missing & ~history_missing
+    same_observed_values = np.equal(
+        training_sales[both_observed], history_sales[both_observed]
+    ).all()
+    if not same_observation_status or not same_observed_values:
+        raise Phase13IssuanceError(TRAINING_HISTORY_SALES_MISMATCH)
+
+
 def _frozen_recipe() -> dict[str, Any]:
     trial_parameters = dict(TRIAL_PARAMETERS["A"])
     configuration = {
@@ -239,6 +283,8 @@ def _validate_inputs(
         raise Phase13IssuanceError(
             "Eligible training rows must equal observed source Open=1 with valid Sales."
         )
+
+    _validate_training_history_sales_consistency(training, history)
 
     valid_mask = labels.notna()
     valid_rows = training.loc[valid_mask].copy()
