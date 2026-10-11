@@ -13,9 +13,39 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1/M2 are integrated; M3 is IMPLEMENTED / UNDER REVIEW; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
-| Phase 13 — Sequential final evaluation | **M1/M2 INTEGRATED; M3 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. M3 is on `feat/phase-13-m3-frozen-uncertainty-targets`; Draft PR and CI status are tracked there. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
+| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1–M3 are integrated after PR #40; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
+| Phase 13 — Sequential final evaluation | **M1/M2/M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. PR #40 integrated the M3 adapter and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 
+### CC-02 course-compliance seasonal decomposition — 2026-10-11
+
+The focused branch `feat/course-cc02-seasonal-decomposition` starts from verified live
+`origin/main` at `1426f29878fd8d7aaa920482310c02842498198b`; the prior local tracking ref was stale.
+CC-02 adds robust weekly STL (`period=7`) as a retrospective EDA diagnostic over finite contiguous
+Store/Date/Sales segments through 2015-07-03. It requires 56 days, caps the most recent eligible
+segment at 112 rows, and chooses the first three eligible Store IDs in ascending order. Missing
+calendar dates and missing/non-finite values split segments, observed zeros remain, and the
+components are checked to reconstruct observed Sales. The diagnostic is not a forecast, causal
+result, feature, model-selection input, or Phase 13 operation. See the [completed CC-02 plan](../plans/completed/cc-02-seasonal-decomposition.md)
+and [ADR-027](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
+
+The dedicated command only describes the trusted-input contract or fails closed. It has no source
+path or bypass option and opens no data; actual API use requires an already-authorized in-memory
+frame. Before any real run, a separately approved provider must prove physical separation from the
+combined prepared artifact and protected period, establish the cutoff before opening/hashing data,
+and carry a reviewable owner-approved preflight reference. No such provider is configured here.
+
+Focused synthetic tests passed **20/20**. The full fixture suite passed **671** tests with **one
+skip** for a canonical artifact-dependent test in an isolated clean worktree with no source or
+prepared artifacts; one existing Starlette/httpx deprecation warning was reported. Whole-repository
+Ruff lint/format, 304 Markdown destinations/anchors, `uv lock --check`, and `git diff --check`
+passed. An 84-day synthetic figure was visually inspected; maximum absolute reconstruction error
+was approximately `2.3e-13`. Generated synthetic component/figure/manifest outputs stayed in
+temporary directories. No Rossmann source, combined prepared artifact, holdout outcome, EDA pipeline,
+model, or Phase 13 command was read or run.
+
+**State:** CC-02 is IMPLEMENTED / UNDER REVIEW on the focused branch. [Draft PR #41](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/41)
+is open at head `46cb013506a6b2f35335beb07ba0f22f72af74df`; independent review is pending. Merge
+and Phase 13 closeout are not authorized by this task.
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
 squash-merge commit reported by GitHub. PR #7 is merged into `main`. The merged tree contains the
@@ -210,8 +240,7 @@ was performed.
 
 Phases 0–12 are COMPLETE; Phase 13 remains PLANNED / NOT APPROVED; the protected July 4–31
 holdout remains unreleased. The [active Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
-records methods under ADR-026 and the owner's A-bounded scope under ADR-025. M1 and M2 are
-integrated; M3 is IMPLEMENTED / UNDER REVIEW under the separate synthetic-only task authorization.
+records methods under ADR-026 and the owner's A-bounded scope under ADR-025. M1–M3 are integrated after PR #40. Phase 13 remains PLANNED / NOT APPROVED, and the existing source, rehearsal, staging, release and later-milestone gates remain unchanged.
 Source and preparation preflight, development rehearsal, protected-source staging, analytical
 release, M4 and later milestones, and Phase 14 remain outside this authorization.
 

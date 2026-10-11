@@ -34,5 +34,5 @@ was visually inspected; component reconstruction's maximum absolute error was ab
 
 No Rossmann file, combined prepared artifact, real-data EDA, model pipeline, or protected outcome was
 read or executed. The CLI remains closed until a separately reviewed physically isolated
-development-only provider and owner approval exist. The branch is ready for the authorized Draft
-PR and independent review; no merge or Phase 13 closeout is part of this task.
+development-only provider and owner approval exist. [Draft PR #41](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/41)
+is open for independent review; no merge or Phase 13 closeout is part of this task.
