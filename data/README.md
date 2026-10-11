@@ -86,6 +86,24 @@ and a manifest. The manifest identifies direct Python API execution or preserves
 caller-supplied invocation, while recording the exporter entry point and output hashes. Figures
 label their source as a synthetic fixture or development-only input according to caller provenance.
 Each export requires a new or empty destination and refuses to overwrite an existing run.
-The current CLI has no source-file reader; real execution requires a separately reviewed trusted
-development-only provider and owner approval. Do not create that input by reading and filtering the
-combined prepared train artifact.
+The fixture-tested provider API is implemented in
+`src/rossmann_forecasting/data/cc02_development.py`. It accepts only a trusted, externally issued
+approval binding for one exact bundle under `data/interim/cc02_development/<artifact_id>/`, with the
+fixed files `sales.parquet` and `partition_manifest.json`. It hashes the pinned manifest before the
+partition, checks the exact approved Parquet bytes, strict three-column schema, row/store counts,
+date bounds and provenance references, then decodes the same in-memory byte snapshot it hashed.
+Supported representations are Store `int64`, timezone-naive Date `datetime64[ns]` or
+`datetime64[us]`, and Sales `int64` or `float64`; null/non-finite float Sales and observed zeros are
+preserved. The 128 MiB partition, 64 KiB manifest and 1.2 million row limits bound local memory.
+The returned frame is copy-safe and its exact partition/manifest byte hashes remain separate from
+the CC-02 canonical in-memory projection hash.
+
+These Python checks enforce an application-level allowlist and detect path aliases where the
+operating system exposes them. They do not authenticate an approver, prove custody or guarantee
+physical isolation against a privileged process. A separate trusted custodian must create and
+document an immutable development partition under an independently authorized preparation
+procedure before an external approval binding can be issued. Mechanical source access and
+analytical release are distinct approval gates. This task created no real partition and configured
+no real-data approval. The CLI has no filesystem reader or binding option and remains fail-closed.
+Never create the partition by reading/filtering `data/interim/train.parquet`; do not fall back to
+raw or feature artifacts.
