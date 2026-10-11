@@ -250,6 +250,19 @@ Paired target adapters freeze one H14 target set per origin for both policies, R
 P=L+1. They apply the accepted Phase 10 equations: baseline `m × sum(planned_open)`; forecast
 `D=sum(operational points)`, `U=max(0,D+q)`, safety `max(0,U-D)`, and target `max(D,U)`. Baseline
 anchor and forecast-prefix availability are independent; turnover-proxy semantics remain explicit.
+
+The P40-01 correction binds each synthetic mean anchor to one Store and origin in a typed
+collection whose identity includes the per-Store value/status and provenance. The collection must
+match the issuance Store universe and origin; missing Store keys stay unavailable and are never
+filled, borrowed, or broadcast. The P40-02 correction requires matching daily lower/upper sample
+counts at each horizon and matching cumulative complete-prefix counts across probabilities at
+each prefix, while preserving the frozen rank equations, floors, and per-probability quantile
+availability. The P40-03 correction validates the exact complete paired target schema, identity,
+origin and key set, availability/value/reason combinations, and per-Store anchor provenance when
+constructing the defensive synthetic output snapshot. Synthetic regressions cover Store-specific
+golden targets, inconsistent sample counts, and forged target snapshots; validation evidence is
+recorded in [PROGRESS](../../docs/PROGRESS.md).
+
 The focused synthetic M3 suite passed 47 tests; final repository validation is recorded in
 [PROGRESS](../../docs/PROGRESS.md).
 

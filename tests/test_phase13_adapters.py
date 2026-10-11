@@ -28,10 +28,12 @@ from rossmann_forecasting.phase13.adapters import (
     UNCERTAINTY_POLICY_VERSION,
     FitBCanonicalMetadata,
     FitBTransportMetadata,
+    OriginFrozenStandingTargets,
     Phase13AdapterError,
     Phase13M3Adapter,
     SyntheticFitBQuantileFixture,
     SyntheticHistoricalMeanAnchor,
+    SyntheticHistoricalMeanAnchorCollection,
     load_canonical_fit_b_quantiles,
 )
 from rossmann_forecasting.phase13.contracts import (
@@ -280,12 +282,13 @@ def _cumulative_table(
 ) -> pd.DataFrame:
     unsupported_keys = unsupported_keys or set()
     sample_counts = sample_counts or {}
+    unsupported_prefixes = {k for k, _probability in unsupported_keys}
     rows = []
     for k in range(1, HORIZON + 1):
         for probability in CUMULATIVE_LEVELS:
             n = sample_counts.get(
                 (k, probability),
-                49 if (k, probability) in unsupported_keys else 100,
+                49 if k in unsupported_prefixes else 100,
             )
             q_by_probability = {0.90: -5.0, 0.95: 2.0, 0.98: 4.0}
             unsupported = n < 50
@@ -341,6 +344,42 @@ def _fixture(
             feature_schema_identity=raw.feature_schema_identity,
         ),
         calibration_metadata=metadata,
+    )
+
+
+def _anchor_collection(
+    origin: date = ORIGIN_1,
+    *,
+    means: dict[int, float] | None = None,
+    unavailable: dict[int, str] | None = None,
+    missing: set[int] | None = None,
+) -> SyntheticHistoricalMeanAnchorCollection:
+    means = {store: 100.0 for store in STORES} if means is None else means
+    unavailable = {} if unavailable is None else unavailable
+    missing = set() if missing is None else missing
+    provenance = SourceProvenance(
+        source_id="phase13.synthetic.mean-anchor",
+        version="fixture-v1",
+        provenance="Artificial per-Store origin-bound mean anchor.",
+        availability_assumption=AvailabilityAssumption.SYNTHETIC_RULE,
+    )
+    anchors = tuple(
+        SyntheticHistoricalMeanAnchor(
+            store_id=store,
+            forecast_origin=origin,
+            identity=f"synthetic://phase13/mean-anchor/store-{store}/{origin.isoformat()}",
+            provenance=provenance,
+            available=store not in unavailable,
+            mean_open_sales_value=(None if store in unavailable else means[store]),
+            unavailable_reason=unavailable.get(store),
+        )
+        for store in STORES
+        if store not in missing
+    )
+    return SyntheticHistoricalMeanAnchorCollection(
+        origin=origin,
+        store_ids=STORES,
+        anchors=anchors,
     )
 
 
@@ -574,7 +613,7 @@ def test_unsupported_horizon_and_prefix_are_not_borrowed_from_neighbors() -> Non
     assert not intervals.loc[intervals["horizon"].eq(3), "raw_interval_available"].any()
     assert intervals.loc[intervals["horizon"].eq(4), "raw_interval_available"].all()
     prefixes = result.prefixes_to_frame()
-    assert not prefixes.loc[prefixes["k"].eq(3) & prefixes["p"].eq(0.95), "available"].any()
+    assert not prefixes.loc[prefixes["k"].eq(3), "available"].any()
     assert prefixes.loc[prefixes["k"].eq(4) & prefixes["p"].eq(0.95), "available"].all()
 
 
@@ -753,14 +792,75 @@ def test_exact_quantile_keys_duplicates_probabilities_and_ranks_are_validated() 
         )
 
 
+def test_daily_fixture_rejects_different_sample_counts_between_tails() -> None:
+    raw = _raw_issuance()
+    good = _fixture(raw)
+    daily = good.daily_to_frame()
+    mask = daily["horizon"].eq(3) & daily["tail"].eq("upper")
+    daily.loc[mask, "n"] = 101
+    daily.loc[mask, "rank_1_indexed"] = _daily_rank(101, "upper")
+    with pytest.raises(Phase13AdapterError, match="tails must share the same calibration sample"):
+        SyntheticFitBQuantileFixture(
+            daily,
+            good.cumulative_to_frame(),
+            fixture_id=good.fixture_id,
+            transport=good.transport,
+        )
+
+
+def test_cumulative_fixture_rejects_different_sample_counts_between_probabilities() -> None:
+    raw = _raw_issuance()
+    good = _fixture(raw)
+    cumulative = good.cumulative_to_frame()
+    mask = cumulative["k"].eq(4) & cumulative["p"].eq(0.95)
+    cumulative.loc[mask, "n"] = 101
+    cumulative.loc[mask, "rank_1_indexed"] = _upper_rank(101, 0.95)
+    with pytest.raises(Phase13AdapterError, match="must share the same complete-sample count"):
+        SyntheticFitBQuantileFixture(
+            good.daily_to_frame(),
+            cumulative,
+            fixture_id=good.fixture_id,
+            transport=good.transport,
+        )
+
+
+def test_one_probability_can_keep_saved_nonfinite_reason_with_common_prefix_count() -> None:
+    raw = _raw_issuance()
+    good = _fixture(raw)
+    cumulative = good.cumulative_to_frame()
+    mask = cumulative["k"].eq(3) & cumulative["p"].eq(0.95)
+    cumulative.loc[mask, "signed_quantile"] = None
+    cumulative.loc[mask, "available"] = False
+    cumulative.loc[mask, "unavailable_reason"] = "nonfinite_quantile"
+    fixture = _fixture(raw, cumulative=cumulative)
+    result = Phase13M3Adapter().issue(raw, _planned_open(), fixture)
+    prefix = (
+        result.prefixes_to_frame()
+        .loc[lambda frame: frame["Store"].eq(1) & frame["k"].eq(3)]
+        .set_index("p")
+    )
+    assert prefix["cumulative_quantile_n"].nunique() == 1
+    assert bool(prefix.loc[0.90, "quantile_available"])
+    assert not bool(prefix.loc[0.95, "quantile_available"])
+    assert prefix.loc[0.95, "quantile_unavailable_reason"] == "nonfinite_quantile"
+    assert bool(prefix.loc[0.98, "quantile_available"])
+
+
+def test_below_floor_cumulative_prefix_marks_all_probabilities_unavailable() -> None:
+    fixture = _fixture(_raw_issuance(), cumulative_unsupported={(3, 0.95)})
+    rows = fixture.cumulative_to_frame().loc[lambda frame: frame["k"].eq(3)]
+    assert rows["n"].eq(49).all()
+    assert not rows["available"].any()
+    assert rows["unavailable_reason"].eq("insufficient_calibration").all()
+    assert rows["rank_1_indexed"].tolist() == [
+        _upper_rank(49, probability) for probability in CUMULATIVE_LEVELS
+    ]
+
+
 def test_baseline_and_forecast_targets_match_phase10_equations() -> None:
     _raw, _schedule, _fixture_value, issuance = _issue()
-    anchor = SyntheticHistoricalMeanAnchor(
-        identity="synthetic://phase13/mean-anchor",
-        available=True,
-        mean_open_sales_value=100.0,
-    )
-    targets = issuance.build_standing_targets(anchor).to_frame()
+    anchors = _anchor_collection(issuance.origin)
+    targets = issuance.build_standing_targets(anchors).to_frame()
     key = (
         targets["Store"].eq(1) & targets["lead_time"].eq(2) & targets["buffer_probability"].eq(0.95)
     )
@@ -779,14 +879,102 @@ def test_baseline_and_forecast_targets_match_phase10_equations() -> None:
     assert not forecast["calibration_transport_valid"]
 
 
+def test_store_bound_anchor_golden_targets_and_provenance_are_distinct() -> None:
+    _raw, _schedule, _fixture_value, issuance = _issue()
+    anchors = _anchor_collection(issuance.origin, means={1: 100.0, 2: 500.0})
+    targets = issuance.build_standing_targets(anchors)
+    frame = targets.to_frame()
+    baseline = frame.loc[
+        frame["lead_time"].eq(2)
+        & frame["buffer_probability"].eq(0.95)
+        & frame["policy_id"].eq(POLICY_IDS[0])
+    ].set_index("Store")
+    assert baseline.loc[1, "open_days_in_protection_period"] == 2
+    assert baseline.loc[2, "open_days_in_protection_period"] == 2
+    assert baseline.loc[1, "target_value"] == 200.0
+    assert baseline.loc[2, "target_value"] == 1000.0
+    assert baseline.loc[1, "anchor_identity"] != baseline.loc[2, "anchor_identity"]
+    assert baseline.loc[1, "anchor_source_id"] == baseline.loc[2, "anchor_source_id"]
+    assert baseline.loc[1, "anchor_collection_identity"] == anchors.identity
+    assert targets.anchor_collection_identity == anchors.identity
+
+
+def test_store_specific_anchor_availability_zero_and_missing_key_do_not_borrow() -> None:
+    _raw, _schedule, _fixture_value, issuance = _issue()
+    unavailable = _anchor_collection(
+        issuance.origin, means={1: 0.0, 2: 500.0}, unavailable={1: "store_1_anchor_unavailable"}
+    )
+    unavailable_frame = issuance.build_standing_targets(unavailable).to_frame()
+    baseline = unavailable_frame.loc[
+        unavailable_frame["lead_time"].eq(2)
+        & unavailable_frame["buffer_probability"].eq(0.95)
+        & unavailable_frame["policy_id"].eq(POLICY_IDS[0])
+    ].set_index("Store")
+    assert not baseline.loc[1, "target_available"]
+    assert baseline.loc[1, "availability_reason"] == "store_1_anchor_unavailable"
+    assert pd.isna(baseline.loc[1, "target_value"])
+    assert baseline.loc[2, "target_available"]
+    assert baseline.loc[2, "target_value"] == 1000.0
+
+    zero_and_positive = _anchor_collection(issuance.origin, means={1: 0.0, 2: 500.0})
+    zero_frame = issuance.build_standing_targets(zero_and_positive).to_frame()
+    zero_baseline = zero_frame.loc[
+        zero_frame["lead_time"].eq(2)
+        & zero_frame["buffer_probability"].eq(0.95)
+        & zero_frame["policy_id"].eq(POLICY_IDS[0])
+    ].set_index("Store")
+    assert zero_baseline["target_available"].all()
+    assert zero_baseline.loc[1, "target_value"] == 0.0
+    assert zero_baseline.loc[2, "target_value"] == 1000.0
+
+    missing = _anchor_collection(issuance.origin, means={1: 0.0, 2: 500.0}, missing={1})
+    missing_frame = issuance.build_standing_targets(missing).to_frame()
+    missing_baseline = missing_frame.loc[
+        missing_frame["lead_time"].eq(2)
+        & missing_frame["buffer_probability"].eq(0.95)
+        & missing_frame["policy_id"].eq(POLICY_IDS[0])
+    ].set_index("Store")
+    assert not missing_baseline.loc[1, "target_available"]
+    assert missing_baseline.loc[1, "availability_reason"] == "anchor_missing"
+    assert pd.isna(missing_baseline.loc[1, "target_value"])
+    assert pd.isna(missing_baseline.loc[1, "anchor_identity"])
+    assert missing_baseline.loc[2, "target_value"] == 1000.0
+
+
+def test_anchor_collection_rejects_duplicate_and_cross_origin_keys() -> None:
+    valid = _anchor_collection()
+    with pytest.raises(Phase13AdapterError, match="duplicate Store/origin keys"):
+        SyntheticHistoricalMeanAnchorCollection(
+            origin=ORIGIN_1,
+            store_ids=STORES,
+            anchors=(*valid.anchors, valid.anchors[0]),
+        )
+    other_origin_anchor = _anchor_collection(ORIGIN_2).anchors[0]
+    with pytest.raises(Phase13AdapterError, match="cross-origin anchor"):
+        SyntheticHistoricalMeanAnchorCollection(
+            origin=ORIGIN_1,
+            store_ids=STORES,
+            anchors=(other_origin_anchor,),
+        )
+
+
+def test_target_builder_rejects_wrong_origin_and_store_universe() -> None:
+    _raw, _schedule, _fixture_value, issuance = _issue()
+    with pytest.raises(Phase13AdapterError, match="origin differs"):
+        issuance.build_standing_targets(_anchor_collection(ORIGIN_2))
+    smaller_roster = SyntheticHistoricalMeanAnchorCollection(
+        origin=issuance.origin,
+        store_ids=(1,),
+        anchors=(_anchor_collection(issuance.origin).anchors[0],),
+    )
+    with pytest.raises(Phase13AdapterError, match="Store universe differs"):
+        issuance.build_standing_targets(smaller_roster)
+
+
 def test_all_approved_lead_times_probabilities_and_paired_policy_rows_are_present() -> None:
     _raw, _schedule, _fixture_value, issuance = _issue()
-    anchor = SyntheticHistoricalMeanAnchor(
-        identity="synthetic://phase13/mean-anchor",
-        available=True,
-        mean_open_sales_value=100.0,
-    )
-    targets = issuance.build_standing_targets(anchor).to_frame()
+    anchors = _anchor_collection(issuance.origin)
+    targets = issuance.build_standing_targets(anchors).to_frame()
     assert set(targets["lead_time"]) == set(range(2, 8))
     assert set(targets["review_period"]) == {1}
     assert set(targets["protection_period"]) == set(range(3, 9))
@@ -820,14 +1008,109 @@ def test_all_approved_lead_times_probabilities_and_paired_policy_rows_are_presen
         assert row["target_value"] == max(expected_demand, expected_upper)
 
 
+@pytest.mark.parametrize(
+    "forgery",
+    (
+        "duplicate_keys",
+        "missing_policy_rows",
+        "wrong_origin",
+        "negative_available_target",
+        "null_available_target",
+        "available_target_has_reason",
+        "numeric_unavailable_target",
+        "mismatched_identity",
+    ),
+)
+def test_origin_frozen_target_constructor_rejects_forged_snapshots(forgery: str) -> None:
+    _raw, _schedule, _fixture_value, issuance = _issue()
+    anchors = _anchor_collection(
+        issuance.origin,
+        unavailable={1: "store_1_anchor_unavailable"}
+        if forgery == "numeric_unavailable_target"
+        else {},
+    )
+    valid = issuance.build_standing_targets(anchors)
+    records = valid.to_frame()
+
+    if forgery == "duplicate_keys":
+        records = pd.concat([records, records.iloc[[0]]], ignore_index=True)
+    elif forgery == "missing_policy_rows":
+        records = records.loc[
+            ~(records["Store"].eq(1) & records["policy_id"].eq(POLICY_IDS[0]))
+        ].copy()
+    elif forgery == "wrong_origin":
+        records["forecast_origin"] = ORIGIN_2
+    elif forgery == "negative_available_target":
+        index = records.index[records["target_available"]][0]
+        records.loc[index, "target_value"] = -1.0
+    elif forgery == "null_available_target":
+        index = records.index[records["target_available"]][0]
+        records.loc[index, "target_value"] = None
+    elif forgery == "available_target_has_reason":
+        index = records.index[records["target_available"]][0]
+        records.loc[index, "availability_reason"] = "spurious_reason"
+    elif forgery == "numeric_unavailable_target":
+        index = records.index[~records["target_available"]][0]
+        records.loc[index, "target_value"] = 0.0
+    elif forgery == "mismatched_identity":
+        records.loc[records.index[0], "issuance_identity"] = "0" * 64
+
+    with pytest.raises(Phase13AdapterError):
+        OriginFrozenStandingTargets(
+            origin=valid.origin,
+            store_ids=valid.store_ids,
+            issuance_identity=valid.issuance_identity,
+            anchor_collection_identity=valid.anchor_collection_identity,
+            records=records,
+        )
+
+
+def test_origin_frozen_target_constructor_rejects_schema_and_outcome_fields() -> None:
+    _raw, _schedule, _fixture_value, issuance = _issue()
+    valid = issuance.build_standing_targets(_anchor_collection(issuance.origin))
+    omitted = valid.to_frame().drop(columns=["policy_id"])
+    with pytest.raises(Phase13AdapterError, match="typed schema"):
+        OriginFrozenStandingTargets(
+            origin=valid.origin,
+            store_ids=valid.store_ids,
+            issuance_identity=valid.issuance_identity,
+            anchor_collection_identity=valid.anchor_collection_identity,
+            records=omitted,
+        )
+    forbidden = valid.to_frame().assign(Sales=1.0)
+    with pytest.raises(Phase13AdapterError, match="forbidden outcome fields"):
+        OriginFrozenStandingTargets(
+            origin=valid.origin,
+            store_ids=valid.store_ids,
+            issuance_identity=valid.issuance_identity,
+            anchor_collection_identity=valid.anchor_collection_identity,
+            records=forbidden,
+        )
+
+
+@pytest.mark.parametrize("identity_field", ("issuance_identity", "anchor_collection_identity"))
+def test_origin_frozen_target_constructor_requires_sha256_identities(identity_field: str) -> None:
+    _raw, _schedule, _fixture_value, issuance = _issue()
+    valid = issuance.build_standing_targets(_anchor_collection(issuance.origin))
+    identities = {
+        "issuance_identity": valid.issuance_identity,
+        "anchor_collection_identity": valid.anchor_collection_identity,
+    }
+    identities[identity_field] = "invalid"
+    with pytest.raises(Phase13AdapterError, match="must be SHA-256"):
+        OriginFrozenStandingTargets(
+            origin=valid.origin,
+            store_ids=valid.store_ids,
+            issuance_identity=identities["issuance_identity"],
+            anchor_collection_identity=identities["anchor_collection_identity"],
+            records=valid.to_frame(),
+        )
+
+
 def test_zero_historical_mean_anchor_is_available_zero_not_missing() -> None:
     _raw, _schedule, _fixture_value, issuance = _issue()
-    anchor = SyntheticHistoricalMeanAnchor(
-        identity="synthetic://phase13/zero-mean-anchor",
-        available=True,
-        mean_open_sales_value=0.0,
-    )
-    targets = issuance.build_standing_targets(anchor).to_frame()
+    anchors = _anchor_collection(issuance.origin, means={1: 0.0, 2: 0.0})
+    targets = issuance.build_standing_targets(anchors).to_frame()
     baseline = targets.loc[targets["policy_id"].eq(POLICY_IDS[0])]
     assert baseline["target_available"].all()
     assert baseline["target_value"].eq(0.0).all()
@@ -836,13 +1119,8 @@ def test_zero_historical_mean_anchor_is_available_zero_not_missing() -> None:
 
 def test_anchor_and_forecast_prefix_availability_are_independent() -> None:
     _raw, _schedule, _fixture_value, issuance = _issue(unavailable={(1, 4)})
-    unavailable_anchor = SyntheticHistoricalMeanAnchor(
-        identity="synthetic://phase13/unavailable-anchor",
-        available=False,
-        mean_open_sales_value=None,
-        unavailable_reason="synthetic_anchor_unavailable",
-    )
-    targets = issuance.build_standing_targets(unavailable_anchor).to_frame()
+    anchors = _anchor_collection(issuance.origin, unavailable={1: "synthetic_anchor_unavailable"})
+    targets = issuance.build_standing_targets(anchors).to_frame()
     l2 = targets.loc[
         targets["Store"].eq(1) & targets["lead_time"].eq(2) & targets["buffer_probability"].eq(0.95)
     ]
@@ -863,12 +1141,8 @@ def test_no_baseline_or_point_only_fallback_when_exact_q_is_unavailable() -> Non
     raw = _raw_issuance()
     fixture = _fixture(raw, cumulative_unsupported={(3, 0.95)})
     result = Phase13M3Adapter().issue(raw, _planned_open(), fixture)
-    anchor = SyntheticHistoricalMeanAnchor(
-        identity="synthetic://phase13/mean-anchor",
-        available=True,
-        mean_open_sales_value=100.0,
-    )
-    targets = result.build_standing_targets(anchor).to_frame()
+    anchors = _anchor_collection(result.origin)
+    targets = result.build_standing_targets(anchors).to_frame()
     mask = (
         targets["Store"].eq(1) & targets["lead_time"].eq(2) & targets["buffer_probability"].eq(0.95)
     )
@@ -883,12 +1157,8 @@ def test_no_baseline_or_point_only_fallback_when_exact_q_is_unavailable() -> Non
 
 def test_unknown_schedule_prefix_keeps_target_unavailable_without_zero_fallback() -> None:
     _raw, _schedule, _fixture_value, issuance = _issue(unknown={(1, 3)})
-    anchor = SyntheticHistoricalMeanAnchor(
-        identity="synthetic://phase13/mean-anchor",
-        available=True,
-        mean_open_sales_value=100.0,
-    )
-    targets = issuance.build_standing_targets(anchor).to_frame()
+    anchors = _anchor_collection(issuance.origin)
+    targets = issuance.build_standing_targets(anchors).to_frame()
     subset = targets.loc[
         targets["Store"].eq(1) & targets["lead_time"].eq(2) & targets["buffer_probability"].eq(0.95)
     ]
@@ -958,16 +1228,12 @@ def test_mutating_sealed_outcome_fixture_cannot_change_any_issued_output() -> No
 
 
 def test_each_origin_freezes_a_distinct_paired_target_set_without_daily_refresh() -> None:
-    anchor = SyntheticHistoricalMeanAnchor(
-        identity="synthetic://phase13/mean-anchor",
-        available=True,
-        mean_open_sales_value=100.0,
-    )
     results = []
     targets_by_origin = []
     for origin in SUPPORTED_ORIGINS:
         raw, _schedule, _fixture_value, result = _issue(origin)
-        targets = result.build_standing_targets(anchor)
+        anchors = _anchor_collection(origin)
+        targets = result.build_standing_targets(anchors)
         frame = targets.to_frame()
         assert result.origin == origin
         assert targets.origin == origin

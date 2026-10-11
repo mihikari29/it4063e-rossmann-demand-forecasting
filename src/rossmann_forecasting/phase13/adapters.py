@@ -25,8 +25,10 @@ from rossmann_forecasting.phase13.contracts import (
     HORIZON,
     SUPPORTED_ORIGINS,
     SYNTHETIC_OPEN_RULE_ID,
+    AvailabilityAssumption,
     ForecastOrigin,
     RequestedForecastGrid,
+    SourceProvenance,
     SyntheticPlannedOpen,
 )
 from rossmann_forecasting.phase13.issuer import (
@@ -85,6 +87,62 @@ _CUMULATIVE_COLUMNS = (
     "policy_version",
     "selected_candidate_id",
     "calibration_windows",
+)
+TARGET_COLUMNS = (
+    "Store",
+    "forecast_origin",
+    "model_identity",
+    "model_fit_identity",
+    "fresh_model_fit_identity",
+    "calibration_fit_identity",
+    "calibration_run_id",
+    "calibration_manifest_sha256",
+    "calibration_daily_table_sha256",
+    "calibration_cumulative_table_sha256",
+    "calibration_policy_config_sha256",
+    "calibration_config_sha256",
+    "daily_fixture_sha256",
+    "cumulative_fixture_sha256",
+    "quantile_fixture_identity",
+    "transport_status",
+    "calibration_transport_valid",
+    "schedule_identity",
+    "schedule_rule_id",
+    "schedule_source_id",
+    "schedule_version",
+    "schedule_provenance",
+    "schedule_availability_assumption",
+    "anchor_collection_identity",
+    "anchor_identity",
+    "anchor_store_id",
+    "anchor_origin",
+    "anchor_source_id",
+    "anchor_version",
+    "anchor_provenance",
+    "anchor_availability_assumption",
+    "anchor_parent_identities",
+    "anchor_available",
+    "anchor_unavailable_reason",
+    "mean_open_sales_value",
+    "anchor_semantics",
+    "open_days_in_protection_period",
+    "lead_time",
+    "review_period",
+    "protection_period",
+    "buffer_probability",
+    "cumulative_signed_quantile",
+    "quantile_available",
+    "quantile_unavailable_reason",
+    "forecast_protection_demand_value",
+    "upper_turnover_value",
+    "safety_stock_value",
+    "input_semantics",
+    "issuance_identity",
+    "policy_id",
+    "target_value",
+    "target_available",
+    "availability_reason",
+    "buffer_interpretation",
 )
 _RAW_REQUIRED_COLUMNS = {
     "requested_key",
@@ -248,9 +306,12 @@ class SyntheticFitBQuantileFixture:
 
 @dataclass(frozen=True, slots=True)
 class SyntheticHistoricalMeanAnchor:
-    """One declared synthetic open-day mean turnover anchor; no outcome rows are accepted."""
+    """One synthetic mean anchor bound to a single Store and Phase 13 origin."""
 
+    store_id: int
+    forecast_origin: date
     identity: str
+    provenance: SourceProvenance
     available: bool
     mean_open_sales_value: float | None
     unavailable_reason: str | None = None
@@ -258,12 +319,27 @@ class SyntheticHistoricalMeanAnchor:
     synthetic_only: bool = True
 
     def __post_init__(self) -> None:
-        if not self.identity.startswith("synthetic://phase13/"):
+        if not isinstance(self.identity, str) or not self.identity.startswith(
+            "synthetic://phase13/"
+        ):
             raise Phase13AdapterError("Target anchor must have a synthetic fixture identity.")
+        try:
+            grid = RequestedForecastGrid(self.forecast_origin, (self.store_id,))
+        except (TypeError, ValueError) as exc:
+            raise Phase13AdapterError("Target anchor Store/origin binding is invalid.") from exc
+        if not isinstance(self.provenance, SourceProvenance):
+            raise Phase13AdapterError("Target anchor requires typed source provenance.")
+        if self.provenance.availability_assumption != AvailabilityAssumption.SYNTHETIC_RULE:
+            raise Phase13AdapterError("Target anchor provenance must identify synthetic input.")
+        if not isinstance(self.available, (bool, np.bool_)):
+            raise Phase13AdapterError("Target anchor availability must be explicit Boolean.")
         if self.synthetic_only is not True:
             raise Phase13AdapterError("Target construction accepts synthetic anchors only.")
         if self.semantics != SYNTHETIC_TARGET_SEMANTICS:
             raise Phase13AdapterError("Target anchor turnover semantics are incompatible.")
+        object.__setattr__(self, "store_id", grid.store_ids[0])
+        object.__setattr__(self, "forecast_origin", grid.origin.value)
+        object.__setattr__(self, "available", bool(self.available))
         if self.available:
             value = _finite_number(self.mean_open_sales_value, "mean_open_sales_value")
             if value < 0 or self.unavailable_reason is not None:
@@ -273,6 +349,81 @@ class SyntheticHistoricalMeanAnchor:
             self.unavailable_reason
         ):
             raise Phase13AdapterError("Unavailable synthetic anchor requires only a reason.")
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class SyntheticHistoricalMeanAnchorCollection:
+    """Origin-bound anchors for an exact requested Store universe; missing keys stay missing."""
+
+    origin: date
+    store_ids: tuple[int, ...]
+    anchors: tuple[SyntheticHistoricalMeanAnchor, ...]
+    identity: str
+
+    def __init__(
+        self,
+        *,
+        origin: date,
+        store_ids: tuple[int, ...],
+        anchors: tuple[SyntheticHistoricalMeanAnchor, ...],
+    ) -> None:
+        try:
+            grid = RequestedForecastGrid(origin, tuple(store_ids))
+            anchor_values = tuple(anchors)
+        except (TypeError, ValueError) as exc:
+            raise Phase13AdapterError(
+                "Target anchor collection origin/universe is invalid."
+            ) from exc
+        if any(not isinstance(anchor, SyntheticHistoricalMeanAnchor) for anchor in anchor_values):
+            raise Phase13AdapterError("Target anchor collection contains an untyped anchor.")
+        keys = [(anchor.store_id, anchor.forecast_origin) for anchor in anchor_values]
+        if len(keys) != len(set(keys)):
+            raise Phase13AdapterError(
+                "Target anchor collection contains duplicate Store/origin keys."
+            )
+        if any(anchor.forecast_origin != grid.origin.value for anchor in anchor_values):
+            raise Phase13AdapterError("Target anchor collection contains a cross-origin anchor.")
+        if any(anchor.store_id not in grid.store_ids for anchor in anchor_values):
+            raise Phase13AdapterError("Target anchor Store is outside the requested universe.")
+        if len({anchor.identity for anchor in anchor_values}) != len(anchor_values):
+            raise Phase13AdapterError(
+                "Target anchor identities must be unique within the collection."
+            )
+        payload = {
+            "contract": "phase13-synthetic-mean-anchor-collection-v1",
+            "origin": grid.origin.value.isoformat(),
+            "store_ids": grid.store_ids,
+            "anchors": [
+                {
+                    "store_id": anchor.store_id,
+                    "origin": anchor.forecast_origin.isoformat(),
+                    "identity": anchor.identity,
+                    "available": anchor.available,
+                    "mean_open_sales_value": anchor.mean_open_sales_value,
+                    "unavailable_reason": anchor.unavailable_reason,
+                    "semantics": anchor.semantics,
+                    "provenance": {
+                        "source_id": anchor.provenance.source_id,
+                        "version": anchor.provenance.version,
+                        "provenance": anchor.provenance.provenance,
+                        "availability_assumption": (
+                            anchor.provenance.availability_assumption.value
+                        ),
+                        "parent_identities": anchor.provenance.parent_identities,
+                    },
+                }
+                for anchor in sorted(anchor_values, key=lambda row: row.store_id)
+            ],
+        }
+        object.__setattr__(self, "origin", grid.origin.value)
+        object.__setattr__(self, "store_ids", grid.store_ids)
+        object.__setattr__(self, "anchors", anchor_values)
+        object.__setattr__(self, "identity", _digest(payload))
+
+    def for_store(self, store_id: int) -> SyntheticHistoricalMeanAnchor | None:
+        """Return the exact origin-bound anchor, or None when that Store key is absent."""
+
+        return next((anchor for anchor in self.anchors if anchor.store_id == store_id), None)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -468,11 +619,11 @@ class Phase13M3Issuance:
         return self._prefixes.copy(deep=True)
 
     def build_standing_targets(
-        self, anchor: SyntheticHistoricalMeanAnchor
+        self, anchors: SyntheticHistoricalMeanAnchorCollection
     ) -> OriginFrozenStandingTargets:
-        """Build both Phase 10 target policies once for this origin and synthetic anchor."""
+        """Build both Phase 10 target policies from origin- and Store-bound anchors."""
 
-        return build_origin_frozen_targets(self, anchor)
+        return build_origin_frozen_targets(self, anchors)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -480,25 +631,43 @@ class OriginFrozenStandingTargets:
     """Defensive snapshot of paired origin-frozen synthetic inventory targets."""
 
     origin: date
+    store_ids: tuple[int, ...]
     issuance_identity: str
-    anchor_identity: str
+    anchor_collection_identity: str
     _records: pd.DataFrame
 
     def __init__(
         self,
         *,
         origin: date,
+        store_ids: tuple[int, ...],
         issuance_identity: str,
-        anchor_identity: str,
+        anchor_collection_identity: str,
         records: pd.DataFrame,
     ) -> None:
         if not isinstance(records, pd.DataFrame):
             raise Phase13AdapterError("Standing targets require a table output.")
+        try:
+            grid = RequestedForecastGrid(origin, tuple(store_ids))
+        except (TypeError, ValueError) as exc:
+            raise Phase13AdapterError("Standing target origin/store universe is invalid.") from exc
+        if not _is_sha256(issuance_identity):
+            raise Phase13AdapterError("Standing target issuance identity must be SHA-256.")
+        if not _is_sha256(anchor_collection_identity):
+            raise Phase13AdapterError("Standing target anchor collection identity must be SHA-256.")
         _reject_forbidden_columns(records, "standing targets")
-        object.__setattr__(self, "origin", origin)
+        snapshot = _validate_standing_target_snapshot(
+            records,
+            origin=grid.origin.value,
+            store_ids=grid.store_ids,
+            issuance_identity=issuance_identity,
+            anchor_collection_identity=anchor_collection_identity,
+        )
+        object.__setattr__(self, "origin", grid.origin.value)
+        object.__setattr__(self, "store_ids", grid.store_ids)
         object.__setattr__(self, "issuance_identity", issuance_identity)
-        object.__setattr__(self, "anchor_identity", anchor_identity)
-        object.__setattr__(self, "_records", records.copy(deep=True).reset_index(drop=True))
+        object.__setattr__(self, "anchor_collection_identity", anchor_collection_identity)
+        object.__setattr__(self, "_records", snapshot)
 
     def to_frame(self) -> pd.DataFrame:
         """Return an independent copy of the frozen target rows."""
@@ -734,18 +903,25 @@ def load_canonical_fit_b_quantiles(*_args: object, **_kwargs: object) -> None:
 
 def build_origin_frozen_targets(
     issuance: Phase13M3Issuance,
-    anchor: SyntheticHistoricalMeanAnchor,
+    anchors: SyntheticHistoricalMeanAnchorCollection,
 ) -> OriginFrozenStandingTargets:
     """Build the paired Phase 10 standing targets from origin-only synthetic inputs."""
 
     if not isinstance(issuance, Phase13M3Issuance):
         raise Phase13AdapterError("Standing targets require a validated M3 issuance.")
-    if not isinstance(anchor, SyntheticHistoricalMeanAnchor):
-        raise Phase13AdapterError("Standing targets require a typed synthetic mean anchor.")
+    if not isinstance(anchors, SyntheticHistoricalMeanAnchorCollection):
+        raise Phase13AdapterError("Standing targets require a typed synthetic anchor collection.")
+    if anchors.origin != issuance.origin:
+        raise Phase13AdapterError("Target anchor collection origin differs from M3 issuance.")
     forecasts = issuance.to_frame()
     prefixes = issuance.prefixes_to_frame()
+    requested_stores = tuple(sorted(int(store) for store in forecasts["Store"].unique()))
+    if anchors.store_ids != requested_stores:
+        raise Phase13AdapterError("Target anchor Store universe differs from M3 issuance.")
     rows: list[dict[str, Any]] = []
     for store, block in forecasts.groupby("Store", sort=True):
+        anchor = anchors.for_store(int(store))
+        anchor_available = anchor is not None and anchor.available
         block = block.sort_values("horizon", kind="mergesort")
         if tuple(block["horizon"].astype(int)) != tuple(range(1, HORIZON + 1)):
             raise Phase13AdapterError("Standing-target input is not one complete H14 grid.")
@@ -758,12 +934,16 @@ def build_origin_frozen_targets(
             open_days = (
                 sum(int(bool(value)) for value in schedule_values) if schedule_known else None
             )
-            baseline_available = schedule_known and anchor.available
+            baseline_available = schedule_known and anchor_available
             baseline_value = (
-                float(anchor.mean_open_sales_value) * int(open_days) if baseline_available else None
+                float(anchor.mean_open_sales_value) * int(open_days)
+                if baseline_available and anchor is not None
+                else None
             )
             if not schedule_known:
                 baseline_reason = "unknown_schedule_in_protection_prefix"
+            elif anchor is None:
+                baseline_reason = "anchor_missing"
             elif not anchor.available:
                 baseline_reason = anchor.unavailable_reason
             else:
@@ -841,9 +1021,29 @@ def build_origin_frozen_targets(
                     "schedule_availability_assumption": (
                         prefix.iloc[0]["schedule_availability_assumption"]
                     ),
-                    "anchor_identity": anchor.identity,
-                    "mean_open_sales_value": anchor.mean_open_sales_value,
-                    "anchor_semantics": anchor.semantics,
+                    "anchor_collection_identity": anchors.identity,
+                    "anchor_identity": anchor.identity if anchor is not None else None,
+                    "anchor_store_id": int(store),
+                    "anchor_origin": issuance.origin,
+                    "anchor_source_id": anchor.provenance.source_id if anchor else None,
+                    "anchor_version": anchor.provenance.version if anchor else None,
+                    "anchor_provenance": anchor.provenance.provenance if anchor else None,
+                    "anchor_availability_assumption": (
+                        anchor.provenance.availability_assumption.value if anchor else None
+                    ),
+                    "anchor_parent_identities": (
+                        anchor.provenance.parent_identities if anchor else None
+                    ),
+                    "anchor_available": bool(anchor_available),
+                    "anchor_unavailable_reason": (
+                        anchor.unavailable_reason if anchor is not None else "anchor_missing"
+                    ),
+                    "mean_open_sales_value": (
+                        anchor.mean_open_sales_value if anchor is not None else None
+                    ),
+                    "anchor_semantics": (
+                        anchor.semantics if anchor is not None else SYNTHETIC_TARGET_SEMANTICS
+                    ),
                     "open_days_in_protection_period": open_days,
                     "lead_time": lead_time,
                     "review_period": REVIEW_PERIOD,
@@ -878,24 +1078,229 @@ def build_origin_frozen_targets(
                         "buffer_interpretation": "uncalibrated_synthetic_fit_b_transport",
                     }
                 )
-    records = pd.DataFrame.from_records(rows)
-    key_columns = [
-        "Store",
-        "forecast_origin",
-        "lead_time",
-        "review_period",
-        "protection_period",
-        "buffer_probability",
-        "policy_id",
-    ]
-    if records.duplicated(key_columns).any():
-        raise Phase13AdapterError("Standing targets contain duplicate origin-frozen keys.")
+    records = pd.DataFrame.from_records(rows, columns=TARGET_COLUMNS)
     return OriginFrozenStandingTargets(
         origin=issuance.origin,
+        store_ids=anchors.store_ids,
         issuance_identity=issuance.issuance_identity,
-        anchor_identity=anchor.identity,
+        anchor_collection_identity=anchors.identity,
         records=records,
     )
+
+
+def _validate_standing_target_snapshot(
+    records: pd.DataFrame,
+    *,
+    origin: date,
+    store_ids: tuple[int, ...],
+    issuance_identity: str,
+    anchor_collection_identity: str,
+) -> pd.DataFrame:
+    data = _exact_table(records, TARGET_COLUMNS, "origin-frozen standing targets")
+    _reject_forbidden_columns(data, "standing targets")
+    if data.empty:
+        raise Phase13AdapterError("Standing target snapshot must not be empty.")
+    try:
+        stores = pd.to_numeric(data["Store"], errors="raise").to_numpy(dtype=np.float64)
+        anchor_stores = pd.to_numeric(data["anchor_store_id"], errors="raise").to_numpy(
+            dtype=np.float64
+        )
+        origins = pd.to_datetime(data["forecast_origin"], errors="raise")
+        anchor_origins = pd.to_datetime(data["anchor_origin"], errors="raise")
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise Phase13AdapterError("Standing target keys or origins are malformed.") from exc
+    if (
+        not np.isfinite(stores).all()
+        or not np.equal(stores, np.floor(stores)).all()
+        or not np.isfinite(anchor_stores).all()
+        or not np.equal(anchor_stores, np.floor(anchor_stores)).all()
+        or (stores <= 0).any()
+        or (anchor_stores <= 0).any()
+    ):
+        raise Phase13AdapterError("Standing target Store keys must be positive integers.")
+    if origins.dt.tz is not None or anchor_origins.dt.tz is not None:
+        raise Phase13AdapterError("Standing target origins must be timezone-naive dates.")
+    if (
+        not origins.eq(origins.dt.normalize()).all()
+        or not anchor_origins.eq(anchor_origins.dt.normalize()).all()
+    ):
+        raise Phase13AdapterError("Standing target origins must be normalized calendar dates.")
+    expected_stores = np.asarray(store_ids, dtype=np.int64)
+    if not np.isin(stores.astype(np.int64), expected_stores).all():
+        raise Phase13AdapterError("Standing target rows contain a Store outside the requested set.")
+
+    key_values: list[tuple[int, date, int, int, int, float, str]] = []
+    for row in data.itertuples(index=False):
+        store = _integer(row.Store, "target Store", minimum=1)
+        lead_time = _integer(row.lead_time, "target lead time", minimum=2)
+        review_period = _integer(row.review_period, "target review period", minimum=0)
+        protection = _integer(row.protection_period, "target protection period", minimum=1)
+        probability = _finite_number(row.buffer_probability, "target buffer probability")
+        if lead_time not in LEAD_TIMES or review_period != REVIEW_PERIOD:
+            raise Phase13AdapterError("Standing target lead/review contract is incompatible.")
+        if protection != lead_time + REVIEW_PERIOD:
+            raise Phase13AdapterError("Standing target protection period is incompatible.")
+        if probability not in CUMULATIVE_LEVELS or row.policy_id not in POLICY_IDS:
+            raise Phase13AdapterError("Standing target probability or policy is unsupported.")
+        key_values.append(
+            (
+                store,
+                pd.Timestamp(row.forecast_origin).date(),
+                lead_time,
+                review_period,
+                protection,
+                probability,
+                str(row.policy_id),
+            )
+        )
+    if len(key_values) != len(set(key_values)):
+        raise Phase13AdapterError("Standing target snapshot contains duplicate exact keys.")
+    expected_keys = {
+        (store, origin, lead, REVIEW_PERIOD, lead + REVIEW_PERIOD, probability, policy)
+        for store in store_ids
+        for lead in LEAD_TIMES
+        for probability in CUMULATIVE_LEVELS
+        for policy in POLICY_IDS
+    }
+    if set(key_values) != expected_keys:
+        raise Phase13AdapterError("Standing target snapshot is partial or has unexpected keys.")
+
+    if (
+        not origins.eq(pd.Timestamp(origin)).all()
+        or not anchor_origins.eq(pd.Timestamp(origin)).all()
+    ):
+        raise Phase13AdapterError("Standing target row origins disagree with snapshot origin.")
+    if (
+        not data["issuance_identity"].eq(issuance_identity).all()
+        or not data["anchor_collection_identity"].eq(anchor_collection_identity).all()
+    ):
+        raise Phase13AdapterError("Standing target row identity disagrees with snapshot identity.")
+    if not np.array_equal(stores.astype(np.int64), anchor_stores.astype(np.int64)):
+        raise Phase13AdapterError("Standing target anchor Store binding is inconsistent.")
+    for column in (
+        "model_identity",
+        "fresh_model_fit_identity",
+        "schedule_identity",
+        "quantile_fixture_identity",
+        "daily_fixture_sha256",
+        "cumulative_fixture_sha256",
+    ):
+        if data[column].isna().any() or data[column].nunique(dropna=False) != 1:
+            raise Phase13AdapterError(f"Standing target {column} is missing or inconsistent.")
+    for column in (
+        "model_identity",
+        "fresh_model_fit_identity",
+        "schedule_identity",
+        "quantile_fixture_identity",
+        "daily_fixture_sha256",
+        "cumulative_fixture_sha256",
+    ):
+        if not _is_sha256(data[column].iloc[0]):
+            raise Phase13AdapterError(f"Standing target {column} must be SHA-256.")
+    if not data["model_fit_identity"].eq(data["fresh_model_fit_identity"]).all():
+        raise Phase13AdapterError("Standing target model-fit identities disagree.")
+    if (
+        not data["calibration_transport_valid"]
+        .map(lambda value: isinstance(value, (bool, np.bool_)) and not bool(value))
+        .all()
+    ):
+        raise Phase13AdapterError("Standing targets must retain unvalidated Fit B transport.")
+    if (
+        not data["anchor_semantics"].eq(SYNTHETIC_TARGET_SEMANTICS).all()
+        or not data["input_semantics"].eq(SYNTHETIC_TARGET_SEMANTICS).all()
+    ):
+        raise Phase13AdapterError("Standing target synthetic turnover semantics changed.")
+
+    for column in ("target_available", "anchor_available", "quantile_available"):
+        if (
+            data[column].isna().any()
+            or not data[column].map(lambda value: isinstance(value, (bool, np.bool_))).all()
+        ):
+            raise Phase13AdapterError(f"Standing target {column} must be explicit Boolean.")
+    for row in data.itertuples(index=False):
+        available = bool(row.target_available)
+        reason = None if _is_missing_scalar(row.availability_reason) else row.availability_reason
+        if available:
+            if reason is not None:
+                raise Phase13AdapterError("Available standing targets cannot carry a reason.")
+            if _finite_number(row.target_value, "available target value") < 0:
+                raise Phase13AdapterError("Available target value cannot be negative.")
+        elif not _is_missing_scalar(row.target_value) or not _nonempty_reason(reason):
+            raise Phase13AdapterError(
+                "Unavailable standing targets require null value and a nonempty reason."
+            )
+
+    anchor_group_columns = (
+        "anchor_identity",
+        "anchor_available",
+        "anchor_unavailable_reason",
+        "mean_open_sales_value",
+        "anchor_source_id",
+        "anchor_version",
+        "anchor_provenance",
+        "anchor_availability_assumption",
+        "anchor_parent_identities",
+    )
+    anchor_identities_by_store: dict[int, str] = {}
+    for store, group in data.groupby("Store", sort=True):
+        for column in anchor_group_columns:
+            if group[column].nunique(dropna=False) != 1:
+                raise Phase13AdapterError(
+                    f"Standing target Store {int(store)} has inconsistent anchor {column}."
+                )
+        anchor_available = bool(group["anchor_available"].iloc[0])
+        anchor_identity = group["anchor_identity"].iloc[0]
+        anchor_reason = group["anchor_unavailable_reason"].iloc[0]
+        mean_value = group["mean_open_sales_value"].iloc[0]
+        provenance_values = [group[column].iloc[0] for column in anchor_group_columns[4:]]
+        identity_missing = _is_missing_scalar(anchor_identity)
+        if anchor_available:
+            if (
+                not isinstance(anchor_identity, str)
+                or not anchor_identity.startswith("synthetic://phase13/")
+                or _finite_number(mean_value, "Store mean anchor") < 0
+                or not _is_missing_scalar(anchor_reason)
+                or any(
+                    not isinstance(value, str) or not value.strip()
+                    for value in provenance_values[:3]
+                )
+                or provenance_values[3] != AvailabilityAssumption.SYNTHETIC_RULE.value
+            ):
+                raise Phase13AdapterError("Available Store mean anchor snapshot is invalid.")
+        else:
+            if not _is_missing_scalar(mean_value) or not _nonempty_reason(anchor_reason):
+                raise Phase13AdapterError("Unavailable Store mean anchor snapshot is invalid.")
+            if identity_missing:
+                if anchor_reason != "anchor_missing" or any(
+                    not _is_missing_scalar(value) for value in provenance_values
+                ):
+                    raise Phase13AdapterError(
+                        "Missing Store anchor must remain explicitly missing."
+                    )
+            elif (
+                not isinstance(anchor_identity, str)
+                or not anchor_identity.startswith("synthetic://phase13/")
+                or any(
+                    not isinstance(value, str) or not value.strip()
+                    for value in provenance_values[:3]
+                )
+                or provenance_values[3] != AvailabilityAssumption.SYNTHETIC_RULE.value
+            ):
+                raise Phase13AdapterError("Unavailable Store anchor provenance is invalid.")
+        if not identity_missing:
+            anchor_identities_by_store[int(store)] = anchor_identity
+    if len(set(anchor_identities_by_store.values())) != len(anchor_identities_by_store):
+        raise Phase13AdapterError("Standing target anchor identity is reused across Stores.")
+
+    data["Store"] = stores.astype("int64")
+    data["anchor_store_id"] = anchor_stores.astype("int64")
+    data["forecast_origin"] = origins.dt.date
+    data["anchor_origin"] = anchor_origins.dt.date
+    data["lead_time"] = pd.to_numeric(data["lead_time"]).astype("int64")
+    data["review_period"] = pd.to_numeric(data["review_period"]).astype("int64")
+    data["protection_period"] = pd.to_numeric(data["protection_period"]).astype("int64")
+    data["buffer_probability"] = pd.to_numeric(data["buffer_probability"]).astype("float64")
+    return data.reset_index(drop=True).copy(deep=True)
 
 
 def _validate_m3_result_snapshot(
@@ -1336,6 +1741,10 @@ def _validated_daily_table(frame: pd.DataFrame) -> pd.DataFrame:
     for horizon in range(1, HORIZON + 1):
         lower = by_horizon.loc[(horizon, "lower")]
         upper = by_horizon.loc[(horizon, "upper")]
+        if int(lower["n"]) != int(upper["n"]):
+            raise Phase13AdapterError(
+                "Daily lower and upper tails must share the same calibration sample count."
+            )
         if (
             bool(lower["available"])
             and bool(upper["available"])
@@ -1388,6 +1797,11 @@ def _validated_cumulative_table(frame: pd.DataFrame) -> pd.DataFrame:
     if actual_keys != expected_keys:
         raise Phase13AdapterError(
             "Cumulative fixture must contain exact prefixes 1..14 and p in {0.90, 0.95, 0.98}."
+        )
+    by_prefix = data.groupby("k", sort=True)["n"].nunique()
+    if not by_prefix.eq(1).all():
+        raise Phase13AdapterError(
+            "Cumulative probabilities at each prefix must share the same complete-sample count."
         )
     data["k"] = data["k"].astype("int64")
     data["n"] = data["n"].astype("int64")
@@ -1752,6 +2166,18 @@ def _is_finite_scalar(value: Any) -> bool:
         return False
 
 
+def _is_missing_scalar(value: Any) -> bool:
+    """Return whether a single scalar is null without accepting array-shaped values."""
+
+    if value is None:
+        return True
+    try:
+        result = pd.isna(value)
+    except (TypeError, ValueError):
+        return False
+    return isinstance(result, (bool, np.bool_)) and bool(result)
+
+
 def _nonempty_reason(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
@@ -1777,6 +2203,7 @@ __all__ = [
     "Phase13M3Issuance",
     "SyntheticFitBQuantileFixture",
     "SyntheticHistoricalMeanAnchor",
+    "SyntheticHistoricalMeanAnchorCollection",
     "build_origin_frozen_targets",
     "load_canonical_fit_b_quantiles",
 ]

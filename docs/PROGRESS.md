@@ -431,6 +431,41 @@ hashed. No source preparation, staging, rehearsal, analytical release, M4 public
 later milestone is included. Independent Technical Lead review is the next boundary; the final
 holdout remains unreleased.
 
+### Phase 13 P40-01/02/03 synthetic M3 corrections — 2026-10-11
+
+On the existing Draft PR #40 branch, P40-01 replaces the broadcast synthetic historical mean with
+a typed collection bound to `(Store, origin)`. Duplicate/cross-origin/out-of-universe anchors are
+rejected, the Store universe and issuance origin must match, and sparse missing anchors remain
+unavailable without filling or cross-Store borrowing. Per-Store values, status, identity, and
+synthetic provenance are captured in the collection identity and target rows. Synthetic golden
+coverage checks Store 1 mean 100 and Store 2 mean 500 across two planned open days (baseline targets
+200 and 1,000), as well as Store-local unavailable, zero, missing-key, duplicate-key, wrong-origin,
+and no-borrow cases.
+
+P40-02 enforces equal daily lower/upper calibration counts at each horizon and equal cumulative
+complete-prefix counts across all probabilities at each prefix. Frozen rank equations, n floors,
+availability reasons, and independent per-probability quantile values remain unchanged. The
+nonfinite-quantile test uses a consistent common-n prefix; an n=49 prefix marks every probability
+unavailable with `insufficient_calibration`. Adversarial fixtures with contradictory counts across
+tails or probabilities are rejected.
+
+P40-03 makes `OriginFrozenStandingTargets` validate the supported origin, SHA-256 issuance and
+anchor-collection identities, exact output schema, forbidden outcome fields, complete unique
+`(Store, origin, L, R, P, p, policy)` combinations, per-Store anchor binding/provenance, explicit
+Boolean availability, and target value/reason consistency. Forgery tests reject duplicate keys,
+missing policy rows, wrong origin, negative/null available targets, reasons on available targets,
+numeric unavailable targets, and mismatched row identity. The focused suite now passes **66 tests**
+on Python 3.14.5; the prior valid M3 cases remain represented with constructors and sample-count
+fixtures updated to the tightened contracts. The full repository suite passes **652 tests** in
+178.29 seconds on Python 3.14.5, with one existing Starlette/httpx deprecation warning. Ruff lint
+passed; all **115 files** pass Ruff format; documentation validation passed with **302 local
+destinations/anchors across 29 Markdown files**; `uv lock --check` resolved 109 packages; and
+`git diff --check` passed. The focused suite passed in 18.35 seconds.
+
+No real or protected Rossmann data, canonical quantile artifact, or future outcome was accessed.
+The change remains synthetic M3 only; M4, staging, and release remain outside scope. Draft PR #40
+remains under Technical Lead re-review.
+
 ## Historical implementation checkpoints (preserved)
 
 The following next-boundary notes are historical checkpoints; the current state is recorded at
