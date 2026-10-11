@@ -135,8 +135,11 @@ The current modeling firewall still excludes July 4–31 from selection, tuning 
 
 CC-02 adds a separate retrospective weekly STL diagnostic. Its reusable API accepts an
 already-authorized in-memory `Store`, `Date`, `Sales` frame; it does not read the combined prepared
-train artifact. The dedicated command currently prints its trusted-input contract and fails closed
-for execution because no separately reviewed development-only provider is configured:
+train artifact. A fixed-path, fixture-tested loader is implemented for an immutable development-only
+bundle supplied with an external approval binding. That binding is trusted only when issued through
+a separately reviewed operator process; the Python record does not prove custody or physical
+separation. The dedicated command still has no filesystem input option, prints its trusted-input
+contract, and fails closed:
 
 ```powershell
 python scripts/run_seasonal_decomposition.py --describe-input-contract
@@ -144,11 +147,13 @@ python scripts/run_seasonal_decomposition.py --describe-input-contract
 
 The fixed diagnostic ends by 2015-07-03, uses the first three eligible Store IDs, and writes
 components, status, figures, and a provenance manifest under ignored
-`reports/generated/seasonal_decomposition/` when called through the approved in-memory API. It
-requires a separately reviewed provider with documented physical separation and owner approval
-before any real-data execution. Synthetic fixture verification is not a Rossmann result. The
-components are descriptive and are not forecasting features or model-selection evidence. Details
-are in [EDA findings](docs/EDA_FINDINGS.md#cc-02-weekly-stl-diagnostic).
+`reports/generated/seasonal_decomposition/` when called through its API. Before a real-data binding
+can be issued, a custodian must separately prepare and document a physically isolated immutable
+partition; mechanical source access and later analytical release each need their own authorization.
+This implementation task did not create or load a real partition. Synthetic fixture verification is
+not a Rossmann result. The components are descriptive and are not forecasting features or
+model-selection evidence. See [the provider plan](plans/active/cc-02b-trusted-development-provider.md)
+and [EDA findings](docs/EDA_FINDINGS.md#cc-02-weekly-stl-diagnostic).
 
 ## Phase 8 development-only uncertainty
 

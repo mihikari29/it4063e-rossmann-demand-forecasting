@@ -158,14 +158,18 @@ Sales, estimated trend, weekly seasonal, and residual values and is checked to r
 Sales within numerical tolerance. Four-panel figures label the monetary turnover unit and state
 that the result is retrospective, descriptive, and not a forecast or causal explanation.
 
-No Rossmann source was read or used to select stores or parameters for CC-02. Verification is
-fixture-only with synthetic in-memory data; the synthetic figures/manifests used during tests are
-temporary artifacts and are not source findings. The command
+No Rossmann source was read or used to select stores or parameters for CC-02. The CC-02B loader is
+implemented and verified only with temporary synthetic Parquet bundles; this is not a Rossmann
+result. The command
 `python scripts/run_seasonal_decomposition.py --describe-input-contract` describes the required
-preflight. Normal command execution currently fails closed and opens no data because no reviewed
-trusted input provider is configured. Real development-only execution requires a separately
-approved provider that proves physical separation from the combined prepared train artifact and
-the protected period before opening or hashing data, verifies the 2015-07-03 ceiling, and records
-an owner-approved preflight reference. A caller-provided reference alone is not proof of isolation.
+preflight. Normal command execution remains fail-closed and opens no data; the CLI has no provider
+binding option. The provider API accepts a fixed-path bundle only with an externally issued
+approval record and verifies exact file hashes, declared provenance, schema, counts, ordering and
+the 2015-07-03 ceiling before returning a copy-safe projection. The approval object and path checks
+do not prove who prepared the partition or establish physical isolation. Before any real partition
+is opened or hashed, a separate custodian procedure must establish and document physical separation
+from the combined prepared train artifact and protected period, with operating-system controls as
+needed. Mechanical source access, later analytical release, and findings publication remain
+separately authorized steps. A caller-provided reference alone is not proof of isolation.
 The diagnostic does not alter the 29-feature contract and its components are not forecast features,
 model-selection evidence, or an alternative forecasting method.

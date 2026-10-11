@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import platform
+import re
 import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -50,6 +51,11 @@ class InputProvenance:
     source_kind: SOURCE_KIND
     source_id: str
     preflight_reference: str | None = None
+    partition_data_sha256: str | None = None
+    partition_manifest_sha256: str | None = None
+    source_lineage_reference: str | None = None
+    custodian_preparation_authorization_reference: str | None = None
+    provider_loading_approval_reference: str | None = None
 
     def __post_init__(self) -> None:
         if self.source_kind not in {"synthetic_fixture", "approved_development_only"}:
@@ -68,6 +74,21 @@ class InputProvenance:
                 "approved development inputs require a reviewed preflight reference; "
                 "this metadata does not itself establish source isolation"
             )
+        provider_fields = (
+            self.partition_data_sha256,
+            self.partition_manifest_sha256,
+            self.source_lineage_reference,
+            self.custodian_preparation_authorization_reference,
+            self.provider_loading_approval_reference,
+        )
+        if any(value is not None for value in provider_fields):
+            if self.source_kind != "approved_development_only" or not all(
+                isinstance(value, str) and value.strip() for value in provider_fields
+            ):
+                raise ValueError("provider partition provenance must be complete and approved")
+            for digest in (self.partition_data_sha256, self.partition_manifest_sha256):
+                if not re.fullmatch(r"[0-9a-f]{64}", digest or ""):
+                    raise ValueError("provider partition hashes must be lowercase SHA-256 digests")
 
 
 @dataclass(frozen=True)
@@ -507,6 +528,22 @@ def export_decomposition_outputs(
             "identity": run.provenance.source_id,
             "preflight_reference": run.provenance.preflight_reference,
             "authorized_in_memory_projection_sha256": run.input_sha256,
+            "partition_snapshot": (
+                {
+                    "data_file_bytes_sha256": run.provenance.partition_data_sha256,
+                    "manifest_file_bytes_sha256": run.provenance.partition_manifest_sha256,
+                    "hash_scope": "exact approved local file bytes",
+                }
+                if run.provenance.partition_data_sha256 is not None
+                else None
+            ),
+            "source_lineage_reference": run.provenance.source_lineage_reference,
+            "custodian_preparation_authorization_reference": (
+                run.provenance.custodian_preparation_authorization_reference
+            ),
+            "provider_loading_approval_reference": (
+                run.provenance.provider_loading_approval_reference
+            ),
             "input_rows": run.input_rows,
             "fields_used": list(SOURCE_COLUMNS),
         },
@@ -544,10 +581,13 @@ def export_decomposition_outputs(
 
 
 def input_contract() -> dict[str, object]:
-    """Describe the preflight a future separately authorized input provider must satisfy."""
+    """Describe the input boundary while the command-line loader remains disabled."""
 
     return {
-        "status": "no filesystem input provider is currently configured",
+        "status": (
+            "a fixed-path, externally approved local bundle loader is fixture-tested; no real-data "
+            "approval binding is configured"
+        ),
         "accepted_runtime_input": "an already-authorized in-memory pandas DataFrame",
         "required_fields": list(SOURCE_COLUMNS),
         "date_ceiling": MAX_ELIGIBLE_DATE.date().isoformat(),
@@ -570,7 +610,10 @@ def input_contract() -> dict[str, object]:
             ),
             "Only Store, Date, and Sales are exposed to this analysis API.",
         ],
-        "current_cli_behavior": "fails closed without opening or reading a data file",
+        "current_cli_behavior": (
+            "fails closed without opening or reading a data file; filesystem approval bindings "
+            "are not accepted by the CLI"
+        ),
     }
 
 
@@ -581,7 +624,7 @@ def cli_main(argv: Sequence[str] | None = None) -> int:
         prog="rossmann-seasonal-decomposition",
         description=(
             "Report the CC-02 input contract. The command has no file-path or bypass option and "
-            "cannot run until a trusted development-only provider receives separate approval."
+            "does not accept filesystem approval bindings; it remains fail-closed."
         ),
     )
     parser.add_argument(
@@ -594,8 +637,9 @@ def cli_main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(input_contract(), indent=2, sort_keys=True))
         return 0
     parser.error(
-        "no approved development-only input provider is configured; no data file was opened. "
-        "Obtain a separately reviewed provider and preflight approval before real-data execution."
+        "the command has no approved filesystem binding and no data file was opened. The direct "
+        "provider API requires a separately established trusted approval process before any "
+        "real-data use."
     )
 
 

@@ -374,5 +374,8 @@ def test_command_describes_contract_without_opening_data(monkeypatch, capsys) ->
 
     assert decomposition.cli_main(["--describe-input-contract"]) == 0
     contract = json.loads(capsys.readouterr().out)
-    assert contract["status"] == "no filesystem input provider is currently configured"
+    assert contract["status"] == (
+        "a fixed-path, externally approved local bundle loader is fixture-tested; no real-data "
+        "approval binding is configured"
+    )
     assert "combined prepared train artifact" in contract["preflight_requirements"][0]
