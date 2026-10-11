@@ -13,8 +13,8 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1 is integrated; M2 is IMPLEMENTED / UNDER REVIEW; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
-| Phase 13 — Sequential final evaluation | **M1 INTEGRATED; M2 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at verified SHA `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; post-merge Quality #120 passed on Python 3.12/3.14. M2 is on `feat/phase-13-m2-fresh-fit-issuer`; [Draft PR #39](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/39) is open against `main`; CI status is tracked there. Source preparation, rehearsal, staging and release remain unauthorized. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
+| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1/M2 are integrated; M3 is IMPLEMENTED / UNDER REVIEW; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
+| Phase 13 — Sequential final evaluation | **M1/M2 INTEGRATED; M3 IMPLEMENTED / UNDER REVIEW; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. M3 is on `feat/phase-13-m3-frozen-uncertainty-targets`; Draft PR and CI status are tracked there. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 
 At closeout start, the clean `docs/phase-5-closeout` branch was created from fetched latest
 `origin/main`; both resolved to `76707a03b7d10dbaa79d3ef26b39e31994431d70`, the actual PR #7
@@ -210,10 +210,10 @@ was performed.
 
 Phases 0–12 are COMPLETE; Phase 13 remains PLANNED / NOT APPROVED; the protected July 4–31
 holdout remains unreleased. The [active Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
-records methods under ADR-026 and the owner's A-bounded scope under ADR-025. M1 is integrated and
-M2 is IMPLEMENTED / UNDER REVIEW under the separate synthetic-only task authorization. Source and
-preparation preflight, development rehearsal, protected-source staging, analytical release, and
-Phase 14 remain outside this authorization.
+records methods under ADR-026 and the owner's A-bounded scope under ADR-025. M1 and M2 are
+integrated; M3 is IMPLEMENTED / UNDER REVIEW under the separate synthetic-only task authorization.
+Source and preparation preflight, development rehearsal, protected-source staging, analytical
+release, M4 and later milestones, and Phase 14 remain outside this authorization.
 
 ### Phase 13 M0.1 methodology review checkpoint — 2026-10-10
 
@@ -388,6 +388,83 @@ artifact was read, hashed, loaded, or changed. No July covariate extraction, sou
 real-data fit, June Fit B transport, planned-Open routing, inventory work, durable release journal,
 M3, or later milestone was implemented. Source/preparation provenance, operator, rehearsal,
 staging and analytical-release gates remain open.
+
+### Phase 13 M3 synthetic uncertainty and target adapters — 2026-10-11
+
+M2 PR #39 merged into `main` at `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Post-merge Quality
+#125 passed on Python 3.12 and 3.14 at that exact SHA. The M3 branch
+`feat/phase-13-m3-frozen-uncertainty-targets` is based on that verified `origin/main`; M3 is
+IMPLEMENTED / UNDER REVIEW. Phase 13 remains PLANNED / NOT APPROVED.
+
+`rossmann_forecasting.phase13.adapters` adds a synthetic-only M3 boundary. It accepts an in-memory
+M2 `RawForecastIssuance`, M1's typed synthetic planned-Open schedule, independently generated
+synthetic Fit B-shaped quantile fixtures, and a synthetic mean anchor. Static, documented Fit B
+metadata is retained as calibration identity; hashes generated by the fixtures identify only
+artificial table content. The canonical Fit B loader fails closed. Calibration identity and model
+fit identity remain separate, and June-to-July Fit B transport is explicitly unvalidated.
+
+Daily intervals apply the exact signed Fit B endpoint errors at 0.025/0.975 for horizons 1–14,
+requiring n ≥ 40 and the frozen 1-indexed ranks floor((n+1)/40) and ceil(39(n+1)/40). Cumulative
+quantiles use complete planned-open operational prefixes k=1–14 and p={0.90, 0.95, 0.98}, requiring
+n ≥ 50 and rank ceil((n+1)p). Quantiles are not refit, interpolated, borrowed across horizons or
+prefixes, or replaced with fallback values. Raw points/intervals are preserved; planned closures
+route operational point and interval values to zero, and unknown schedule values stay unavailable.
+
+The target adapter applies the frozen Phase 10 equations for both policies and every L=2…7 with
+R=1 and P=L+1: baseline target = historical open-day mean × planned-open days; forecast demand D
+is the sum of operational point values; upper protection value U=max(0,D+q); safety value
+max(0,U−D); target=max(D,U). Baseline anchor and forecast availability remain independent, and
+each origin freezes its paired target set across H14.
+
+The focused M3 synthetic suite passed **47 tests in 12.08 seconds**. It covers both July origins,
+H14 ordering and M2 identities, schedule closure/unknown/sparse rows, signed daily and cumulative
+quantiles, sample floors/ranks and reasons, unsupported-prefix behavior, identity separation,
+metadata and hash validation, no-fit/no-borrow behavior, Phase 10 targets, independent availability,
+and no future outcome reader calls. The full fixture suite passed **633 tests in 172.41 seconds**
+on Python 3.14.5, with one existing Starlette deprecation warning about `httpx` and
+`starlette.testclient`. Repository Ruff checks passed (`ruff check .`; 115 files formatted),
+`scripts/check_docs.py` passed with 301 local destinations/anchors across 29 Markdown files,
+`uv lock --check` resolved 109 locked packages, and `git diff --check` passed.
+
+No real or protected Rossmann data, canonical Phase 8/9 artifact, or future outcome was accessed or
+hashed. No source preparation, staging, rehearsal, analytical release, M4 publication/replay, or
+later milestone is included. Independent Technical Lead review is the next boundary; the final
+holdout remains unreleased.
+
+### Phase 13 P40-01/02/03 synthetic M3 corrections — 2026-10-11
+
+On the existing Draft PR #40 branch, P40-01 replaces the broadcast synthetic historical mean with
+a typed collection bound to `(Store, origin)`. Duplicate/cross-origin/out-of-universe anchors are
+rejected, the Store universe and issuance origin must match, and sparse missing anchors remain
+unavailable without filling or cross-Store borrowing. Per-Store values, status, identity, and
+synthetic provenance are captured in the collection identity and target rows. Synthetic golden
+coverage checks Store 1 mean 100 and Store 2 mean 500 across two planned open days (baseline targets
+200 and 1,000), as well as Store-local unavailable, zero, missing-key, duplicate-key, wrong-origin,
+and no-borrow cases.
+
+P40-02 enforces equal daily lower/upper calibration counts at each horizon and equal cumulative
+complete-prefix counts across all probabilities at each prefix. Frozen rank equations, n floors,
+availability reasons, and independent per-probability quantile values remain unchanged. The
+nonfinite-quantile test uses a consistent common-n prefix; an n=49 prefix marks every probability
+unavailable with `insufficient_calibration`. Adversarial fixtures with contradictory counts across
+tails or probabilities are rejected.
+
+P40-03 makes `OriginFrozenStandingTargets` validate the supported origin, SHA-256 issuance and
+anchor-collection identities, exact output schema, forbidden outcome fields, complete unique
+`(Store, origin, L, R, P, p, policy)` combinations, per-Store anchor binding/provenance, explicit
+Boolean availability, and target value/reason consistency. Forgery tests reject duplicate keys,
+missing policy rows, wrong origin, negative/null available targets, reasons on available targets,
+numeric unavailable targets, and mismatched row identity. The focused suite now passes **66 tests**
+on Python 3.14.5; the prior valid M3 cases remain represented with constructors and sample-count
+fixtures updated to the tightened contracts. The full repository suite passes **652 tests** in
+178.29 seconds on Python 3.14.5, with one existing Starlette/httpx deprecation warning. Ruff lint
+passed; all **115 files** pass Ruff format; documentation validation passed with **302 local
+destinations/anchors across 29 Markdown files**; `uv lock --check` resolved 109 packages; and
+`git diff --check` passed. The focused suite passed in 18.35 seconds.
+
+No real or protected Rossmann data, canonical quantile artifact, or future outcome was accessed.
+The change remains synthetic M3 only; M4, staging, and release remain outside scope. Draft PR #40
+remains under Technical Lead re-review.
 
 ## Historical implementation checkpoints (preserved)
 
