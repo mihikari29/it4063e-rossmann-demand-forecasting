@@ -107,3 +107,21 @@ analytical release are distinct approval gates. This task created no real partit
 no real-data approval. The CLI has no filesystem reader or binding option and remains fail-closed.
 Never create the partition by reading/filtering `data/interim/train.parquet`; do not fall back to
 raw or feature artifacts.
+
+CC-02C adds fixture-only preparation helpers in
+`src/rossmann_forecasting/data/cc02_preparation.py` and the command
+`python scripts/prepare_cc02_development.py --describe-input-contract`. The command describes the
+fixed future source/bundle contract or fails closed; it cannot read the source or activate the
+synthetic byte-snapshot test seam. No real bundle currently exists. A future custodian read of the
+mixed `train.csv` mechanically accesses bytes from the protected period, including when chunked,
+and requires a distinct written authorization. Preparation, independent bundle verification,
+provider loading, STL execution and findings publication are separate gates. The output manifest
+keeps the exact CC-02B provider schema; additional command, code, lock and environment provenance
+belongs in ignored `reports/generated/cc02_custodian/<artifact_id>/preparation_record.json`.
+
+Provider and preflight reference IDs may be reserved before preparation, but pending records grant
+no permission. After preparation, an independently authorized verifier checks the bundle and an
+external delegated approver binds its exact data and manifest hashes. The bundle's separate path,
+application checks and date ceiling do not establish OS-enforced isolation. The local claim trusts
+the custodian/operator and machine owner/administrator; Windows identity and ACL separation is
+optional hardening. No Phase 13 or final-holdout access is authorized by the CC-02 workflow.

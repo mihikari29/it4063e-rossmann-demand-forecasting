@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-11
+## Current implementation and Git state — 2026-10-12
 
 | Scope | State | Integration |
 |---|---|---|
@@ -15,8 +15,79 @@
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
 | Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1–M3 are integrated after PR #40; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
 | Phase 13 — Sequential final evaluation | **M1/M2/M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. PR #40 integrated the M3 adapter and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
-| CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | PR #41 was squash-merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; post-merge Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
-| CC-02B — development-only Sales provider | **IMPLEMENTED / UNDER REVIEW** | Fixture-only loader and tests are on `feat/course-cc02b-trusted-development-provider`; [Draft PR #42](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/42) targets `main`. A real immutable partition, custodian procedure and real-data approval binding remain absent and separately gated. See the [active plan](../plans/active/cc-02b-trusted-development-provider.md). |
+| CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | Accepted PR #41 merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
+| CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
+| CC-02C — custodian preparation | **IMPLEMENTED / UNDER REVIEW** | [Draft PR #43](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/43) is open and mergeable against `main`; Quality run [#38195056526](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38195056526) passed on Python 3.12 and 3.14 at implementation commit `e85e814237bd35240d8f44ff427c7e5d9f7205ac`. Real source access and preparation are unauthorized. See the [active plan](../plans/active/cc-02c-custodian-preparation.md). |
+
+### CC-02C independent review corrections (2026-10-12)
+
+Independent Sol 6.1 review returned ACCEPT_WITH_MINOR_CHANGES at reviewed head
+073f4e9a850df76c34796c3ad68138f9d58f1873. Required finding CC02C-R01 is fixed in
+_parse_signed_int64: the existing ASCII signed-decimal grammar is preserved, leading zeros are
+removed, signed magnitude bounds are checked before conversion, only the bounded normalized token
+reaches int(), and the exact signed-int64 range check remains. Invalid eligible values raise a
+sanitized PreparationError. Date classification still excludes rows after 2015-07-03 before
+Store or Sales numeric parsing.
+
+Optional finding CC02C-R02 added two fixture regressions without production changes: a receipt write
+failure after bundle publication and a late receipt-directory collision. Both verify that the
+published two-file bundle remains hash-valid and unbound, unrelated bytes survive, and no active
+staging directory remains. The collision test also verifies the pre-existing receipt marker is
+preserved and no receipt overwrites it. These cases add failure coverage; the independent review
+found no production defect in receipt handling.
+
+Implementation commit e85e814237bd35240d8f44ff427c7e5d9f7205ac is pushed on the existing branch
+and Draft PR #43. Focused preparation/provider/STL tests passed 115 tests with two Windows
+symlink-privilege skips. A full fixture suite in a clean detached checkout at this commit, with
+no data/raw or data/interim, passed 766 tests with three skips and one existing Starlette/httpx
+deprecation warning in 252.27 seconds using Python 3.14.5. The skips were the two Windows symlink
+tests and the optional canonical-artifact test. An additional synthetic probe passed 5,000-digit
+positive and negative overflow, int64 boundaries, zero-padded values, signed zero, and sanitized
+error checks. Ruff lint passed; 126 files passed format checking; Markdown validation found 315
+local destinations/anchors across 32 files; uv lock --check resolved 109 packages; pip check and
+git diff --check passed.
+
+[Quality run 38195056526](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38195056526)
+passed at the implementation commit on Python 3.12 and 3.14, each with 768 passed, 1 skipped,
+and 1 warning. The only CI skip was the optional canonical-artifact test. CC-02C remains
+IMPLEMENTED / UNDER REVIEW pending focused independent re-review and authorized integration.
+No real Rossmann source, prepared partition, protected outcome, real approval binding, real STL
+run, or Phase 13 operation was accessed or executed.
+
+### CC-02/CC-02B closeout and CC-02C implementation — 2026-10-12
+
+PR #41 was accepted and merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; PR #42 was
+accepted and merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`. Live GitHub metadata verified
+both merge commits and Quality #135 at the PR #42 merge SHA. Quality #135 succeeded on Python 3.12
+and 3.14. CC-02/CC-02B fixture implementations are reviewed and integrated. Their real-data
+evidence remains pending.
+
+The current CC-02C branch starts from that accepted main SHA. It adds a byte-snapshot transformation
+test seam, explicit Arrow int64/timestamp[us] schema, deterministic Parquet settings, the exact
+17-field provider manifest, bounded staged publication, an external receipt, and a CLI that
+describes the contract or fails closed. Reference labels are inert; preparation does not create a
+provider binding or call STL. Synthetic end-to-end tests exercise the existing provider and weekly
+STL method only with artificial CSV rows.
+
+The [ADR-027 custody clarification](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic)
+distinguishes the custodian's mechanical mixed-source read from provider loading, STL execution and
+findings publication. It documents reference reservation versus permission activation and the
+trusted-operator/admin boundary. Separate bundle storage and application checks do not prove
+OS-level isolation. Source snapshot/custodian approval, mechanical-source authorization, actual
+preparation, independent verification and external binding, real STL execution, and findings
+publication remain separate owner gates. No real source, combined prepared artifact, protected
+outcome, canonical artifact or real STL run was accessed for CC-02C. Phase 13 and the final holdout
+remain protected.
+
+Validation at commit `e589232`: focused CC-02C/provider/STL regression suite, 98 passed and two
+Windows symlink-privilege skips. Full fixture suite in a clean detached worktree with no raw or
+interim data: 749 passed, 3 skipped, 1 warning in 272.37 seconds. The skips were those two symlink
+tests plus the existing optional canonical-artifact test; the warning was Starlette's `httpx`
+TestClient deprecation. Whole-repository Ruff lint and formatting, 315 Markdown destinations and
+anchors, `python -m uv lock --check`, commit whitespace, and the no-source contract-description
+command passed. No forecasting/data pipeline or Rossmann file was used. Draft [PR #43](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/43)
+is open and mergeable against `main`. Quality #137, run [#38189361426](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38189361426),
+passed on Python 3.12 and 3.14 at pushed head `e872043a000a05cffc733da90e64ad74bdae2383`.
 
 ### CC-02 integration and current data boundary — 2026-10-11
 

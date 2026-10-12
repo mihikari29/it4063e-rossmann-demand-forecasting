@@ -158,18 +158,23 @@ Sales, estimated trend, weekly seasonal, and residual values and is checked to r
 Sales within numerical tolerance. Four-panel figures label the monetary turnover unit and state
 that the result is retrospective, descriptive, and not a forecast or causal explanation.
 
-No Rossmann source was read or used to select stores or parameters for CC-02. The CC-02B loader is
-implemented and verified only with temporary synthetic Parquet bundles; this is not a Rossmann
-result. The command
-`python scripts/run_seasonal_decomposition.py --describe-input-contract` describes the required
-preflight. Normal command execution remains fail-closed and opens no data; the CLI has no provider
-binding option. The provider API accepts a fixed-path bundle only with an externally issued
-approval record and verifies exact file hashes, declared provenance, schema, counts, ordering and
-the 2015-07-03 ceiling before returning a copy-safe projection. The approval object and path checks
-do not prove who prepared the partition or establish physical isolation. Before any real partition
-is opened or hashed, a separate custodian procedure must establish and document physical separation
-from the combined prepared train artifact and protected period, with operating-system controls as
-needed. Mechanical source access, later analytical release, and findings publication remain
-separately authorized steps. A caller-provided reference alone is not proof of isolation.
+PR #41's decomposition and PR #42's loader are reviewed and integrated; Quality #135 passed on
+Python 3.12 and 3.14. The CC-02C preparation helper is fixture-only and its production command
+describes the contract or fails closed:
+`python scripts/prepare_cc02_development.py --describe-input-contract`. Its input is synthetic CSV
+bytes in tests. No Rossmann source, prepared train, real partition, or protected outcome was read,
+hashed or used for this closeout. No Rossmann decomposition has run, so synthetic tests are not a
+Rossmann finding.
+
+A future custodian read of the mixed source mechanically accesses bytes including protected rows;
+it must receive separate explicit authorization. That does not authorize protected-value analysis,
+summaries, modeling, scoring, Phase 13 staging/release or replay. The immutable development bundle
+uses the accepted provider path and manifest. Reference IDs may be reserved while provider and
+preflight permissions remain pending. An independent verifier and delegated external approver must
+bind exact output hashes after preparation. Provider loading, STL execution and findings publication
+are separate approval gates. The code validates application-level path, hash and date rules but does
+not authenticate the approver or prove physical isolation. The accepted local claim trusts the
+custodian/operator and machine owner/administrator; separate Windows identities and ACLs are
+optional hardening. See the scoped [ADR-027 custody clarification](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
 The diagnostic does not alter the 29-feature contract and its components are not forecast features,
 model-selection evidence, or an alternative forecasting method.

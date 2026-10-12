@@ -1,7 +1,7 @@
 # CC-02B — Trusted Development-Only Sales Provider
 
-**State:** Fixture-only implementation is **IMPLEMENTED / UNDER REVIEW**. Real-data operation is
-not approved.
+**State:** Fixture-only implementation is **REVIEWED / INTEGRATED**. Real-data operation is not
+approved.
 
 ## Scope and accepted boundary
 
@@ -54,5 +54,20 @@ real-data approval is configured.
 The focused provider and CC-02 suite passed 61 tests with one Windows symlink-permission skip. The
 full suite passed 712 tests with two skips in a detached worktree without local data/artifacts and
 one existing Starlette/httpx deprecation warning. Whole-repository Ruff, formatting, 309 Markdown
-destinations/anchors, `uv lock --check`, and `git diff --check` passed. Independent review and
-integration remain pending; see [PROGRESS](../../docs/PROGRESS.md).
+destinations/anchors, `uv lock --check`, and `git diff --check` passed. At that implementation
+checkpoint, independent review and integration remained pending; the closeout below supersedes
+that status. See [PROGRESS](../../docs/PROGRESS.md).
+
+## Review and integration closeout — 2026-10-12
+
+The owner accepted the fixture-only provider implementation. PR #42 merged into `main` at
+`3efbda248af09231f69a6e461bf5246b2fbb3e3a`, after PR #41's STL integration at
+`1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`. GitHub Quality #135 passed at the PR #42 merge SHA on
+Python 3.12 and 3.14. The integrated loader and the fixed STL method remain unchanged.
+
+The [ADR-027 custody clarification](../../docs/DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic)
+defines reference reservation and later activation. The provider and preparation code validate
+application-level paths, hashes, types and limits; neither authenticates the external approver nor
+proves OS-level isolation. A separately authorized custodian procedure must precede any source
+access. Real preparation, provider binding, STL execution and findings publication remain pending
+separate owner approvals. Phase 13 and the final holdout remain protected.

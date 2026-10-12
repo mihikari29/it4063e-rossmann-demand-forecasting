@@ -874,9 +874,10 @@ This method selection does not mark Phase 13 APPROVED for implementation, REVIEW
 
 ## ADR-027 — CC-02 Development-Only Weekly STL Diagnostic
 
-**Status:** Accepted for the bounded supplementary EDA implementation under the explicit CC-02
-owner task dated 2026-10-11. Implementation remains **IMPLEMENTED / UNDER REVIEW** until independent
-review and integration.
+**Status:** Accepted; CC-02 implementation is **REVIEWED / INTEGRATED**. PR #41 was accepted and
+merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`. PR #42 integrated its trusted development-only
+provider at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; Quality #135 passed on Python 3.12 and 3.14.
+Real-source preparation, real-data STL, and findings publication remain separately unauthorized.
 
 **Context:** The proposal includes Sales decomposition as an EDA method, while the historical Phase
 2 EDA implemented trends, weekday summaries, autocorrelation and anomaly analysis without an
@@ -892,17 +893,42 @@ smooth/modify observed Sales before fitting.
 Return explicit per-Store availability and reason metadata, check component reconstruction, and
 label figures as retrospective descriptions rather than forecasts or causal explanations.
 
-**Data boundary:** The reusable API accepts an already-authorized in-memory Store/Date/Sales frame
-and rejects any date beyond the development ceiling. The dedicated CLI has no file-path or
-isolation-bypass option and fails closed until a separately approved trusted development-only
-provider exists. Before any real-data run, the provider's physical separation, source lineage and
-date boundary must be independently reviewed and owner-approved before opening or hashing data;
-the provider must supply a reviewable preflight reference. A reference string or column projection
-alone does not prove isolation. This ADR does not authorize real Rossmann access, source partition
-creation, protected-period inspection, EDA execution, or a final-holdout operation.
+**Data boundary and scoped custody clarification:** The reusable API accepts an already-authorized
+in-memory Store/Date/Sales frame and rejects any date beyond the development ceiling. The accepted
+fixed-path provider validates one immutable development-only bundle using an external binding; it
+does not authenticate its issuer or establish custody. Its production STL CLI remains fail-closed.
 
-**Consequences:** Outputs are descriptive-only component tables, figures and provenance manifests
-under the ignored generated-report convention. Synthetic fixtures are the only execution evidence
-for this implementation. The decomposition is not part of `phase-3-v1`, forecast evaluation,
-selection, inventory decisions, or Phase 13; all accepted forecasting methods and release gates
-remain unchanged.
+The approved preparation design uses the documented official `data/raw/rossmann/train.csv`
+snapshot. A custodian reading or hashing this mixed-source CSV mechanically accesses bytes that
+include the protected period, even when parsing in chunks. Such source access is a distinct,
+narrow operation requiring a later explicit authorization naming the owner-approved source,
+custodian, purpose, implementation and scope. It grants no analytical inspection or summaries of
+protected values, holdout modeling/scoring, methodology changes, Phase 13 staging/release or replay.
+
+Preparation emits only eligible Store/Date/Sales rows with Date no later than 2015-07-03 into the
+fixed development bundle. This separate artifact and logical date/field checks do not prove OS-level
+physical isolation. Under the accepted operator-enforced claim, the custodian/operator and machine
+owner/administrator are trusted; separate Windows identities and restrictive NTFS ACLs are optional
+hardening. Make no strict-isolation claim against a privileged operator, machine owner or
+administrator. Stronger OS-enforced separation requires separately reviewed identities and ACLs.
+
+Manifest authorization-reference fields identify external records. Stable references may be
+reserved before preparation, but reserved provider-loading and preflight records remain PENDING
+and grant no permission. Preparation authorization must be effective before source access. After
+preparation, a separately authorized independent verifier validates the isolated bundle; a delegated
+external approver then binds its exact Parquet and manifest hashes and activates provider-loading
+and preflight approvals. The immutable manifest is not edited when those external states change.
+Provider loading, STL execution and publication of findings each require their own explicit owner
+approval. The current provider schema supports these references without a schema change, but the
+trustworthy lifecycle is enforced by the external operator process, not Python.
+
+This clarification does not authorize real Rossmann access, source partition creation, protected-
+period analysis, EDA execution, or a final-holdout operation. The preparation CLI and STL CLI remain
+fail-closed. No real partition or approval binding is configured.
+
+**Consequences:** PR #41 integrates the bounded diagnostic and PR #42 integrates its fixed-path
+provider. Synthetic fixtures remain the only execution evidence; no Rossmann decomposition has
+been run. Outputs, when separately authorized, are descriptive-only component tables, figures and
+provenance manifests under the ignored generated-report convention. The diagnostic is not part of
+`phase-3-v1`, forecast evaluation, selection, inventory decisions, or Phase 13; all accepted
+forecasting methods and release gates remain unchanged.

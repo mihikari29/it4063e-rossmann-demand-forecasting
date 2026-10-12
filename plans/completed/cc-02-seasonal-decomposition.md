@@ -1,7 +1,6 @@
 # CC-02 Development-Only Seasonal Decomposition
 
-**State:** APPROVED by the implementation task; implementation remains **IMPLEMENTED / UNDER
-REVIEW** until independent review and integration.
+**State:** **REVIEWED / INTEGRATED**. PR #41 is merged; the real-data diagnostic remains pending.
 
 ## Scope and fixed method
 
@@ -33,6 +32,20 @@ lint/format, 304 local documentation destinations/anchors, `uv lock --check`, an
 was visually inspected; component reconstruction's maximum absolute error was about `2.3e-13`.
 
 No Rossmann file, combined prepared artifact, real-data EDA, model pipeline, or protected outcome was
-read or executed. The CLI remains closed until a separately reviewed physically isolated
-development-only provider and owner approval exist. [Draft PR #41](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/41)
-is open for independent review; no merge or Phase 13 closeout is part of this task.
+read or executed. At that checkpoint, PR #41 remained open for independent review. The integration
+and closeout evidence below supersede that historical review state.
+
+## Integration and review closeout — 2026-10-12
+
+PR #41 was accepted and merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`. PR #42 integrated
+the trusted development-only provider at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`.
+Post-merge Quality #135 passed on Python 3.12 and 3.14. The owner-authorized closeout records CC-02
+and CC-02B fixture implementations as reviewed and integrated. No real Rossmann partition or
+decomposition has been created or run; real-data findings remain pending.
+
+The [scoped ADR-027 custody clarification](../../docs/DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic)
+distinguishes the custodian's mechanically mixed-source read from provider loading, STL execution
+and findings publication. Separate artifact storage and date checks do not establish OS-level
+isolation. The accepted local claim trusts the custodian/operator and machine owner/administrator;
+separate Windows identities and ACLs remain optional hardening. Phase 13 and final-holdout gates are
+unchanged.
