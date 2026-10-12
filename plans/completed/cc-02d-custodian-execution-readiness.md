@@ -45,6 +45,7 @@ after validation. Commit `6ca830060d53bc182b831747e5f5947e5e71640d` was the init
 implementation/PR-opening checkpoint, not the current PR head. Independent Sol 6.1 reviewed live
 Draft [PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44) at
 `93b29f9d4139ef79916bd23f2e3045b620c038eb` and returned REQUEST_CHANGES for CC02D-R01–R04. The
-focused corrections and their commit identity are recorded in the current
-[progress entry](../../docs/PROGRESS.md); CC-02D remains IMPLEMENTED / UNDER REVIEW pending focused
+focused fixes and synthetic verification are in correction commit
+`1e14be1a75a32bb4c3ab4265e88e060328eb2d60`; test and quality evidence is recorded in the current
+[progress entry](../../docs/PROGRESS.md). CC-02D remains IMPLEMENTED / UNDER REVIEW pending focused
 independent re-review and authorized integration. No real-data work is complete or authorized.

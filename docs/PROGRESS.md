@@ -106,8 +106,17 @@ cross-checks the accepted manifest against the preparation receipt without creat
 binding; R03 corrects receipt and contract wording; R04 labels earlier SHAs as historical review
 checkpoints. The runbook also clarifies environment-derived username hints and separates pre-source
 and post-preparation approvals. The current state remains **IMPLEMENTED / UNDER REVIEW** pending
-focused independent re-review. All verification is synthetic-only; real source, partition, binding,
-STL, findings release and Phase 13 remain unauthorized.
+focused independent re-review. Implementation correction commit
+`1e14be1a75a32bb4c3ab4265e88e060328eb2d60` contains the R01–R04 fixes, synthetic regressions, and
+R05/R06 documentation clarifications. The focused CC-02D/preparation/provider/STL selection passed
+154 tests with six Windows symlink-privilege skips. A full fixture suite in a detached checkout at
+that commit, with no real source or canonical interim artifacts, passed 805 tests with seven skips
+and one existing Starlette/httpx deprecation warning in 183.94 seconds on Python 3.14.5. Six skips
+were Windows symlink-privilege cases; the other was the optional canonical-artifact test. The
+runbook verifier example also passed against a temporary synthetic partition. Ruff lint and format,
+Markdown validation (323 local destinations/anchors across 34 files), `uv lock --check`, dependency
+consistency (93 packages), and whitespace checks passed. All execution evidence is synthetic-only;
+real source, partition, binding, STL, findings release and Phase 13 remain unauthorized.
 
 ### CC-02/CC-02B closeout and CC-02C implementation — 2026-10-12
 
