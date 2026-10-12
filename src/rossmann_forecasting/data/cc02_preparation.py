@@ -408,7 +408,7 @@ def _preparation_receipt(
 ) -> dict[str, Any]:
     return {
         "schema_version": 1,
-        "designation": "fixture-only preparation output; no permission is conveyed",
+        "designation": provider.PREPARATION_RECORD_DESIGNATION,
         "source": {
             "documented_path": EXPECTED_SOURCE_PATH.as_posix(),
             "expected_bytes": config.expected_source_bytes,
@@ -593,7 +593,9 @@ def input_contract() -> dict[str, Any]:
     """Return the no-source-access contract advertised by the production command."""
 
     return {
-        "status": "fixture-only preparation helpers exist; real-source execution is disabled",
+        "status": (
+            "fixed one-use source execution is implemented; external authorization is required"
+        ),
         "production_source": EXPECTED_SOURCE_PATH.as_posix(),
         "documented_source_bytes": REFERENCE_SOURCE_BYTES,
         "documented_source_sha256": REFERENCE_SOURCE_SHA256,
@@ -601,19 +603,24 @@ def input_contract() -> dict[str, Any]:
         "output_files": [DATA_FILENAME, MANIFEST_FILENAME],
         "columns": list(OUTPUT_COLUMNS),
         "date_ceiling": DEVELOPMENT_CEILING,
-        "current_cli_behavior": (
-            "describes this contract or fails closed; --execute-once requires a fixed, "
-            "hash-bound external authorization packet and never accepts a source-path override"
+        "default_execution": (
+            "fails closed before source access when no execution option is supplied"
+        ),
+        "contract_description": "--describe-input-contract performs no data-file I/O",
+        "one_time_execution": (
+            "--execute-once invokes only the fixed-source procedure and requires its fixed, "
+            "externally authorized one-use packet; no source-path or approval-reference "
+            "override exists"
         ),
         "authorization": (
-            "this component does not authenticate or grant source-access, preparation, provider, "
-            "analysis, or publication permission; the external approval process "
-            "remains authoritative"
+            "Python verifies packet/evidence structure and hashes, not approving authority or "
+            "signature authenticity; the external approval process remains authoritative"
         ),
-        "custody_note": (
-            "a future custodian read mechanically includes protected bytes in the mixed source; "
-            "provider loading, STL execution, and findings publication need separate approval"
+        "downstream_gates": (
+            "provider loading, STL execution, and findings publication each require "
+            "separate approval"
         ),
+        "custody_note": "mechanical reading of the mixed source includes protected-period bytes",
     }
 
 

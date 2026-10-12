@@ -24,13 +24,15 @@ python scripts/prepare_cc02_development.py --execute-once
 ```
 
 It has no source-path, authorization-path, approval-reference, or output-path argument. Before
-opening the source it checks the fixed packet, current username and host, exact clean commit and
-lock hash, expiry, exact documented source identity, and three matching evidence-file hashes. It
-then creates a no-replace execution marker. That marker consumes the authorization even if the
-source read or preparation later fails; do not delete it or retry under the same authorization.
-The only source snapshot passed to preparation is the bytes read from the fixed path. The existing
-preparation code verifies byte count and SHA-256, classifies dates before parsing Store or Sales,
-and emits only Store/Date/Sales rows through 2015-07-03.
+opening the source it checks the fixed packet, runtime and host, exact clean commit and lock hash,
+expiry, exact documented source identity, three matching evidence-file hashes, and both immutable
+output destinations. The destination preflight does not create output directories or temporary
+files; it cannot prevent a filesystem race or prove that a later write will succeed. It then creates
+a no-replace execution marker. That marker consumes the authorization even if the source read or
+preparation later fails; do not delete it or retry under the same authorization. The only source
+snapshot passed to preparation is the bytes read from the fixed path. The existing preparation code
+verifies byte count and SHA-256, classifies dates before parsing Store or Sales, and emits only
+Store/Date/Sales rows through 2015-07-03.
 
 The fixed packet is ignored local data at
 `data/authorizations/cc02_custodian_execution.json`. It has exactly these top-level fields:
@@ -63,12 +65,18 @@ custody. Before preparing the packet, the trusted operator must verify the owner
 signatures and confirm that each approval is current and covers this exact operation. Record IDs
 or arbitrary approval strings by themselves never satisfy the evidence-file, runtime, identity,
 expiry, and one-use checks. The owner and machine administrator remain trusted under ADR-027; this
-is not an OS-enforced security boundary.
+is not an OS-enforced security boundary. The account comparison uses `getpass.getuser()`, which is
+an environment-derived username hint, not authenticated Windows process-principal identity. The
+trusted operator must independently verify the actual Windows principal and approved host before
+creating the packet.
 
 ## GO / NO-GO authorization checklist
 
-Proceed only when every GO item is true and documented. Any missing, stale, mismatched, or
-unverifiable item is **NO-GO**; stop before opening or hashing the Rossmann file.
+Stage A must be complete before opening or hashing the Rossmann file. Any missing, stale,
+mismatched, or unverifiable Stage A item is **NO-GO**. Stage B applies only after successful
+preparation; its approvals cannot be prerequisites to creating the partition.
+
+### Stage A — Required before opening source
 
 | Gate | GO evidence required |
 |---|---|
@@ -78,15 +86,20 @@ unverifiable item is **NO-GO**; stop before opening or hashing the Rossmann file
 | Accepted procedure | Owner approves the exact integrated execution commit, clean worktree, `uv.lock` hash, fixed CLI, one-use packet, and accepted CC-02C preparation behavior. |
 | Custody evidence | Custodian documents source provenance and handling; trusted operator verifies the signed owner and custodian records and hashes them into the fixed packet. |
 | Preparation permission | Owner separately approves this one-time preparation, output artifact ID, and cutoff/schema contract. No retry follows a consumed marker without a new authorization. |
-| Independent partition verification | After preparation, owner names and separately authorizes an independent verifier to inspect only the generated development bundle and receipt. Verifier records immutable Parquet and manifest byte hashes, exact 17-field manifest, exact schema, row/store counts, sorting/uniqueness, and `date_max <= 2015-07-03`. |
-| Provider binding and loading | Only after the verification record passes, a delegated approver binds the exact immutable Parquet and manifest hashes and activates provider-loading/preflight references. Loading authority names the exact fixed bundle and does not include STL authority. |
-| Real STL execution | Owner separately authorizes the real CC-02 analysis after the approved development frame is loaded. Use `STL(period=7, robust=True)`, retain source zeros, split at sparse dates and missing/non-finite Sales, require 56 contiguous days, select the latest eligible segment by end date then start date, trim to its latest 112 rows, and choose the first three eligible Store IDs ascending. |
+| Runtime and destinations | Runtime matches the approved account/host, clean commit and lock; the execution ID is new and unused; both immutable output destinations are absent and pass the non-mutating preflight. |
+
+### Stage B — Required only after successful preparation
+
+| Gate | GO evidence required |
+|---|---|
+| Independent partition verification | Owner names and separately authorizes an independent verifier to inspect only the generated development bundle and receipt. The verifier records immutable Parquet, manifest, and receipt byte hashes; exact 17-field manifest; exact schema; row/store counts; sorting/uniqueness; and `date_max <= 2015-07-03`. |
+| Exact-hash binding and provider loading | Only after verification passes, a delegated approver binds the exact immutable Parquet and manifest hashes and activates provider-loading/preflight references. Loading authority names the exact fixed bundle and does not include STL authority. |
+| Real STL execution | Owner separately authorizes real CC-02 analysis after the approved development frame is loaded. Use `STL(period=7, robust=True)`, retain source zeros, split at sparse dates and missing/non-finite Sales, require 56 contiguous days, select the latest eligible segment by end date then start date, trim to its latest 112 rows, and choose the first three eligible Store IDs ascending. |
 | Findings publication | Owner separately approves release of the verified tables, three eligible Store-level weekly figures when available, Store availability status, manifest, and evidence-based discussion. |
 
-The current task leaves all of these real-data GO items unapproved. In particular, the task does
-not name a custodian, authorize mixed-source access, create the fixed packet, produce a real
-execution marker, prepare a bundle, verify real partition files, bind the provider, run STL, or
-publish findings.
+The current task leaves all real-data GO items unapproved. In particular, it does not name a
+custodian, authorize mixed-source access, create the fixed packet, produce a real execution marker,
+prepare a bundle, verify real partition files, bind the provider, run STL, or publish findings.
 
 ## Handoff after an authorized preparation
 
@@ -97,66 +110,64 @@ only `sales.parquet` and `partition_manifest.json`; the manifest remains the acc
 CC-02B schema. The receipt and command output report the exact data and manifest hashes. Do not
 edit the manifest to activate later approvals.
 
-The independently authorized verifier records both file hashes directly from the immutable
-files, compares them with the manifest and preparation receipt, checks Parquet schema and contents,
-and confirms the development cutoff. For example, after separate owner authorization to inspect
-that generated bundle, the verifier can run this read-only check with the locked environment and
-record its printed hashes and counts in the independent verification record:
+After separate owner authorization to inspect the already created development-only bundle and
+receipt, the independent verifier runs this read-only content check with the locked environment.
+It reads bounded regular-file snapshots, hashes and decodes the same in-memory Parquet bytes, and
+cross-checks the manifest against the preparation receipt. It does not create a provider approval
+binding or authorize provider loading or STL:
 
 ```powershell
-$bundle = 'data/interim/cc02_development/<artifact_id>'
-Get-FileHash "$bundle/sales.parquet" -Algorithm SHA256
-Get-FileHash "$bundle/partition_manifest.json" -Algorithm SHA256
-$env:CC02_BUNDLE = $bundle
 @'
-import hashlib, json
-import os
+from dataclasses import asdict
 from pathlib import Path
-import pandas as pd
-import pyarrow.parquet as pq
+import re
+from rossmann_forecasting.data import cc02_development as verification
 
-root = Path(os.environ["CC02_BUNDLE"])
-data_path, manifest_path = root / "sales.parquet", root / "partition_manifest.json"
-data_bytes, manifest_bytes = data_path.read_bytes(), manifest_path.read_bytes()
-manifest = json.loads(manifest_bytes)
-expected = {
-    "schema_version", "artifact_id", "purpose", "source_lineage_reference",
-    "custodian_preparation_authorization_reference", "provider_loading_approval_reference",
-    "preflight_reference", "data_file", "data_sha256", "data_bytes", "row_count",
-    "store_count", "columns", "dtypes", "sort_order", "date_min", "date_max",
-}
-table = pq.read_table(data_path)
-frame = table.to_pandas()
-assert set(manifest) == expected and manifest["columns"] == ["Store", "Date", "Sales"]
-assert manifest["data_file"] == "sales.parquet"
-assert manifest["dtypes"] == {"Store": "int64", "Date": "datetime64[us]", "Sales": "int64"}
-assert manifest["sort_order"] == ["Store", "Date"]
-assert table.schema.names == ["Store", "Date", "Sales"]
-assert [str(field.type) for field in table.schema] == ["int64", "timestamp[us]", "int64"]
-assert hashlib.sha256(data_bytes).hexdigest() == manifest["data_sha256"]
-assert len(data_bytes) == manifest["data_bytes"] == data_path.stat().st_size
-assert len(frame) == manifest["row_count"] and frame["Store"].nunique() == manifest["store_count"]
-assert frame["Store"].notna().all() and frame["Store"].gt(0).all()
-assert not frame.duplicated(["Store", "Date"]).any()
-assert frame.equals(frame.sort_values(["Store", "Date"], kind="stable", ignore_index=True))
-assert frame["Date"].min().date().isoformat() == manifest["date_min"]
-assert frame["Date"].max().date().isoformat() == manifest["date_max"] <= "2015-07-03"
-print({"data_sha256": hashlib.sha256(data_bytes).hexdigest(),
-       "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
-       "rows": len(frame), "stores": frame["Store"].nunique(),
-       "date_max": manifest["date_max"]})
+artifact_id = "<artifact_id>"
+if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", artifact_id):
+    raise ValueError("replace artifact_id with the authorized immutable bundle ID")
+root = Path("data/interim/cc02_development") / artifact_id
+receipt_path = (
+    Path("reports/generated/cc02_custodian") / artifact_id / "preparation_record.json"
+)
+
+
+def bounded_snapshot(path: Path, limit: int) -> bytes:
+    verification._assert_regular_path_without_aliases(path)
+    return verification._read_approved_bytes(path, max_bytes=limit)
+
+data_bytes = bounded_snapshot(
+    root / verification.DATA_FILENAME, verification.MAX_DATA_BYTES
+)
+manifest_bytes = bounded_snapshot(
+    root / verification.MANIFEST_FILENAME, verification.MAX_MANIFEST_BYTES
+)
+receipt_bytes = bounded_snapshot(
+    receipt_path, verification.MAX_PREPARATION_RECEIPT_BYTES
+)
+result = verification.verify_development_bundle_snapshot(
+    data_bytes, manifest_bytes, receipt_bytes
+)
+if result.artifact_id != artifact_id:
+    raise ValueError("verified artifact_id differs from the fixed bundle directory")
+print(asdict(result))
 '@ | .\.venv\Scripts\python.exe -B -
-Remove-Item Env:CC02_BUNDLE
 ```
 
-The verifier also compares the printed manifest hash and data hash with the separate preparation
-receipt and command output. The printed hashes must be exactly the identities in the independent
-verification record; do not edit the manifest. A delegated external approver then issues a distinct
-`DevelopmentInputApproval` binding for those exact hashes and fixed bundle path. Reserved reference
-IDs do not grant provider permission. Do not use the convenience function that combines loading
-and STL when the separate STL gate is pending: first call the approved provider loader, stop for
-the separate STL authorization, then pass its returned copy-safe frame and provenance to
-`decompose_development_sales`. Findings export waits for its own approval.
+The verifier rejects duplicate manifest/receipt keys and nonstandard JSON constants; checks the
+exact 17-field manifest, accepted physical and decoded schema, positive Stores, unique sorted
+Store/Date keys, non-null midnight Dates through 2015-07-03, exact counts and date bounds; and
+records SHA-256 for the Parquet, manifest, and preparation receipt snapshots. The operator compares
+these results with the separately recorded preparation output and independently authenticated
+owner/custodian evidence, including the fixed source path and recorded source identity in the
+receipt, source lineage, custodian and preparation references, and exact procedure scope. The
+application validates content relationships; it does not authenticate signers or establish custody.
+Do not edit the manifest. Only after the independent verification record passes may a delegated
+external approver issue a distinct exact-hash `DevelopmentInputApproval`
+binding. Reserved reference IDs do not grant provider permission. Do not use the convenience
+function that combines loading and STL while the separate STL gate is pending: first load through
+the separately authorized provider, stop for STL authorization, then pass its returned copy-safe
+frame and provenance to `decompose_development_sales`. Findings export waits for its own approval.
 
 The analysis process receives only the verified development partition; it never reads or hashes
 the mixed source. The academic output is descriptive weekly decomposition of monetary Store-level

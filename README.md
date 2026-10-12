@@ -147,13 +147,14 @@ python scripts/run_seasonal_decomposition.py --describe-input-contract
 
 The fixed diagnostic ends by 2015-07-03, uses the first three eligible Store IDs, and writes
 components, status, figures, and a provenance manifest under ignored
-`reports/generated/seasonal_decomposition/` when called through its API. The fixture-only CC-02C
-preparation helper implements the future Store/Date/Sales projection and immutable bundle writer;
-its command describes the contract or fails closed by default. A later authorized custodian may
-use its fixed-source `--execute-once` path only with the external, one-use authorization packet,
-hash-matched source-access/preparation/custody evidence, matching Windows account and host, and the
-approved clean execution commit. The command has no source-path override and stops after bundle
-preparation; it does not load the provider or run STL:
+`reports/generated/seasonal_decomposition/` when called through its API. The CC-02C preparation
+code implements the Store/Date/Sales projection and immutable bundle writer, with a separate fixed
+source `--execute-once` gate. The command describes the contract or fails closed by default. A
+future custodian may execute it only under the externally authenticated one-use procedure, with
+hash-matched source-access/preparation/custody evidence, the approved account and host, and the
+approved clean execution commit. Python checks packet/evidence structure and hashes, not approving
+authority. The command has no source-path override and stops after bundle preparation; it does not
+load the provider or run STL:
 
 ```powershell
 python scripts/prepare_cc02_development.py --describe-input-contract

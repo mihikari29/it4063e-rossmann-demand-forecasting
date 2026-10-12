@@ -6,10 +6,12 @@ import csv
 import hashlib
 import io
 import json
+import stat
 import uuid
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -100,6 +102,8 @@ def _run_synthetic(
     authorization: execution.CustodianExecutionAuthorization,
     *,
     reader,
+    bundle_root: Path | None = None,
+    preparation_receipt_root: Path | None = None,
 ) -> preparation.PreparationResult:
     evidence_root = tmp_path / "evidence"
     _write_evidence(evidence_root, authorization)
@@ -108,8 +112,9 @@ def _run_synthetic(
         authorization_bytes=b"synthetic-only-authorization-packet",
         evidence_root=evidence_root,
         receipt_root=tmp_path / "execution-receipts",
-        bundle_root=tmp_path / "data" / "interim" / "cc02_development",
-        preparation_receipt_root=tmp_path / "reports" / "generated" / "cc02_custodian",
+        bundle_root=bundle_root or tmp_path / "data" / "interim" / "cc02_development",
+        preparation_receipt_root=preparation_receipt_root
+        or tmp_path / "reports" / "generated" / "cc02_custodian",
         source_reader=reader,
         runtime=_runtime(),
         windows_user="fixture-user",
@@ -191,6 +196,8 @@ def test_authorized_synthetic_snapshot_prepares_once_and_stops_before_provider_o
     assert manifest["date_max"] == "2015-03-25"
     assert manifest["provider_loading_approval_reference"] == "synthetic-provider-record:PENDING"
     assert manifest["preflight_reference"] == "synthetic-preflight-record:PENDING"
+    preparation_record = json.loads(result.receipt_path.read_bytes())
+    assert preparation_record["designation"] == provider.PREPARATION_RECORD_DESIGNATION
     marker = tmp_path / "execution-receipts" / f"{authorization.execution_id}.json"
     assert json.loads(marker.read_text())["designation"].startswith("one-use")
 
@@ -262,6 +269,203 @@ def test_runtime_and_identity_failures_do_not_read_synthetic_source(tmp_path: Pa
         )
 
 
+@pytest.mark.parametrize(
+    "case",
+    [
+        "existing-bundle",
+        "existing-preparation-receipt",
+        "bundle-root-file",
+        "preparation-receipt-root-file",
+        "file-ancestor",
+        "inaccessible-root",
+        "traversal-root",
+    ],
+)
+def test_invalid_output_destinations_fail_before_source_or_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    source = _synthetic_source()
+    authorization = _authorization(source)
+    evidence_root = tmp_path / "evidence"
+    _write_evidence(evidence_root, authorization)
+    bundle_root = tmp_path / "bundle-root"
+    preparation_receipt_root = tmp_path / "receipt-root"
+    unrelated = tmp_path / "unrelated.txt"
+    unrelated.write_text("preserve-me", encoding="utf-8")
+    expected_path: Path
+
+    if case == "existing-bundle":
+        expected_path = bundle_root / authorization.artifact_id
+        expected_path.mkdir(parents=True)
+        (expected_path / "sentinel.txt").write_text("preserve-bundle", encoding="utf-8")
+    elif case == "existing-preparation-receipt":
+        expected_path = preparation_receipt_root / authorization.artifact_id
+        expected_path.mkdir(parents=True)
+        (expected_path / "sentinel.txt").write_text("preserve-receipt", encoding="utf-8")
+    elif case == "bundle-root-file":
+        expected_path = bundle_root
+        bundle_root.write_text("preserve-root", encoding="utf-8")
+    elif case == "preparation-receipt-root-file":
+        expected_path = preparation_receipt_root
+        preparation_receipt_root.write_text("preserve-root", encoding="utf-8")
+    elif case == "file-ancestor":
+        expected_path = tmp_path / "not-a-directory"
+        expected_path.write_text("preserve-ancestor", encoding="utf-8")
+        bundle_root = expected_path / "child" / "bundle-root"
+    elif case == "inaccessible-root":
+        expected_path = bundle_root
+        original_lstat = Path.lstat
+
+        def inaccessible(path: Path):
+            if path == expected_path:
+                raise PermissionError("synthetic private path detail")
+            return original_lstat(path)
+
+        monkeypatch.setattr(Path, "lstat", inaccessible)
+    else:
+        expected_path = tmp_path
+        bundle_root = tmp_path / ".." / "traversal-root"
+
+    reads: list[bytes] = []
+    with pytest.raises(execution.CustodianExecutionError) as failure:
+        execution._execute_authorized_snapshot(
+            authorization,
+            authorization_bytes=b"synthetic-only-authorization-packet",
+            evidence_root=evidence_root,
+            receipt_root=tmp_path / "execution-receipts",
+            bundle_root=bundle_root,
+            preparation_receipt_root=preparation_receipt_root,
+            source_reader=lambda: reads.append(source) or source,
+            runtime=_runtime(),
+            windows_user="fixture-user",
+            host_name="fixture-host",
+            now=datetime(2026, 10, 12, tzinfo=UTC),
+        )
+
+    assert reads == []
+    assert not (tmp_path / "execution-receipts" / f"{authorization.execution_id}.json").exists()
+    assert unrelated.read_text(encoding="utf-8") == "preserve-me"
+    assert str(tmp_path) not in str(failure.value)
+    if case == "existing-bundle":
+        assert (expected_path / "sentinel.txt").read_text(encoding="utf-8") == "preserve-bundle"
+    elif case == "existing-preparation-receipt":
+        assert (expected_path / "sentinel.txt").read_text(encoding="utf-8") == "preserve-receipt"
+    elif case in {"bundle-root-file", "preparation-receipt-root-file", "file-ancestor"}:
+        assert expected_path.read_text(encoding="utf-8").startswith("preserve-")
+
+
+@pytest.mark.parametrize("dangling", [False, True])
+@pytest.mark.parametrize("target_root", ["bundle", "receipt"])
+def test_output_symlink_alias_fails_before_source_or_marker(
+    tmp_path: Path, dangling: bool, target_root: str
+) -> None:
+    source = _synthetic_source()
+    authorization = _authorization(source)
+    evidence_root = tmp_path / "evidence"
+    _write_evidence(evidence_root, authorization)
+    bundle_root = tmp_path / "bundle-root"
+    preparation_receipt_root = tmp_path / "receipt-root"
+    root = bundle_root if target_root == "bundle" else preparation_receipt_root
+    destination = root / authorization.artifact_id
+    destination.parent.mkdir(parents=True)
+    target = tmp_path / "symlink-target"
+    if not dangling:
+        target.mkdir()
+    try:
+        destination.symlink_to(target, target_is_directory=True)
+    except OSError as error:
+        pytest.skip(f"symlink creation is unavailable: {error}")
+
+    reads: list[bytes] = []
+    with pytest.raises(execution.CustodianExecutionError, match="cannot be inspected safely"):
+        execution._execute_authorized_snapshot(
+            authorization,
+            authorization_bytes=b"synthetic-only-authorization-packet",
+            evidence_root=evidence_root,
+            receipt_root=tmp_path / "execution-receipts",
+            bundle_root=bundle_root,
+            preparation_receipt_root=preparation_receipt_root,
+            source_reader=lambda: reads.append(source) or source,
+            runtime=_runtime(),
+            windows_user="fixture-user",
+            host_name="fixture-host",
+            now=datetime(2026, 10, 12, tzinfo=UTC),
+        )
+    assert reads == []
+    assert destination.is_symlink()
+    assert not (tmp_path / "execution-receipts" / f"{authorization.execution_id}.json").exists()
+
+
+@pytest.mark.parametrize("target_root", ["bundle", "receipt"])
+def test_output_reparse_alias_report_fails_before_source_or_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, target_root: str
+) -> None:
+    source = _synthetic_source()
+    authorization = _authorization(source)
+    evidence_root = tmp_path / "evidence"
+    _write_evidence(evidence_root, authorization)
+    bundle_root = tmp_path / "bundle-root"
+    preparation_receipt_root = tmp_path / "receipt-root"
+    root = bundle_root if target_root == "bundle" else preparation_receipt_root
+    destination = root / authorization.artifact_id
+    original_lstat = Path.lstat
+
+    def report_reparse(path: Path):
+        if path == destination:
+            return SimpleNamespace(
+                st_mode=stat.S_IFDIR,
+                st_file_attributes=getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400),
+            )
+        return original_lstat(path)
+
+    monkeypatch.setattr(Path, "lstat", report_reparse)
+    reads: list[bytes] = []
+    with pytest.raises(execution.CustodianExecutionError, match="cannot be inspected safely"):
+        execution._execute_authorized_snapshot(
+            authorization,
+            authorization_bytes=b"synthetic-only-authorization-packet",
+            evidence_root=evidence_root,
+            receipt_root=tmp_path / "execution-receipts",
+            bundle_root=bundle_root,
+            preparation_receipt_root=preparation_receipt_root,
+            source_reader=lambda: reads.append(source) or source,
+            runtime=_runtime(),
+            windows_user="fixture-user",
+            host_name="fixture-host",
+            now=datetime(2026, 10, 12, tzinfo=UTC),
+        )
+    assert reads == []
+    assert not (tmp_path / "execution-receipts" / f"{authorization.execution_id}.json").exists()
+
+
+def test_destination_appearing_after_preflight_is_rejected_by_publication_guard(
+    tmp_path: Path,
+) -> None:
+    source = _synthetic_source()
+    authorization = _authorization(source)
+    bundle_root = tmp_path / "bundle-root"
+    destination = bundle_root / authorization.artifact_id
+    reads: list[bytes] = []
+
+    def create_racing_destination() -> bytes:
+        reads.append(source)
+        destination.mkdir(parents=True)
+        (destination / "sentinel.txt").write_text("preserve-race", encoding="utf-8")
+        return source
+
+    with pytest.raises(FileExistsError, match="immutable preparation destination already exists"):
+        _run_synthetic(
+            tmp_path,
+            source,
+            authorization,
+            reader=create_racing_destination,
+            bundle_root=bundle_root,
+        )
+    assert reads == [source]
+    assert (destination / "sentinel.txt").read_text(encoding="utf-8") == "preserve-race"
+    assert (tmp_path / "execution-receipts" / f"{authorization.execution_id}.json").is_file()
+
+
 def test_fixed_source_reader_uses_only_the_allowlisted_path_and_checks_synthetic_identity(
     tmp_path: Path,
 ) -> None:
@@ -326,6 +530,11 @@ def test_describe_command_reports_fixed_gate_without_opening_source(
     assert preparation.cli_main(["--describe-input-contract"]) == 0
     contract = json.loads(capsys.readouterr().out)
     assert contract["production_source"] == "data/raw/rossmann/train.csv"
+    assert "fails closed" in contract["default_execution"]
+    assert "no data-file I/O" in contract["contract_description"]
+    assert "--execute-once" in contract["one_time_execution"]
+    assert "not approving authority" in contract["authorization"]
+    assert "separate approval" in contract["downstream_gates"]
     assert contract["execution_authorization"]["source_snapshot"]["bytes"] == (
         preparation.REFERENCE_SOURCE_BYTES
     )

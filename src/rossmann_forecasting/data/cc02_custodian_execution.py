@@ -342,6 +342,73 @@ def _write_consumption_marker(
     return receipt_path
 
 
+def _preflight_output_destination(root: Path, artifact_id: str, *, label: str) -> None:
+    """Check a final immutable destination without creating or modifying any paths."""
+
+    if not root.is_absolute() or ".." in root.parts:
+        raise CustodianExecutionError(f"{label} output root must be absolute and traversal-free")
+    destination = root / artifact_id
+    try:
+        preparation._assert_no_aliases(root)
+        preparation._assert_no_aliases(destination)
+    except preparation.PreparationError:
+        raise CustodianExecutionError(f"{label} output path cannot be inspected safely") from None
+
+    for component in [*reversed(root.parents), root]:
+        try:
+            info = component.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError:
+            raise CustodianExecutionError(
+                f"{label} output path cannot be inspected safely"
+            ) from None
+        if not stat.S_ISDIR(info.st_mode):
+            raise CustodianExecutionError(f"{label} output ancestor is not a directory")
+
+    try:
+        destination.lstat()
+    except FileNotFoundError:
+        return
+    except OSError:
+        raise CustodianExecutionError(f"{label} output destination cannot be inspected") from None
+    raise CustodianExecutionError(f"{label} immutable output destination already exists")
+
+
+def _assert_execution_marker_absent(
+    authorization: CustodianExecutionAuthorization, *, receipt_root: Path
+) -> None:
+    """Reject an already consumed identifier without creating or modifying the marker root."""
+
+    marker_path = receipt_root / f"{authorization.execution_id}.json"
+    try:
+        preparation._assert_no_aliases(marker_path)
+        marker_path.lstat()
+    except FileNotFoundError:
+        return
+    except preparation.PreparationError:
+        raise CustodianExecutionError("execution marker path cannot be inspected safely") from None
+    except OSError:
+        raise CustodianExecutionError("execution marker path cannot be inspected safely") from None
+    raise CustodianExecutionError("this execution authorization was already consumed")
+
+
+def _preflight_output_destinations(
+    authorization: CustodianExecutionAuthorization,
+    *,
+    bundle_root: Path,
+    preparation_receipt_root: Path,
+) -> None:
+    _preflight_output_destination(
+        bundle_root, authorization.artifact_id, label="development bundle"
+    )
+    _preflight_output_destination(
+        preparation_receipt_root,
+        authorization.artifact_id,
+        label="preparation receipt",
+    )
+
+
 def _read_fixed_source_snapshot(
     authorization: CustodianExecutionAuthorization,
     *,
@@ -399,17 +466,6 @@ def _execute_authorized_snapshot(
         now=now,
     )
     evidence_hashes = _verify_evidence_files(authorization, evidence_root=evidence_root)
-    _write_consumption_marker(
-        authorization,
-        evidence_hashes=evidence_hashes,
-        authorization_sha256=hashlib.sha256(authorization_bytes).hexdigest(),
-        receipt_root=receipt_root,
-        started_at_utc=now.astimezone(UTC).isoformat().replace("+00:00", "Z"),
-    )
-
-    # No source reader is called until the structured packet, custodian identity, runtime, expiry,
-    # evidence bytes, and one-use no-replace receipt have all passed.
-    source_bytes = source_reader()
     config = preparation.PreparationConfiguration(
         artifact_id=authorization.artifact_id,
         expected_source_bytes=authorization.expected_source_bytes,
@@ -421,6 +477,24 @@ def _execute_authorized_snapshot(
         provider_loading_approval_reference=authorization.provider_loading_approval_reference,
         preflight_reference=authorization.preflight_reference,
     )
+    preparation._validate_configuration(config)
+    _assert_execution_marker_absent(authorization, receipt_root=receipt_root)
+    _preflight_output_destinations(
+        authorization,
+        bundle_root=bundle_root,
+        preparation_receipt_root=preparation_receipt_root,
+    )
+    _write_consumption_marker(
+        authorization,
+        evidence_hashes=evidence_hashes,
+        authorization_sha256=hashlib.sha256(authorization_bytes).hexdigest(),
+        receipt_root=receipt_root,
+        started_at_utc=now.astimezone(UTC).isoformat().replace("+00:00", "Z"),
+    )
+
+    # No source reader is called until the structured packet, custodian identity, runtime, expiry,
+    # evidence bytes, and one-use no-replace receipt have all passed.
+    source_bytes = source_reader()
     return preparation._prepare_partition_from_bytes(
         config,
         source_bytes,

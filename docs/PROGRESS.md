@@ -18,7 +18,7 @@
 | CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | Accepted PR #41 merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
 | CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
-| CC-02D — minimal custodian execution readiness | **IMPLEMENTED / UNDER REVIEW** | [Draft PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44) is open from `feat/cc-02d-stl-custodian-readiness` at `6ca830060d53bc182b831747e5f5947e5e71640d`, based on the verified CC-02C integration SHA. Adds a default-deny one-use execution packet, fixed source reader and operator runbook; real source access, preparation, binding and STL remain unauthorized. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
+| CC-02D — minimal custodian execution readiness | **IMPLEMENTED / UNDER REVIEW** | [Draft PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44) remains open from `feat/cc-02d-stl-custodian-readiness`, based on the verified CC-02C integration SHA. The initial implementation/PR-opening checkpoint was `6ca830060d53bc182b831747e5f5947e5e71640d`; review corrections are tracked in the live PR. Real source access, preparation, binding and STL remain unauthorized. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 
 ### CC-02C independent review corrections (2026-10-12)
 
@@ -90,8 +90,24 @@ Starlette/httpx deprecation warning in 189.04 seconds on Python 3.14.5. Full-rep
 and format, Markdown validation (322 local destinations/anchors across 34 files),
 `python -m uv lock --check`, `python -m uv pip check`, and `git diff --check` passed. No actual
 Rossmann source bytes were opened or hashed, no partition was generated, and no real provider/STL
-execution or Phase 13 operation occurred. Draft [PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44)
-is open at head `6ca830060d53bc182b831747e5f5947e5e71640d`; no merge was performed.
+execution or Phase 13 operation occurred. The initial implementation/PR-opening checkpoint was
+`6ca830060d53bc182b831747e5f5947e5e71640d`. Independent Sol 6.1 reviewed PR #44 at
+`93b29f9d4139ef79916bd23f2e3045b620c038eb` and returned **REQUEST_CHANGES** for CC02D-R01–R04;
+the focused corrections below address those findings and clarify optional R05/R06. Draft
+[PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44) remains
+IMPLEMENTED / UNDER REVIEW; no merge or real-data operation is authorized.
+
+### CC-02D independent review corrections — 2026-10-12
+
+This correction pass addresses the review checkpoint at `93b29f9d4139ef79916bd23f2e3045b620c038eb`:
+R01 adds a non-mutating output preflight before marker creation and source access while preserving
+the preparation helper's no-replace publication checks; R02 verifies bounded byte snapshots and
+cross-checks the accepted manifest against the preparation receipt without creating a provider
+binding; R03 corrects receipt and contract wording; R04 labels earlier SHAs as historical review
+checkpoints. The runbook also clarifies environment-derived username hints and separates pre-source
+and post-preparation approvals. The current state remains **IMPLEMENTED / UNDER REVIEW** pending
+focused independent re-review. All verification is synthetic-only; real source, partition, binding,
+STL, findings release and Phase 13 remain unauthorized.
 
 ### CC-02/CC-02B closeout and CC-02C implementation — 2026-10-12
 
