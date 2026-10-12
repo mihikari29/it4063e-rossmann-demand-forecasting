@@ -15,8 +15,36 @@
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
 | Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1–M3 are integrated after PR #40; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
 | Phase 13 — Sequential final evaluation | **M1/M2/M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. PR #40 integrated the M3 adapter and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
-| CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | PR #41 was squash-merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; post-merge Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
-| CC-02B — development-only Sales provider | **IMPLEMENTED / UNDER REVIEW** | Fixture-only loader and tests are on `feat/course-cc02b-trusted-development-provider`; [Draft PR #42](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/42) targets `main`. A real immutable partition, custodian procedure and real-data approval binding remain absent and separately gated. See the [active plan](../plans/active/cc-02b-trusted-development-provider.md). |
+| CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | Accepted PR #41 merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
+| CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
+| CC-02C — custodian preparation | **IMPLEMENTED / UNDER REVIEW** | Fixture-only helpers, fail-closed command, and synthetic tests are on `feat/course-cc02c-custodian-preparation`, based on accepted `main` at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`. Real source access and preparation are unauthorized. See the [active plan](../plans/active/cc-02c-custodian-preparation.md). |
+
+### CC-02/CC-02B closeout and CC-02C implementation — 2026-10-12
+
+PR #41 was accepted and merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; PR #42 was
+accepted and merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`. Live GitHub metadata verified
+both merge commits and Quality #135 at the PR #42 merge SHA. Quality #135 succeeded on Python 3.12
+and 3.14. CC-02/CC-02B fixture implementations are reviewed and integrated. Their real-data
+evidence remains pending.
+
+The current CC-02C branch starts from that accepted main SHA. It adds a byte-snapshot transformation
+test seam, explicit Arrow int64/timestamp[us] schema, deterministic Parquet settings, the exact
+17-field provider manifest, bounded staged publication, an external receipt, and a CLI that
+describes the contract or fails closed. Reference labels are inert; preparation does not create a
+provider binding or call STL. Synthetic end-to-end tests exercise the existing provider and weekly
+STL method only with artificial CSV rows.
+
+The [ADR-027 custody clarification](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic)
+distinguishes the custodian's mechanical mixed-source read from provider loading, STL execution and
+findings publication. It documents reference reservation versus permission activation and the
+trusted-operator/admin boundary. Separate bundle storage and application checks do not prove
+OS-level isolation. Source snapshot/custodian approval, mechanical-source authorization, actual
+preparation, independent verification and external binding, real STL execution, and findings
+publication remain separate owner gates. No real source, combined prepared artifact, protected
+outcome, canonical artifact or real STL run was accessed for CC-02C. Phase 13 and the final holdout
+remain protected.
+
+Validation and Draft PR details will be added below after the full fixture checks complete.
 
 ### CC-02 integration and current data boundary — 2026-10-11
 
