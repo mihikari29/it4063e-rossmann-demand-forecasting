@@ -89,6 +89,23 @@ def _manifest(bundle: Path) -> tuple[dict[str, object], bytes]:
     return json.loads(content), content
 
 
+def _assert_published_bundle_integrity(bundle: Path) -> dict[str, object]:
+    assert {path.name for path in bundle.iterdir()} == {
+        preparation.DATA_FILENAME,
+        preparation.MANIFEST_FILENAME,
+    }
+    manifest, _ = _manifest(bundle)
+    data_bytes = (bundle / preparation.DATA_FILENAME).read_bytes()
+    assert manifest["data_sha256"] == hashlib.sha256(data_bytes).hexdigest()
+    assert manifest["data_bytes"] == len(data_bytes)
+    assert set(manifest) == preparation._MANIFEST_KEYS
+    assert (
+        pq.ParquetFile(bundle / preparation.DATA_FILENAME).metadata.num_rows
+        == manifest["row_count"]
+    )
+    return manifest
+
+
 def _fixture_approval(bundle: Path) -> provider.DevelopmentInputApproval:
     manifest, manifest_bytes = _manifest(bundle)
     return provider.DevelopmentInputApproval(
@@ -207,6 +224,93 @@ def test_invalid_eligible_numeric_values_are_rejected(store: str, sales: str, me
     source = _csv_bytes([_record(store, "2015-07-03", sales)])
     with pytest.raises(preparation.PreparationError, match=message):
         preparation._extract_development_sales(source, _config(source))
+
+
+def test_signed_int64_boundaries_and_normalized_tokens_preserve_values() -> None:
+    long_zeros = "0" * 5_000
+    source = _csv_bytes(
+        [
+            _record("+0001", "2015-07-03", "+0005"),
+            _record("0002", "2015-07-02", "-0000"),
+            _record("0003", "2015-07-01", long_zeros),
+            _record(long_zeros + "4", "2015-06-30", long_zeros + "123"),
+            _record("5", "2015-06-29", "9223372036854775807"),
+            _record("6", "2015-06-28", "-9223372036854775808"),
+        ]
+    )
+
+    frame = preparation._extract_development_sales(source, _config(source))
+
+    assert frame["Store"].tolist() == [1, 2, 3, 4, 5, 6]
+    assert frame["Sales"].tolist() == [5, 0, 0, 123, 9223372036854775807, -9223372036854775808]
+
+
+@pytest.mark.parametrize(
+    ("store", "sales", "field", "positive_store"),
+    [
+        ("1", "9223372036854775808", "Sales", False),
+        ("1", "-9223372036854775809", "Sales", False),
+        ("1", "9" * 5_000, "Sales", False),
+        ("1", "-" + "9" * 5_000, "Sales", False),
+        ("9" * 5_000, "1", "Store", False),
+        ("1a", "1", "Store", False),
+        ("1_0", "1", "Store", False),
+        ("1", "not-a-number", "Sales", False),
+        ("1", "1.5", "Sales", False),
+        ("0", "1", "Store", True),
+        ("0000", "1", "Store", True),
+        ("+0000", "1", "Store", True),
+        ("-0000", "1", "Store", True),
+    ],
+    ids=[
+        "positive-overflow",
+        "negative-overflow",
+        "long-positive-overflow",
+        "long-negative-overflow",
+        "long-store-token",
+        "alphabetic-store-token",
+        "nondecimal-store-token",
+        "alphabetic-sales-token",
+        "nondecimal-sales-token",
+        "store-zero",
+        "zero-padded-store",
+        "signed-zero-store",
+        "negative-zero-store",
+    ],
+)
+def test_invalid_eligible_integer_tokens_fail_without_publishing(
+    tmp_path: Path, store: str, sales: str, field: str, positive_store: bool
+) -> None:
+    source = _csv_bytes([_record(store, "2015-07-03", sales)])
+    bundle_root, _ = _roots(tmp_path)
+    token = store if field == "Store" else sales
+
+    with pytest.raises(preparation.PreparationError) as caught:
+        _prepare(tmp_path, source)
+
+    message = str(caught.value)
+    assert token not in message
+    if field == "Store" and not positive_store:
+        assert "outside signed int64" in message or "base-10 integer" in message
+    if positive_store:
+        assert "must be positive" in message
+    assert not (bundle_root / "fixture-cc02-preparation").exists()
+    assert not list(bundle_root.glob(".stage-fixture-cc02-preparation-*"))
+
+
+def test_extremely_long_post_cutoff_sales_token_is_ignored_before_numeric_parsing() -> None:
+    source = _csv_bytes(
+        [
+            _record(1, "2015-07-03", 10),
+            _record(2, "2015-07-04", "INVALID-PROTECTED-SALES-" + "x" * 5_000),
+        ]
+    )
+
+    frame = preparation._extract_development_sales(source, _config(source))
+
+    assert frame.to_dict("records") == [
+        {"Store": 1, "Date": pd.Timestamp("2015-07-03"), "Sales": 10}
+    ]
 
 
 def test_malformed_date_is_rejected_without_echoing_its_token() -> None:
@@ -428,6 +532,83 @@ def test_writer_failure_cleans_only_current_staging_directory(
     assert list(unrelated.iterdir()) == []
     assert not list(unrelated.parent.glob(".stage-fixture-cc02-preparation-*"))
     assert not (unrelated.parent / "fixture-cc02-preparation").exists()
+
+
+def test_receipt_write_failure_keeps_published_bundle_and_unrelated_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _csv_bytes([_record(1, "2015-07-03", 10)])
+    config = _config(source)
+    bundle_root, receipt_root = _roots(tmp_path)
+    unrelated = bundle_root / ".stage-unrelated" / "keep.txt"
+    unrelated.parent.mkdir(parents=True)
+    unrelated.write_bytes(b"unrelated bytes")
+    original = preparation._write_file
+    failure_canary = "SENSITIVE-RECEIPT-FAILURE-CANARY"
+    receipt_write_attempted = False
+
+    def fail_receipt(path: Path, content: bytes) -> None:
+        nonlocal receipt_write_attempted
+        if path.name == "preparation_record.json":
+            assert (bundle_root / config.artifact_id).is_dir()
+            receipt_write_attempted = True
+            raise OSError(failure_canary)
+        original(path, content)
+
+    monkeypatch.setattr(preparation, "_write_file", fail_receipt)
+    with pytest.raises(preparation.PreparationError, match="no approval was issued") as caught:
+        _prepare(tmp_path, source, config=config)
+
+    bundle = bundle_root / config.artifact_id
+    manifest = _assert_published_bundle_integrity(bundle)
+    receipt_dir = receipt_root / config.artifact_id
+    assert receipt_write_attempted
+    assert receipt_dir.is_dir()
+    assert list(receipt_dir.iterdir()) == []
+    assert not (receipt_dir / "preparation_record.json").exists()
+    assert manifest["provider_loading_approval_reference"].endswith("PENDING:v1")
+    assert failure_canary not in str(caught.value)
+    assert unrelated.read_bytes() == b"unrelated bytes"
+    assert not list(bundle_root.glob(f".stage-{config.artifact_id}-*"))
+
+
+def test_late_receipt_directory_collision_preserves_marker_and_unbound_bundle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _csv_bytes([_record(1, "2015-07-03", 10)])
+    config = _config(source)
+    bundle_root, receipt_root = _roots(tmp_path)
+    unrelated = receipt_root / "unrelated" / "keep.txt"
+    unrelated.parent.mkdir(parents=True)
+    unrelated.write_bytes(b"unrelated receipt bytes")
+    final_receipt_dir = receipt_root / config.artifact_id
+    marker = final_receipt_dir / "keep.bin"
+    original = preparation._rename_final_directory
+    collision_canary = "SENSITIVE-RECEIPT-COLLISION-CANARY"
+    collision_injected = False
+
+    def publish_then_collide(staging: Path, destination: Path) -> None:
+        nonlocal collision_injected
+        original(staging, destination)
+        assert destination.is_dir()
+        final_receipt_dir.mkdir()
+        marker.write_bytes(collision_canary.encode("ascii"))
+        collision_injected = True
+
+    monkeypatch.setattr(preparation, "_rename_final_directory", publish_then_collide)
+    with pytest.raises(preparation.PreparationError, match="no approval was issued") as caught:
+        _prepare(tmp_path, source, config=config)
+
+    bundle = bundle_root / config.artifact_id
+    manifest = _assert_published_bundle_integrity(bundle)
+    assert collision_injected
+    assert marker.read_bytes() == collision_canary.encode("ascii")
+    assert {path.name for path in final_receipt_dir.iterdir()} == {"keep.bin"}
+    assert not (final_receipt_dir / "preparation_record.json").exists()
+    assert manifest["provider_loading_approval_reference"].endswith("PENDING:v1")
+    assert collision_canary not in str(caught.value)
+    assert unrelated.read_bytes() == b"unrelated receipt bytes"
+    assert not list(bundle_root.glob(f".stage-{config.artifact_id}-*"))
 
 
 def test_manifest_publication_failure_cleans_staging_and_never_publishes_bundle(

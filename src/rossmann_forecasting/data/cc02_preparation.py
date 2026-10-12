@@ -144,7 +144,21 @@ def _validate_configuration(config: PreparationConfiguration) -> None:
 def _parse_signed_int64(token: str, field: str) -> int:
     if not _SIGNED_INTEGER.fullmatch(token):
         raise PreparationError(f"eligible {field} value is not a base-10 integer")
-    value = int(token)
+
+    sign = token[0] if token[0] in "+-" else ""
+    digits = token[1:] if sign else token
+    significant_digits = digits.lstrip("0")
+    if not significant_digits:
+        return 0
+
+    magnitude_limit = "9223372036854775808" if sign == "-" else "9223372036854775807"
+    if len(significant_digits) > len(magnitude_limit) or (
+        len(significant_digits) == len(magnitude_limit) and significant_digits > magnitude_limit
+    ):
+        raise PreparationError(f"eligible {field} value is outside signed int64")
+
+    normalized_token = f"{sign}{significant_digits}"
+    value = int(normalized_token)
     if not _INT64_MIN <= value <= _INT64_MAX:
         raise PreparationError(f"eligible {field} value is outside signed int64")
     return value
