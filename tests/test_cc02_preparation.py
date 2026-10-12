@@ -375,7 +375,7 @@ def test_publication_writes_exact_provider_schema_and_separate_safe_receipt(tmp_
         {"Store": 1, "Date": pd.Timestamp("2015-06-01"), "Sales": 4},
         {"Store": 2, "Date": pd.Timestamp("2015-07-03"), "Sales": 0},
     ]
-    assert receipt["designation"].startswith("fixture-only")
+    assert receipt["designation"] == provider.PREPARATION_RECORD_DESIGNATION
     assert (
         receipt["preparation"]["permission_status"]
         == "not authenticated or activated by this component"
@@ -727,7 +727,12 @@ def test_production_command_only_describes_contract_or_fails_without_file_access
     assert preparation.cli_main(["--describe-input-contract"]) == 0
     described = json.loads(capsys.readouterr().out)
     assert described["date_ceiling"] == "2015-07-03"
-    assert "mechanically includes protected bytes" in described["custody_note"]
+    assert "includes protected-period bytes" in described["custody_note"]
+    assert "fails closed" in described["default_execution"]
+    assert "no data-file I/O" in described["contract_description"]
+    assert "--execute-once" in described["one_time_execution"]
+    assert "not approving authority" in described["authorization"]
+    assert "separate approval" in described["downstream_gates"]
     with pytest.raises(SystemExit):
         preparation.cli_main([])
     with pytest.raises(SystemExit):

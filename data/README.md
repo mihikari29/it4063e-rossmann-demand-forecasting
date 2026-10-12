@@ -100,24 +100,29 @@ the CC-02 canonical in-memory projection hash.
 
 These Python checks enforce an application-level allowlist and detect path aliases where the
 operating system exposes them. They do not authenticate an approver, prove custody or guarantee
-physical isolation against a privileged process. A separate trusted custodian must create and
-document an immutable development partition under an independently authorized preparation
-procedure before an external approval binding can be issued. Mechanical source access and
-analytical release are distinct approval gates. This task created no real partition and configured
-no real-data approval. The CLI has no filesystem reader or binding option and remains fail-closed.
+physical isolation against a privileged process. CC-02D adds a default-deny one-use preparation
+path. Its ignored fixed packet is `data/authorizations/cc02_custodian_execution.json`; three
+hash-matched evidence records belong under
+`data/authorizations/cc02_custodian/<execution_id>/`. The packet is checked against the documented
+source identity, named Windows account/host, exact clean code commit and lock hash, expiry, and a
+no-replace run marker before the fixed source can be opened. The external trusted process must
+authenticate the approver and verify the signed records; Python does not. This task created no
+packet, real partition or real-data approval. The command remains fail-closed unless explicitly
+invoked with `--execute-once` and a complete, externally approved packet. Mechanical source access
+and analytical release are distinct approval gates.
 Never create the partition by reading/filtering `data/interim/train.parquet`; do not fall back to
 raw or feature artifacts.
 
-CC-02C adds fixture-only preparation helpers in
-`src/rossmann_forecasting/data/cc02_preparation.py` and the command
-`python scripts/prepare_cc02_development.py --describe-input-contract`. The command describes the
-fixed future source/bundle contract or fails closed; it cannot read the source or activate the
-synthetic byte-snapshot test seam. No real bundle currently exists. A future custodian read of the
-mixed `train.csv` mechanically accesses bytes from the protected period, including when chunked,
-and requires a distinct written authorization. Preparation, independent bundle verification,
-provider loading, STL execution and findings publication are separate gates. The output manifest
-keeps the exact CC-02B provider schema; additional command, code, lock and environment provenance
-belongs in ignored `reports/generated/cc02_custodian/<artifact_id>/preparation_record.json`.
+CC-02C adds fixture-tested preparation helpers in
+`src/rossmann_forecasting/data/cc02_preparation.py`. CC-02D connects them to the fixed-source
+custodian command `python scripts/prepare_cc02_development.py --execute-once`, which is opt-in and
+requires the packet described above. No real bundle currently exists. A future custodian read of
+the mixed `train.csv` mechanically accesses bytes from the protected period, including when
+chunked, and requires a distinct written authorization. Preparation, independent bundle
+verification, provider loading, STL execution and findings publication are separate gates. The
+output manifest keeps the exact CC-02B provider schema; additional command, code, lock and
+environment provenance belongs in ignored
+`reports/generated/cc02_custodian/<artifact_id>/preparation_record.json`.
 
 Provider and preflight reference IDs may be reserved before preparation, but pending records grant
 no permission. After preparation, an independently authorized verifier checks the bundle and an

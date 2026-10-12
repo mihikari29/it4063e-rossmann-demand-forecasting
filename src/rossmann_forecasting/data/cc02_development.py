@@ -35,6 +35,10 @@ MAX_DATA_BYTES = 128 * 1024 * 1024
 MAX_MANIFEST_BYTES = 64 * 1024
 MAX_ROWS = 1_200_000
 MAX_ROW_GROUPS = 10_000
+MAX_PREPARATION_RECEIPT_BYTES = 1024 * 1024
+PREPARATION_RECORD_DESIGNATION = (
+    "CC-02 development-only partition preparation record; no approval or permission is conveyed"
+)
 _ARTIFACT_ID = re.compile(r"[a-z0-9][a-z0-9-]{0,63}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _MANIFEST_KEYS = frozenset(
@@ -101,6 +105,21 @@ class ApprovedDevelopmentSales:
         """Return a deep copy so callers cannot mutate this validated snapshot."""
 
         return self._frame.copy(deep=True)
+
+
+@dataclass(frozen=True, slots=True)
+class DevelopmentBundleVerification:
+    """Content identities and counts from a read-only, unbound bundle verification."""
+
+    artifact_id: str
+    data_sha256: str
+    manifest_sha256: str
+    preparation_receipt_sha256: str
+    data_bytes: int
+    row_count: int
+    store_count: int
+    date_min: str
+    date_max: str
 
 
 def _approved_bundle_root() -> Path:
@@ -379,6 +398,180 @@ def _decode_parquet(content: bytes, manifest: dict[str, Any]) -> pd.DataFrame:
     if str(validated["Sales"].dtype) != manifest["dtypes"]["Sales"]:
         raise DevelopmentInputError("decoded Sales dtype differs from the approved manifest")
     return validated
+
+
+def _validate_unbound_manifest(manifest: dict[str, Any]) -> None:
+    """Validate manifest semantics without treating references as an approval binding."""
+
+    if type(manifest["schema_version"]) is not int or manifest["schema_version"] != 1:
+        raise DevelopmentInputError("partition manifest schema_version must be integer 1")
+    if not isinstance(manifest["artifact_id"], str) or not _ARTIFACT_ID.fullmatch(
+        manifest["artifact_id"]
+    ):
+        raise DevelopmentInputError("manifest artifact_id must be a simple lowercase identifier")
+    for key, expected in (
+        ("purpose", PURPOSE),
+        ("data_file", DATA_FILENAME),
+        ("columns", list(SOURCE_COLUMNS)),
+        ("sort_order", ["Store", "Date"]),
+        (
+            "dtypes",
+            {"Store": "int64", "Date": "datetime64[us]", "Sales": "int64"},
+        ),
+    ):
+        if manifest[key] != expected:
+            raise DevelopmentInputError(
+                f"partition manifest {key} violates the preparation contract"
+            )
+    for key in (
+        "source_lineage_reference",
+        "custodian_preparation_authorization_reference",
+        "provider_loading_approval_reference",
+        "preflight_reference",
+    ):
+        _valid_reference(manifest[key], f"manifest {key}")
+    _valid_sha256(manifest["data_sha256"], "manifest data_sha256")
+    for key in ("data_bytes", "row_count", "store_count"):
+        if type(manifest[key]) is not int or manifest[key] <= 0:
+            raise DevelopmentInputError(f"manifest {key} must be a positive integer")
+    if manifest["data_bytes"] > MAX_DATA_BYTES:
+        raise DevelopmentInputError("manifest data_bytes exceeds the provider size limit")
+    if manifest["row_count"] > MAX_ROWS:
+        raise DevelopmentInputError("manifest row_count exceeds the provider row limit")
+    if manifest["store_count"] > manifest["row_count"]:
+        raise DevelopmentInputError("manifest store_count cannot exceed row_count")
+    for key in ("date_min", "date_max"):
+        value = manifest[key]
+        if not isinstance(value, str):
+            raise DevelopmentInputError(f"manifest {key} must be an ISO calendar date")
+        try:
+            parsed = date.fromisoformat(value)
+        except ValueError:
+            raise DevelopmentInputError(f"manifest {key} must be an ISO calendar date") from None
+        if parsed.isoformat() != value or parsed > date.fromisoformat(DEVELOPMENT_CEILING):
+            raise DevelopmentInputError(f"manifest {key} exceeds or violates the date ceiling")
+    if manifest["date_min"] > manifest["date_max"]:
+        raise DevelopmentInputError("manifest date_min must not be after date_max")
+
+
+def _parse_preparation_receipt(content: bytes) -> dict[str, Any]:
+    try:
+        receipt = json.loads(
+            content.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_json_constant,
+        )
+    except DevelopmentInputError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise DevelopmentInputError("preparation receipt is not valid UTF-8 JSON") from None
+    if not isinstance(receipt, dict):
+        raise DevelopmentInputError("preparation receipt must be a JSON object")
+    return receipt
+
+
+def verify_development_bundle_snapshot(
+    data_bytes: bytes, manifest_bytes: bytes, preparation_receipt_bytes: bytes
+) -> DevelopmentBundleVerification:
+    """Verify three already-read byte snapshots without issuing or constructing a binding.
+
+    This function establishes consistency of these bytes and the preparation receipt. It does not
+    authenticate approval records, establish custody, or authorize provider loading or STL.
+    """
+
+    if not isinstance(data_bytes, bytes) or not isinstance(manifest_bytes, bytes):
+        raise DevelopmentInputError("bundle verification requires immutable byte snapshots")
+    if not isinstance(preparation_receipt_bytes, bytes):
+        raise DevelopmentInputError("bundle verification requires an immutable receipt snapshot")
+    if len(data_bytes) > MAX_DATA_BYTES:
+        raise DevelopmentInputError("partition data exceeds the provider byte limit")
+    if len(manifest_bytes) > MAX_MANIFEST_BYTES:
+        raise DevelopmentInputError("partition manifest exceeds the provider byte limit")
+    if len(preparation_receipt_bytes) > MAX_PREPARATION_RECEIPT_BYTES:
+        raise DevelopmentInputError("preparation receipt exceeds the verification byte limit")
+
+    manifest = _parse_manifest(manifest_bytes)
+    _validate_unbound_manifest(manifest)
+    data_sha256 = hashlib.sha256(data_bytes).hexdigest()
+    manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+    receipt_sha256 = hashlib.sha256(preparation_receipt_bytes).hexdigest()
+    if len(data_bytes) != manifest["data_bytes"]:
+        raise DevelopmentInputError("partition data byte count differs from the manifest")
+    if data_sha256 != manifest["data_sha256"]:
+        raise DevelopmentInputError("partition data SHA-256 differs from the manifest")
+
+    frame = _decode_parquet(data_bytes, manifest)
+    if len(frame) != manifest["row_count"]:
+        raise DevelopmentInputError("decoded row count differs from the manifest")
+    store_count = int(frame["Store"].nunique())
+    if store_count != manifest["store_count"]:
+        raise DevelopmentInputError("decoded Store count differs from the manifest")
+    actual_date_min = frame["Date"].min().date().isoformat()
+    actual_date_max = frame["Date"].max().date().isoformat()
+    if (actual_date_min, actual_date_max) != (manifest["date_min"], manifest["date_max"]):
+        raise DevelopmentInputError("decoded Date bounds differ from the manifest")
+
+    receipt = _parse_preparation_receipt(preparation_receipt_bytes)
+    try:
+        receipt_preparation = receipt["preparation"]
+        receipt_source = receipt["source"]
+        receipt_output = receipt["output"]
+        receipt_authorizations = receipt_preparation["authorization_references"]
+        if not all(
+            isinstance(section, dict)
+            for section in (
+                receipt_preparation,
+                receipt_source,
+                receipt_output,
+                receipt_authorizations,
+            )
+        ):
+            raise TypeError
+        receipt_checks = (
+            type(receipt["schema_version"]) is int
+            and receipt["schema_version"] == 1
+            and receipt["designation"] == PREPARATION_RECORD_DESIGNATION
+            and receipt_source["lineage_reference"] == manifest["source_lineage_reference"]
+            and receipt_preparation["artifact_id"] == manifest["artifact_id"]
+            and receipt_authorizations["custodian_preparation"]
+            == manifest["custodian_preparation_authorization_reference"]
+            and receipt_authorizations["provider_loading"]
+            == manifest["provider_loading_approval_reference"]
+            and receipt_authorizations["preflight"] == manifest["preflight_reference"]
+            and receipt_output["data_file"] == DATA_FILENAME
+            and receipt_output["data_sha256"] == data_sha256
+            and type(receipt_output["data_bytes"]) is int
+            and receipt_output["data_bytes"] == len(data_bytes)
+            and receipt_output["manifest_sha256"] == manifest_sha256
+            and type(receipt_output["manifest_bytes"]) is int
+            and receipt_output["manifest_bytes"] == len(manifest_bytes)
+            and type(receipt_output["row_count"]) is int
+            and receipt_output["row_count"] == len(frame)
+            and type(receipt_output["store_count"]) is int
+            and receipt_output["store_count"] == store_count
+            and receipt_output["columns"] == list(SOURCE_COLUMNS)
+            and receipt_output["dtypes"] == manifest["dtypes"]
+            and receipt_output["date_min"] == actual_date_min
+            and receipt_output["date_max"] == actual_date_max
+        )
+    except (KeyError, TypeError):
+        receipt_checks = False
+    if not receipt_checks:
+        raise DevelopmentInputError(
+            "preparation receipt does not match the verified bundle and manifest snapshots"
+        )
+
+    return DevelopmentBundleVerification(
+        artifact_id=manifest["artifact_id"],
+        data_sha256=data_sha256,
+        manifest_sha256=manifest_sha256,
+        preparation_receipt_sha256=receipt_sha256,
+        data_bytes=len(data_bytes),
+        row_count=len(frame),
+        store_count=store_count,
+        date_min=actual_date_min,
+        date_max=actual_date_max,
+    )
 
 
 def load_approved_development_sales(

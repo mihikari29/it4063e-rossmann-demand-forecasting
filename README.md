@@ -147,13 +147,21 @@ python scripts/run_seasonal_decomposition.py --describe-input-contract
 
 The fixed diagnostic ends by 2015-07-03, uses the first three eligible Store IDs, and writes
 components, status, figures, and a provenance manifest under ignored
-`reports/generated/seasonal_decomposition/` when called through its API. The fixture-only CC-02C
-preparation helper implements the future Store/Date/Sales projection and immutable bundle writer;
-its command describes the contract or fails closed:
+`reports/generated/seasonal_decomposition/` when called through its API. The CC-02C preparation
+code implements the Store/Date/Sales projection and immutable bundle writer, with a separate fixed
+source `--execute-once` gate. The command describes the contract or fails closed by default. A
+future custodian may execute it only under the externally authenticated one-use procedure, with
+hash-matched source-access/preparation/custody evidence, the approved account and host, and the
+approved clean execution commit. Python checks packet/evidence structure and hashes, not approving
+authority. The command has no source-path override and stops after bundle preparation; it does not
+load the provider or run STL:
 
 ```powershell
 python scripts/prepare_cc02_development.py --describe-input-contract
 ```
+
+See the [CC-02D custodian runbook](docs/CC-02D_CUSTODIAN_RUNBOOK.md) for the future GO/NO-GO
+checklist and independent verification/provider/STL handoff.
 
 No real partition or Rossmann decomposition has been created or run. A future custodian reading the
 mixed source mechanically accesses protected bytes and needs a separate explicit authorization.
@@ -163,7 +171,7 @@ relies on the custodian/operator and machine owner/administrator; separate Windo
 ACLs are optional hardening, not a claim of strict isolation. Synthetic fixture verification is not
 a Rossmann result. The components are descriptive and are not forecasting features or
 model-selection evidence. See the [completed provider plan](plans/completed/cc-02b-trusted-development-provider.md),
-[active preparation plan](plans/active/cc-02c-custodian-preparation.md), and
+[completed preparation plan](plans/completed/cc-02c-custodian-preparation.md), and
 [EDA findings](docs/EDA_FINDINGS.md#cc-02-weekly-stl-diagnostic).
 
 ## Phase 8 development-only uncertainty

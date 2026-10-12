@@ -17,7 +17,8 @@
 | Phase 13 — Sequential final evaluation | **M1/M2/M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. PR #40 integrated the M3 adapter and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 | CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | Accepted PR #41 merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
 | CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
-| CC-02C — custodian preparation | **IMPLEMENTED / UNDER REVIEW** | [Draft PR #43](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/43) is open and mergeable against `main`; Quality run [#38195056526](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38195056526) passed on Python 3.12 and 3.14 at implementation commit `e85e814237bd35240d8f44ff427c7e5d9f7205ac`. Real source access and preparation are unauthorized. See the [active plan](../plans/active/cc-02c-custodian-preparation.md). |
+| CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
+| CC-02D — minimal custodian execution readiness | **IMPLEMENTED / UNDER REVIEW** | [Draft PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44) remains open from `feat/cc-02d-stl-custodian-readiness`, based on the verified CC-02C integration SHA. The initial implementation/PR-opening checkpoint was `6ca830060d53bc182b831747e5f5947e5e71640d`; review corrections are tracked in the live PR. Real source access, preparation, binding and STL remain unauthorized. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 
 ### CC-02C independent review corrections (2026-10-12)
 
@@ -53,6 +54,69 @@ and 1 warning. The only CI skip was the optional canonical-artifact test. CC-02C
 IMPLEMENTED / UNDER REVIEW pending focused independent re-review and authorized integration.
 No real Rossmann source, prepared partition, protected outcome, real approval binding, real STL
 run, or Phase 13 operation was accessed or executed.
+
+### CC-02C integration closeout (2026-10-12)
+
+PR #43 was subsequently accepted and merged into `main` at
+`13d762c0c622164ebf6a804ab0a1887c738bdbe8`. Live GitHub metadata confirmed the merge, and
+[Quality #141](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38197240761)
+passed on Python 3.12 and 3.14 at that exact merge SHA. The CC-02C fixture implementation is
+reviewed and integrated; no real source, partition, approval binding or STL run was created. Its
+ordinary task plan is archived under `plans/completed/`.
+
+### CC-02D minimal custodian execution readiness — 2026-10-12
+
+Verified `origin/main` at `13d762c0c622164ebf6a804ab0a1887c738bdbe8` and live post-merge Quality
+#141 success at that exact SHA before creating the focused branch
+`feat/cc-02d-stl-custodian-readiness`. The missing connection was the absence of any production
+path from the fail-closed CC-02C CLI to its byte-snapshot transformation: the accepted preparation
+helper accepts bytes only, while the accepted provider separately requires an externally issued
+`DevelopmentInputApproval`. CC-02D adds a fixed-source `--execute-once` gate that checks a structured
+external packet, exact documented source identity, named account/host, clean procedure commit and
+lock hash, expiry, hash-matched source-access/custody/preparation records, and a no-replace
+consumption marker before source open. It passes one in-memory source snapshot to the accepted
+preparation helper, then stops. It does not create or activate a provider binding or call STL.
+
+The [operator runbook](CC-02D_CUSTODIAN_RUNBOOK.md) defines the fixed packet and GO/NO-GO checklist,
+the independently authorized bundle verification, the later exact-hash provider binding, and
+separate provider-loading, STL, and findings gates. Python checks packet structure and evidence
+hashes but does not authenticate approvers or prove custody; the ADR-027 trusted operator process
+remains the authority. No packet or external approval binding was created.
+
+All new execution tests use independently generated synthetic CSV bytes and temporary paths. The
+focused CC-02/preparation/provider/STL regression selection passed 124 tests with two Windows
+symlink-privilege skips. Full fixture suite: 776 passed, two symlink-privilege skips, one existing
+Starlette/httpx deprecation warning in 189.04 seconds on Python 3.14.5. Full-repository Ruff lint
+and format, Markdown validation (322 local destinations/anchors across 34 files),
+`python -m uv lock --check`, `python -m uv pip check`, and `git diff --check` passed. No actual
+Rossmann source bytes were opened or hashed, no partition was generated, and no real provider/STL
+execution or Phase 13 operation occurred. The initial implementation/PR-opening checkpoint was
+`6ca830060d53bc182b831747e5f5947e5e71640d`. Independent Sol 6.1 reviewed PR #44 at
+`93b29f9d4139ef79916bd23f2e3045b620c038eb` and returned **REQUEST_CHANGES** for CC02D-R01–R04;
+the focused corrections below address those findings and clarify optional R05/R06. Draft
+[PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44) remains
+IMPLEMENTED / UNDER REVIEW; no merge or real-data operation is authorized.
+
+### CC-02D independent review corrections — 2026-10-12
+
+This correction pass addresses the review checkpoint at `93b29f9d4139ef79916bd23f2e3045b620c038eb`:
+R01 adds a non-mutating output preflight before marker creation and source access while preserving
+the preparation helper's no-replace publication checks; R02 verifies bounded byte snapshots and
+cross-checks the accepted manifest against the preparation receipt without creating a provider
+binding; R03 corrects receipt and contract wording; R04 labels earlier SHAs as historical review
+checkpoints. The runbook also clarifies environment-derived username hints and separates pre-source
+and post-preparation approvals. The current state remains **IMPLEMENTED / UNDER REVIEW** pending
+focused independent re-review. Implementation correction commit
+`1e14be1a75a32bb4c3ab4265e88e060328eb2d60` contains the R01–R04 fixes, synthetic regressions, and
+R05/R06 documentation clarifications. The focused CC-02D/preparation/provider/STL selection passed
+154 tests with six Windows symlink-privilege skips. A full fixture suite in a detached checkout at
+that commit, with no real source or canonical interim artifacts, passed 805 tests with seven skips
+and one existing Starlette/httpx deprecation warning in 183.94 seconds on Python 3.14.5. Six skips
+were Windows symlink-privilege cases; the other was the optional canonical-artifact test. The
+runbook verifier example also passed against a temporary synthetic partition. Ruff lint and format,
+Markdown validation (323 local destinations/anchors across 34 files), `uv lock --check`, dependency
+consistency (93 packages), and whitespace checks passed. All execution evidence is synthetic-only;
+real source, partition, binding, STL, findings release and Phase 13 remain unauthorized.
 
 ### CC-02/CC-02B closeout and CC-02C implementation — 2026-10-12
 

@@ -923,8 +923,11 @@ approval. The current provider schema supports these references without a schema
 trustworthy lifecycle is enforced by the external operator process, not Python.
 
 This clarification does not authorize real Rossmann access, source partition creation, protected-
-period analysis, EDA execution, or a final-holdout operation. The preparation CLI and STL CLI remain
-fail-closed. No real partition or approval binding is configured.
+period analysis, EDA execution, or a final-holdout operation. The preparation CLI defaults to
+fail-closed and has only the separate fixed-source `--execute-once` gate; no authorization packet
+or real approval is configured. The STL CLI remains fail-closed. CC-02D documents the later
+operator handoff in [the custodian runbook](CC-02D_CUSTODIAN_RUNBOOK.md). No real partition or
+approval binding is configured.
 
 **Consequences:** PR #41 integrates the bounded diagnostic and PR #42 integrates its fixed-path
 provider. Synthetic fixtures remain the only execution evidence; no Rossmann decomposition has
