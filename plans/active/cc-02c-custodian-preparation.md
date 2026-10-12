@@ -65,6 +65,15 @@ approval and the operator-enforced isolation claim. Phase 13 methods and gates a
 
 ## Execution checkpoint — 2026-10-12
 
-Implementation and validation evidence will be appended after the scoped checks. The active plan
-remains open until independent review and integration. Do not create a real bundle, activate a real
-binding, run real STL, or enter Phase 13.
+Commit `e589232` implements the fixture-only workflow on `feat/course-cc02c-custodian-preparation`,
+based on accepted `origin/main` at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`. The focused
+preparation/provider/STL regression selection passed 98 tests with two Windows symlink-privilege
+skips. A clean detached worktree containing no `data/raw` or `data/interim` passed the full suite:
+749 passed, 3 skipped, 1 warning in 272.37 seconds. The skips were the same two symlink tests and
+the existing optional canonical-artifact test; the warning was Starlette's `httpx` TestClient
+deprecation. Full-repository Ruff check/format, 315 local Markdown destinations/anchors,
+`python -m uv lock --check`, `git diff --check`, and the no-source contract-description command
+passed. No remote Draft PR or CI result has been recorded yet.
+
+The active plan remains open until independent review and integration. Do not create a real bundle,
+activate a real binding, run real STL, or enter Phase 13.

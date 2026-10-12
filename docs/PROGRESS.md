@@ -44,7 +44,14 @@ publication remain separate owner gates. No real source, combined prepared artif
 outcome, canonical artifact or real STL run was accessed for CC-02C. Phase 13 and the final holdout
 remain protected.
 
-Validation and Draft PR details will be added below after the full fixture checks complete.
+Validation at commit `e589232`: focused CC-02C/provider/STL regression suite, 98 passed and two
+Windows symlink-privilege skips. Full fixture suite in a clean detached worktree with no raw or
+interim data: 749 passed, 3 skipped, 1 warning in 272.37 seconds. The skips were those two symlink
+tests plus the existing optional canonical-artifact test; the warning was Starlette's `httpx`
+TestClient deprecation. Whole-repository Ruff lint and formatting, 315 Markdown destinations and
+anchors, `python -m uv lock --check`, commit whitespace, and the no-source contract-description
+command passed. No forecasting/data pipeline or Rossmann file was used. Draft PR creation and
+remote CI status are pending publication.
 
 ### CC-02 integration and current data boundary — 2026-10-11
 
