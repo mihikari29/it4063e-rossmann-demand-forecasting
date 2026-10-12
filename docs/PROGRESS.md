@@ -18,7 +18,7 @@
 | CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | Accepted PR #41 merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
 | CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
-| CC-02D — minimal custodian execution readiness | **IMPLEMENTED / UNDER REVIEW** | Focused branch `feat/cc-02d-stl-custodian-readiness` from the verified CC-02C integration SHA. Adds a default-deny one-use execution packet, fixed source reader and operator runbook; real source access, preparation, binding and STL remain unauthorized. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
+| CC-02D — minimal custodian execution readiness | **IMPLEMENTED / UNDER REVIEW** | [Draft PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44) is open from `feat/cc-02d-stl-custodian-readiness` at `6ca830060d53bc182b831747e5f5947e5e71640d`, based on the verified CC-02C integration SHA. Adds a default-deny one-use execution packet, fixed source reader and operator runbook; real source access, preparation, binding and STL remain unauthorized. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 
 ### CC-02C independent review corrections (2026-10-12)
 
@@ -87,11 +87,11 @@ All new execution tests use independently generated synthetic CSV bytes and temp
 focused CC-02/preparation/provider/STL regression selection passed 124 tests with two Windows
 symlink-privilege skips. Full fixture suite: 776 passed, two symlink-privilege skips, one existing
 Starlette/httpx deprecation warning in 189.04 seconds on Python 3.14.5. Full-repository Ruff lint
-and format, Markdown validation (322 local destinations/anchors across 35 files),
+and format, Markdown validation (322 local destinations/anchors across 34 files),
 `python -m uv lock --check`, `python -m uv pip check`, and `git diff --check` passed. No actual
 Rossmann source bytes were opened or hashed, no partition was generated, and no real provider/STL
-execution or Phase 13 operation occurred. Draft PR and final commit identity are recorded after
-publication.
+execution or Phase 13 operation occurred. Draft [PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44)
+is open at head `6ca830060d53bc182b831747e5f5947e5e71640d`; no merge was performed.
 
 ### CC-02/CC-02B closeout and CC-02C implementation — 2026-10-12
 

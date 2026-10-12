@@ -41,5 +41,6 @@ approval packet/binding, provider loading, or STL run was accessed or created.
 Current status and evidence are recorded in [`docs/PROGRESS.md`](../../docs/PROGRESS.md). The
 real-source authorization checklist remains in the
 [operator runbook](../../docs/CC-02D_CUSTODIAN_RUNBOOK.md). This ordinary task plan is archived
-after validation; the implementation remains UNDER REVIEW until its Draft PR is reviewed and
-integrated.
+after validation. Draft [PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44)
+is open at head `6ca830060d53bc182b831747e5f5947e5e71640d`; the implementation remains UNDER REVIEW
+until the PR is reviewed and integrated.
