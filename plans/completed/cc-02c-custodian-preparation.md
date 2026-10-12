@@ -1,7 +1,7 @@
 # CC-02C — Fixture-Only Custodian Preparation
 
-**State:** **IMPLEMENTED / UNDER REVIEW** under the explicit 2026-10-12 fixture-only owner task.
-Real source access and preparation are not authorized.
+**State:** **REVIEWED / INTEGRATED** at `13d762c0c622164ebf6a804ab0a1887c738bdbe8` after
+PR #43 was accepted and merged. Real source access and preparation remain unauthorized.
 
 ## Scope and boundary
 
@@ -78,5 +78,11 @@ is open and mergeable against `main`. Quality run
 [#137 / #38189361426](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38189361426)
 passed on Python 3.12 and 3.14 at pushed head `e872043a000a05cffc733da90e64ad74bdae2383`.
 
-The active plan remains open until independent review and integration. Do not create a real bundle,
-activate a real binding, run real STL, or enter Phase 13.
+At the implementation checkpoint above, the plan remained open pending independent review and
+integration. The authorized closeout is recorded below.
+
+## Integration closeout — 2026-10-12
+
+PR #43 merged into `main` at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`. Post-merge Quality #141
+passed on Python 3.12 and 3.14 at that exact SHA. This plan is archived after review and integration.
+No real bundle, active provider binding, real STL run, or Phase 13 operation was created.

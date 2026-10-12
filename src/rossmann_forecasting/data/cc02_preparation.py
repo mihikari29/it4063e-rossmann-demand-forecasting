@@ -1,9 +1,9 @@
 """Fixture-tested preparation for a CC-02 development-only Sales partition.
 
-The transformation helpers accept a bounded byte snapshot; they do not open a source file.
-The production CLI intentionally has no source-reading path until a separately authorized
-custodian execution procedure is approved. Configuration references are provenance labels,
-not authenticated permissions.
+The transformation helpers accept a bounded byte snapshot; they do not open a source file. The
+production CLI defaults to no source access and delegates its one-use path to a fixed-source
+custodian gate. Preparation configuration references are provenance labels, not authenticated
+permissions.
 """
 
 from __future__ import annotations
@@ -94,7 +94,8 @@ class PreparationConfiguration:
     """Inert source identity and provenance labels for one preparation.
 
     These values are not credentials or permissions. The fixture-only API never authenticates
-    them, and the production command does not accept this record or read a source file.
+    them. The production command constructs this record only after its separate authorization
+    packet and custody-evidence checks pass.
     """
 
     artifact_id: str
@@ -600,10 +601,14 @@ def input_contract() -> dict[str, Any]:
         "output_files": [DATA_FILENAME, MANIFEST_FILENAME],
         "columns": list(OUTPUT_COLUMNS),
         "date_ceiling": DEVELOPMENT_CEILING,
-        "current_cli_behavior": "describes this contract or fails closed without opening a file",
+        "current_cli_behavior": (
+            "describes this contract or fails closed; --execute-once requires a fixed, "
+            "hash-bound external authorization packet and never accepts a source-path override"
+        ),
         "authorization": (
-            "no source access, preparation, binding, analysis, or publication permission "
-            "is configured"
+            "this component does not authenticate or grant source-access, preparation, provider, "
+            "analysis, or publication permission; the external approval process "
+            "remains authoritative"
         ),
         "custody_note": (
             "a future custodian read mechanically includes protected bytes in the mixed source; "
@@ -613,15 +618,15 @@ def input_contract() -> dict[str, Any]:
 
 
 def cli_main(argv: list[str] | None = None) -> int:
-    """Describe the future contract or fail closed; this command never opens data."""
+    """Describe the contract or invoke the separately gated one-time custodian procedure."""
 
     import argparse
 
     parser = argparse.ArgumentParser(
         prog="rossmann-prepare-cc02-development",
         description=(
-            "Describe the fixture-tested CC-02 preparation contract; "
-            "real-source execution is disabled."
+            "Describe the fixture-tested CC-02 contract. A fixed, hash-bound external "
+            "authorization packet is required for one-time source preparation."
         ),
     )
     parser.add_argument(
@@ -629,11 +634,56 @@ def cli_main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Print the contract without opening a data file.",
     )
+    parser.add_argument(
+        "--execute-once",
+        action="store_true",
+        help=(
+            "Run the fixed-source procedure once using its external authorization packet; "
+            "there is no source-path or approval-reference override."
+        ),
+    )
     args = parser.parse_args(argv)
     if args.describe_input_contract:
-        print(json.dumps(input_contract(), indent=2, sort_keys=True))
+        if args.execute_once:
+            parser.error("--describe-input-contract and --execute-once are mutually exclusive")
+        from rossmann_forecasting.data.cc02_custodian_execution import authorization_contract
+
+        contract = input_contract()
+        contract["execution_authorization"] = authorization_contract()
+        print(json.dumps(contract, indent=2, sort_keys=True))
+        return 0
+    if args.execute_once:
+        from rossmann_forecasting.data.cc02_custodian_execution import (
+            run_fixed_source_preparation_once,
+        )
+
+        try:
+            result = run_fixed_source_preparation_once()
+        except PreparationError as error:
+            parser.exit(
+                2, f"custodian preparation stopped before/within the authorized run: {error}\n"
+            )
+        print(
+            json.dumps(
+                {
+                    "bundle_path": result.bundle_path.as_posix(),
+                    "receipt_path": result.receipt_path.as_posix(),
+                    "data_sha256": result.data_sha256,
+                    "manifest_sha256": result.manifest_sha256,
+                    "data_bytes": result.data_bytes,
+                    "row_count": result.row_count,
+                    "store_count": result.store_count,
+                    "next_gate": (
+                        "independent bundle verification; this command does not load the provider "
+                        "or run STL"
+                    ),
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return 0
     parser.error(
-        "real-source preparation is disabled; this command opened no data file and has no "
-        "source-path or bypass option"
+        "no source was opened; use --describe-input-contract or, only after the external "
+        "custodian authorization gate, --execute-once"
     )

@@ -149,11 +149,18 @@ The fixed diagnostic ends by 2015-07-03, uses the first three eligible Store IDs
 components, status, figures, and a provenance manifest under ignored
 `reports/generated/seasonal_decomposition/` when called through its API. The fixture-only CC-02C
 preparation helper implements the future Store/Date/Sales projection and immutable bundle writer;
-its command describes the contract or fails closed:
+its command describes the contract or fails closed by default. A later authorized custodian may
+use its fixed-source `--execute-once` path only with the external, one-use authorization packet,
+hash-matched source-access/preparation/custody evidence, matching Windows account and host, and the
+approved clean execution commit. The command has no source-path override and stops after bundle
+preparation; it does not load the provider or run STL:
 
 ```powershell
 python scripts/prepare_cc02_development.py --describe-input-contract
 ```
+
+See the [CC-02D custodian runbook](docs/CC-02D_CUSTODIAN_RUNBOOK.md) for the future GO/NO-GO
+checklist and independent verification/provider/STL handoff.
 
 No real partition or Rossmann decomposition has been created or run. A future custodian reading the
 mixed source mechanically accesses protected bytes and needs a separate explicit authorization.
@@ -163,7 +170,7 @@ relies on the custodian/operator and machine owner/administrator; separate Windo
 ACLs are optional hardening, not a claim of strict isolation. Synthetic fixture verification is not
 a Rossmann result. The components are descriptive and are not forecasting features or
 model-selection evidence. See the [completed provider plan](plans/completed/cc-02b-trusted-development-provider.md),
-[active preparation plan](plans/active/cc-02c-custodian-preparation.md), and
+[completed preparation plan](plans/completed/cc-02c-custodian-preparation.md), and
 [EDA findings](docs/EDA_FINDINGS.md#cc-02-weekly-stl-diagnostic).
 
 ## Phase 8 development-only uncertainty
