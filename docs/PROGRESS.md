@@ -17,7 +17,7 @@
 | Phase 13 — Sequential final evaluation | **M1/M2/M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. PR #40 integrated the M3 adapter and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 | CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | Accepted PR #41 merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
 | CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
-| CC-02C — custodian preparation | **IMPLEMENTED / UNDER REVIEW** | Fixture-only helpers, fail-closed command, and synthetic tests are on `feat/course-cc02c-custodian-preparation`, based on accepted `main` at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`. Real source access and preparation are unauthorized. See the [active plan](../plans/active/cc-02c-custodian-preparation.md). |
+| CC-02C — custodian preparation | **IMPLEMENTED / UNDER REVIEW** | [Draft PR #43](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/43) is open and mergeable against `main`; Quality #136 passed on Python 3.12 and 3.14 at `b70e36c28edf0f1cdc0b10bafa022b2513c2479c`. Real source access and preparation are unauthorized. See the [active plan](../plans/active/cc-02c-custodian-preparation.md). |
 
 ### CC-02/CC-02B closeout and CC-02C implementation — 2026-10-12
 
@@ -50,8 +50,9 @@ interim data: 749 passed, 3 skipped, 1 warning in 272.37 seconds. The skips were
 tests plus the existing optional canonical-artifact test; the warning was Starlette's `httpx`
 TestClient deprecation. Whole-repository Ruff lint and formatting, 315 Markdown destinations and
 anchors, `python -m uv lock --check`, commit whitespace, and the no-source contract-description
-command passed. No forecasting/data pipeline or Rossmann file was used. Draft PR creation and
-remote CI status are pending publication.
+command passed. No forecasting/data pipeline or Rossmann file was used. Draft [PR #43](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/43)
+is open and mergeable against `main`. Quality #136, run [#38189100787](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/38189100787),
+passed on Python 3.12 and 3.14 at pushed head `b70e36c28edf0f1cdc0b10bafa022b2513c2479c`.
 
 ### CC-02 integration and current data boundary — 2026-10-11
 
