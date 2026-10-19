@@ -935,3 +935,56 @@ been run. Outputs, when separately authorized, are descriptive-only component ta
 provenance manifests under the ignored generated-report convention. The diagnostic is not part of
 `phase-3-v1`, forecast evaluation, selection, inventory decisions, or Phase 13; all accepted
 forecasting methods and release gates remain unchanged.
+
+## ADR-028 — Instructor Feedback Alignment and Public Demonstration
+
+**Status: PROPOSED — awaiting explicit project-owner acceptance.** This record captures instructor
+guidance and a proposed delivery direction. It does not supersede an accepted decision or authorize
+implementation, data access, public exposure, scenario analysis, or final evaluation.
+
+**Instructor guidance:** The instructor accepts Store × Date monetary `Sales` forecasting with the
+existing 14-day primary horizon. The instructor prefers both the API and dashboard to be publicly
+accessible for grading; precomputed forecasts are sufficient, and on-demand forecasting is optional.
+Monitoring should show multiple indicators spanning data quality, data characteristics, and forecast
+performance, with business-performance indicators where the existing simulation supports them.
+The instructor also requires scenario-based comparisons of LightGBM and alternative forecasting
+methods, with accuracy evidence and business interpretation using available Store-level
+characteristics. LightGBM need not outperform simpler methods in every scenario. A matched
+cross-model inventory simulation is desirable bonus work, distinct from the scenario-based forecast
+comparison.
+
+**Proposed project direction:** Prepare a public course demonstration of the existing FastAPI and
+Streamlit interfaces using precomputed forecasts and existing result artifacts. Keep on-demand
+forecast generation optional. Design a development-only scenario analysis that compares existing
+forecast candidates across approved Store-level scenarios and interprets accuracy and supported
+business impacts. Before analysis, document and obtain approval for scenario definitions, eligible
+populations, comparison methods, and interpretation limits. Use only development evidence and
+preserve the accepted forecast information boundary. A forecast-driven, matched inventory comparison
+across Seasonal Naive, Holt-Winters, and LightGBM remains an optional extension; it is not required
+to satisfy the scenario-comparison objective. Monitoring should support human review of the indicators
+and recommendations to consider retraining when documented conditions or triggers are met. The latest
+instructor feedback does not explicitly require automatic retraining and does not waive the original
+project requirement to define retraining conditions and triggers. Automatic retraining remains
+optional pending a separate approved design. This proposal adds no numeric thresholds or model
+changes and authorizes no adaptive retraining during the frozen Phase 13 evaluation; the protocol
+remains unchanged.
+
+**Relationship to accepted decisions:** ADR-024 remains authoritative: the dashboard's approved
+deployment target is localhost, and network/public exposure remains out of scope. ADR-017 accepted
+one deployed Streamlit demonstration as sufficient and independent API hosting as optional. This
+proposal would supersede those delivery choices only for the owner-approved course-demonstration
+audience and access scope; its model ladder and application-service architecture remain unchanged.
+Owner acceptance of that change and a separate implementation/hosting/security plan and
+authorization are required before public deployment; instructor preference does not require a
+hosting purchase. No public URL or deployment currently exists. The accepted Store × Date target,
+14-day horizon, feature and data contracts, model selection, uncertainty and simulation methods,
+ADR-013 metrics and origins, ADR-015 holdout boundary, and ADR-025/026 Phase 13 scope and protocol
+remain unchanged. Present the requested monitoring categories within existing approved evidence;
+do not introduce thresholds or alter ADR-026 monitoring methods without an accepted methodology.
+
+**Approval and implementation boundary:** Instructor guidance is recorded above; the project owner
+has not accepted this ADR. The existing localhost application is implemented, but public API or
+dashboard hosting, instructor-requested scenario analysis, and cross-model inventory evaluation are
+not implemented by this proposal. Any change that could affect final evaluation must be reviewed and
+resolved before the protected holdout is released. Until the owner accepts a superseding decision,
+follow ADR-024 and all existing Phase 13 authorization gates.
