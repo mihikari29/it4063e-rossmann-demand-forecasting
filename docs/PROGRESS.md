@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-12
+## Current implementation and Git state — 2026-10-19
 
 | Scope | State | Integration |
 |---|---|---|
@@ -13,12 +13,28 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of scope, and no LAN tests are claimed. Phase 13 M1–M3 are integrated after PR #40; the phase remains PLANNED / NOT APPROVED. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
-| Phase 13 — Sequential final evaluation | **M1/M2/M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at verified `origin/main` SHA `2a935aea30ab22110153d33d3a55dac44e67a1c8`. Main Quality #125 passed on Python 3.12/3.14 at that exact SHA. PR #40 integrated the M3 adapter and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Source preparation, rehearsal, staging and release remain separately gated. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
+| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure remain out of scope under ADR-024. No public deployment exists; proposed public API/dashboard delivery is pending owner approval under ADR-028. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
+| Phase 13 — Sequential final evaluation | **M1–M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at `2a935aea30ab22110153d33d3a55dac44e67a1c8`, with main Quality #125 passing on Python 3.12/3.14. PR #40 integrated M3 and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Independent M3 review, source preparation, rehearsal, staging, release, M4 and later milestones remain open and separately gated; final evaluation has not run. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 | CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | Accepted PR #41 merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
 | CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
-| CC-02D — minimal custodian execution readiness | **IMPLEMENTED / UNDER REVIEW** | [Draft PR #44](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/44) remains open from `feat/cc-02d-stl-custodian-readiness`, based on the verified CC-02C integration SHA. The initial implementation/PR-opening checkpoint was `6ca830060d53bc182b831747e5f5947e5e71640d`; review corrections are tracked in the live PR. Real source access, preparation, binding and STL remain unauthorized. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
+| CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
+| WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / OWNER REVIEW PENDING** | Local branch `docs/wp0-instructor-feedback-alignment`, based on verified `origin/main` `8ad97f8a4d19318b31bba280ee14766c37493a23`. No open PRs were listed at verification. Proposed ADR-028 awaits explicit owner acceptance; no commit or PR has been created. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
+
+### WP0-L1 instructor feedback and current delivery boundary — 2026-10-19
+
+Instructor guidance recorded in proposed ADR-028 accepts the existing Store × Date monetary
+`Sales` target and 14-day horizon; prefers public access to both API and dashboard using precomputed
+forecasts; makes on-demand inference optional; requests multiple monitoring indicators and a
+development-only scenario-based model comparison with business interpretation. A matched
+cross-model inventory comparison is a bonus. The project owner has not accepted ADR-028, so ADR-024
+remains authoritative and public exposure is not approved or implemented.
+
+PR #44 is merged and its Python 3.12/3.14 checks passed, but real-source access/preparation and STL
+evidence remain pending. Phase 13 M1–M3 are integrated through PR #40, but Phase 13 remains PLANNED /
+NOT APPROVED; no final evaluation or protected-outcome release has occurred. Phase 14 is incomplete.
+The current WP0-L1 work changes documentation only and does not run scenario analysis, source
+operations, STL, final evaluation, or deployment.
 
 ### CC-02C independent review corrections (2026-10-12)
 
@@ -443,11 +459,12 @@ was performed.
 
 ## Current boundary
 
-Phases 0–12 are COMPLETE; Phase 13 remains PLANNED / NOT APPROVED; the protected July 4–31
-holdout remains unreleased. The [active Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
-records methods under ADR-026 and the owner's A-bounded scope under ADR-025. M1–M3 are integrated after PR #40. Phase 13 remains PLANNED / NOT APPROVED, and the existing source, rehearsal, staging, release and later-milestone gates remain unchanged.
-Source and preparation preflight, development rehearsal, protected-source staging, analytical
-release, M4 and later milestones, and Phase 14 remain outside this authorization.
+Phases 0–12 are COMPLETE; Phase 13 M1–M3 are integrated, but Phase 13 remains PLANNED / NOT
+APPROVED and the protected July 4–31 holdout remains unreleased. The [active Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md)
+records methods under ADR-026 and the owner's A-bounded scope under ADR-025. Independent M3 review,
+source/preparation preflight, development rehearsal, protected-source staging, analytical release,
+M4 and later milestones remain separately gated; Phase 14 is incomplete. ADR-028 is proposed only;
+ADR-024 remains the approved localhost-only boundary until the owner accepts a superseding decision.
 
 ### Phase 13 M0.1 methodology review checkpoint — 2026-10-10
 

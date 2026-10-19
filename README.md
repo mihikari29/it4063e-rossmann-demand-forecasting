@@ -6,12 +6,17 @@ It provides no SKU forecasts, physical demand, real inventory data or verified R
 
 ## Current state
 
-`main` has Phases 0–11 formally complete. Phase 11 PR #26 was squash-merged at
+`main` has Phases 0–12 formally complete. Phase 11 PR #26 was squash-merged at
 `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; M1-M4 are accepted and findings M3-01, M4-01 and
 FR-01 are resolved. See the [completed Phase 11 plan](plans/completed/phase-11-application-services.md)
-and [PROGRESS](docs/PROGRESS.md) for closeout evidence. The protected final holdout remains
-unreleased. Phase 13 M1–M3 are integrated after PR #40, but Phase 13 remains PLANNED / NOT
-APPROVED; source preparation, rehearsal, staging, and release keep their separate gates. Phase 5
+and [PROGRESS](docs/PROGRESS.md) for closeout evidence. Phase 12 is complete under ADR-024's
+localhost-only scope. Phase 13 M1–M3 are integrated through PR #40, but Phase 13 remains PLANNED /
+NOT APPROVED; independent M3 review, source preparation, rehearsal, staging, release and later
+milestones retain separate gates. PR #44 integrated CC-02D's gated custodian preparation path, but
+no real-source preparation, STL evidence or public deployment exists. The protected final holdout
+remains unreleased, and Phase 14 is incomplete. Proposed ADR-028 records instructor feedback and a
+high-priority public API/dashboard delivery objective; the owner has not approved it, so ADR-024
+remains authoritative. Phase 5
 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
@@ -300,6 +305,8 @@ The dashboard binds to `127.0.0.1:8501`. It does not train or infer forecasts, r
 simulation, access the Phase 10 ledger, or evaluate the protected final holdout. The user reported
 PASS on human visual review of all five screens; this acceptance is recorded as user-attested.
 Phase 12 integration and closeout evidence is in the [completed plan](plans/completed/phase-12-streamlit-dashboard.md).
+The instructor prefers public API and dashboard access for grading, but no public deployment exists;
+that proposed scope awaits owner approval to supersede ADR-024.
 
 In PowerShell, check process health, list supported cases, and try a bounded forecast or the
 canonical reference inventory case:
@@ -323,7 +330,9 @@ outputs or manifests are absent, catalog reports unavailable resources and a req
 missing artifact returns sanitized `503`; fixture tests still work from a clean checkout. Canonical
 local artifacts are not included in Git. Rossmann Sales are monetary turnover, not physical demand;
 simulated costs do not establish observed inventory or savings. The server binds to `127.0.0.1`;
-public hosting is outside scope. See the [Phase 11 handoff](plans/completed/phase-11-application-services.md#phase-11-m4-integration-handoff)
+no public deployment exists. Public API/dashboard access using precomputed results is proposed as a
+high-priority course-delivery target under ADR-028, pending owner approval to supersede ADR-024 and
+a separate hosting/security plan. See the [Phase 11 handoff](plans/completed/phase-11-application-services.md#phase-11-m4-integration-handoff)
 for service interfaces, artifact requirements and limitations.
 
 ## Architecture and remaining work
@@ -351,14 +360,18 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   services directly; separate API hosting and Evidently are optional.
 - Phase 12: **COMPLETE**. PR #32 integrated M4 at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`;
   main Quality #103 passed Python 3.12 and 3.14. The approved target remains
-  `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure are out of
-  scope. See the [completed plan](plans/completed/phase-12-streamlit-dashboard.md) and
+  `http://127.0.0.1:8501` under ADR-024; public access is proposed for both API and dashboard but
+  awaits owner approval. See the [completed plan](plans/completed/phase-12-streamlit-dashboard.md) and
   [localhost deployment runbook](docs/DEPLOYMENT_LAN.md).
-- Phase 13: one frozen sequential final evaluation remains future work requiring separate
-  authorization. The [M0 design proposal](plans/active/phase-13-sequential-final-evaluation.md)
-  is under Technical Lead review only; it does not authorize implementation or outcome release.
-  The protected holdout remains unreleased.
-- Phase 14: recorded results, report, slides and demonstration.
+- Required next evidence: approve and freeze a development-only scenario-analysis method before
+  comparing forecast candidates across Store-level scenarios; separately authorize the CC-02D
+  source/preparation/STL/finding steps. Cross-model inventory simulation is optional.
+- Phase 13: M1–M3 are integrated through PR #40; the phase remains PLANNED / NOT APPROVED. M3 review,
+  M4, execution gates and the frozen sequential final evaluation remain future work. The protected
+  holdout is unreleased and final evaluation has not run. See the
+  [active Phase 13 plan](plans/active/phase-13-sequential-final-evaluation.md).
+- Phase 14: report, slides and demonstration after reviewed Phase 13 results; public hosting is a
+  high-priority proposed delivery target, and on-demand inference remains optional.
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and formally

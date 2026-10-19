@@ -39,6 +39,55 @@ review acceptance and Fit B freeze, and was squash-merged into `main` at
 2026-10-07 closeout in the [completed plan](../plans/completed/phase-8-forecast-uncertainty.md).
 The frozen values apply only to the canonical artifact identities in [PROGRESS](PROGRESS.md).
 
+## Remaining delivery roadmap
+
+The detailed phase contracts below remain authoritative. This dependency-aware handoff separates
+required course evidence from preferred delivery scope and optional extensions; current integration
+and approval state is maintained in [PROGRESS](PROGRESS.md).
+
+**MUST-HAVE**
+
+1. Review instructor-feedback alignment and explicitly decide whether to accept proposed ADR-028.
+   Until then, ADR-024's localhost-only deployment scope remains in force.
+2. Write and approve a separate scenario-analysis method before running any development analysis.
+   Compare LightGBM with the existing alternative forecast methods across defined Store-level
+   scenarios, report accuracy, and explain supported business implications. Freeze scenario
+   definitions, eligible populations, and analysis rules in advance; use development evidence only
+   and keep the Phase 7 selection unchanged unless separately authorized.
+3. Obtain the distinct source-access, preparation, verification, provider-binding, STL, and findings
+   approvals required by the CC-02D runbook before producing real-data STL/EDA evidence. Merged
+   readiness code is not a completed source operation or decomposition.
+4. Complete the existing Phase 13 gates under ADR-025/026: independent M3 review, separately
+   authorized rehearsal and source staging, required M4 and later milestones, the approved resource
+   gate, chronological releases, monitoring, independent review, and explicit closeout. Preserve its
+   frozen two-block protocol and comparator; the final evaluation has not been run.
+5. Complete Phase 14's evidence-based report, slides, repository handoff, and demonstration after
+   reviewed Phase 13 results are available.
+
+**HIGH-PRIORITY DELIVERY TARGET**
+
+Prepare public access to both the API and dashboard for grading, using precomputed forecasts and
+existing results where feasible. This requires explicit owner acceptance of a change to ADR-024,
+then a reviewed hosting, artifact, and security implementation plan. Before release, identify the
+minimum approved artifact bundle and which data, historical observations, forecasts, and API
+responses may be exposed; review applicable redistribution and licensing restrictions; and obtain
+explicit project-owner approval of the public content scope. Keep the protected holdout, raw sources,
+credentials, and authorization records out of public artifacts. It is a delivery objective, not an
+unconditional hosting purchase. No public deployment currently exists. On-demand forecasting is not
+a prerequisite.
+
+**OPTIONAL BONUS**
+
+Add on-demand inference if a later approved design demonstrates a useful course need. A fair
+forecast-driven inventory-impact comparison across Seasonal Naive, Holt-Winters, and LightGBM is
+also optional and must have its own approved design; it remains separate from the required
+scenario-based forecast comparison.
+
+Scenario methodology must be approved and frozen before development analysis. Resolve any proposed
+change that could affect final-evaluation methods or selection before protected holdout release.
+This roadmap authorizes no source access, scenario analysis, public deployment, or Phase 13
+execution.
+
 ## Phase 0 — Repository Foundation
 
 **Objective:** Establish sources, scope, contribution rules, and reproducible planning.
@@ -250,10 +299,11 @@ importance and limitations suffice.
 — METHOD SELECTED under ADR-026; the owner's A-bounded inventory scope remains recorded in
 ADR-025. PR #38 integrated M1 at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 integrated
 at `2a935aea30ab22110153d33d3a55dac44e67a1c8`, where main Quality #125 passed on Python 3.12 and
-3.14. A separate 2026-10-11 task authorizes synthetic-only M3 implementation and one Draft PR; M3
-is IMPLEMENTED / UNDER REVIEW. Source/preparation preflight, development rehearsal, protected-source
-staging, analytical release, M4 and later work remain separately gated. The final holdout remains
-unreleased.
+3.14. PR #40 integrated the synthetic M3 adapter and P40 corrections at
+`1426f29878fd8d7aaa920482310c02842498198b`. M1–M3 are integrated; independent M3 review, source/
+preparation preflight, development rehearsal, protected-source staging, analytical release, M4 and
+later work remain separately gated. Phase 13 remains PLANNED / NOT APPROVED, and the final holdout
+remains unreleased.
 
 **Objective:** Evaluate the frozen system once and demonstrate historical monitoring.
 **Dependencies:** Phases 7–12 frozen choices; source identity, provenance, availability, safe
@@ -327,7 +377,8 @@ summaries/plots suffice; Evidently is optional only for a demonstrated unmet nee
 **Acceptance / boundary:** Report the recorded final evaluation; no new tuning or repeated selection
 on holdout outcomes. State historical descriptive exposure, short evaluation span, simulation
 assumptions and negative results honestly. Deployment is a course demonstration, not a live
-Rossmann production claim.
+Rossmann production claim. Public API/dashboard access is a high-priority proposal under ADR-028,
+pending owner approval to supersede ADR-024 and a separate deployment plan.
 
 ## Phase 6 implementation handoff (historical)
 
