@@ -19,7 +19,8 @@
 | CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
-| WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / OWNER REVIEW PENDING** | Local branch `docs/wp0-instructor-feedback-alignment`, based on verified `origin/main` `8ad97f8a4d19318b31bba280ee14766c37493a23`. No open PRs were listed at verification. Proposed ADR-028 awaits explicit owner acceptance; no commit or PR has been created. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
+| WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
+| WP1 — scenario-based forecast evaluation | **L1 IMPLEMENTED / UNDER REVIEW** | Fixture-only common population is on `feat/wp1-scenario-common-population`, based on `2e57a2e96ea6f01a3d47be192124500011defa91`. No scenario analysis or real-data operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
 
 ### WP0-L1 instructor feedback and current delivery boundary — 2026-10-19
 
@@ -35,6 +36,26 @@ evidence remain pending. Phase 13 M1–M3 are integrated through PR #40, but Pha
 NOT APPROVED; no final evaluation or protected-outcome release has occurred. Phase 14 is incomplete.
 The current WP0-L1 work changes documentation only and does not run scenario analysis, source
 operations, STL, final evaluation, or deployment.
+
+### WP1-L1 fixture-only common population — 2026-10-19
+
+The project owner authorized the WP1 methodology direction and fixture-only L1 implementation,
+subject to reuse of the Phase 7 candidate validator, a separate label-only eligibility mask, and
+preservation of the sparse observed-target population. L1 adds a pure in-memory builder and synthetic
+tests on `feat/wp1-scenario-common-population`; it uses only the three accepted candidates and the
+three approved development windows through 2015-07-03.
+
+The focused suite passed 21 tests on the locked Python 3.14.5 environment. The full fixture suite
+passed 827 tests with 6 Windows symlink-privilege skips and one existing Starlette/httpx
+deprecation warning. Ruff lint, formatting (135 files), Markdown validation (326
+destinations/anchors across 36 files), and `git diff --check` passed. No Python 3.12 local run was
+performed.
+
+This authorization does not accept ADR-028, execute the full scenario-analysis protocol, or accept
+scenario results. No real Rossmann source or cached forecast artifact, protected outcome, inventory
+artifact, fitting, recalibration, or Phase 13 operation was accessed or run. L2 metrics/scenario
+summaries, safe-input readiness and any L4 analysis remain outside this milestone and separately
+gated. Human ownership and course academic-integrity review are required before submission.
 
 ### CC-02C independent review corrections (2026-10-12)
 
