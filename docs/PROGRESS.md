@@ -20,7 +20,7 @@
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
-| WP1 — scenario-based forecast evaluation | **L1 IMPLEMENTED / UNDER REVIEW** | Fixture-only common population is on `feat/wp1-scenario-common-population`, based on `2e57a2e96ea6f01a3d47be192124500011defa91`. No scenario analysis or real-data operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+| WP1 — scenario-based forecast evaluation | **L1 REVIEWED / INTEGRATED; L2 IMPLEMENTED / UNDER REVIEW** | L1 merged through PR #46 at `291660108da0c3d91b065a7dba47beabe1926fae`; main Quality #149 passed on Python 3.12/3.14. Fixture-only L2 is on `feat/wp1-scenario-metrics-aggregation`, based on that SHA. No scenario analysis or real-data operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
 
 ### WP0-L1 instructor feedback and current delivery boundary — 2026-10-19
 
@@ -56,6 +56,92 @@ scenario results. No real Rossmann source or cached forecast artifact, protected
 artifact, fitting, recalibration, or Phase 13 operation was accessed or run. L2 metrics/scenario
 summaries, safe-input readiness and any L4 analysis remain outside this milestone and separately
 gated. Human ownership and course academic-integrity review are required before submission.
+
+### WP1-L1 integration closeout — 2026-10-19
+
+PR #46 was independently reviewed and merged into `main` at
+`291660108da0c3d91b065a7dba47beabe1926fae`. Post-merge Quality #149 completed successfully on
+Python 3.12 and 3.14 at that exact SHA ([run 39255134029](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39255134029)).
+The L1 common-population builder is REVIEWED / INTEGRATED. Its local feature branch and history are
+preserved. Scenario analysis has not run, and no real or protected data was accessed.
+
+### WP1-L2 fixture-only aggregation and serialization — 2026-10-19
+
+L2 is IMPLEMENTED / UNDER REVIEW on `feat/wp1-scenario-metrics-aggregation`, based on the
+integrated L1 SHA `291660108da0c3d91b065a7dba47beabe1926fae`. The exact four changed files are the
+active WP1 plan, this progress record, `scenario_evaluation.py`, and
+`tests/test_scenario_evaluation.py`. L2 adds `summarize_scenario_population`, the
+`ScenarioEvaluationResult` container, and the in-memory `serialize_scenario_fixture` API. It
+revalidates the 21-column L1 population through the unchanged L1 builder, optionally joins complete
+in-memory synthetic metadata by canonical key, and emits five fixed long-form tables: support,
+coverage, metrics, comparisons, and unavailability. Default reporting retains all 96 pooled/origin
+core strata; known, missing, and observed unrecognized metadata levels are declared without
+interactions.
+
+All candidate metrics and the three fixed pairwise comparisons use the same three-way common rows.
+Directional errors are `raw forecast - actual Sales`; additive sums use stable float64 summation,
+undefined ratios remain null with explicit reasons, and reconciliation checks cover direction
+counts, signed/absolute error totals, MAE, and WAPE. The serializer validates schemas, strata,
+counts, metrics and comparisons before returning deterministic UTF-8 JSON bytes. No dependencies,
+Phase 7 logic, forecast methods, or inventory methods changed.
+
+Focused validation in the locked Python 3.14.5 environment passed **84 tests** across scenario
+evaluation (46), Phase 7 metrics (3), and model selection (35). The complete repository suite ran in
+a detached sibling worktree at the L1 integration SHA with only the four proposed files copied in;
+`data/README.md` was the only tracked data path, and raw, interim, processed, forecast, and inventory
+artifact directories were absent. It passed **851 tests**, with **7 skips** and **1 warning** in
+206.22 seconds. Six skips were Windows symlink-privilege cases; one optional canonical-artifact test
+skipped because ignored artifacts were absent. The warning was the existing Starlette/httpx
+TestClient deprecation notice.
+
+Repository checks in that isolated checkout passed: Ruff lint (with `--no-cache`), Ruff format
+(135 files), Markdown validation (326 local destinations/anchors across 36 files), `uv lock
+--check` (109 packages), `uv pip check` (91 installed packages), and `git diff --check`. An initial
+cached Ruff invocation reported an access-denied cache write warning; the no-cache lint rerun
+passed cleanly. The locked environment used uv 0.12.23 and Python 3.14.5; no local Python 3.12 run
+was performed.
+
+No real Rossmann source, forecast artifact, inventory artifact, or protected outcome was read or
+hashed. The L2 implementation generated no forecasts and performed no fitting. The repository
+suite ran existing synthetic fixture tests only; no real-data scenario analysis, recalibration,
+real inventory operation, or Phase 13 run occurred. Phase 13 remains PLANNED / NOT APPROVED and
+the July 4–31 holdout remains protected. ADR-028 remains PROPOSED; ADR-024 remains effective. L2
+awaits an independent Sol 6.1 ACCEPT review of this exact diff and required CI before any separately
+authorized publication. L3 metadata/source readiness needs its own input authorization; L4 scenario analysis
+needs a separate frozen-method execution authorization, independent review, and disclosure. Human
+ownership and course AI-assistance/authorship disclosure remain required before submission. No
+commit, push, PR, or merge was performed.
+
+### WP1-L2 independent review corrections — 2026-10-19
+
+Sol 6.1's read-only review returned REQUEST_CHANGES with four bounded findings. The local L2
+corrections now reconcile the independently accumulated signed-error sum against directional sums
+using an ULP allowance derived from component magnitudes; serializer validation requires exact
+candidate agreement for each common-population actual-Sales denominator, checks metadata identities
+against fixed known domains and missing/unrecognized rules, and bounds missing-Sales and
+reason-level unavailability counts by their eligible populations. Exact error sign and zero-match
+classification, the common population, metric formulas, comparison identities, and all declared
+strata remain unchanged. New regressions cover the 1,001-row cancellation case and material
+corruption, non-pooled denominator corruption, malformed metadata identities, valid missing
+categories, and both impossible diagnostic subsets.
+
+Validation ran in the detached isolated sibling checkout at base SHA
+`291660108da0c3d91b065a7dba47beabe1926fae`, with corrected implementation and tests byte-identical
+to this branch. `data/README.md` was the only tracked data path; raw, interim, processed, forecast,
+inventory, generated-report, model, and artifact directories were absent. The focused WP1, Phase 7
+metrics, and model-selection suites passed **90 tests**; the complete fixture suite passed **857
+tests**, with **7 skips** and **1 existing Starlette/httpx deprecation warning** in 221.71 seconds.
+Six skips require Windows symlink privileges; the optional canonical-artifact test skipped because
+ignored artifacts were absent. After formatting, all **52** scenario-evaluation tests passed again.
+
+Ruff lint and format checks, Markdown validation (**326** local destinations/anchors across 36
+files), `uv lock --check --offline` (**109** resolved packages), `uv pip check` (**91** compatible
+packages), and `git diff --check` passed in Python **3.14.5** with uv **0.12.23**. No local
+Python 3.12 run was performed. No real Rossmann source, forecast/inventory artifact, or protected
+outcome was read or hashed; no fitting, scenario analysis, or Phase 13 run occurred. ADR-028 remains
+PROPOSED, ADR-024 remains effective, and Phase 13 remains PLANNED / NOT APPROVED with the holdout
+protected. L2 remains IMPLEMENTED / UNDER REVIEW pending independent rereview of this exact diff.
+No commit, push, PR, or merge was performed.
 
 ### CC-02C independent review corrections (2026-10-12)
 
