@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-20
+## Current implementation and Git state — 2026-10-21
 
 | Scope | State | Integration |
 |---|---|---|
@@ -20,7 +20,7 @@
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
-| WP1 — scenario-based forecast evaluation | **L1/L2 REVIEWED / INTEGRATED; L3-F-R3 IMPLEMENTED / UNDER REVIEW — AWAITING INDEPENDENT REREVIEW** | L1 integrated through PR #46. Independently accepted L2 merged through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; main Quality #151 passed on Python 3.12/3.14. Restricted fixture-only L3-F is local on `feat/wp1-scenario-input-verification`, based on that SHA, under accepted ADR-029. The original hard-memory finding remains technically unresolved. No real scenario analysis or source operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+| WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; WP1 REMAINS INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`. The exact six-file L3-F snapshot was independently accepted and squash-merged through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. PR Quality #152 and post-merge main Quality #153 passed on Python 3.12 and 3.14. ADR-029 remains fixture-only, and the original hard-memory finding remains unresolved. No real scenario analysis or real-data source operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
 
 ### WP1-L3-F-R3 original horizon range guard — 2026-10-20
 
@@ -59,11 +59,44 @@ packages**), installed-package check (**91 packages**) and whitespace checks pas
 datasets, forecasts, authorization records or protected outcomes were accessed. No fit, forecast
 generation, L2 aggregation, source operation, or production path was introduced.
 
-R3 remains **IMPLEMENTED / UNDER REVIEW — AWAITING INDEPENDENT REREVIEW**. L3-F and WP1 are not
-complete. ADR-029 remains accepted, ADR-028 remains PROPOSED and ADR-024 remains authoritative.
-Real M/C/H operations remain NO-GO, H segmentation remains BLOCKED, and L3-C/V/B and L4 remain
-separately gated. Phase 13 remains PLANNED / NOT APPROVED and the July 4–31 holdout remains
-protected and unreleased. No commit, push, PR, merge or publication occurred.
+At the end of this R3 implementation checkpoint, R3 was **IMPLEMENTED / UNDER REVIEW — AWAITING
+INDEPENDENT REREVIEW**; L3-F and WP1 were not complete at that point. ADR-029 remained accepted,
+ADR-028 remained PROPOSED and ADR-024 remained authoritative. Real M/C/H operations were NO-GO,
+H segmentation was BLOCKED, and L3-C/V/B and L4 were separately gated. Phase 13 was PLANNED / NOT
+APPROVED and the July 4–31 holdout was protected and unreleased. At that checkpoint, no commit,
+push, PR, merge or publication had occurred. The later integration status is recorded below.
+
+### WP1-L3-F post-merge integration closeout — 2026-10-21
+
+The exact six-file L3-F snapshot received independent Sol 6.1 **ACCEPT** review and was squash-merged
+through [PR #48](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/48) at
+`ed2f37cee5a1e7b3901437acf5e643c612868e55`. The independent review evidence records the corrected
+original Arrow horizon-range validation and focused input/compatibility testing. The R3 record above
+reports 218 passing focused input tests and 305 passing compatibility tests across L3-F, L1/L2 and
+Phase 7. The developer-reported full synthetic fixture suite passed 1,075 tests, with 7 skips and 1
+existing warning; this full-suite run is developer evidence and is not attributed to Sol 6.1.
+
+PR Quality [#152](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39516884014)
+passed on Python 3.12 and 3.14. Post-merge main Quality
+[#153](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39517296266)
+also passed on Python 3.12 and 3.14 at the merge revision above. No human GitHub review was recorded
+or is claimed. This closeout records L3-F as **REVIEWED / INTEGRATED**; WP1 remains incomplete.
+
+ADR-029 restricts inputs to project-controlled synthetic fixtures and controlled test mutations;
+the verifier cannot authenticate fixture origin or custody. Hashes, manifests, receipts and bindings
+establish consistency, not real-data authorization. Arrow output thresholds apply after
+materialization and do not enforce peak process-memory limits. **WP1-S7-01 remains unresolved under
+the original contract**; restricted-fixture risk acceptance does not authorize a real-data decoder.
+
+Rossmann Sales remains monetary turnover, not physical demand or SKU quantities, and the approved
+three-model comparison is unchanged. No WP1 scenario analysis or real-data M/C/H source operation
+has run or is authorized. The July 4–31, 2015 outcomes remain sealed; H segmentation remains
+blocked, and L3-C/V/B and L4 remain unauthorized. ADR-028 remains PROPOSED; ADR-024 remains
+authoritative for localhost-only deployment. Phase 13 remains PLANNED / NOT APPROVED, Phase 14
+remains incomplete, and no public cloud deployment is claimed. Independent AI review does not
+establish human authorship or academic compliance; ownership and AI-assistance disclosure
+obligations remain. This documentation closeout does not satisfy the complete instructor
+assignment.
 
 ### WP1-L3-F-R2 restricted trusted-fixture implementation — 2026-10-20
 
