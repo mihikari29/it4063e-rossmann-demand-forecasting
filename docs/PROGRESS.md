@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-19
+## Current implementation and Git state — 2026-10-20
 
 | Scope | State | Integration |
 |---|---|---|
@@ -20,7 +20,340 @@
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
-| WP1 — scenario-based forecast evaluation | **L1 REVIEWED / INTEGRATED; L2 IMPLEMENTED / UNDER REVIEW** | L1 merged through PR #46 at `291660108da0c3d91b065a7dba47beabe1926fae`; main Quality #149 passed on Python 3.12/3.14. Fixture-only L2 is on `feat/wp1-scenario-metrics-aggregation`, based on that SHA. No scenario analysis or real-data operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+| WP1 — scenario-based forecast evaluation | **L1/L2 REVIEWED / INTEGRATED; L3-F-R3 IMPLEMENTED / UNDER REVIEW — AWAITING INDEPENDENT REREVIEW** | L1 integrated through PR #46. Independently accepted L2 merged through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; main Quality #151 passed on Python 3.12/3.14. Restricted fixture-only L3-F is local on `feat/wp1-scenario-input-verification`, based on that SHA, under accepted ADR-029. The original hard-memory finding remains technically unresolved. No real scenario analysis or source operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+
+### WP1-L3-F-R3 original horizon range guard — 2026-10-20
+
+The independent WP1-S9-I review returned REQUEST_CHANGES for WP1-S9-I-01. An `int64` horizon such
+as 65537 or -65535 passed the supported physical schema and was silently narrowed to `int16` by
+the unchanged Phase 7 validator before its range check, becoming 1 and matching a one-day target.
+The defect let invalid original candidate metadata pass the fixture verifier.
+
+The R3 correction checks candidate horizons on the decoded PyArrow integer column, after the
+existing output-size check and before pandas conversion or either Phase 7/L1 validator. It requires
+an integer type, no nulls, and exact Arrow minimum/maximum values within 1–14 inclusive. Arrow
+integer scalar conversion yields Python integers, so the guard does not narrow the values, convert
+them to floating point, or change the accepted physical schema. The existing Phase 7 validator
+remains authoritative for agreement between every valid horizon and its origin/target dates.
+Metadata schema, all three candidates, caller frames, trust/binding semantics, and memory limits
+are unchanged. WP1-S7-01 remains **UNRESOLVED UNDER ORIGINAL CONTRACT — RESTRICTED FIXTURE
+CONTRACT APPROVED**.
+
+Regressions exercise 65537, -65535, 32769, 0 and 15 against each of the three candidates. They
+confirm that hashes and receipts are validly resealed and caller DataFrames remain unchanged before
+the expected original-horizon error. Date-consistent horizons 1 and 14 remain accepted; an in-range
+horizon that disagrees with the date remains rejected by Phase 7. Null and non-integer physical
+horizons are also rejected. The final focused input suite passed **218 tests**; the compatibility
+suite passed **305 tests** across L3-F, L1/L2 scenario evaluation and Phase 7 model selection. The
+full synthetic fixture suite passed **1,075 tests**, with **7 skips** and **1 existing warning** in
+**249.89 seconds**. Six skips require unavailable Windows symlink privileges, and the optional
+canonical-artifact test skips because ignored upstream artifacts are absent. The warning is the
+existing Starlette/httpx TestClient deprecation.
+
+Validation used the existing artifact-free detached sibling worktree at
+`29bfd0e0dbf0d42ef94ba5136d25981652921930`, with the exact corrected source, tests and progress
+record synchronized by SHA-256. The locked Windows x64 environment is Python 3.14.5, NumPy 2.5.3,
+pandas 3.0.6, PyArrow 24.0.0, pytest 9.1.1 and Ruff 0.16.10; `uv.lock` remains unchanged. Final
+Ruff lint, formatting (**137 files**), Markdown link validation, offline lock check (**109
+packages**), installed-package check (**91 packages**) and whitespace checks passed. No ignored
+datasets, forecasts, authorization records or protected outcomes were accessed. No fit, forecast
+generation, L2 aggregation, source operation, or production path was introduced.
+
+R3 remains **IMPLEMENTED / UNDER REVIEW — AWAITING INDEPENDENT REREVIEW**. L3-F and WP1 are not
+complete. ADR-029 remains accepted, ADR-028 remains PROPOSED and ADR-024 remains authoritative.
+Real M/C/H operations remain NO-GO, H segmentation remains BLOCKED, and L3-C/V/B and L4 remain
+separately gated. Phase 13 remains PLANNED / NOT APPROVED and the July 4–31 holdout remains
+protected and unreleased. No commit, push, PR, merge or publication occurred.
+
+### WP1-L3-F-R2 restricted trusted-fixture implementation — 2026-10-20
+
+The owner's R2 task records WP1-S8's **RECOMMEND_RESTRICTED_FIXTURE_CONTRACT** and explicit approval
+of that revision. This follows WP1-S7 **REQUEST_CHANGES** and R1 **DESIGN_REVIEW_REQUIRED** for
+WP1-S7-01. Accepted [ADR-029](DECISIONS.md#adr-029--wp1-l3-f-restricted-trusted-fixture-contract)
+supersedes only L3-F's trust/resource acceptance conditions. The earlier four-file implementation
+and R1 entries below remain historical evidence; their counts and interfaces describe those
+snapshots. No original failure evidence is erased or reclassified as a technical repair.
+
+The public decoder is now `verify_trusted_scenario_fixture_snapshot`; the generic old API is
+removed without an alias. Only reviewed project-controlled synthetic fixture-generator bytes and
+controlled synthetic test mutations meet its caller precondition. The implementation cannot
+authenticate that precondition. Hashes, manifests, receipts, claimed custody/authorization,
+`input_kind`, environment assertions and matching bindings convey no trust or authority. This
+verifier is not designed for untrusted or real Rossmann input decoding and must not prepare,
+verify, bind or load actual WP1 development datasets or enter production ingestion.
+
+All successful frozen verification results carry explicit fixture-only, unauthenticated
+origin/custody, unverified historical availability and real observed-roster completeness,
+no-real-source-permission, no-hard-peak-memory and no-L4-approval limitations in their existing
+immutable tuple. No trust/approval Boolean or new framework is added. Bindings retain identity
+consistency semantics and the two synthetic-only uses; even two mutually matching fabricated
+records with a real-data purpose are rejected. Public Phase 7 and L1 validation, exact candidates,
+raw fields, masks/reasons, sparse roster, complete C membership, static/null/unrecognized categories,
+availability classifications and the development ceiling remain unchanged. The decoder never
+invokes L2 aggregation.
+
+WP1-S7-01 is **UNRESOLVED UNDER ORIGINAL CONTRACT — RESTRICTED FIXTURE CONTRACT APPROVED**.
+All original input/schema/JSON/footer/logical-output bounds remain. Byte limits precede decoding;
+footer estimates are untrusted admission/rejection hints; Arrow output checks follow
+materialization. PyArrow may allocate more than accepted output. Python, Arrow, pandas and native
+temporary allocations have no hard process-memory budget. Erroneous fixtures can exhaust memory
+or terminate the process; the owner accepts this residual risk only for restricted fixture testing.
+The R2 regressions demonstrate retained eventual rejection after allocation, not prevention.
+
+Exactly six local files are authorized and changed: `src/rossmann_forecasting/data/wp1_inputs.py`,
+`tests/test_wp1_inputs.py`, the active WP1 plan, PROGRESS, DECISIONS and README. Source, script,
+test and application/CLI entry-point inspection found no production decoder integration; an
+architectural regression checks tracked Python/TOML files only, allowing references solely in the
+fixture module and its tests. Existing no-I/O/execution/authorization spies remain. No real source
+path, artifact loader, filesystem reader, CLI, dependency or lockfile change is introduced.
+
+Validation uses the existing detached sibling worktree
+`C:/Users/Minh/Desktop/hust/introba/project/it4063e-rossmann-demand-forecasting-validation-wp1l3f`
+at `29bfd0e0dbf0d42ef94ba5136d25981652921930`, copying only the six authorized files. Known
+raw/interim/processed/generated-report/artifact/model directories are absent. No ignored dataset,
+forecast, inventory output, authorization packet or protected outcome was copied, linked, scanned,
+read or hashed. Its existing locked Windows x64 environment uses Python 3.14.5, NumPy 2.5.3,
+pandas 3.0.6, PyArrow 24.0.0, pytest 9.1.1 and Ruff 0.16.10. Python 3.12 and new remote CI remain
+pending until a separately authorized post-review publication step.
+
+The original 174 scientific/integrity/side-effect tests are retained with the renamed API. The
+24 added cases cover removal of the generic API, immutable result limitations, all prohibited
+purposes/uses, mutually matching forged real-purpose records, fabricated provenance/environment
+assertions, absence of tracked production callers, and the two controlled expansion mechanisms.
+The archived S7 byte counts below remain the original review evidence. R2 uses bounded
+reconstructions rather than the reviewer's original encoded blobs; an instrumented invocation
+of each exact test measured these final-generator values:
+
+| Synthetic reconstruction | Rows | Encoded bytes | Footer-declared bytes | Materialized Arrow bytes | Outcome |
+|---|---:|---:|---:|---:|---|
+| Honest dictionary expansion; 1,024-character repeated reason | 20,000 | 125,510 | 206,543 | 21,880,000 | Rejected after materialization |
+| Forged-low row-group total; 32,768-character repeated reason | 1,024 | 6,312 | 0 | 33,626,112 | Rejected after materialization |
+
+Both pass the small byte/footer admission checks, exceed the unchanged 16 MiB logical-output
+threshold, and are rejected before pandas conversion, text-length checks or scientific validation.
+The spies explicitly observe the oversized Arrow table. This is evidence of post-allocation output rejection,
+not containment or prevention. The fixture-only footer mutation replaces one asserted unique marker
+in a generated single-row-group footer; it is not a general Parquet parser or production control.
+
+Commands use the isolated `.venv/Scripts/python.exe` directly (`python` below), with
+`PYTHONDONTWRITEBYTECODE=1`. `uv` is the existing pinned 0.12.23 executable at
+`C:/Users/Minh/AppData/Roaming/Python/Python314/Scripts/uv.exe`; no new environment or dependency is
+introduced. The unchanged lock SHA-256 is
+`16d76d6ffca3848e6af5f7ab838bc16c6b88d18b1af0097e5a3c216fe7e36ad0`.
+
+```powershell
+python -B -m pytest -p no:cacheprovider tests/test_wp1_inputs.py
+python -B -m pytest -p no:cacheprovider tests/test_wp1_inputs.py tests/test_scenario_evaluation.py tests/test_model_selection.py
+python -B -m pytest -p no:cacheprovider
+python -B -m ruff check --no-cache .
+python -B -m ruff format --check --no-cache .
+python -B scripts/check_docs.py
+uv lock --check --offline
+uv pip check
+git diff --check
+```
+
+The final-code input suite passed **198 tests in 21.42 seconds**. The compatibility suite passed
+**285 tests in 106.80 seconds**: 198 input tests, 52 L1/L2 scenario tests and 35 Phase 7 tests;
+neither run had skips or warnings. The final complete fixture suite passed **1,055 tests**, with
+**7 skips** and **1 warning**, in **273.74 seconds**. Six skips require unavailable Windows symlink
+privileges, and the optional canonical-artifact test skips because ignored upstream artifacts are
+absent. The warning is the existing Starlette/httpx TestClient deprecation. No new dependency was
+added to suppress it. Before the final generator's honest case was switched from Zstandard to
+Snappy for closer encoded-size correspondence with S7, preliminary focused/compatibility runs
+passed 198/285 tests in 25.41/113.07 seconds; the final counts/times above supersede those runs.
+
+Final repository checks passed Ruff lint, formatting (**137 files**), Markdown validation
+(**333** destinations/anchors across **36** files), `uv lock --check --offline` (**109 packages**),
+`uv pip check` (**91 compatible installed packages**) and `git diff --check`. Separate no-index
+checks of both untracked Python files found no whitespace diagnostics; their status 1 denotes
+the expected file difference against NUL, not a failed whitespace check. Final self-review covers
+all six files, including the untracked implementation/tests. Byte identities agree with the
+isolated validation snapshot; the six final SHA-256 hashes are supplied in the review handoff
+outside these files to avoid a self-referential PROGRESS hash. No seventh file, accepted method,
+production path, dependency, lockfile, API/dashboard, CC-02 or Phase 13 implementation changed.
+
+L3-F stays **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**; WP1 is not complete.
+Real M/C/H access remains **NO-GO**, H segmentation **BLOCKED**, and L3-C/V/B and L4 separately
+gated. ADR-028 remains PROPOSED, ADR-024 authoritative, Phase 13 PLANNED / NOT APPROVED and July
+4–31 protected. No commit, push, PR, merge, real-data model fitting/forecasting/scenario execution,
+custody approval or deployment is authorized or performed. Synthetic compatibility and repository
+tests may exercise existing synthetic analytics/model routines; they do not produce real-data
+course evidence. The complete course objectives and human ownership/authorship/AI-assistance
+disclosures remain required.
+
+### WP1-L2 integration and WP1-S6 acceptance — 2026-10-20
+
+The owner-supplied handoff records independent acceptance of the corrected L2 implementation.
+Live GitHub metadata confirms PR #47 squash-merged at
+`29bfd0e0dbf0d42ef94ba5136d25981652921930`, matching clean local main and fetched origin/main.
+Post-merge [Quality #151](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39286696223)
+succeeded at that exact SHA, with both Python 3.12 and Python 3.14 jobs successful. L2 is
+REVIEWED / INTEGRATED; the earlier implementation and correction entries below remain historical
+evidence of their respective checkpoints.
+
+The Technical Lead accepted WP1-S6 for L3-F with four mandatory clarifications: structural and
+declared-provenance verification does not prove authorization or authentic historical provenance;
+resource limits and Parquet metadata checks precede decoding; a separately declared observed-key
+roster must agree with all three candidate populations; and synthetic engineering remains separate
+from any real source/preparation/binding/execution operation. The owner authorized only the local
+four-file L3-F implementation, synthetic tests and checks, and local review. This acceptance does
+not accept ADR-028, enable a real source, or authorize later milestones.
+
+### WP1-L3-F fixture-only scenario input verification — 2026-10-20
+
+L3-F is IMPLEMENTED / UNDER REVIEW on `feat/wp1-scenario-input-verification`, based on
+`29bfd0e0dbf0d42ef94ba5136d25981652921930`. Its exact four-file scope is the new
+`src/rossmann_forecasting/data/wp1_inputs.py`, new `tests/test_wp1_inputs.py`, the active WP1 plan,
+and this progress record. The implementation adds `verify_scenario_bundle_snapshot` and
+`validate_scenario_input_binding`, frozen record objects, a strict synthetic v1 envelope/receipt,
+fixed nine/ten-file inventory, computed byte/key identities, bounded in-memory Parquet inspection,
+and separate external reference consistency checking. Parquet input/footer inspection is bounded,
+but Arrow output checks occur after table materialization. It changes no accepted Phase 7, L1 or L2 code,
+dependencies, forecast/inventory methods or commands. The [active plan](../plans/active/wp1-scenario-forecast-evaluation.md#l3-f-v1-fixture-contract)
+documents the exact schema, digest encodings, physical types and fixed fixture limits.
+
+The verifier calls public Phase 7 validation and the unchanged L1 builder, retains sparse observed
+keys, original raw-column identities, Sales/Open labels, forecast and eligibility masks, and original
+reason presence/precedence/fallback semantics. It compares all candidate keys with the independent
+declared roster, including shared-omission detection. C metadata requires the entire observed
+population, including ineligible rows, with null categories distinct from missing records and static
+Store fields consistent. It screens development chronology before labels reach the evaluation
+layers. Footer metadata and aggregate declared-uncompressed checks precede table materialization,
+but these values are untrusted and do not bound decoder allocations; Arrow output-size checks follow
+materialization. External column-file paths are rejected. JSON rejects duplicate keys, non-finite constants/numbers,
+unsupported fields and structural excess. Archived original JSON retains its variable historical
+field set and inert references; only its bounded syntax, minimal candidate/command/development identity and
+LightGBM configuration-byte relationship are checked, not authentic historical model execution.
+
+Availability claims retain the three S6 levels as **unverified declarations**, with permitted
+interpretation limited to retrospective conditional grouping. The output and binding confer no
+authorization, trusted signer identity, real custody or historically available promotion/holiday/
+Store/Open schedule. Separate SN/HW configuration payloads are explicitly absent; original manifests
+remain required. The synthetic archival layout establishes no availability of verified real inputs.
+
+Real M/C/H access remains **NO-GO**, and H volume segmentation remains **BLOCKED**. L3-C, L3-V,
+L3-B and L4 remain separately gated. ADR-028 remains PROPOSED, ADR-024 remains authoritative,
+Phase 13 remains PLANNED / NOT APPROVED, and July 4–31 remains protected and unreleased. Human
+ownership and course academic-integrity/AI-assistance disclosure remain required before submission.
+Independent Sol 6.1 ACCEPT review of this exact local diff and subsequent required CI remain pending.
+No commit, push, PR or merge has occurred during L3-F.
+
+Validation uses the fresh detached sibling worktree
+`C:/Users/Minh/Desktop/hust/introba/project/it4063e-rossmann-demand-forecasting-validation-wp1l3f`
+at the exact L2 integration base, with only the four scoped files copied in. Tracked-path inspection
+showed only `data/README.md` under data/artifacts/models/generated reports; known raw, interim,
+processed, generated-report, artifact and model directories were absent. No ignored dataset or
+forecast/inventory artifact was copied, linked, inspected, read or hashed. The new code and tests
+are checked for byte identity between implementation and validation worktrees at final handoff.
+
+The locked environment is Windows x64, Python **3.14.5**, uv **0.12.23**, NumPy **2.5.3**,
+pandas **3.0.6**, PyArrow **24.0.0**, pytest **9.1.1**, and Ruff **0.16.10**. uv was absent from
+PATH, so commands used its existing executable at
+`C:/Users/Minh/AppData/Roaming/Python/Python314/Scripts/uv.exe`; `uv` below denotes that executable.
+No local Python 3.12 run or new remote CI run was performed; Python 3.12 validation awaits the
+separately gated publication/CI process.
+The tracked lockfile SHA-256 is
+`16d76d6ffca3848e6af5f7ab838bc16c6b88d18b1af0097e5a3c216fe7e36ad0`.
+
+Executed commands, from the isolated worktree:
+
+```powershell
+uv sync --locked --extra dev --extra api --extra dashboard --python 3.14
+uv run --locked --extra dev --extra api --extra dashboard python -B -m pytest -p no:cacheprovider tests/test_wp1_inputs.py tests/test_scenario_evaluation.py tests/test_model_selection.py
+uv run --locked --extra dev --extra api --extra dashboard python -B -m pytest -p no:cacheprovider
+uv run --locked --extra dev --extra api --extra dashboard python -B -m ruff check --no-cache .
+uv run --locked --extra dev --extra api --extra dashboard python -B -m ruff format --check --no-cache .
+uv run --locked --extra dev --extra api --extra dashboard python -B scripts/check_docs.py
+uv lock --check
+uv pip check
+git diff --check
+```
+
+Initial focused validation passed 249 tests. After resource/side-effect regressions were expanded,
+one synthetic external-column metadata fixture failed before verifier invocation because PyArrow's
+metadata writer needed a readable buffer. Replacing the write-only buffer with in-memory BytesIO
+corrected that test; the expanded focused suite then passed 260 tests. The first complete fixture
+run passed 1,030 tests, with 7 skips and 1 existing warning in 258.75 seconds. Self-review then added
+one bounded regression rejecting a contradictory archived runner command while preserving legitimate
+absence of that legacy field. Final-snapshot validation is recorded below.
+
+The final focused command passed **261 tests** in **102.58 seconds**: **174** L3-F input tests,
+**52** scenario-evaluation tests and **35** Phase 7 model-selection tests, with no skips or warnings.
+Final-code repository checks passed Ruff lint, formatting (**137 files**), Markdown validation
+(**328** local destinations/anchors across **36 files**), `uv lock --check` (**109** packages),
+`uv pip check` (**91** compatible installed packages), and `git diff --check`. Additional no-index
+checks found no whitespace diagnostics in either new file. Git initially printed LF-to-CRLF
+normalization notices; a command-local raw-content check passed without changing Git configuration.
+
+The **final complete fixture suite passed 1,031 tests**, with **7 skips** and **1 warning**, in
+**254.49 seconds**. Six skips require Windows symlink privileges; the optional canonical-artifact
+test skipped because ignored upstream artifacts were absent. The warning is the existing
+Starlette/httpx TestClient deprecation notice. All **174** new input-verification tests passed.
+Final documentation validation and diff/byte-identity checks passed after recording these results.
+Exactly the four scoped files remain uncommitted; the active phase plan is retained for independent
+review and later explicitly authorized milestones. WP1 is not complete.
+
+The verifier and binding check perform no source/artifact I/O, authorization issuance, model fitting,
+CC-02 preparation/execution, Phase 13 operation or L2 aggregation. Side-effect spies cover valid and
+invalid snapshots and bindings. The separately invoked L2 compatibility test and existing repository
+suite exercise synthetic fixtures only, including existing synthetic model routines; no real-data
+fit, forecast generation, scenario analysis, recalibration, inventory operation or protected-outcome
+access/hash has occurred. Real custody/authentication, historical availability, observed-roster
+independence/completeness and production resource limits remain unverified and separately gated.
+
+### WP1-L3-F-R1 preallocation memory enforcement blocker — 2026-10-20
+
+Independent WP1-S7 review returned **REQUEST_CHANGES** for WP1-S7-01: the decoded-memory limits are
+checked after PyArrow has allocated the table. The prior reviewer reproduced two validly enveloped,
+fully synthetic inputs: a 20,000-row, 1,024-character dictionary-encoded table with 127,450 encoded
+bytes and 211,407 footer-declared uncompressed bytes materialized 21,812,500 Arrow bytes; a forged-low
+footer case with 6,523 encoded bytes and a declared total of zero materialized 33,555,787 Arrow
+bytes. Both exceeded the 16 MiB output threshold before rejection. Encoded-page totals alone do not
+prevent the honest dictionary expansion.
+
+R1 investigation used the locked PyArrow 24.0.0 environment and the corresponding official API and
+implementation references. `ParquetFile.read()` has no memory-pool or allocation-limit parameter;
+`iter_batches()` limits rows yielded per batch, not the size of a page or dictionary decoded inside
+the reader. `MemoryPool` exposes allocation statistics and `max_memory()`, while `proxy_memory_pool`
+tracks a parent pool; neither API rejects allocations at a configured byte limit. PyArrow's Parquet
+reader grows a decompression buffer to the page-header uncompressed size when reading compressed
+pages. Thus footer totals, output size checks, memory-pool measurements, and small batches are not
+preallocation controls. References: [PyArrow 24 ParquetFile API](https://arrow.apache.org/docs/24.0/python/generated/pyarrow.parquet.ParquetFile.html),
+[PyArrow 24 MemoryPool API](https://arrow.apache.org/docs/24.0/python/generated/pyarrow.MemoryPool.html),
+[PyArrow 24 page reader](https://github.com/apache/arrow/blob/apache-arrow-24.0.0/cpp/src/parquet/column_reader.cc#L3104-L3125).
+
+A footer-level encoding/codec whitelist cannot establish a hard bound while page headers and their
+declared expansion sizes are parsed during the Arrow read. Safely admitting a strict Parquet subset
+would require a bounded pre-reader that validates every page header and row/value count before Arrow
+decoding, or an isolated decoder process with an OS-enforced memory limit and bounded output handoff.
+The former adds a custom format parser; the latter changes the in-memory verifier architecture and
+needs platform-specific process controls. Both exceed this repair's current interfaces and accepted
+dependencies, so no weaker assertion or post-allocation check is presented as a fix. The existing
+16 MiB per-table and 64 MiB aggregate thresholds remain useful output rejection checks, while footer
+totals remain untrusted defense-in-depth checks; neither is a hard peak-memory budget.
+
+L3-F remains **IMPLEMENTED / UNDER REVIEW**, and WP1-S7-01 is **UNRESOLVED**. No R1 regression test
+is claimed as passing because the permitted implementation cannot prove prevention of the allocation;
+the two prior synthetic reproductions remain the failure evidence. The existing footer-estimate tests
+have been named to describe only their pre-read checks. In the isolated sibling worktree, this
+targeted command passed 7 tests (167 deselected, 4.87 seconds), confirming footer-estimate rejection
+only:
+
+```powershell
+python -B -m pytest -p no:cacheprovider tests/test_wp1_inputs.py -k "footer_metadata_and_size_estimates or aggregate_footer_estimate"
+```
+
+`python -B scripts/check_docs.py` passed for 328 local destinations/anchors, and `git diff --check`
+passed. No R1 allocation-prevention
+regression can pass against the unresolved implementation, so the focused compatibility suite, full
+suite, lint, format and lock checks were not rerun. Minimum next decision for independent Sol 6.1
+review: approve a design amendment for an isolated, OS-memory-limited decoder with a bounded result
+handoff, or approve a separately specified bounded Parquet pre-reader. Until that decision and a
+passing allocation-prevention regression exist, the snapshot is not READY_FOR_REREVIEW.
+Real M/C/H access remains **NO-GO**; H volume segmentation remains **BLOCKED**; L3-C/V/B and L4 remain
+separately gated; ADR-028 remains PROPOSED; Phase 13 remains PLANNED / NOT APPROVED; July 4–31 remains
+protected.
 
 ### WP0-L1 instructor feedback and current delivery boundary — 2026-10-19
 

@@ -2,10 +2,196 @@
 
 **State:** WP1 direction is owner-approved for fixture-only methodology implementation. L1 was
 reviewed and integrated through PR #46 at `291660108da0c3d91b065a7dba47beabe1926fae`; Quality
-#149 passed on Python 3.12 and 3.14. L2 fixture-only aggregation and serialization are
-IMPLEMENTED / UNDER REVIEW after local correction of all four WP1-S4 findings; independent
-rereview is pending. No real-data scenario analysis has run, scenario results are not accepted, and
-ADR-028 remains PROPOSED.
+#149 passed on Python 3.12 and 3.14. L2 was independently accepted and integrated through PR #47
+at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; post-merge Quality #151 succeeded on Python 3.12
+and 3.14. WP1-S6's L3-F design is superseded only at the trust/resource boundary by accepted
+ADR-029 and the owner-approved WP1-S8 restricted fixture contract below. No real-data
+scenario analysis has run, scenario results are not accepted, and ADR-028 remains PROPOSED.
+
+## WP1-S8 / L3-F-R2 approved revision — 2026-10-20
+
+The owner approved `RECOMMEND_RESTRICTED_FIXTURE_CONTRACT` after S7 REQUEST_CHANGES and R1
+DESIGN_REVIEW_REQUIRED. [ADR-029](../../docs/DECISIONS.md#adr-029--wp1-l3-f-restricted-trusted-fixture-contract)
+supersedes the generic/untrusted decoder claim and the original hard-memory acceptance condition
+for this fixture-support component only. WP1-S7-01 remains
+**UNRESOLVED UNDER ORIGINAL CONTRACT — RESTRICTED FIXTURE CONTRACT APPROVED**. The historical S6/R1
+checkpoints below remain evidence of their earlier scope, not the current acceptance conditions.
+
+The caller must supply only reviewed, project-controlled synthetic fixture-generator bytes or
+controlled synthetic test mutations. This precondition cannot be authenticated by the verifier.
+Hashes, manifests, receipts, provenance/custodian/authorization labels, `input_kind`, environment
+variables and bindings convey no trust or permission. This verifier is not designed for untrusted
+or real Rossmann input decoding; it must not prepare, verify, bind or load actual WP1 development
+datasets or be called by production ingestion.
+
+R2's exact six-file scope adds DECISIONS and README to the original four files; branch/base remain
+`feat/wp1-scenario-input-verification` / `29bfd0e0dbf0d42ef94ba5136d25981652921930`.
+Execution sequence and fixture-only acceptance criteria:
+
+1. Record the owner-approved design before code; preserve the existing scientific validators,
+   candidate/raw identities, sparse roster, source Sales/Open, masks/reasons, complete C membership,
+   static/null/unrecognized metadata semantics, availability claims and development windows.
+2. Rename to `verify_trusted_scenario_fixture_snapshot` and remove the generic alias. Retain frozen
+   records and the binding API; every successful result must expose the trust, availability,
+   real-roster, real-source, memory and L4 limitations through its existing immutable tuple.
+3. Keep purpose and binding uses synthetic-only, including rejection of mutually matching forged
+   real-purpose records. Audit tracked source, scripts, tests and entry points; add an architectural
+   regression against production imports/callers. Add no loader, filesystem access or command.
+4. Preserve every v1 defensive limit. Input byte checks precede decoding; footer estimates remain
+   untrusted hints. Arrow logical-output checks occur after materialization. Python, Arrow, pandas
+   and native temporary allocations have no hard process-memory budget; decoding may allocate more
+   than accepted output. Erroneous fixture bytes can exhaust memory or terminate the process. The
+   owner accepts this residual risk only for the restricted fixture context.
+5. Retain all scientific/side-effect tests and add trust-boundary checks and bounded synthetic
+   dictionary-expansion/forged-low-footer cases. Assert eventual output rejection and demonstrate
+   that materialization already occurred; never claim allocation prevention. Run the requested
+   focused, compatibility and full suites and repository checks in the existing isolated sibling
+   worktree using locked Python 3.14. Record actual results only in PROGRESS.
+6. Review the complete six-file change set, including untracked files, and hash the final bytes for
+   independent Sol 6.1 review. L3-F stays IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1. Python 3.12
+   awaits separately authorized publication/CI; no commit, push, PR, merge or deployment is allowed.
+
+R2 implementation and validation evidence belongs in the
+[R2 PROGRESS checkpoint](../../docs/PROGRESS.md#wp1-l3-f-r2-restricted-trusted-fixture-implementation--2026-10-20),
+including the controlled post-allocation measurements. Independent review of the final six-file
+snapshot is still required; the phase plan stays active.
+
+Real M/C/H access stays NO-GO; H segmentation stays BLOCKED. L3-C/V/B and L4 require their separate
+real-input and execution gates; Phase 13 remains PLANNED / NOT APPROVED and July 4–31 protected.
+This test-support revision does not reduce L4 or the complete course deliverables, establish
+end-to-end course compliance, accept ADR-028 or replace human ownership/AI-assistance disclosure.
+
+## WP1-S6 accepted design and L3-F execution plan — 2026-10-20 (historical)
+
+The Technical Lead accepted S6 with four mandatory guardrails: structural and declared-provenance
+checks do not authenticate authorization or historical provenance; byte and Parquet metadata limits
+precede decoding; an independently declared observed-key roster must match all three candidates;
+and fixture engineering must remain separate from every real source/preparation/binding/execution
+operation. Real M/C/H access is **NO-GO**; H volume segmentation is **BLOCKED**.
+
+L3-F adds only `data/wp1_inputs.py` and `tests/test_wp1_inputs.py`, and updates this plan and
+PROGRESS. It supplies a strict in-memory v1 snapshot verifier and a separate immutable external
+binding consistency check. It reuses public Phase 7 candidate validation and the L1 population
+builder; it does not call L2 aggregation. Ordinary hashes and reference labels convey no approval.
+
+Execution sequence:
+
+1. Verify current main and L2 integration/CI, create `feat/wp1-scenario-input-verification` from
+   `29bfd0e0dbf0d42ef94ba5136d25981652921930`, and create a clean detached sibling worktree.
+2. Implement fixed inventory/schema/receipt/claim checks, bounded input/footer inspection,
+   post-read Arrow output checks, independent roster checks, exact metadata coverage, and fail-closed
+   binding consistency. R1 later found the output checks do not enforce a hard allocation cap.
+3. Add independently constructed fixtures and failure/side-effect regressions; validate public
+   L1/L2 compatibility separately from the verifier.
+4. Run focused and full fixture suites plus repository checks only in the isolated worktree with
+   pinned uv 0.12.23 and locked Python 3.14 dependencies. Record actual evidence in PROGRESS.
+5. Review exactly four local changed files and hand off for independent Sol 6.1 review. No commit,
+   push, PR or merge is authorized during this task. L3-C (real preparation), L3-V (real independent
+   verification), L3-B (external binding), and L4 execution remain separately gated.
+
+ADR-024 remains authoritative, ADR-028 remains PROPOSED, Phase 13 remains PLANNED / NOT APPROVED,
+and the July 4–31 holdout remains protected and unreleased. Human ownership and academic-integrity
+review remain required before submission. S6 does not approve a production format/resource budget,
+establish custody, or prove independence/completeness of a later real observed-key roster.
+
+L3-F implementation, synthetic validation and local self-review are finished. It remains
+**IMPLEMENTED / UNDER REVIEW**; the exact four-file diff awaits independent Sol 6.1 ACCEPT review
+and subsequent required CI. Canonical commands, environment, test counts, skips, warning and
+limitations are recorded in [PROGRESS](../../docs/PROGRESS.md#wp1-l3-f-fixture-only-scenario-input-verification--2026-10-20).
+This phase plan remains active; no commit/publication or L3-C/V/B/L4 operation is authorized here.
+
+WP1-S7 returned REQUEST_CHANGES for finding WP1-S7-01. The current PyArrow path does not enforce
+the advertised decoded-memory cap before allocation; see the R1 checkpoint in PROGRESS. This
+finding remains unresolved. The owner subsequently selected the S8 restricted fixture design above;
+R2 rereview assesses that narrowed contract and does not close the original finding.
+
+## L3-F v1 fixture contract
+
+The two public functions are `verify_trusted_scenario_fixture_snapshot(files,
+preparation_receipt_bytes) -> ScenarioInputVerification` and
+`validate_scenario_input_binding(binding, verification) -> None`. All inputs are immutable caller
+bytes or externally supplied records; logical filenames and all archived references are inert.
+The output consists of frozen records and tuples, with hashes, population counts/bounds, accepted
+candidate/raw identities, original reason-field presence and unavailable-reason counts, enabled
+dimensions, lineage/claim declarations, findings and limitations. It contains no approval flag,
+source reader, authorization issuer, model binary, aggregation, CLI or execution handoff.
+
+The fixed inventory is `manifest.json`, `M/observed_keys.parquet`, three candidate-named Parquet
+projections and three candidate-named JSON originals under `M/original_manifests/`, plus
+`M/lightgbm_configuration.json`. `C/membership.parquet` is required exactly when at least one
+metadata field is enabled. Separate SN/HW configuration payloads are absent, explicitly represented
+by null configuration identities; the original manifests remain required under Phase 7's contract.
+No other file is admitted. This synthetic layout does not establish that corresponding verified
+real archives or metadata exist.
+
+The exact envelope uses integer `schema_version=1`, `purpose=wp1_scenario_fixture_inputs`,
+`input_kind=synthetic_fixture`, simple `bundle_id`, cutoff `2015-07-03`, `h_enabled=false`,
+`candidates`, `metadata_fields`, the three fixed `windows`, `files`, `field_schemas`, `population`,
+`observed_key_sha256`, `payload_sha256`, `source_lineage_references`,
+`observed_key_lineage_reference`, `preparation`, and `availability_claims`.
+
+- Each candidate declaration has its exact `raw_column`, `original_evidence_reference`,
+  `original_reason_fields` (ordered subset of `unavailable_reason`, `fit_failure_reason`, including
+  empty), and nonempty `legacy_provenance_limitations`. Original JSON keeps its variable historical
+  field set; it is strict bounded JSON, with minimal candidate/command/development identity checks and a
+  LightGBM configuration-byte hash cross-check. Other original fields remain inert and unverified;
+  this does not re-run Phase 7 artifact loading or certify model execution/configuration provenance.
+- `files` maps every payload name, excluding the manifest itself, to exact integer `bytes` and
+  lowercase SHA-256 `sha256`. The payload digest hashes compact sorted UTF-8 JSON of that inventory
+  (`ensure_ascii=False`, no newline). Manifest/receipt identities hash their actual supplied bytes.
+  There is no circular manifest self-hash.
+- `field_schemas` maps each Parquet name to ordered `{name, type}` records checked against Arrow.
+  Keys use int64 Store and timezone-free ns/us timestamps at midnight; horizons use int8/int16/int64;
+  Sales/Open/raw values use int64 or float64, masks use booleans, and reason/category strings use
+  string/large_string/null. Binary metadata also accepts int64/float64/bool; StateHoliday also accepts
+  numeric zero. Missing numeric values require nullable numeric storage. Nested/extension fields,
+  unexpected columns, duplicate fields and external Parquet column paths are rejected.
+- `population` declares exact positive row/Store/date/origin counts and ISO date bounds. The roster
+  contains exactly the three keys, unique and sorted by Store/origin/Date. Its digest hashes ASCII
+  `Store\tYYYY-MM-DD origin\tYYYY-MM-DD target\n` per row, without a header. Candidate chronology is
+  screened before labels reach the unchanged Phase 7/L1 validators. All three candidates and the
+  independent roster must agree exactly, preserving sparse and ineligible rows.
+- Enabled C fields follow Promo, StoreType, Assortment, StateHoliday, SchoolHoliday order. Their
+  keyed population must match the entire roster, with null categories distinct from missing records,
+  unknown text codes retained, binary values validated, and static fields consistent per Store.
+  Claims require `original_source_identity` in declared lineage, one of the three S6 levels,
+  `assumption_or_evidence_reference`, and `permitted_interpretation` fixed to
+  `retrospective_conditional_grouping`. Even `documented_known_at_origin` remains an unverified
+  declaration and permits no origin-known or causal inference.
+- `preparation` declares `execution_id`, `reference`, 40-hex `code_revision`, 64-hex `lock_sha256`,
+  `environment_references`, `custodian_label` and `authorization_reference`. The exact receipt
+  repeats those fields and schema/purpose/bundle/lineage/payload identity, adding the actual
+  `manifest_sha256`. All identities must agree; custodian and authorization labels are untrusted.
+- The separate binding must match bundle/purpose/schema/cutoff, candidate/dimension tuples,
+  manifest/payload/receipt hashes, preparation execution/reference, and the deterministic verification
+  reference (`wp1-v1:` plus SHA-256 of compact JSON `[manifest_hash, receipt_hash]`). A nonempty external
+  reference and unique nonempty permitted-use tuple are required. Only
+  `synthetic_fixture_verification` and `synthetic_fixture_compatibility` are supported. Missing or
+  mismatched records fail closed; matching records confer no real access or L4 authority.
+
+| Fixed v1 fixture limit | Bound |
+|---|---:|
+| Logical files, including manifest | 10 |
+| Manifest / receipt / each archived JSON | 64 KiB each |
+| Total supplied bytes, including receipt | 32 MiB |
+| Individual Parquet | 8 MiB |
+| Rows / columns / row groups per Parquet | 50,000 / 12 / 64 |
+| Parquet footer / Thrift string budget | 128 KiB |
+| Footer-declared uncompressed bytes / post-read Arrow output threshold per table | 16 MiB each |
+| Aggregate footer-declared bytes / cumulative post-read Arrow output threshold | 64 MiB each |
+| JSON/string lengths | 1,024 characters |
+| JSON depth / nodes; Thrift container budget | 16 / 10,000; 10,000 |
+| References per declared list / logical filename length | 32 / 160 characters |
+
+Supplied byte/JSON sizes and footer parsing have pre-parse bounds. Footer-declared uncompressed
+totals are untrusted and serve only as defense-in-depth checks; they can understate decoded output.
+PyArrow `ParquetFile.read()` materializes decoded pages and dictionary-expanded values before the
+returned table can be measured. The per-table Arrow output and aggregate output thresholds therefore
+reject only after allocation, and do not bound peak process memory. Text-length checks run before
+pandas conversion but also after Parquet materialization. Python, Arrow, pandas and native temporary
+allocations have no hard process-memory budget; malformed or erroneous fixtures may exhaust memory
+or terminate the process. WP1-S7-01 is **UNRESOLVED UNDER ORIGINAL CONTRACT — RESTRICTED FIXTURE
+CONTRACT APPROVED**. These limits do not certify a hardened parser or production memory budget.
 
 ## Objective
 
@@ -89,17 +275,18 @@ Execution sequence:
 | Milestone | Scope | Boundary |
 |---|---|---|
 | L1 — common population | Fixture-only candidate alignment and auditable eligibility masks | REVIEWED / INTEGRATED by PR #46; main Quality #149 passed |
-| L2 — metrics and scenario views | Add approved metrics, summaries, and in-memory JSON serialization to synthetic fixtures | IMPLEMENTED / UNDER REVIEW after this task's implementation and validation |
-| L3 — safe-input readiness | Review provenance and feasibility for authorized scenario metadata and any optional history inputs | Requires explicit source/input authorization; no mixed-source shortcut |
+| L2 — metrics and scenario views | Approved metrics, summaries, and in-memory JSON serialization for synthetic fixtures | REVIEWED / INTEGRATED by PR #47; main Quality #151 passed |
+| L3-F — fixture input verification | Restricted trusted synthetic M/C snapshots and reference consistency under ADR-029 | IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1; no hard memory containment |
+| L3-C/V/B — real input operations | Custodian preparation, independent real verification, and external binding | Separately gated; real M/C/H access is NO-GO |
 | L4 — development analysis | Run frozen scenario analysis on approved cached development evidence and document interpretation | Requires safe inputs, execution authorization, independent review, and disclosure of limitations |
 
 ## Deferred decisions
 
-Volume segmentation and cross-model inventory experiments remain deferred; the latter is a separate
+H volume segmentation remains BLOCKED; cross-model inventory experiments remain deferred under a separate
 bonus design. Do not infer categorical meanings or turn forecast underprediction into observed
 stockouts, lost Sales, or realized savings. L3 requires separate source/input authorization before
 safe-input assessment; L4 requires safe inputs, a frozen methodology, separate execution
-authorization, independent review, and disclosure. This L2 authorization grants neither milestone.
+authorization, independent review, and disclosure. L3-F grants none of those real operations.
 
 ## Academic integrity and review
 
@@ -153,8 +340,8 @@ serialization, and scope before later milestones build on L1/L2.
   ordering/nonmutation, arithmetic overflow, serializer integrity, no external side effects, and
   Phase 7 metric consistency. No real input, fit, forecast generation, protected outcome, holdout,
   Phase 13, selection policy, or inventory decision is accessed or executed.
-- L2 remains IMPLEMENTED / UNDER REVIEW until independent review and separately authorized
-  integration. L3 input authorization and L4 scenario execution remain separate gates.
+- L2's independent review and integration gate was subsequently satisfied by PR #47. L3 real-input
+  authorization and L4 scenario execution remain separate gates.
 
 ## WP1-S4 correction checkpoint — 2026-10-19
 

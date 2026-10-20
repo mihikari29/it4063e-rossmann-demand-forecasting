@@ -988,3 +988,54 @@ dashboard hosting, instructor-requested scenario analysis, and cross-model inven
 not implemented by this proposal. Any change that could affect final evaluation must be reviewed and
 resolved before the protected holdout is released. Until the owner accepts a superseding decision,
 follow ADR-024 and all existing Phase 13 authorization gates.
+
+## ADR-029 — WP1-L3-F Restricted Trusted-Fixture Contract
+
+**Status:** Accepted by explicit project-owner approval on 2026-10-20 of WP1-S8's
+`RECOMMEND_RESTRICTED_FIXTURE_CONTRACT`. Implementation remains subject to independent Sol 6.1
+review; acceptance of this design does not accept the implementation or complete WP1.
+
+**Context:** WP1-S7 returned REQUEST_CHANGES for WP1-S7-01. R1 reached
+DESIGN_REVIEW_REQUIRED: footer estimates and post-materialization Arrow output checks cannot
+prevent excessive decoder allocation. The original generic/untrusted decoder claim is rejected
+for L3-F. Historical failure evidence remains in [PROGRESS](PROGRESS.md).
+
+**Decision:** L3-F may decode only bytes supplied by reviewed, project-controlled synthetic fixture
+generators and controlled synthetic test mutations. This is a caller precondition; the verifier
+cannot authenticate synthetic origin. SHA-256, manifests, receipts, custodian or authorization
+references, `input_kind`, environment variables and bindings do not prove trust or issue authority.
+This verifier is not designed for untrusted or real Rossmann input decoding. It must not prepare,
+verify, bind or load actual WP1 development datasets or enter a production ingestion path.
+
+Rename the public API to `verify_trusted_scenario_fixture_snapshot`; remove
+`verify_scenario_bundle_snapshot` without an alias. Keep `validate_scenario_input_binding` and
+the immutable records, using the existing limitations tuple to expose fixture-only conformance,
+unauthenticated origin/custody, unverified historical availability and real observed-roster
+completeness, no real-source permission, no hard peak-memory guarantee and no L4 authority.
+Purpose and permitted-use declarations remain synthetic-only; matching bindings establish identity
+consistency only. Scientific validation, candidate identities, sparse keys, metadata coverage,
+availability classifications and the development/holdout boundary remain unchanged.
+
+Preserve all v1 byte, JSON, schema, footer, row, column, row-group, string and logical-output bounds.
+Input bytes are limited before decoding; footer estimates are untrusted admission/rejection hints;
+Arrow output checks run after materialization. PyArrow can allocate more than the accepted output
+size. Python, Arrow, pandas and native temporary allocations have no hard process-memory budget.
+Malformed or erroneous fixture bytes may exhaust memory or terminate the process. The owner accepts
+this residual risk only for the restricted development/testing context. WP1-S7-01 is
+**UNRESOLVED UNDER ORIGINAL CONTRACT — RESTRICTED FIXTURE CONTRACT APPROVED**; it is not technically
+repaired. Bounded reproductions test eventual output rejection, never prevention of allocation.
+
+The authorized local scope is exactly `src/rossmann_forecasting/data/wp1_inputs.py`,
+`tests/test_wp1_inputs.py`, `plans/active/wp1-scenario-forecast-evaluation.md`, `docs/PROGRESS.md`,
+`docs/DECISIONS.md` and `README.md`. No dependency, module, CLI, loader or production integration is
+added. An OS-memory-limited isolated worker is deferred because it requires a separately reviewed
+process architecture, platform controls and bounded handoff for any later real/untrusted decoder.
+A custom Parquet pre-reader is not pursued because maintaining and validating a format parser
+exceeds this fixture-support scope. Neither option is replaced by a claimed in-process hard limit.
+
+**Consequences:** Validate only in the isolated fixture environment and obtain independent Sol 6.1
+acceptance of the exact six-file snapshot before any separately authorized publication/CI step.
+No real-data source/preparation/verification/binding, custody approval, scenario execution, L3-C/V/B,
+L4, Phase 13, public release or deployment is authorized. ADR-028 remains PROPOSED and ADR-024
+remains authoritative. The full course delivery objectives, later real-data WP1 work, human
+ownership review and academic-integrity/AI-assistance disclosures remain required.
