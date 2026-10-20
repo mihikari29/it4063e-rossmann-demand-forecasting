@@ -343,6 +343,18 @@ development-only model selection), and `inventory/` (Phase 9 origin-safe scenari
 Phase 10 policy simulator).
 Thin command scripts expose reusable logic; notebooks are exploration/presentation.
 
+**WP1-L3-F is fixture-only test support, not a production input path.**
+`verify_trusted_scenario_fixture_snapshot` requires reviewed, project-controlled synthetic fixtures
+or controlled synthetic test mutations. It cannot authenticate their origin, custody or historical
+availability, and must not prepare, verify, bind or load actual Rossmann development datasets.
+Output limits are checked after Arrow materialization; there is no hard peak-memory guarantee and
+erroneous fixtures may exhaust memory or terminate the process. WP1-S7-01 remains
+**UNRESOLVED UNDER ORIGINAL CONTRACT — RESTRICTED FIXTURE CONTRACT APPROVED** under
+[ADR-029](docs/DECISIONS.md#adr-029--wp1-l3-f-restricted-trusted-fixture-contract).
+L3-F remains IMPLEMENTED / UNDER REVIEW; hashes, receipts and synthetic bindings grant no real-source
+access, L4 execution or publication authority. Real WP1 inputs and analysis remain separately gated;
+passing fixture tests does not establish completion of the course deliverables.
+
 The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
 
 - Phases 6–7: complete; ADR-020's development-only decision selected the frozen LightGBM method
