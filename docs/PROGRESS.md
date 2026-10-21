@@ -20,7 +20,7 @@
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
-| WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; WP1 REMAINS INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`. The exact six-file L3-F snapshot was independently accepted and squash-merged through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. PR Quality #152 and post-merge main Quality #153 passed on Python 3.12 and 3.14. ADR-029 remains fixture-only, and the original hard-memory finding remains unresolved. No real scenario analysis or real-data source operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+| WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 CORRECTED / UNDER REVIEW; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`. The exact six-file L3-F snapshot was independently accepted and squash-merged through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. WP1-S13 corrected the three S12 findings; independent Sol 6.1 rereview is pending. ADR-029 remains fixture-only, and the original hard-memory finding remains unresolved. No real scenario analysis or real-data source operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
 
 ### WP1-L3-F-R3 original horizon range guard — 2026-10-20
 
@@ -97,6 +97,107 @@ remains incomplete, and no public cloud deployment is claimed. Independent AI re
 establish human authorship or academic compliance; ownership and AI-assistance disclosure
 obligations remain. This documentation closeout does not satisfy the complete instructor
 assignment.
+
+### WP1-S11 fixture-only Milestone 1 — 2026-10-21
+
+The owner's corrective task confirms prior approval of `RECOMMEND_BOUNDED_HYBRID` and local
+synthetic-only Milestone 1 implementation, tests, documentation and handoff for independent Sol
+6.1 review. Work is on `feat/wp1-real-input-fixture-core`, based on `origin/main` at
+`8069f518734b6b83b1cf78090b9fbd82dcb45eb5`. The worktree contains only the two new fixture
+modules, their two new test files and this active WP1 plan/PROGRESS update. Nothing was committed,
+published, merged or deleted.
+
+`data/wp1_preparation.py` provides `prepare_target_observations(source_csv_bytes)`, which projects
+only Store, Date, Sales, Open and Promo for the three approved target windows;
+`prepare_candidate_records(records_by_candidate)`, which range-checks original integer horizons
+before calling the unchanged Phase 7 validator; and `build_promo_membership(observations)`, which
+creates complete keyed retrospective Promo membership. `data/wp1_development.py` provides
+`create_wp1_fixture_snapshot(source_csv_bytes, candidate_records)`, producing deterministic
+canonical JSON payloads, a strict preparation manifest and a separate consistency receipt; and
+`verify_wp1_fixture_snapshot(snapshot, independent_source_reference)`, which scans a separately
+supplied synthetic CSV reference with its own parser, derives the source roster, compares every
+candidate's keys/Sales/Open and validates Promo coverage. Its frozen result carries identities,
+counts and limitations only. Candidate Sales labels retain their original integer-or-float JSON
+type so the independent source comparison catches adjacent large-integer mismatches before Phase
+7's accepted float64 normalization can collapse them.
+
+The regressions cover shared omissions, extra keys, changed labels, horizon overflow and boundary
+values, protected-date canaries, sparse/missing/zero Sales, large-integer precision collisions,
+raw-field and mask semantics, reason preservation, Promo null versus missing membership, canonical
+and duplicate-key JSON, tampered identities/declarations, deterministic ordering, input
+nonmutation, no external I/O and no fitting, forecasting or L2/publication calls from the new
+verifier. A separate synthetic compatibility test passes the prepared records through Phase 7, L1
+and the existing in-memory L2 summarizer. These fixtures do not establish real source custody or
+candidate-artifact authenticity.
+
+Focused WP1 tests passed **45/45**. The selected WP1/Phase 7/L1/L2 compatibility command passed
+**350 tests** in **104.40 seconds**, with no skips, warnings or failures. Validation used the
+existing Windows x64 Python **3.14.5**, pytest **9.1.1** and Ruff **0.16.10** environment. Whole-repo
+Ruff lint passed; format check passed (**141 files**); `scripts/check_docs.py` passed (**336 local
+destinations/anchors across 36 Markdown files**); and `git diff --check` passed. The full fixture
+suite was not run because this checkout was not established as an isolated artifact-free
+environment; no ignored datasets, cached forecasts, authorization packets or protected outcomes
+were read, enumerated or hashed.
+
+The implementation remains **IMPLEMENTED / UNDER REVIEW — AWAITING INDEPENDENT SOL 6.1 REVIEW**.
+ADR-029 still limits use to caller-supplied controlled synthetic fixtures, and WP1-S7-01 remains
+unresolved under its original contract. This work adds no real-source access, custody, binding,
+loader, L4, Phase 13, H segmentation, publication or deployment permission. WP1 remains incomplete;
+L3-C/V/B and L4 remain separately gated, July 4–31 outcomes remain protected, and no commit or
+publication was authorized.
+
+### WP1-S12 independent implementation rereview — 2026-10-21
+
+The independent Sol 6.1 review verified the exact six-file S11 worktree snapshot on
+`feat/wp1-real-input-fixture-core`, based at `8069f518734b6b83b1cf78090b9fbd82dcb45eb5`, and
+returned **REQUEST_CHANGES** with two MAJOR findings and one MINOR finding. It independently passed
+45 focused tests and 305 Phase 7/L1/L2/L3-F compatibility tests. Of 73 additional synthetic
+adversarial probes, 68 passed and five assertions reproduced the reported defects. Ruff, formatting,
+Markdown links, and whitespace checks passed; the full suite was not run.
+
+The findings were loss of large integer Sales precision in public candidate preparation; Store and
+Open values rounding or truncating into valid keys/labels before snapshot serialization; and
+authorization manifest flags accepting numeric values that compare equal to Python Booleans. The
+S12 review made no repository changes. S11's implementation evidence above remains its original
+checkpoint; the corrective implementation and its results are recorded separately below.
+
+### WP1-S13 correction of S12 findings — 2026-10-21
+
+The independent WP1-S12 review returned **REQUEST_CHANGES** with two MAJOR findings and one MINOR
+finding. The correction preserves original candidate labels before Phase 7's unchanged numeric
+normalization. `prepare_candidate_records` validates and saves labels by canonical Store, origin,
+and target keys; after Phase 7 validation it restores Sales and Open into object-typed columns. It
+accepts its own prepared output as snapshot input, verifies the prepared derived columns, and
+rebuilds the normalized candidate records without relying on row positions. Exact numeric equality
+allows an integer and equal-valued float (for example `20` and `20.0`); it applies no tolerance, so
+`9007199254740992` and `9007199254740993` remain distinct.
+
+The supported candidate scalar contract is explicit: Store is a Python/NumPy integer from 1 through
+`2**63 - 1` (Booleans, floats, strings, Decimal values, nulls, fractions and out-of-range values
+are rejected); Sales is a non-negative int64 integer, finite non-negative float64 value, or missing;
+Open is exact integer/float `0` or `1`, or missing. Booleans, strings, Decimal values, fractional or
+non-finite Open values are rejected before Phase 7 coercion. Snapshot serialization rechecks the
+original Store/Sales/Open values and writes the checked Open semantics. Every authorization flag in
+the manifest is type-checked as a JSON Boolean before its required false value is compared; the
+H-disabled declaration remains strictly Boolean.
+
+Synthetic regressions cover both adjacent integers above `2**53`, raw and prepared-output snapshot
+creation, exact integer/float equivalence, null labels, all three candidate Store/Open paths,
+positive int64 Store boundaries, invalid discrete values, and resealed Boolean mutations. The
+corrections leave the independent source roster, forecasts, masks, Promo membership, and accepted
+Phase 7/L1/L2/L3-F methods unchanged. No real source, authorization packet, cached artifact, or
+protected outcome was accessed. The S13 implementation remains **IMPLEMENTED / UNDER REVIEW —
+AWAITING SOL 6.1 REREVIEW**; WP1-S7-01 remains unresolved under its original contract.
+
+Final validation on Windows x64 with the locked Python **3.14.5**, pytest **9.1.1**, and Ruff
+**0.16.10** environment passed **125 focused WP1 preparation/development tests** in **16.98
+seconds** and **305 Phase 7/L1/L2/L3-F compatibility tests** in **141.47 seconds**, with no
+failures, skips, or warnings. `ruff check --no-cache .` passed; `ruff format --check --no-cache .`
+passed (**141 files**); `scripts/check_docs.py` passed (**339 local destinations/anchors across
+36 Markdown files**); and both `git diff --check` and a trailing-whitespace scan of the six
+authorized files passed. The full fixture suite was not run because this checkout was not
+established as safely isolated from ignored artifacts; no ignored Rossmann data or protected
+artifacts were inspected to establish isolation.
 
 ### WP1-L3-F-R2 restricted trusted-fixture implementation — 2026-10-20
 
