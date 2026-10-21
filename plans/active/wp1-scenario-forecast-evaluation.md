@@ -1,12 +1,40 @@
 # WP1 — Scenario-Based Forecast Evaluation
 
-**State:** WP1 direction is owner-approved for fixture-only methodology implementation. L1 was
-reviewed and integrated through PR #46 at `291660108da0c3d91b065a7dba47beabe1926fae`; Quality
-#149 passed on Python 3.12 and 3.14. L2 was independently accepted and integrated through PR #47
-at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; post-merge Quality #151 succeeded on Python 3.12
-and 3.14. WP1-S6's L3-F design is superseded only at the trust/resource boundary by accepted
-ADR-029 and the owner-approved WP1-S8 restricted fixture contract below. No real-data
+**Current state (2026-10-21):** WP1 remains incomplete. L1 was reviewed and integrated through
+PR #46 at `291660108da0c3d91b065a7dba47beabe1926fae`; Quality #149 passed on Python 3.12 and
+3.14. L2 was independently accepted and integrated through PR #47 at
+`29bfd0e0dbf0d42ef94ba5136d25981652921930`; post-merge Quality #151 succeeded on Python 3.12
+and 3.14. The exact six-file L3-F implementation was independently accepted and integrated through
+PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`; PR Quality #152 and main Quality #153 passed
+on Python 3.12 and 3.14. See the canonical [L3-F integration closeout](../../docs/PROGRESS.md#wp1-l3-f-post-merge-integration-closeout--2026-10-21).
+ADR-029 and the owner-approved WP1-S8 restricted fixture contract below govern L3-F. No real-data
 scenario analysis has run, scenario results are not accepted, and ADR-028 remains PROPOSED.
+
+## WP1-L3-F integration closeout — 2026-10-21
+
+L3-F is **REVIEWED / INTEGRATED through PR #48** at merge revision
+`ed2f37cee5a1e7b3901437acf5e643c612868e55`; main Quality #153 passed on Python 3.12 and 3.14.
+The independent Sol 6.1 review accepted the exact six-file snapshot and its original Arrow horizon
+range correction. Focused and compatibility test evidence is recorded in the canonical
+[PROGRESS closeout](../../docs/PROGRESS.md#wp1-l3-f-post-merge-integration-closeout--2026-10-21).
+No human GitHub review was recorded or is claimed. The prior R2/R3 handoff statements that review
+and publication were pending describe their historical checkpoints and are superseded by this
+closeout.
+
+ADR-029 permits only project-controlled synthetic fixtures and controlled test mutations. The
+verifier cannot authenticate fixture origin or custody; hashes, manifests, receipts and bindings
+establish consistency, not authorization. Arrow thresholds apply after materialization and do not
+enforce peak process-memory limits. WP1-S7-01 remains **UNRESOLVED UNDER THE ORIGINAL CONTRACT**;
+restricted-fixture risk acceptance does not authorize a real-data decoder.
+
+Rossmann Sales is monetary turnover, not physical demand or SKU-level quantity, and the approved
+three-model comparison is unchanged. Protected July 4–31, 2015 outcomes remain sealed; no WP1
+scenario analysis or real-data M/C/H operation has run or is authorized. H segmentation remains
+blocked, and WP1-L3-C/V/B and L4 remain unauthorized. ADR-028 remains PROPOSED; ADR-024 remains
+authoritative for localhost-only deployment. Phase 13 remains PLANNED / NOT APPROVED, Phase 14
+remains incomplete, and no public cloud deployment is claimed. Independent AI review does not
+establish human authorship or academic compliance; ownership and AI-assistance disclosure remain
+obligations. This closeout does not satisfy the complete instructor assignment.
 
 ## WP1-S8 / L3-F-R2 approved revision — 2026-10-20
 
@@ -48,13 +76,16 @@ Execution sequence and fixture-only acceptance criteria:
    focused, compatibility and full suites and repository checks in the existing isolated sibling
    worktree using locked Python 3.14. Record actual results only in PROGRESS.
 6. Review the complete six-file change set, including untracked files, and hash the final bytes for
-   independent Sol 6.1 review. L3-F stays IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1. Python 3.12
-   awaits separately authorized publication/CI; no commit, push, PR, merge or deployment is allowed.
+   independent Sol 6.1 review. At this R2 implementation handoff, L3-F was IMPLEMENTED / UNDER
+   REVIEW — AWAITING SOL 6.1; Python 3.12 publication/CI, commit, push, PR and merge were not yet
+   authorized. Those pending gates were later addressed under separate authorization; see the
+   post-merge closeout above.
 
 R2 implementation and validation evidence belongs in the
 [R2 PROGRESS checkpoint](../../docs/PROGRESS.md#wp1-l3-f-r2-restricted-trusted-fixture-implementation--2026-10-20),
-including the controlled post-allocation measurements. Independent review of the final six-file
-snapshot is still required; the phase plan stays active.
+including the controlled post-allocation measurements. At the R2 checkpoint, independent review of
+the final six-file snapshot was still required; that review and integration were later completed as
+recorded above. The phase plan stays active because WP1 is incomplete.
 
 Real M/C/H access stays NO-GO; H segmentation stays BLOCKED. L3-C/V/B and L4 require their separate
 real-input and execution gates; Phase 13 remains PLANNED / NOT APPROVED and July 4–31 protected.
@@ -94,11 +125,13 @@ and the July 4–31 holdout remains protected and unreleased. Human ownership an
 review remain required before submission. S6 does not approve a production format/resource budget,
 establish custody, or prove independence/completeness of a later real observed-key roster.
 
-L3-F implementation, synthetic validation and local self-review are finished. It remains
-**IMPLEMENTED / UNDER REVIEW**; the exact four-file diff awaits independent Sol 6.1 ACCEPT review
-and subsequent required CI. Canonical commands, environment, test counts, skips, warning and
-limitations are recorded in [PROGRESS](../../docs/PROGRESS.md#wp1-l3-f-fixture-only-scenario-input-verification--2026-10-20).
-This phase plan remains active; no commit/publication or L3-C/V/B/L4 operation is authorized here.
+At this original S6/R1 checkpoint, L3-F implementation, synthetic validation and local self-review
+were finished, but the exact four-file diff remained **IMPLEMENTED / UNDER REVIEW** awaiting
+independent Sol 6.1 ACCEPT review and subsequent CI. Canonical commands, environment, test counts,
+skips, warning and limitations are recorded in
+[PROGRESS](../../docs/PROGRESS.md#wp1-l3-f-fixture-only-scenario-input-verification--2026-10-20).
+The plan and its authorization boundary describe that historical checkpoint; current L3-F state is
+recorded in the closeout above.
 
 WP1-S7 returned REQUEST_CHANGES for finding WP1-S7-01. The current PyArrow path does not enforce
 the advertised decoded-memory cap before allocation; see the R1 checkpoint in PROGRESS. This
@@ -276,7 +309,7 @@ Execution sequence:
 |---|---|---|
 | L1 — common population | Fixture-only candidate alignment and auditable eligibility masks | REVIEWED / INTEGRATED by PR #46; main Quality #149 passed |
 | L2 — metrics and scenario views | Approved metrics, summaries, and in-memory JSON serialization for synthetic fixtures | REVIEWED / INTEGRATED by PR #47; main Quality #151 passed |
-| L3-F — fixture input verification | Restricted trusted synthetic M/C snapshots and reference consistency under ADR-029 | IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1; no hard memory containment |
+| L3-F — fixture input verification | Restricted trusted synthetic M/C snapshots and reference consistency under ADR-029 | REVIEWED / INTEGRATED through PR #48; main Quality #153 passed on Python 3.12/3.14; no hard memory containment |
 | L3-C/V/B — real input operations | Custodian preparation, independent real verification, and external binding | Separately gated; real M/C/H access is NO-GO |
 | L4 — development analysis | Run frozen scenario analysis on approved cached development evidence and document interpretation | Requires safe inputs, execution authorization, independent review, and disclosure of limitations |
 
