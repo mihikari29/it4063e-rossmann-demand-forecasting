@@ -20,7 +20,51 @@
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
-| WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 CORRECTED / UNDER REVIEW; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`. The exact six-file L3-F snapshot was independently accepted and squash-merged through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. WP1-S13 corrected the three S12 findings; independent Sol 6.1 rereview is pending. ADR-029 remains fixture-only, and the original hard-memory finding remains unresolved. No real scenario analysis or real-data source operation has run. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+| WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 REVIEWED / INTEGRATED; S16 M2 IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; L3-F integrated through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. Milestone 1 was independently accepted and integrated through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; PR Quality #156 and main Quality #157 passed on Python 3.12 and 3.14. WP1-S12 findings 01–03 were corrected in WP1-S13 and accepted by Sol 6.1 in WP1-S14. S16 adds only an in-memory controlled-synthetic handoff; no real-source operation or scenario analysis has run. ADR-029 remains fixture-only, and WP1-S7-01 remains unresolved under its original contract. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+
+### WP1-S15 / S15-R1 Milestone 1 integration — 2026-10-21
+
+The corrected six-file Milestone 1 snapshot was independently accepted by Sol 6.1 in WP1-S14,
+including resolution of WP1-S12-01 (original Sales precision), WP1-S12-02 (exact Store/Open scalar
+validation), and WP1-S12-03 (strict Boolean manifest fields). PR #50 was squash-merged into `main`
+at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`. PR Quality run [#156](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39540940582)
+and post-merge main Quality run [#157](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39541341549)
+passed both Python 3.12 and 3.14 jobs on their respective exact revisions. The AI review was not a
+human GitHub review. The S11/S12/S13 entries below remain historical implementation and review
+checkpoints. Milestone 2 is separately authorized as fixture-only work; WP1 remains incomplete and
+no real-source operation or later analytical milestone is authorized here.
+
+### WP1-S16 fixture-only Milestone 2 — 2026-10-21
+
+WP1-S16 extends the integrated Milestone 1 verifier with a controlled-synthetic provider on branch
+`feat/wp1-fixture-operational-bridge`, based on `origin/main` at
+`8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`. The in-memory sequence uses the existing
+`create_wp1_fixture_snapshot` preparation and `verify_wp1_fixture_snapshot` independent-reference
+verification, then requires a separately supplied immutable `WP1FixtureBinding` and the exact
+`FIXTURE_USE_CONTEXT` before `load_wp1_fixture_provider` returns defensive-copy candidate and Promo
+frames. Verification identity now includes the candidate ID, raw forecast column and candidate
+payload digest for all three accepted Phase 7 candidates. The provider re-verifies the snapshot and
+separate source reference on every load, validates bound purpose/schema/digests/windows/cutoff/
+dimension/H state, reconstructs frames through the existing validators, and exposes fixture-only
+provenance and limitations. L1/L2 calls remain explicit caller actions.
+
+Provider preflight limits the in-memory reference to 64 MiB, each payload to 64 MiB, the manifest to
+1 MiB, the receipt to 256 KiB, the combined serialized handoff to 128 MiB, and declared/decoded
+populations to 50,000 rows. Declared counts and schemas are checked before payload decoding; actual
+decoded population counts are checked after decoding. These ordinary encoded-size/schema/row
+checks do not establish hard peak-memory containment; inputs have already been allocated before
+the provider receives them, and WP1-S7-01 remains unresolved under its original contract. No
+filesystem rehearsal or one-use execution intent was implemented, so path-alias/symlink, partial
+write, and stale single-use-intent cases do not apply. No CC-02 grant, real input path, real source,
+candidate archive, July 4–31 outcome, L4, fit, forecast generation, automatic L2 aggregation,
+inventory analysis, publication or dependency change was introduced.
+
+The locked local Python 3.14.5 environment was synchronized with `uv 0.12.23` using
+`uv sync --locked --extra dev --extra api --extra dashboard --python 3.14` (109 packages resolved;
+`uv.lock` unchanged). The focused synthetic regression command
+`python -m pytest tests/test_wp1_preparation.py tests/test_wp1_development.py tests/test_wp1_inputs.py tests/test_model_selection.py tests/test_scenario_evaluation.py -q` passed (**457 passed**, no skips or warnings). Repository Ruff lint passed, Ruff formatting reported 141 files already formatted, documentation validation passed for 338 local destinations/anchors across 36 Markdown files, `pip check` reported no broken requirements, and `git diff --check` passed. The full repository suite was not run because an artifact-free isolated full-suite environment was not established without probing ignored data/artifact locations; complete Linux matrix evidence remains for a later authorized PR/CI gate. No new dependencies were added.
+
+The exact local implementation remains **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. WP1 remains **INCOMPLETE**; no real-source preparation or binding is complete, and the next boundary is independent review only.
 
 ### WP1-L3-F-R3 original horizon range guard — 2026-10-20
 
