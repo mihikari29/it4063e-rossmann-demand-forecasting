@@ -147,6 +147,51 @@ def _snapshot() -> tuple[development.WP1FixtureSnapshot, list[list[str]], dict[s
     return development.create_wp1_fixture_snapshot(_csv_bytes(rows), candidates), rows, candidates
 
 
+def _verified_fixture_binding(
+    snapshot: development.WP1FixtureSnapshot,
+    reference: bytes | None = None,
+) -> tuple[bytes, development.WP1FixtureVerification, development.WP1FixtureBinding]:
+    source_reference = _reference_bytes() if reference is None else reference
+    verification = development.verify_wp1_fixture_snapshot(snapshot, source_reference)
+    binding = development.WP1FixtureBinding(
+        schema_version=development.SCHEMA_VERSION,
+        purpose=development.PURPOSE,
+        preparation_manifest_sha256=verification.preparation_manifest_sha256,
+        payload_inventory_sha256=verification.payload_inventory_sha256,
+        preparation_receipt_sha256=verification.preparation_receipt_sha256,
+        verification_identity_sha256=verification.identity_sha256,
+        candidate_identities=verification.candidate_identities,
+        development_cutoff=development.DEVELOPMENT_CUTOFF,
+        approved_windows=tuple(
+            (
+                window.name,
+                window.forecast_origin.date().isoformat(),
+                window.target_start.date().isoformat(),
+                window.target_end.date().isoformat(),
+            )
+            for window in APPROVED_DEVELOPMENT_WINDOWS
+        ),
+        enabled_dimensions=("Promo",),
+        h_segmentation_enabled=False,
+        external_fixture_use_reference="reviewed-fixture-test:WP1-S16",
+    )
+    return source_reference, verification, binding
+
+
+def _load_bound_fixture(
+    snapshot: development.WP1FixtureSnapshot,
+    reference: bytes | None = None,
+) -> development.WP1BoundFixtureData:
+    source_reference, verification, binding = _verified_fixture_binding(snapshot, reference)
+    return development.load_wp1_fixture_provider(
+        snapshot,
+        source_reference,
+        verification,
+        binding,
+        fixture_use_context=development.FIXTURE_USE_CONTEXT,
+    )
+
+
 def _canonical(value: Any) -> bytes:
     return json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
@@ -702,3 +747,331 @@ def test_protected_canary_is_absent_from_outputs_and_fixture_errors() -> None:
     assert b"NEVER_EMIT_STORE" not in all_bytes
     assert b"NEVER_EMIT_PROTECTED_SALES" not in all_bytes
     assert verified.observed_target_rows == len(_source_rows())
+
+
+def test_fixture_provider_completes_external_c_to_v_to_b_handoff() -> None:
+    snapshot, source_rows, _ = _snapshot()
+    reference, verification, binding = _verified_fixture_binding(snapshot)
+    fixture = development.load_wp1_fixture_provider(
+        snapshot,
+        reference,
+        verification,
+        binding,
+        fixture_use_context=development.FIXTURE_USE_CONTEXT,
+    )
+
+    manifest_inventory = json.loads(snapshot.preparation_manifest)["prepared_payloads"]
+    assert verification.candidate_identities == tuple(
+        (
+            candidate,
+            FORECAST_COLUMNS[candidate],
+            manifest_inventory[development.CANDIDATE_NAMES[candidate]]["sha256"],
+        )
+        for candidate in CANDIDATE_IDS
+    )
+    assert fixture.provenance.source_kind == "controlled_project_synthetic_fixture"
+    assert (
+        fixture.provenance.external_fixture_use_reference == binding.external_fixture_use_reference
+    )
+    assert fixture.provenance.verification_identity_sha256 == verification.identity_sha256
+    assert fixture.provenance.enabled_dimensions == ("Promo",)
+    assert fixture.provenance.h_segmentation_enabled is False
+    assert fixture.provenance.observed_target_rows == len(source_rows)
+    assert set(fixture.candidate_records) == set(CANDIDATE_IDS)
+    assert all(len(frame) == len(source_rows) for frame in fixture.candidate_records.values())
+    assert len(fixture.promo_membership) == len(source_rows)
+    assert fixture.provenance.limitations == development._SECURITY_LIMITATIONS
+
+
+@pytest.mark.parametrize(
+    "binding_change",
+    [
+        {"schema_version": 2},
+        {"purpose": "real_wp1_input"},
+        {"candidate_identities": ()},
+        {"development_cutoff": "2015-07-31"},
+        {"approved_windows": ()},
+        {"enabled_dimensions": ("Promo", "H")},
+        {"h_segmentation_enabled": True},
+        {"preparation_manifest_sha256": "f" * 64},
+        {"payload_inventory_sha256": "f" * 64},
+        {"preparation_receipt_sha256": "f" * 64},
+        {"verification_identity_sha256": "f" * 64},
+    ],
+)
+def test_fixture_provider_rejects_mismatched_external_binding(
+    binding_change: dict[str, Any],
+) -> None:
+    snapshot, _, _ = _snapshot()
+    reference, verification, binding = _verified_fixture_binding(snapshot)
+    changed_binding = replace(binding, **binding_change)
+    with pytest.raises(development.WP1FixtureProviderError, match="binding"):
+        development.load_wp1_fixture_provider(
+            snapshot,
+            reference,
+            verification,
+            changed_binding,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+
+
+def test_fixture_provider_requires_verification_binding_and_exact_context() -> None:
+    snapshot, _, _ = _snapshot()
+    reference, verification, binding = _verified_fixture_binding(snapshot)
+    with pytest.raises(development.WP1FixtureProviderError, match="verification"):
+        development.load_wp1_fixture_provider(
+            snapshot,
+            reference,
+            None,
+            binding,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+    with pytest.raises(development.WP1FixtureProviderError, match="binding"):
+        development.load_wp1_fixture_provider(
+            snapshot,
+            reference,
+            verification,
+            None,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+    with pytest.raises(development.WP1FixtureProviderError, match="context"):
+        development.load_wp1_fixture_provider(snapshot, reference, verification, binding)
+    with pytest.raises(development.WP1FixtureProviderError, match="context"):
+        development.load_wp1_fixture_provider(
+            snapshot,
+            reference,
+            verification,
+            binding,
+            fixture_use_context="cc02_real_input_authorization",
+        )
+
+
+def test_fixture_provider_rejects_mismatched_reference_and_stale_verification() -> None:
+    snapshot, _, _ = _snapshot()
+    reference, verification, binding = _verified_fixture_binding(snapshot)
+    changed_reference_rows = _independent_reference_rows()
+    changed_reference_rows[0][3] = "999"
+    with pytest.raises(development.WP1FixtureProviderError, match="failed verification"):
+        development.load_wp1_fixture_provider(
+            snapshot,
+            _csv_bytes(changed_reference_rows),
+            verification,
+            binding,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+
+    changed_verification = replace(verification, source_derived_roster_sha256="f" * 64)
+    with pytest.raises(development.WP1FixtureProviderError, match="verification"):
+        development.load_wp1_fixture_provider(
+            snapshot,
+            reference,
+            changed_verification,
+            binding,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+
+
+@pytest.mark.parametrize("tamper", ["manifest", "payload", "receipt", "missing", "extra"])
+def test_fixture_provider_reverifies_snapshot_and_exact_logical_inventory(tamper: str) -> None:
+    snapshot, _, _ = _snapshot()
+    reference, verification, binding = _verified_fixture_binding(snapshot)
+    if tamper == "manifest":
+        changed = replace(snapshot, preparation_manifest=snapshot.preparation_manifest + b" ")
+    elif tamper == "receipt":
+        changed = replace(snapshot, preparation_receipt=snapshot.preparation_receipt + b" ")
+    else:
+        payloads = list(snapshot.payloads)
+        if tamper == "payload":
+            name, content = payloads[0]
+            payloads[0] = (name, content + b" ")
+        elif tamper == "missing":
+            payloads.pop()
+        else:
+            payloads.append(("candidates/unexpected.json", b"{}"))
+        changed = replace(snapshot, payloads=tuple(payloads))
+    with pytest.raises(development.WP1FixtureEvidenceError):
+        development.load_wp1_fixture_provider(
+            changed,
+            reference,
+            verification,
+            binding,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [("Store", 1.0), ("source_open", 0.5), ("horizon", 65537)],
+)
+def test_fixture_provider_rejects_invalid_original_candidate_values(
+    field: str, replacement: int | float
+) -> None:
+    snapshot, _, _ = _snapshot()
+    reference, verification, binding = _verified_fixture_binding(snapshot)
+    candidate = CANDIDATE_IDS[0]
+    payload_name = development.CANDIDATE_NAMES[candidate]
+    rows = json.loads(dict(snapshot.payloads)[payload_name])["rows"]
+    rows[0][field] = replacement
+    changed = _reseal(
+        snapshot,
+        payload_change=(
+            payload_name,
+            _canonical(
+                {
+                    "columns": json.loads(dict(snapshot.payloads)[payload_name])["columns"],
+                    "rows": rows,
+                }
+            ),
+        ),
+    )
+    with pytest.raises(development.WP1FixtureProviderError, match="failed verification"):
+        development.load_wp1_fixture_provider(
+            changed,
+            reference,
+            verification,
+            binding,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+
+
+def test_fixture_provider_enforces_predecode_size_and_population_limits() -> None:
+    snapshot, _, _ = _snapshot()
+    reference, verification, binding = _verified_fixture_binding(snapshot)
+    oversized = replace(
+        snapshot,
+        preparation_manifest=b" " * (development._MAX_PROVIDER_MANIFEST_BYTES + 1),
+    )
+    with pytest.raises(development.WP1FixtureProviderError, match="size limit"):
+        development.load_wp1_fixture_provider(
+            oversized,
+            reference,
+            verification,
+            binding,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+
+    manifest = json.loads(snapshot.preparation_manifest)
+    manifest["populations"]["source_observations"]["rows"] = development._MAX_PROVIDER_ROWS + 1
+    oversized_population = replace(
+        snapshot,
+        preparation_manifest=_canonical(manifest),
+    )
+    with pytest.raises(development.WP1FixtureProviderError, match="row limit"):
+        development.load_wp1_fixture_provider(
+            oversized_population,
+            reference,
+            verification,
+            binding,
+            fixture_use_context=development.FIXTURE_USE_CONTEXT,
+        )
+
+
+def test_fixture_provider_reuses_immutable_snapshot_and_returns_copy_safe_frames() -> None:
+    snapshot, _, input_candidates = _snapshot()
+    reference, verification, binding = _verified_fixture_binding(snapshot)
+    original = development.load_wp1_fixture_provider(
+        snapshot,
+        reference,
+        verification,
+        binding,
+        fixture_use_context=development.FIXTURE_USE_CONTEXT,
+    )
+    input_candidates[CANDIDATE_IDS[0]].loc[:, "actual_sales"] = 999999
+    first_copy = original.candidate_records
+    candidate = CANDIDATE_IDS[0]
+    first_copy[candidate].loc[:, "actual_sales"] = 888888
+    first_copy[candidate].loc[:, FORECAST_COLUMNS[candidate]] = 0
+    first_promo = original.promo_membership
+    first_promo.loc[:, "Promo"] = 0
+
+    repeated = development.load_wp1_fixture_provider(
+        snapshot,
+        reference,
+        verification,
+        binding,
+        fixture_use_context=development.FIXTURE_USE_CONTEXT,
+    )
+    assert not repeated.candidate_records[candidate]["actual_sales"].eq(888888).any()
+    assert not repeated.candidate_records[candidate][FORECAST_COLUMNS[candidate]].eq(0).all()
+    assert repeated.promo_membership["Promo"].isna().any()
+
+
+def test_fixture_provider_preserves_sales_integer_precision_and_promo_null_roster() -> None:
+    source_rows = _source_rows()
+    reference_rows = _independent_reference_rows()
+    large_sales = 2**53 + 1
+    target = (APPROVED_DEVELOPMENT_WINDOWS[0].forecast_origin + pd.Timedelta(days=1)).date()
+    for row in source_rows:
+        if int(row[0]) == 1 and row[2] == target.isoformat():
+            row[3] = str(large_sales)
+    for row in reference_rows:
+        if int(row[0]) == 1 and row[2] == target.isoformat():
+            row[3] = str(large_sales)
+    candidates = _candidate_frames(source_rows)
+    for frame in candidates.values():
+        frame["actual_sales"] = pd.Series(
+            [
+                large_sales
+                if int(record.Store) == 1 and pd.Timestamp(record.Date).date() == target
+                else record.actual_sales
+                for record in frame.itertuples(index=False)
+            ],
+            dtype="object",
+        )
+    snapshot = development.create_wp1_fixture_snapshot(_csv_bytes(source_rows), candidates)
+    fixture = _load_bound_fixture(snapshot, _csv_bytes(reference_rows))
+    candidate = CANDIDATE_IDS[0]
+    found = fixture.candidate_records[candidate].loc[
+        fixture.candidate_records[candidate]["Date"].eq(pd.Timestamp(target)), "actual_sales"
+    ]
+    assert found.iloc[0] == large_sales
+    assert isinstance(found.iloc[0], int)
+    membership = fixture.promo_membership
+    assert membership["Promo"].isna().any()
+    sparse_missing_key = (
+        2,
+        APPROVED_DEVELOPMENT_WINDOWS[1].forecast_origin,
+        APPROVED_DEVELOPMENT_WINDOWS[1].target_end,
+    )
+    assert not (
+        membership["Store"].eq(sparse_missing_key[0])
+        & membership["forecast_origin"].eq(sparse_missing_key[1])
+        & membership["Date"].eq(sparse_missing_key[2])
+    ).any()
+
+
+def test_fixture_provider_has_no_io_or_analysis_side_effects(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def forbidden(*_args: Any, **_kwargs: Any) -> Any:
+        raise AssertionError("fixture provider attempted I/O or analysis")
+
+    monkeypatch.setattr(builtins, "open", forbidden)
+    monkeypatch.setattr(Path, "open", forbidden)
+    monkeypatch.setattr(socket, "create_connection", forbidden)
+    monkeypatch.setattr(socket.socket, "connect", forbidden)
+    for module, name in (
+        (seasonal_naive, "forecast_seasonal_naive"),
+        (holt_winters, "forecast_holt_winters"),
+        (lightgbm, "fit_lightgbm"),
+        (lightgbm, "recursive_lightgbm_forecasts"),
+        (lightgbm_evaluation, "tune_global_lightgbm"),
+        (scenario_evaluation, "build_scenario_population"),
+        (scenario_evaluation, "summarize_scenario_population"),
+        (scenario_evaluation, "serialize_scenario_fixture"),
+    ):
+        monkeypatch.setattr(module, name, forbidden)
+    snapshot, _, _ = _snapshot()
+    _load_bound_fixture(snapshot)
+
+
+def test_fixture_provider_outputs_work_with_existing_synthetic_l1_l2_interfaces() -> None:
+    snapshot, _, _ = _snapshot()
+    fixture = _load_bound_fixture(snapshot)
+    population = scenario_evaluation.build_scenario_population(fixture.candidate_records)
+    summary = scenario_evaluation.summarize_scenario_population(
+        population, scenario_membership=fixture.promo_membership
+    )
+    assert len(population) == fixture.provenance.observed_target_rows
+    assert summary.enabled_scenarios == ("Promo",)
+    assert set(summary.metrics["candidate_id"]) == set(CANDIDATE_IDS)

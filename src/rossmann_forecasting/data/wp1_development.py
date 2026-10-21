@@ -1,10 +1,11 @@
-"""Deterministic, in-memory WP1 Milestone 1 fixture evidence and verification.
+"""Deterministic, in-memory WP1 fixture preparation, verification and provider handoff.
 
 This module accepts only synthetic fixture bytes and candidate frames. It has no filesystem,
-network, fitting, forecast-generation, L2 aggregation, publication, or authorization interface.
-Canonical hashes and the separate receipt establish fixture consistency only. They do not prove
-synthetic origin, custody, historical forecast provenance, real-source permission, or safe peak
-memory use. WP1-S7-01 remains unresolved under its original contract.
+network, fitting, forecast-generation, automatic L2 aggregation, publication, or authenticated
+authorization interface. Canonical hashes, receipts, verification records and external binding
+labels establish fixture consistency only. They do not prove synthetic origin, custody, historical
+forecast provenance, real-source permission, or safe peak memory use. WP1-S7-01 remains unresolved
+under its original contract.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ import hashlib
 import io
 import json
 import math
+import re
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
@@ -98,6 +100,15 @@ _AUTHORIZATION_BOOLEAN_FIELDS = (
     "l4_execution",
     "publication",
 )
+FIXTURE_USE_CONTEXT = "wp1_controlled_synthetic_fixture_l1_l2_compatibility"
+_MAX_PROVIDER_REFERENCE_BYTES = 64 * 1024 * 1024
+_MAX_PROVIDER_PAYLOAD_BYTES = 64 * 1024 * 1024
+_MAX_PROVIDER_MANIFEST_BYTES = 1024 * 1024
+_MAX_PROVIDER_RECEIPT_BYTES = 256 * 1024
+_MAX_PROVIDER_TOTAL_BYTES = 128 * 1024 * 1024
+_MAX_PROVIDER_ROWS = 50_000
+_BINDING_REFERENCE_MAX_LENGTH = 256
+_SHA256_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
 _MANIFEST_FIELDS = {
     "schema_version",
     "purpose",
@@ -130,6 +141,10 @@ class WP1FixtureEvidenceError(ValueError):
     """Synthetic WP1 fixture evidence failed canonical or scientific validation."""
 
 
+class WP1FixtureProviderError(WP1FixtureEvidenceError):
+    """The synthetic snapshot, verification, binding, or fixture-use context is invalid."""
+
+
 @dataclass(frozen=True, slots=True)
 class WP1FixtureSnapshot:
     """Immutable byte snapshot; payload names are logical and are never opened as paths."""
@@ -152,8 +167,78 @@ class WP1FixtureVerification:
     store_count: int
     date_count: int
     candidate_row_counts: tuple[tuple[str, int], ...]
+    candidate_identities: tuple[tuple[str, str, str], ...]
     enabled_dimensions: tuple[str, ...]
     limitations: tuple[str, ...] = _SECURITY_LIMITATIONS
+
+    @property
+    def identity_sha256(self) -> str:
+        """Return a deterministic identity for this independent verification record."""
+
+        return _verification_identity(self)
+
+
+@dataclass(frozen=True, slots=True)
+class WP1FixtureBinding:
+    """Externally supplied synthetic identity binding; this record grants no authority."""
+
+    schema_version: int
+    purpose: str
+    preparation_manifest_sha256: str
+    payload_inventory_sha256: str
+    preparation_receipt_sha256: str
+    verification_identity_sha256: str
+    candidate_identities: tuple[tuple[str, str, str], ...]
+    development_cutoff: str
+    approved_windows: tuple[tuple[str, str, str, str], ...]
+    enabled_dimensions: tuple[str, ...]
+    h_segmentation_enabled: bool
+    external_fixture_use_reference: str
+
+
+@dataclass(frozen=True, slots=True)
+class WP1FixtureProvenance:
+    """Explicit fixture-only identity and limitation metadata returned by the provider."""
+
+    source_kind: str
+    purpose: str
+    external_fixture_use_reference: str
+    preparation_manifest_sha256: str
+    payload_inventory_sha256: str
+    preparation_receipt_sha256: str
+    verification_identity_sha256: str
+    source_reference_identity_sha256: str
+    source_derived_roster_sha256: str
+    candidate_identities: tuple[tuple[str, str, str], ...]
+    development_cutoff: str
+    approved_windows: tuple[tuple[str, str, str, str], ...]
+    enabled_dimensions: tuple[str, ...]
+    h_segmentation_enabled: bool
+    observed_target_rows: int
+    store_count: int
+    date_count: int
+    limitations: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class WP1BoundFixtureData:
+    """Validated L1/L2 inputs with defensive-copy accessors and fixture-only provenance."""
+
+    _candidate_records: tuple[tuple[str, pd.DataFrame], ...]
+    _promo_membership: pd.DataFrame
+    provenance: WP1FixtureProvenance
+
+    @property
+    def candidate_records(self) -> dict[str, pd.DataFrame]:
+        """Return fresh frames so caller edits cannot alter this validated provider result."""
+
+        return {candidate: frame.copy(deep=True) for candidate, frame in self._candidate_records}
+
+    @property
+    def promo_membership(self) -> pd.DataFrame:
+        """Return a fresh Promo membership frame on every access."""
+
+        return self._promo_membership.copy(deep=True)
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -169,6 +254,26 @@ def _canonical_json(value: Any) -> bytes:
         raise WP1FixtureEvidenceError(
             "fixture evidence contains a non-canonical JSON value"
         ) from None
+
+
+def _verification_identity(verification: WP1FixtureVerification) -> str:
+    """Hash the complete independent verification finding, without granting authority."""
+
+    identity = {
+        "preparation_manifest_sha256": verification.preparation_manifest_sha256,
+        "preparation_receipt_sha256": verification.preparation_receipt_sha256,
+        "payload_inventory_sha256": verification.payload_inventory_sha256,
+        "source_reference_identity_sha256": verification.source_reference_identity_sha256,
+        "source_derived_roster_sha256": verification.source_derived_roster_sha256,
+        "observed_target_rows": verification.observed_target_rows,
+        "store_count": verification.store_count,
+        "date_count": verification.date_count,
+        "candidate_row_counts": verification.candidate_row_counts,
+        "candidate_identities": verification.candidate_identities,
+        "enabled_dimensions": verification.enabled_dimensions,
+        "limitations": verification.limitations,
+    }
+    return _sha256(_canonical_json(identity))
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -1109,7 +1214,330 @@ def verify_wp1_fixture_snapshot(
         candidate_row_counts=tuple(
             (candidate, len(candidate_payload_rows[candidate])) for candidate in CANDIDATE_IDS
         ),
+        candidate_identities=tuple(
+            (
+                candidate,
+                FORECAST_COLUMNS[candidate],
+                manifest["prepared_payloads"][CANDIDATE_NAMES[candidate]]["sha256"],
+            )
+            for candidate in CANDIDATE_IDS
+        ),
         enabled_dimensions=("Promo",),
+    )
+
+
+def _provider_windows() -> tuple[tuple[str, str, str, str], ...]:
+    return tuple(
+        (
+            window["name"],
+            window["forecast_origin"],
+            window["target_start"],
+            window["target_end"],
+        )
+        for window in _approved_windows()
+    )
+
+
+def _provider_population_preflight(manifest: Any) -> None:
+    """Bound declared row counts and schemas before any payload JSON is decoded."""
+
+    populations = manifest.get("populations") if isinstance(manifest, dict) else None
+    if not isinstance(populations, dict) or set(populations) != {
+        "source_observations",
+        "candidate_rows",
+        "promo_membership_rows",
+    }:
+        raise WP1FixtureProviderError("fixture population declaration is invalid")
+    source = populations["source_observations"]
+    if not isinstance(source, dict) or set(source) != {
+        "rows",
+        "stores",
+        "dates",
+        "missing_sales",
+        "missing_open",
+        "missing_promo",
+    }:
+        raise WP1FixtureProviderError("fixture source population declaration is invalid")
+    row_counts = [source["rows"], populations["promo_membership_rows"]]
+    candidates = populations["candidate_rows"]
+    if not isinstance(candidates, dict) or set(candidates) != set(CANDIDATE_IDS):
+        raise WP1FixtureProviderError("fixture candidate population declaration is invalid")
+    row_counts.extend(candidates[candidate] for candidate in CANDIDATE_IDS)
+    other_counts = [
+        source[field]
+        for field in ("stores", "dates", "missing_sales", "missing_open", "missing_promo")
+    ]
+    if any(type(value) is not int or value < 0 for value in (*row_counts, *other_counts)):
+        raise WP1FixtureProviderError("fixture population counts must be non-negative integers")
+    if any(value > _MAX_PROVIDER_ROWS for value in row_counts):
+        raise WP1FixtureProviderError("fixture population exceeds the provider row limit")
+
+    schemas = manifest.get("schemas")
+    if not isinstance(schemas, dict) or set(schemas) != {
+        "source_observations",
+        "candidates",
+        "promo_membership",
+    }:
+        raise WP1FixtureProviderError("fixture schema declaration is invalid")
+    if schemas["source_observations"] != list(_OBSERVATION_SCHEMA):
+        raise WP1FixtureProviderError("fixture observation schema is unsupported")
+    if schemas["promo_membership"] != list(_PROMO_SCHEMA):
+        raise WP1FixtureProviderError("fixture Promo schema is unsupported")
+    candidate_schemas = schemas["candidates"]
+    if not isinstance(candidate_schemas, dict) or set(candidate_schemas) != set(CANDIDATE_IDS):
+        raise WP1FixtureProviderError("fixture candidate schemas are incomplete")
+    identities = manifest.get("candidate_identities")
+    if not isinstance(identities, list) or len(identities) != len(CANDIDATE_IDS):
+        raise WP1FixtureProviderError("fixture candidate identities are incomplete")
+    for candidate, identity in zip(CANDIDATE_IDS, identities, strict=True):
+        if not isinstance(identity, dict) or identity.get("candidate_id") != candidate:
+            raise WP1FixtureProviderError("fixture candidate identity is unsupported")
+        reasons = identity.get("original_reason_fields")
+        if not isinstance(reasons, list) or any(reason not in _REASON_FIELDS for reason in reasons):
+            raise WP1FixtureProviderError("fixture reason-field schema is unsupported")
+        expected = list(_candidate_columns(candidate, tuple(reasons)))
+        if candidate_schemas[candidate] != expected:
+            raise WP1FixtureProviderError("fixture candidate schema is unsupported")
+
+
+def _provider_preflight(
+    snapshot: WP1FixtureSnapshot, independent_source_reference: bytes
+) -> dict[str, bytes]:
+    """Reject oversized or unexpected immutable inputs before verifier/payload decoding."""
+
+    if not isinstance(snapshot, WP1FixtureSnapshot):
+        raise WP1FixtureProviderError("provider requires an immutable WP1 fixture snapshot")
+    if (
+        not isinstance(snapshot.preparation_manifest, bytes)
+        or len(snapshot.preparation_manifest) > _MAX_PROVIDER_MANIFEST_BYTES
+    ):
+        raise WP1FixtureProviderError("fixture manifest exceeds the provider size limit")
+    if (
+        not isinstance(snapshot.preparation_receipt, bytes)
+        or len(snapshot.preparation_receipt) > _MAX_PROVIDER_RECEIPT_BYTES
+    ):
+        raise WP1FixtureProviderError("fixture receipt exceeds the provider size limit")
+    if (
+        not isinstance(independent_source_reference, bytes)
+        or len(independent_source_reference) > _MAX_PROVIDER_REFERENCE_BYTES
+    ):
+        raise WP1FixtureProviderError("independent source reference exceeds the provider limit")
+    if not isinstance(snapshot.payloads, tuple) or len(snapshot.payloads) != len(CANDIDATE_IDS) + 2:
+        raise WP1FixtureProviderError("fixture payload inventory has an unsupported shape")
+    names: list[str] = []
+    payloads: dict[str, bytes] = {}
+    total_bytes = len(snapshot.preparation_manifest) + len(snapshot.preparation_receipt)
+    for item in snapshot.payloads:
+        if (
+            not isinstance(item, tuple)
+            or len(item) != 2
+            or not isinstance(item[0], str)
+            or not isinstance(item[1], bytes)
+        ):
+            raise WP1FixtureProviderError("fixture payload inventory is malformed")
+        name, content = item
+        if len(content) > _MAX_PROVIDER_PAYLOAD_BYTES:
+            raise WP1FixtureProviderError("fixture payload exceeds the provider size limit")
+        names.append(name)
+        payloads[name] = content
+        total_bytes += len(content)
+    expected_names = {OBSERVATIONS_NAME, PROMO_NAME, *CANDIDATE_NAMES.values()}
+    if len(set(names)) != len(names) or set(names) != expected_names:
+        raise WP1FixtureProviderError("fixture payload paths are incomplete or unsupported")
+    if total_bytes + len(independent_source_reference) > _MAX_PROVIDER_TOTAL_BYTES:
+        raise WP1FixtureProviderError("fixture handoff exceeds the provider total-size limit")
+
+    manifest = _load_canonical_json(snapshot.preparation_manifest, label="preparation manifest")
+    _provider_population_preflight(manifest)
+    return payloads
+
+
+def _binding_matches(
+    binding: WP1FixtureBinding,
+    verification: WP1FixtureVerification,
+) -> bool:
+    if not isinstance(binding, WP1FixtureBinding):
+        return False
+    reference = binding.external_fixture_use_reference
+    if (
+        type(binding.schema_version) is not int
+        or binding.schema_version != SCHEMA_VERSION
+        or not isinstance(binding.purpose, str)
+        or binding.purpose != PURPOSE
+        or type(binding.h_segmentation_enabled) is not bool
+        or binding.h_segmentation_enabled
+        or not isinstance(reference, str)
+        or not reference
+        or reference != reference.strip()
+        or len(reference) > _BINDING_REFERENCE_MAX_LENGTH
+        or any(ord(character) < 32 or ord(character) == 127 for character in reference)
+    ):
+        return False
+    expected_candidates = verification.candidate_identities
+    digest_fields = (
+        (binding.preparation_manifest_sha256, verification.preparation_manifest_sha256),
+        (binding.payload_inventory_sha256, verification.payload_inventory_sha256),
+        (binding.preparation_receipt_sha256, verification.preparation_receipt_sha256),
+        (binding.verification_identity_sha256, verification.identity_sha256),
+    )
+    if any(not isinstance(actual, str) or actual != expected for actual, expected in digest_fields):
+        return False
+    if any(_SHA256_PATTERN.fullmatch(actual) is None for actual, _ in digest_fields):
+        return False
+    if (
+        not isinstance(binding.candidate_identities, tuple)
+        or len(binding.candidate_identities) != len(CANDIDATE_IDS)
+        or any(
+            not isinstance(identity, tuple)
+            or len(identity) != 3
+            or not all(isinstance(value, str) for value in identity)
+            or _SHA256_PATTERN.fullmatch(identity[2]) is None
+            for identity in binding.candidate_identities
+        )
+        or not isinstance(binding.development_cutoff, str)
+        or not isinstance(binding.approved_windows, tuple)
+        or any(
+            not isinstance(window, tuple)
+            or len(window) != 4
+            or not all(isinstance(value, str) for value in window)
+            for window in binding.approved_windows
+        )
+        or not isinstance(binding.enabled_dimensions, tuple)
+    ):
+        return False
+    return (
+        binding.candidate_identities == expected_candidates
+        and binding.development_cutoff == DEVELOPMENT_CUTOFF
+        and binding.approved_windows == _provider_windows()
+        and binding.enabled_dimensions == ("Promo",)
+    )
+
+
+def load_wp1_fixture_provider(
+    snapshot: WP1FixtureSnapshot,
+    independent_source_reference: bytes,
+    verification: WP1FixtureVerification | None,
+    binding: WP1FixtureBinding | None = None,
+    *,
+    fixture_use_context: str | None = None,
+) -> WP1BoundFixtureData:
+    """Load copy-safe synthetic L1/L2 inputs after independent verification and binding checks.
+
+    This provider accepts only the immutable in-memory snapshot and separate reference bytes. It
+    re-verifies both on every call, applies ordinary serialized-size/schema/row limits, then
+    reconstructs candidate and Promo frames through the existing validators. It performs no file
+    access, fitting, forecasting, L2 aggregation, inventory analysis, or publication. The limits
+    bound encoded inputs and declared/decoded rows, not process peak memory.
+    """
+
+    if fixture_use_context != FIXTURE_USE_CONTEXT:
+        raise WP1FixtureProviderError("fixture-use context is missing or unsupported")
+    if verification is None:
+        raise WP1FixtureProviderError("independent fixture verification is required")
+    if binding is None:
+        raise WP1FixtureProviderError("an external fixture binding is required")
+    payloads = _provider_preflight(snapshot, independent_source_reference)
+    try:
+        current_verification = verify_wp1_fixture_snapshot(snapshot, independent_source_reference)
+    except WP1FixtureEvidenceError:
+        raise WP1FixtureProviderError(
+            "fixture snapshot or independent source reference failed verification"
+        ) from None
+    if (
+        not isinstance(verification, WP1FixtureVerification)
+        or verification != current_verification
+        or verification.identity_sha256 != current_verification.identity_sha256
+    ):
+        raise WP1FixtureProviderError("supplied verification is stale or does not match")
+    if not _binding_matches(binding, current_verification):
+        raise WP1FixtureProviderError("external fixture binding does not match this snapshot")
+
+    try:
+        manifest = _load_canonical_json(snapshot.preparation_manifest, label="preparation manifest")
+        schemas = manifest["schemas"]
+        observation_rows = _validate_observation_rows(
+            _decode_rows(
+                payloads[OBSERVATIONS_NAME], _OBSERVATION_SCHEMA, label="source observations"
+            )
+        )
+        if len(observation_rows) > _MAX_PROVIDER_ROWS:
+            raise WP1FixtureProviderError("fixture observations exceed the provider row limit")
+        observations = pd.DataFrame(
+            {
+                "Store": pd.Series([row["Store"] for row in observation_rows], dtype="int64"),
+                "Date": pd.DatetimeIndex(
+                    pd.to_datetime([row["Date"] for row in observation_rows])
+                ).as_unit("us"),
+                "Sales": pd.array([row["Sales"] for row in observation_rows], dtype="Int64"),
+                "Open": pd.array([row["Open"] for row in observation_rows], dtype="Int8"),
+                "Promo": pd.array([row["Promo"] for row in observation_rows], dtype="Int8"),
+            }
+        )
+        generated_membership = build_promo_membership(observations)
+        generated_promo_rows = _membership_rows(generated_membership)
+        promo_rows = _membership_payload_validate(
+            _decode_rows(payloads[PROMO_NAME], _PROMO_SCHEMA, label="Promo membership")
+        )
+        if generated_promo_rows != promo_rows:
+            raise WP1FixtureProviderError(
+                "prepared Promo membership differs from validated source observations"
+            )
+
+        candidate_records: dict[str, pd.DataFrame] = {}
+        for candidate in CANDIDATE_IDS:
+            columns = tuple(schemas["candidates"][candidate])
+            rows = _decode_rows(
+                payloads[CANDIDATE_NAMES[candidate]],
+                columns,
+                label=f"{candidate} candidate payload",
+            )
+            if len(rows) > _MAX_PROVIDER_ROWS:
+                raise WP1FixtureProviderError("candidate payload exceeds the provider row limit")
+            candidate_records[candidate] = _validate_candidate_rows(candidate, columns, rows)
+        prepared_candidates = prepare_candidate_records(candidate_records)
+    except WP1FixtureProviderError:
+        raise
+    except (WP1FixtureEvidenceError, WP1PreparationError):
+        raise WP1FixtureProviderError(
+            "fixture payload failed provider schema or accepted Phase 7 validation"
+        ) from None
+
+    if len(promo_rows) > _MAX_PROVIDER_ROWS:
+        raise WP1FixtureProviderError("Promo payload exceeds the provider row limit")
+    provenance = WP1FixtureProvenance(
+        source_kind="controlled_project_synthetic_fixture",
+        purpose=PURPOSE,
+        external_fixture_use_reference=binding.external_fixture_use_reference,
+        preparation_manifest_sha256=current_verification.preparation_manifest_sha256,
+        payload_inventory_sha256=current_verification.payload_inventory_sha256,
+        preparation_receipt_sha256=current_verification.preparation_receipt_sha256,
+        verification_identity_sha256=current_verification.identity_sha256,
+        source_reference_identity_sha256=current_verification.source_reference_identity_sha256,
+        source_derived_roster_sha256=current_verification.source_derived_roster_sha256,
+        candidate_identities=current_verification.candidate_identities,
+        development_cutoff=DEVELOPMENT_CUTOFF,
+        approved_windows=_provider_windows(),
+        enabled_dimensions=("Promo",),
+        h_segmentation_enabled=False,
+        observed_target_rows=current_verification.observed_target_rows,
+        store_count=current_verification.store_count,
+        date_count=current_verification.date_count,
+        limitations=_SECURITY_LIMITATIONS,
+    )
+    return WP1BoundFixtureData(
+        _candidate_records=tuple(
+            (candidate, prepared_candidates[candidate].copy(deep=True))
+            for candidate in CANDIDATE_IDS
+        ),
+        _promo_membership=pd.DataFrame(promo_rows, columns=_PROMO_SCHEMA).assign(
+            Store=lambda frame: frame["Store"].astype("int64"),
+            forecast_origin=lambda frame: pd.to_datetime(frame["forecast_origin"]).astype(
+                "datetime64[us]"
+            ),
+            Date=lambda frame: pd.to_datetime(frame["Date"]).astype("datetime64[us]"),
+            Promo=lambda frame: pd.array(frame["Promo"], dtype="Int8"),
+        ),
+        provenance=provenance,
     )
 
 

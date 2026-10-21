@@ -1,6 +1,9 @@
 # WP1 — Scenario-Based Forecast Evaluation
 
-**Current state (2026-10-21):** WP1 remains incomplete. L1 was reviewed and integrated through
+**Current state (2026-10-21):** WP1 remains incomplete. Milestone 1 is REVIEWED / INTEGRATED
+through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; WP1-S16 fixture-only Milestone 2
+is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1** on `feat/wp1-fixture-operational-bridge`.
+L1 was reviewed and integrated through
 PR #46 at `291660108da0c3d91b065a7dba47beabe1926fae`; Quality #149 passed on Python 3.12 and
 3.14. L2 was independently accepted and integrated through PR #47 at
 `29bfd0e0dbf0d42ef94ba5136d25981652921930`; post-merge Quality #151 succeeded on Python 3.12
@@ -9,10 +12,74 @@ PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`; PR Quality #152 and main Q
 on Python 3.12 and 3.14. See the canonical [L3-F integration closeout](../../docs/PROGRESS.md#wp1-l3-f-post-merge-integration-closeout--2026-10-21).
 ADR-029 and the owner-approved WP1-S8 restricted fixture contract below govern L3-F. No real-data
 scenario analysis has run, scenario results are not accepted, and ADR-028 remains PROPOSED.
-The owner-authorized WP1-S11 Milestone 1 fixture implementation and WP1-S13 corrections are
-**IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW**; their evidence is recorded in the
-[WP1-S11 PROGRESS checkpoint](../../docs/PROGRESS.md#wp1-s11-fixture-only-milestone-1--2026-10-21)
-and [WP1-S13 checkpoint](../../docs/PROGRESS.md#wp1-s13-correction-of-s12-findings--2026-10-21).
+The WP1-S11 implementation, WP1-S13 corrections, WP1-S14 independent acceptance and WP1-S15
+integration evidence are preserved in the corresponding [PROGRESS checkpoints](../../docs/PROGRESS.md#wp1-s15--s15-r1-milestone-1-integration--2026-10-21).
+
+## WP1-S15 / S15-R1 Milestone 1 integration closeout — 2026-10-21
+
+The exact corrected six-file Milestone 1 snapshot was independently accepted by Sol 6.1 in
+WP1-S14. WP1-S12-01 (Sales precision), WP1-S12-02 (exact Store/Open scalar validation), and
+WP1-S12-03 (strict Boolean manifest fields) were resolved in WP1-S13. PR #50 was squash-merged
+into `main` at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`. PR Quality [run #156](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39540940582)
+and post-merge Quality [run #157](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39541341549)
+passed Python 3.12 and 3.14. The independent review was by an AI reviewer, not a human GitHub
+reviewer. Milestone 1 is REVIEWED / INTEGRATED; WP1 remains INCOMPLETE.
+
+## WP1-S16 fixture-only Milestone 2 implementation — 2026-10-21
+
+The owner-authorized S16 scope implements only the synthetic in-memory C → V → B handoff. It
+extends `src/rossmann_forecasting/data/wp1_development.py` and adds provider regressions to
+`tests/test_wp1_development.py`; it does not modify the accepted preparation, Phase 7, L1, L2,
+CC-02, or L3-F implementation. The branch is based on `origin/main` at
+`8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`.
+
+The handoff composes `create_wp1_fixture_snapshot` and the separate-reference
+`verify_wp1_fixture_snapshot`, then requires an externally supplied frozen `WP1FixtureBinding` and
+the exact fixture-specific context before `load_wp1_fixture_provider` returns
+`WP1BoundFixtureData`. The binding checks exact purpose/schema, manifest/inventory/receipt hashes,
+verification identity, all three candidate/raw-column/payload-digest identities, the approved
+development cutoff/windows, Promo-only scope and disabled H. Verification identity is a canonical
+digest of the entire verification finding. Every provider load reruns independent verification and
+re-decodes the immutable payload bytes through the existing candidate, observation and Promo
+validators. Candidate and Promo accessors return deep copies with fixture-only provenance and
+limitations. Creating the binding record does not authenticate its reference or grant permission;
+the output identifies only caller-asserted project-controlled synthetic fixture use.
+
+Before payload decoding, the provider checks exact logical payload names and encoded-size limits:
+64 MiB per reference and payload, 1 MiB for the manifest, 256 KiB for the receipt, and 128 MiB for
+the combined serialized handoff. It also checks declared population/schema limits before payload
+tables are decoded and enforces a 50,000-row ceiling. Inputs are allocated before receipt by the
+provider. Declared counts and schemas are checked before payload decoding; actual decoded counts are
+checked afterward. These are practical input limits, not hard process-memory containment. WP1-S7-01
+remains unresolved. No filesystem rehearsal was needed or implemented, and no single-use execution intent
+exists; path alias/symlink, partial-write, and reused-intent tests are therefore not applicable.
+The provider does not fit or forecast models, call L1/L2 automatically, simulate inventory, or
+publish results. No real input, protected holdout outcome, real binding, L4 analysis, or dependency
+was used or added.
+
+Validation ran under local Python 3.14.5:
+
+```text
+uv 0.12.23 sync --locked --extra dev --extra api --extra dashboard --python 3.14
+Resolved 109 packages; uv.lock unchanged
+python -m pytest tests/test_wp1_preparation.py tests/test_wp1_development.py tests/test_wp1_inputs.py tests/test_model_selection.py tests/test_scenario_evaluation.py -q
+457 passed; no skips or warnings
+python -m ruff check .
+All checks passed
+python -m ruff format --check .
+141 files already formatted
+python scripts/check_docs.py
+PASS: 338 local destinations/anchors across 36 Markdown files
+python -m pip check
+No broken requirements found
+git diff --check
+Passed
+```
+
+The full repository suite was not run because a safe artifact-free isolated environment was not
+established without probing ignored data/artifact locations. Complete Linux matrix evidence is
+deferred to the later authorized PR/CI gate. The implementation is **IMPLEMENTED / UNDER REVIEW —
+AWAITING SOL 6.1**; WP1 remains **INCOMPLETE**. The next boundary is independent review only.
 
 ## WP1-L3-F integration closeout — 2026-10-21
 
@@ -372,7 +439,8 @@ Execution sequence:
 | L1 — common population | Fixture-only candidate alignment and auditable eligibility masks | REVIEWED / INTEGRATED by PR #46; main Quality #149 passed |
 | L2 — metrics and scenario views | Approved metrics, summaries, and in-memory JSON serialization for synthetic fixtures | REVIEWED / INTEGRATED by PR #47; main Quality #151 passed |
 | L3-F — fixture input verification | Restricted trusted synthetic M/C snapshots and reference consistency under ADR-029 | REVIEWED / INTEGRATED through PR #48; main Quality #153 passed on Python 3.12/3.14; no hard memory containment |
-| WP1-S11 Milestone 1 — real-input readiness fixture core | Synthetic-only source projection, candidate validation, independent source-reference check and deterministic manifest/receipt | **S13 CORRECTED / IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW**; no real source authorization or later milestone work |
+| WP1-S11 Milestone 1 — fixture preparation and verification core | Synthetic-only source projection, candidate validation, independent source-reference check and deterministic manifest/receipt | **REVIEWED / INTEGRATED through PR #50**; S14 Sol 6.1 ACCEPT; PR Quality #156 and main Quality #157 passed on Python 3.12/3.14 |
+| WP1-S16 Milestone 2 — operational fixture bridge and verified provider | In-memory synthetic C → V → B handoff, exact binding consistency and copy-safe L1/L2 inputs | **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**; synthetic fixtures only; no filesystem or real-source operation |
 | L3-C/V/B — real input operations | Custodian preparation, independent real verification, and external binding | Separately gated; real M/C/H access is NO-GO |
 | L4 — development analysis | Run frozen scenario analysis on approved cached development evidence and document interpretation | Requires safe inputs, execution authorization, independent review, and disclosure of limitations |
 
