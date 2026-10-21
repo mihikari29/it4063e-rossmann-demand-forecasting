@@ -9,6 +9,10 @@ PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`; PR Quality #152 and main Q
 on Python 3.12 and 3.14. See the canonical [L3-F integration closeout](../../docs/PROGRESS.md#wp1-l3-f-post-merge-integration-closeout--2026-10-21).
 ADR-029 and the owner-approved WP1-S8 restricted fixture contract below govern L3-F. No real-data
 scenario analysis has run, scenario results are not accepted, and ADR-028 remains PROPOSED.
+The owner-authorized WP1-S11 Milestone 1 fixture implementation and WP1-S13 corrections are
+**IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW**; their evidence is recorded in the
+[WP1-S11 PROGRESS checkpoint](../../docs/PROGRESS.md#wp1-s11-fixture-only-milestone-1--2026-10-21)
+and [WP1-S13 checkpoint](../../docs/PROGRESS.md#wp1-s13-correction-of-s12-findings--2026-10-21).
 
 ## WP1-L3-F integration closeout — 2026-10-21
 
@@ -35,6 +39,64 @@ authoritative for localhost-only deployment. Phase 13 remains PLANNED / NOT APPR
 remains incomplete, and no public cloud deployment is claimed. Independent AI review does not
 establish human authorship or academic compliance; ownership and AI-assistance disclosure remain
 obligations. This closeout does not satisfy the complete instructor assignment.
+
+## WP1-S10 / S11 approved bounded-hybrid Milestone 1 — 2026-10-21
+
+The owner approved `RECOMMEND_BOUNDED_HYBRID` and fixture-only implementation of Milestone 1.
+This is a new local implementation branch from `origin/main` at
+`8069f518734b6b83b1cf78090b9fbd82dcb45eb5`; no source access or publication is included.
+
+Milestone 1 adds only pure in-memory fixture interfaces in
+`src/rossmann_forecasting/data/wp1_preparation.py` and
+`src/rossmann_forecasting/data/wp1_development.py`, with focused tests in
+`tests/test_wp1_preparation.py` and `tests/test_wp1_development.py`. The preparation module
+screens synthetic Rossmann-style CSV rows to the three approved target windows, validates the
+exact three Phase 7 candidate records before horizon narrowing, and builds complete keyed
+retrospective Promo membership. A separate fixture verifier derives the expected target roster
+from independently supplied synthetic source bytes, checks every candidate against that roster,
+and validates deterministic canonical manifest, payload and separate receipt identities. The
+receipt and all references are consistency evidence only; they grant no permission.
+
+The implementation preserves observed sparse keys, nullable source Sales/Open/Promo, zero Sales,
+candidate raw-column identities, labels, masks and original reason fields. It checks dates before
+interpreting retained fields and skips post-2015-07-03 synthetic canaries without emitting their
+values. Candidate Sales labels retain their original JSON numeric type for exact comparison against
+source integers before Phase 7's accepted float normalization. Only Promo is enabled; H remains
+disabled. It reuses Phase 7 candidate validation and tests
+L1/L2 compatibility without changing those accepted modules or methods. It does not read or hash
+real source/artifact paths and does not add a loader, CLI, authorization issuer, bound provider,
+L4 runner or publication interface. StoreType and Assortment remain deferred to a separate source
+approval. ADR-029's fixture-only caller precondition and post-materialization/no-hard-memory limit
+remain in force; WP1-S7-01 remains unresolved under its original contract.
+
+Acceptance is limited to synthetic regressions, focused and Phase 7/L1/L2 compatibility tests,
+requested repository checks, complete diff review and final file hashes. At handoff the code remains
+**IMPLEMENTED / UNDER REVIEW — AWAITING INDEPENDENT SOL 6.1 REVIEW**. No Milestone 2, real-data
+operation, L3-C/V/B, L4, Phase 13, commit, push, PR or merge is authorized by this task.
+
+### WP1-S12 independent implementation rereview — 2026-10-21
+
+Sol 6.1 verified the exact six-file S11 worktree snapshot on the approved branch and returned
+REQUEST_CHANGES with two MAJOR findings and one MINOR finding. The public preparation interface
+lost large integer Sales precision; Store/Open normalization could round or truncate invalid values
+into valid evidence; and numeric values could compare equal to Boolean authorization declarations.
+The review and its 45 focused tests, 305 compatibility tests, and 73 synthetic adversarial probes
+are recorded in the [WP1-S12 PROGRESS checkpoint](../../docs/PROGRESS.md#wp1-s12-independent-implementation-rereview--2026-10-21).
+No code or documentation was changed by that read-only review.
+
+### WP1-S13 correction checkpoint — 2026-10-21
+
+The independent S12 review returned REQUEST_CHANGES for two MAJOR and one MINOR findings. This
+correction preserves and validates original candidate Store, Sales, and Open scalars before Phase 7
+coercion, restores Sales/Open by validated canonical keys after unchanged Phase 7 validation, and
+allows snapshot creation from the prepared output after checking its derived fields. Store accepts
+only Python/NumPy integer keys in 1..`2**63 - 1`; Sales accepts non-negative int64 integers, finite
+non-negative float64 values or missing; Open accepts exact integer/float 0 or 1 or missing.
+Integer/float labels compare by exact numeric equality without tolerance. Manifest authorization
+flags require JSON Boolean scalar types. The exact six-file correction, regressions, validation and
+remaining fixture-only limitations are recorded in the [WP1-S13 PROGRESS checkpoint](../../docs/PROGRESS.md#wp1-s13-correction-of-s12-findings--2026-10-21).
+Status remains **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW**; this does not authorize
+Milestone 2 or any real-source operation.
 
 ## WP1-S8 / L3-F-R2 approved revision — 2026-10-20
 
@@ -310,6 +372,7 @@ Execution sequence:
 | L1 — common population | Fixture-only candidate alignment and auditable eligibility masks | REVIEWED / INTEGRATED by PR #46; main Quality #149 passed |
 | L2 — metrics and scenario views | Approved metrics, summaries, and in-memory JSON serialization for synthetic fixtures | REVIEWED / INTEGRATED by PR #47; main Quality #151 passed |
 | L3-F — fixture input verification | Restricted trusted synthetic M/C snapshots and reference consistency under ADR-029 | REVIEWED / INTEGRATED through PR #48; main Quality #153 passed on Python 3.12/3.14; no hard memory containment |
+| WP1-S11 Milestone 1 — real-input readiness fixture core | Synthetic-only source projection, candidate validation, independent source-reference check and deterministic manifest/receipt | **S13 CORRECTED / IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW**; no real source authorization or later milestone work |
 | L3-C/V/B — real input operations | Custodian preparation, independent real verification, and external binding | Separately gated; real M/C/H access is NO-GO |
 | L4 — development analysis | Run frozen scenario analysis on approved cached development evidence and document interpretation | Requires safe inputs, execution authorization, independent review, and disclosure of limitations |
 
