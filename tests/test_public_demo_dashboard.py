@@ -30,7 +30,9 @@ from rossmann_forecasting.app.demo_services import DemoServices
 _LABEL = "CONTROLLED SYNTHETIC DEMONSTRATION — NOT OBSERVED ROSSMANN DATA"
 
 
-def _dashboard_app(services: DemoServices) -> None:
+# AppTest executes this helper in an isolated script namespace, so its injected
+# arguments must not depend on annotations imported from this test module.
+def _dashboard_app(services) -> None:
     from rossmann_forecasting.app.demo_dashboard import run_demo_dashboard
 
     run_demo_dashboard(services)
@@ -44,6 +46,7 @@ def _entrypoint_app() -> None:
 
 def _app(services: DemoServices, page: str | None = None) -> AppTest:
     app = AppTest.from_function(_dashboard_app, kwargs={"services": services}).run()
+    assert not app.exception
     if page is not None:
         app.sidebar.radio[0].set_value(page).run()
     return app
