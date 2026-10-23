@@ -1,14 +1,15 @@
 # Public Course Demonstration
 
-**Current state (2026-10-22):** The project owner accepted the narrow future objective and
-synthetic-first architecture in ADR-030. WP2-S1 authorizes Milestone A only. WP2-S3 has corrected
-the three WP2-S2 review findings. WP2-S6 returned REQUEST_CHANGES for Unicode case folding in the
-dependency-version validator; WP2-S7 applies the ASCII-specific correction and regression tests.
-Milestone A remains **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW**. Nothing here marks a
-bundle public or releases the existing localhost boundary in ADR-024.
+**Current state (2026-10-23):** WP2 Milestone A is **REVIEWED / INTEGRATED** through PR #52 at
+`086c59183e237279a21139a62265e7450890fa63`; PR and post-merge Quality passed on Python 3.12 and
+3.14. WP2-S10 authorizes only local B1 work: an offline pinned synthetic provider and typed
+read-only services. B1 is implemented on the focused branch below and awaits independent Sol 6.1
+review. Milestone B overall remains incomplete and B2 is not authorized. The generated bundle is
+not published, and the existing localhost boundary in ADR-024 remains in force.
 
-**Branch and base:** `feat/public-demo-offline-synthetic-bundle`, from `origin/main` at
-`a747d7799919497dead9b98bc0498c12115adfc2`.
+**Current task branch and base:** `feat/public-demo-verified-service-provider`, from `origin/main`
+at `086c59183e237279a21139a62265e7450890fa63`. Milestone A's earlier branch and review checkpoints
+below are preserved as history.
 
 ## Accepted objective and fixed boundaries
 
@@ -35,8 +36,8 @@ per-view availability are separate concepts.
 
 | Milestone | Scope and exit evidence | State |
 |---|---|---|
-| A — Offline controlled-synthetic release candidate | Release contract; exact versioned schema; deterministic builder; bounded canonical JSON manifest and payload; standalone verifier with integrity and semantic checks; focused corruption, content and side-effect tests; ignored local candidate only; independent Sol 6.1 review | **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW** |
-| B — Explicit public-compatible application profile | Separately authorized implementation of the typed bundle provider and UI/API adapters; no change to local defaults, canonical reader pins or scientific methods; Linux locked-build and focused security/interface review | NOT AUTHORIZED |
+| A — Offline controlled-synthetic release candidate | Release contract; exact versioned schema; deterministic builder; bounded canonical JSON manifest and payload; standalone verifier with integrity and semantic checks; focused corruption, content and side-effect tests; ignored local candidate only; independent Sol 6.1 review | **REVIEWED / INTEGRATED through WP2-S8/S9 and PR #52** |
+| B — Explicit public-compatible application profile | B1 typed offline provider and services; later B2 UI/API adapters; no change to local defaults, canonical reader pins or scientific methods; locked-build and focused security/interface review | **B1 IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1. B2 NOT AUTHORIZED. Overall Milestone B INCOMPLETE.** |
 | C — Staging and public release | Exact-content/rights approval, independent security review, resource/rollback plan and explicit hosting/audience/window authorization; owner-approved bundle hash; staged external checks; release and shutdown record | NOT AUTHORIZED |
 
 ## Milestone A design and acceptance
@@ -132,3 +133,90 @@ recorded in [PROGRESS](../../docs/PROGRESS.md#wp2-s7-ascii-dependency-version-va
 Milestone A remains **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW**. No public bundle
 release, Git publication, deployment, real-source access, or Milestone B/C implementation is
 authorized.
+
+## WP2-S10 B1 interface contract and execution plan
+
+WP2-S10 authorizes the offline provider and typed read-only services only. The implementation must
+not change the current API, Streamlit dashboard, localhost settings, canonical artifact reader,
+scientific methods, or dependency lock. The generated release stays in a temporary fixture for
+tests; no manifest pin is approved for public release.
+
+### Provider contract
+
+- Construction requires the explicit `CONTROLLED_SYNTHETIC` profile and an independently supplied,
+  lowercase 64-character manifest SHA-256. The release directory is derived internally from the
+  trusted repository root and fixed release ID; query objects cannot supply paths or selectors.
+- Construction calls the Milestone A `verify_release_directory` validator with that mandatory pin.
+  The provider loads the two bounded files once at construction, checks the loaded bytes against the
+  verified bundle and manifest digests, decodes only those verified bytes, and stores a recursively
+  immutable snapshot. It builds fixed, bounded indexes for history, issuance, uncertainty,
+  comparison and inventory rows. Queries perform no filesystem reads.
+- Missing, malformed, tampered, mismatched, aliased or extra-file releases fail closed with fixed,
+  sanitized typed errors. No unpinned mode, regeneration, download, canonical fallback or service
+  readiness is returned on construction failure.
+- Every response uses a frozen synthetic provenance wrapper carrying release ID, evidence kind,
+  bundle and manifest SHA-256, schema version, source kind, view ID and selected-row count. Synthetic
+  DTOs replace canonical provenance fields whose phase/run/artifact semantics would be false.
+- Results preserve saved values, order, nulls, zeros, sparse dates, unavailable reasons and evidence
+  declarations. Services do no arithmetic, model execution, calibration, selection or simulation.
+  The provider has no network or write path.
+
+### Query and service contract
+
+Reuse `HistoryQuery`, `ForecastQuery`, `UncertaintyQuery`, `ModelComparisonQuery`, and
+`InventoryComparisonQuery` as request DTOs, with additional strict checks against the embedded
+fixed allowlist. `DemoServices` exposes `catalog()`, `sales_history(query)`,
+`forecast_issuance(query)`, `forecast_uncertainty(query)`, `model_comparison(query)`, and
+`inventory_comparison(query)`. The six result families are frozen synthetic DTOs with machine-readable
+provenance and explicit availability.
+
+History is Store 101/202/303 within 2015-05-09 through 2015-07-03 and at most 56 inclusive calendar
+days; missing dates stay absent and null Sales is not zero. Issuance accepts the three saved origins
+and returns exact H1-H14 rows, both forecast paths, eligibility, trajectory identity and
+`model_execution=none`. Uncertainty accepts only `(demo_fit_a, 2015-06-05)` or
+`(demo_fit_b, 2015-06-19)` and returns saved daily/cumulative rows, including unavailable values.
+Comparison filters are restricted to the fixed candidate, population, window, scope, metric, horizon
+and Store dimensions, with no more than 500 saved rows. Inventory accepts only the two fixed cases;
+Store filtering applies only to policy-pair detail, while case aggregates retain their all-Store
+population and denominator scope.
+
+### B2 adapter handoff and checks
+
+The later adapter task must keep the existing shared-service/thin-API/direct-Streamlit architecture.
+It must explicitly select a synthetic profile at runtime, obtain the approved manifest pin from a
+trusted deployment configuration rather than from the manifest, serialize the synthetic provenance
+as a source label in every API response and dashboard screen, map invalid queries to sanitized 422
+responses and unavailable/invalid releases to sanitized 503 responses, and keep `/health` as process
+health separate from bundle and view readiness. The five dashboard screens are Overview & Evidence,
+Historical Sales, Forecast Explorer (including uncertainty), Model Comparison, and Inventory
+Comparison. B2 must replace canonical phase/run provenance assumptions and fixed selectors/wording
+(including canonical Store/origin/Fit/candidate/case labels and empirical LightGBM/uncertainty claims)
+with profile-aware synthetic selectors and captions. No B2 changes are part of this task.
+
+The existing request DTOs remain reusable for history, issuance, uncertainty, model comparison and
+inventory queries. The B1 service-specific result DTOs carry those query values plus a synthetic
+provenance object; B2 must not serialize canonical response wrappers that require phase/run IDs,
+artifact validation identities or a model-selection run ID. Numerical rows and units can be mapped
+directly when their field meaning is unchanged. Each API response body should include a `provenance`
+object with `release_id`, `evidence_kind`, `bundle_sha256`, `manifest_sha256`, `schema_version`,
+`source_kind`, `view_id` and `selected_rows`, plus a visible controlled-synthetic source label. The
+dashboard should show the same source label and relevant limitations on every screen.
+
+Screen mapping: Overview & Evidence shows the synthetic source declaration, release identity,
+limitations and per-view availability, removing empirical LightGBM and calibrated-uncertainty
+claims. Historical Sales uses only the three synthetic Store IDs and bounded history dates, with
+captions that identify authored fixture arithmetic. Forecast Explorer offers the three synthetic
+origins and shows raw forecasts separately from operational values; its uncertainty controls offer
+only Fit A at June 5 and Fit B at June 19, with incomplete/unavailable prefixes visible. Model
+Comparison uses only `demo_path_a/b/c`, the synthetic population/window and saved scopes/metrics;
+candidate labels must not imply Phase 7 or LightGBM performance. Inventory Comparison offers the two
+synthetic cases and optional Store detail while keeping aggregates case-wide; captions identify
+turnover-value cost proxies and explicitly avoid physical stock, observed stockouts or savings
+claims. Invalid query DTOs map to sanitized HTTP 422, missing/invalid pinned releases to sanitized
+503, and `/health` remains process liveness rather than release readiness.
+
+Implementation and verification remain local and uncommitted: focused provider/service tests, the
+existing Milestone A and application/API/dashboard regressions, then the full fixture suite in a
+tracked-only isolated workspace with no local ignored data/artifacts; Ruff, documentation, locked
+dependency, whitespace and deterministic release checks. Record actual results in PROGRESS. The
+handoff after validation is independent Sol 6.1 review of B1 only.

@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-21
+## Current implementation and Git state — 2026-10-23
 
 | Scope | State | Integration |
 |---|---|---|
@@ -21,7 +21,7 @@
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
 | WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 AND S16 M2 REVIEWED / INTEGRATED; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; L3-F integrated through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. Milestone 1 was independently accepted and integrated through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; PR Quality #156 and main Quality #157 passed on Python 3.12 and 3.14. Fixture-only Milestone 2 was accepted in WP1-S17 and integrated through PR #51 at `a747d7799919497dead9b98bc0498c12115adfc2`; PR Quality #158 and post-merge Quality #159 passed on Python 3.12 and 3.14. No real-source operation or scenario analysis has run. ADR-029 remains fixture-only, and WP1-S7-01 remains unresolved under its original contract. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
-| Public course demonstration | **Milestone A IMPLEMENTED / UNDER REVIEW — AWAITING INDEPENDENT SOL 6.1 REREVIEW** | WP2-S2 findings were corrected by WP2-S3. WP2-S6 returned REQUEST_CHANGES for Unicode case folding in dependency-version validation; WP2-S7 corrected the ASCII bypass on the same branch, pending independent rereview. The synthetic bundle bytes remain unchanged. No public-compatible runtime, bundle publication, host provisioning, Internet exposure or deployment is authorized. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), and the [WP2-S7 checkpoint](#wp2-s7-ascii-dependency-version-validation-2026-10-22). |
+| Public course demonstration | **Milestone A REVIEWED / INTEGRATED; B1 IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1** | WP2-S9 integrated Milestone A through PR #52; WP2-S10 B1 now has an offline pinned provider and six typed read-only services on its local task branch. Milestone B remains incomplete; B2, publication, hosting and deployment are not authorized. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), [WP2-S9 integration evidence](#wp2-s9-milestone-a-integration-2026-10-23), and [WP2-S10 B1 evidence](#wp2-s10-offline-verified-synthetic-provider-and-services-2026-10-23). |
 
 ### WP1-S15 / S15-R1 Milestone 1 integration — 2026-10-21
 
@@ -3844,3 +3844,78 @@ AWAITING SOL 6.1 REREVIEW**. No commit, push, PR, public release, deployment, re
 protected-holdout access, or Milestone B/C work. The final rereview handoff reports raw-byte SHA-256
 identities for all ten Milestone A files; the five pre-existing documentation identities match their
 WP2-S6 pre-fix values.
+
+### WP2-S9 Milestone A integration (2026-10-23)
+
+The exact ten-file WP2-S8-accepted Milestone A snapshot was published in PR #52 and squash-merged
+into `main`. Publication commit `5e1722220c0a3e2944788a470af68b4c3abc949d` has parent
+`a747d7799919497dead9b98bc0498c12115adfc2`; squash merge and `main` are
+`086c59183e237279a21139a62265e7450890fa63`. The AI WP2-S8 ACCEPT was technical review evidence,
+not human GitHub approval. The ten committed paths and permitted Markdown CRLF-to-LF normalization
+were verified against the reviewed snapshot. No generated JSON assets entered Git.
+
+PR Quality [run](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39904731393)
+on the exact publication SHA and post-merge main Quality [run](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39905208913)
+on the exact merge SHA each passed Python 3.12 and 3.14. Each job ran locked dependency installation
+and consistency, full fixture tests, Ruff lint/format and Markdown validation. Both PR jobs reported
+1,464 passed, 7 skipped and 1 existing Starlette/httpx deprecation warning. Post-merge Python 3.12
+reported 1,464 passed, 7 skipped and 1 warning in 251.89 seconds; Python 3.14 reported 1,464 passed,
+7 skipped and 1 warning in 236.38 seconds. Seven skips comprise six Windows-only junction tests
+and one optional test requiring ignored canonical artifacts absent from CI. GitHub also emitted the
+informational `ubuntu-latest` runner-image migration annotation; no job steps failed.
+
+The generated controlled-synthetic bundle and manifest remain ignored and unpublished. ADR-024
+continues to govern localhost behavior; ADR-028's remaining proposals are not accepted, and ADR-030
+does not authorize publication or hosting. WP1 remains incomplete and Phase 13 remains separately
+gated.
+
+### WP2-S10 offline verified synthetic provider and services 2026-10-23
+
+WP2-S10 implements Milestone B1 on `feat/public-demo-verified-service-provider`, based directly on
+`origin/main` at `086c59183e237279a21139a62265e7450890fa63`. `DemoProvider.open` requires the explicit
+controlled-synthetic profile and a separate lowercase manifest SHA-256, validates the fixed release
+through the integrated Milestone A verifier, checks a bounded in-memory snapshot against the
+verifier's bundle and manifest digests, recursively freezes it and creates fixed lookup indexes.
+Only the explicit `.open()` factories can construct providers or services; their ordinary public
+constructors are disabled. The six `DemoServices` methods return frozen synthetic-specific DTOs with
+release/evidence/hash/schema provenance and no canonical phase, run or artifact identities. Queries
+only filter the snapshot; they do not read or write files, call the network, load the canonical
+artifact reader, or execute models, calibration or inventory simulation. Missing/invalid releases
+fail closed without rebuild or fallback.
+
+The tests generate fixtures only with `demo_bundle.generate_release_bytes(Path.cwd())` and use the
+resulting bytes under a temporary repository. The fixed seed is 4063; the generated bundle is
+326,074 bytes with SHA-256
+`9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`, and the 3,708-byte manifest
+in the tracked-only verification worktree has SHA-256
+`294b3f1fbe2f6ca66a498209561f713c31291db949bbc1f837f7603fd25d9bd3`. Its recorded inputs are
+Python 3.14.5, `uv.lock` SHA-256
+`16d76d6ffca3848e6af5f7ab838bc16c6b88d18b1af0097e5a3c216fe7e36ad0`, `pyproject.toml` SHA-256
+`2180751e965612c20a53ef194073d68d0d55eb6325fa5e28a9d41beca294f6a7`, current base revision
+`086c59183e237279a21139a62265e7450890fa63`, builder module SHA-256
+`a0910f65dc67903a5c37a17f54267c849560e05977956c5b39f2e04dcf4b1532`, and build-script SHA-256
+`c4fdcfa0e2409001601b8d17846011c17ac4b983474a211f45301c553d471a9c`. Tests derive the manifest
+pin independently from those bytes and pass it explicitly; this temporary identity is not a
+production setting or publication approval.
+
+The focused Milestone A, provider/service and application/API/dashboard regression command passed
+**518 passed, 1 skipped, 1 existing Starlette/httpx deprecation warning in 87.93 seconds**. The
+artifact-free tracked-only worktree's full suite passed **1,489 passed, 8 skipped and the same one
+warning** in 269.28 seconds. The skips were six Windows symlink
+creation checks unavailable without the required privilege, one public-demo bundle symlink check
+with the same restriction, and one optional inventory test requiring absent ignored canonical
+artifacts. The isolated checkout contained no ignored `artifacts/` directory; no Rossmann data,
+canonical artifact, model binary or protected outcome was opened or enumerated.
+
+Ruff lint passed; formatting reported 150 files already formatted; Markdown validation passed for
+350 local destinations/anchors across 38 Markdown files; offline `uv lock --check` resolved 109
+packages without a lock change; `uv pip check` found all 91 installed packages compatible; and
+`git diff --check` passed. The isolated environment used Python 3.14.5 and `uv 0.12.23` with locked
+`dev`, `api` and `dashboard` extras installed offline. The deterministic release-byte test passed.
+No dependency, FastAPI HTTP adapter, dashboard, Streamlit entry point, localhost configuration,
+generated release asset or scientific method changed.
+
+The exact B1 snapshot is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. The work remains local
+and uncommitted. Milestone B is incomplete; B2, WP2 closeout, Git publication, hosting, public
+content release and deployment remain unauthorized. The only next boundary is independent Sol 6.1
+review of B1.
