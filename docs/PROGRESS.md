@@ -21,7 +21,7 @@
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
 | WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 AND S16 M2 REVIEWED / INTEGRATED; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; L3-F integrated through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. Milestone 1 was independently accepted and integrated through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; PR Quality #156 and main Quality #157 passed on Python 3.12 and 3.14. Fixture-only Milestone 2 was accepted in WP1-S17 and integrated through PR #51 at `a747d7799919497dead9b98bc0498c12115adfc2`; PR Quality #158 and post-merge Quality #159 passed on Python 3.12 and 3.14. No real-source operation or scenario analysis has run. ADR-029 remains fixture-only, and WP1-S7-01 remains unresolved under its original contract. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
-| Public course demonstration | **Milestone A REVIEWED / INTEGRATED; B1 IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1** | WP2-S9 integrated Milestone A through PR #52; WP2-S10 B1 now has an offline pinned provider and six typed read-only services on its local task branch. Milestone B remains incomplete; B2, publication, hosting and deployment are not authorized. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), [WP2-S9 integration evidence](#wp2-s9-milestone-a-integration-2026-10-23), and [WP2-S10 B1 evidence](#wp2-s10-offline-verified-synthetic-provider-and-services-2026-10-23). |
+| Public course demonstration | **Milestone A REVIEWED / INTEGRATED; B1 REVIEWED / INTEGRATED; B2-A IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1** | WP2-S9 integrated Milestone A through PR #52; WP2-S12 integrated B1 through PR #53; WP2-S13 implements the offline synthetic FastAPI adapter on its local task branch. Milestone B remains incomplete; B2-B, publication, hosting and deployment are not authorized. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), [WP2-S9 evidence](#wp2-s9-milestone-a-integration-2026-10-23), [WP2-S12 B1 integration](#wp2-s12-b1-git-integration-and-ci-identity-clarification-2026-10-23), and [WP2-S13 evidence](#wp2-s13-b2-a-offline-synthetic-fastapi-adapter-2026-10-23). |
 
 ### WP1-S15 / S15-R1 Milestone 1 integration — 2026-10-21
 
@@ -3919,3 +3919,74 @@ The exact B1 snapshot is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. Th
 and uncommitted. Milestone B is incomplete; B2, WP2 closeout, Git publication, hosting, public
 content release and deployment remain unauthorized. The only next boundary is independent Sol 6.1
 review of B1.
+
+### WP2-S12 B1 Git integration and CI identity clarification (2026-10-23)
+
+B1 was independently accepted in WP2-S11 and squash-integrated through PR #53 at
+`a31f9d610ea7922629d24c4b134cd986f634bcb4`. Publication head
+`626acf76726a63efe7f264e9669aaab11af90d19` was based on
+`086c59183e237279a21139a62265e7450890fa63`. The PR Quality run
+[#39924005789](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39924005789)
+and post-merge Quality run
+[#39924475405](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39924475405)
+passed on Python 3.12 and 3.14. The PR's actual temporary merge-ref checkout was
+`f2dd84f07d1d11c22a55c140397dfe4ab2e85fb1`; the final squash merge is
+`a31f9d610ea7922629d24c4b134cd986f634bcb4`.
+
+This appended clarification closes nonblocking finding WP2-S11-01 without rewriting its historical
+checkpoint. Milestone A PR #52 publication head was
+`5e1722220c0a3e2944788a470af68b4c3abc949d`; its actual temporary PR checkout was
+`ddae5428714dd9b784d12b91bcc40c00e4635eb7`, combining it with then-current base
+`a747d7799919497dead9b98bc0498c12115adfc2`; its squash merge was
+`086c59183e237279a21139a62265e7450890fa63`. Workflow association, tested merge-ref commit and final
+squash merge are distinct identities. PR #52 Quality run
+[#39904731393](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39904731393)
+and the post-merge Quality run passed on Python 3.12 and 3.14.
+
+### WP2-S13 B2-A offline synthetic FastAPI adapter (2026-10-23)
+
+WP2-S13 implements the offline B2-A adapter on `feat/public-demo-synthetic-api-adapter`, based on
+integrated B1 merge `a31f9d610ea7922629d24c4b134cd986f634bcb4`. New files are
+`src/rossmann_forecasting/app/demo_api.py` and `tests/test_public_demo_api.py`. The adapter exposes
+`create_demo_app` only; there is no module-global `app`. Construction requires the exact
+`DemoProfile.CONTROLLED_SYNTHETIC` enum and a separate lowercase manifest SHA-256, accepts an
+optional trusted `Path`, and calls `DemoServices.open` once. A missing, corrupt or mismatched release
+leaves `/health` available for process liveness and returns sanitized 503 responses from analytical
+routes without retry or canonical fallback. Invalid configuration fails factory construction.
+
+The app exposes exactly seven GET routes: `/health`, `/api/v1/catalog`, `/api/v1/history`,
+`/api/v1/forecasts`, `/api/v1/uncertainty`, `/api/v1/model-comparison`, and `/api/v1/inventory`.
+FastAPI docs, ReDoc and OpenAPI are disabled. Successful analytical responses use the exact visible
+label `CONTROLLED SYNTHETIC DEMONSTRATION — NOT OBSERVED ROSSMANN DATA`, with the frozen B1
+result data and one top-level `SyntheticProvenance`. Query/body and serialization bounds are
+implemented; invalid input maps to sanitized 422, unavailable/invalid releases to sanitized 503,
+unexpected errors to sanitized 500, and missing paths/methods to sanitized 404/405 with the `Allow`
+header preserved. No CORS, write/upload/admin routes, arbitrary paths, model execution, calibration,
+metric recalculation, inventory simulation or listener was added. The existing canonical API,
+Streamlit app, dependency declarations and lockfile are unchanged.
+
+The fixture test generates its synthetic bytes in memory and writes them only under a per-test
+temporary repository. The bundle is **326,074 bytes**, SHA-256
+`9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`; each test independently
+hashes the generated manifest bytes and supplies that pin. The ignored bundle was not written or
+published. The tracked-only review worktree had no ignored `artifacts/` directory and did not read
+Rossmann, canonical, model or protected-outcome files.
+
+Validation passed on the locked Python 3.14.5 environment. The adapter suite passed **59 tests** with
+one existing Starlette/httpx deprecation warning. Focused adapter, B1 provider/services, Milestone A,
+canonical API and dashboard regressions passed **464 tests**, with one Windows symlink test skipped
+and the same warning. The artifact-free tracked-only full suite passed **1,548 tests**, with **8
+skipped** and the same warning in 289.63 seconds. Seven symlink tests skipped because Windows denied
+symlink creation with WinError 1314; one optional inventory test skipped because ignored canonical
+artifacts were absent.
+
+Ruff lint passed; formatting found **152 files already formatted**; Markdown validation passed for
+**352 local destinations/anchors across 38 Markdown files**; offline `uv lock --check` resolved 109
+packages without a lock change; offline `uv pip check` found all **93** packages in the Python 3.14.5
+environment compatible; and whitespace checks passed. No dependencies or generated repository
+assets changed.
+
+B2-A is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. The work remains local and
+uncommitted. B2-B, Milestone B closeout, Git publication, bundle publication, server startup, hosting,
+public exposure and deployment remain unauthorized. The next boundary is independent Sol 6.1 review
+of B2-A only.
