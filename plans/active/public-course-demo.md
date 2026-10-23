@@ -2,16 +2,15 @@
 
 **Current state (2026-10-23):** Milestone A is **REVIEWED / INTEGRATED** through PR #52 at
 `086c59183e237279a21139a62265e7450890fa63`; B1 is **REVIEWED / INTEGRATED** through PR #53 at
-`a31f9d610ea7922629d24c4b134cd986f634bcb4`. PR and post-merge Quality passed on Python 3.12 and
-3.14 for both integrations. WP2-S13 authorizes local B2-A synthetic FastAPI adapter implementation
-and in-process fixture testing. B2-A is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**
-on the focused branch below; B2-B, Milestone C, publication and deployment remain unauthorized. Milestone B is
-incomplete. The generated bundle remains ignored and unpublished, and ADR-024 remains authoritative
-for the existing localhost application.
+`a31f9d610ea7922629d24c4b134cd986f634bcb4`. B2-A is **REVIEWED / INTEGRATED** through PR #54 at
+`232c7307f75d1ae7906af621853a8753ebe81795`. WP2-S16 authorizes local B2-B synthetic Streamlit
+dashboard implementation and offline AppTest validation on `feat/public-demo-synthetic-streamlit-dashboard`.
+B2-B is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. Milestone B remains incomplete; Milestone C,
+release, hosting and deployment remain unauthorized under ADR-024 and ADR-030.
 
-**Current task branch and base:** `feat/public-demo-synthetic-api-adapter`, from `origin/main` at
-`a31f9d610ea7922629d24c4b134cd986f634bcb4`. The earlier Milestone A and B1 branches and review
-checkpoints below are preserved as history.
+**Current task branch and base:** `feat/public-demo-synthetic-streamlit-dashboard`, from
+`origin/main` at `232c7307f75d1ae7906af621853a8753ebe81795`. The earlier Milestone A, B1 and B2-A
+branches and review checkpoints below are preserved as history.
 
 ## Accepted objective and fixed boundaries
 
@@ -39,7 +38,7 @@ per-view availability are separate concepts.
 | Milestone | Scope and exit evidence | State |
 |---|---|---|
 | A — Offline controlled-synthetic release candidate | Release contract; exact versioned schema; deterministic builder; bounded canonical JSON manifest and payload; standalone verifier with integrity and semantic checks; focused corruption, content and side-effect tests; ignored local candidate only; independent Sol 6.1 review | **REVIEWED / INTEGRATED through WP2-S8/S9 and PR #52** |
-| B — Explicit public-compatible application profile | B1 typed offline provider and services; B2-A synthetic FastAPI adapter; later B2-B dashboard; no change to local defaults, canonical reader pins or scientific methods; locked-build and focused security/interface review | **B1 REVIEWED / INTEGRATED through PR #53. B2-A IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1. B2-B NOT AUTHORIZED. Overall Milestone B INCOMPLETE.** |
+| B - Explicit public-compatible application profile | B1 typed offline provider and services; B2-A synthetic FastAPI adapter; B2-B separate direct-service Streamlit dashboard; no change to local defaults, canonical reader pins or scientific methods | **B1 and B2-A REVIEWED / INTEGRATED through PR #53 and PR #54. B2-B IMPLEMENTED / UNDER REVIEW awaiting Sol 6.1 under WP2-S16. Overall Milestone B INCOMPLETE.** |
 | C — Staging and public release | Exact-content/rights approval, independent security review, resource/rollback plan and explicit hosting/audience/window authorization; owner-approved bundle hash; staged external checks; release and shutdown record | NOT AUTHORIZED |
 
 ## Milestone A design and acceptance
@@ -313,3 +312,163 @@ full suite, locked-environment checks, Ruff, Markdown and whitespace checks pass
 counts and skip reasons are recorded in [PROGRESS](../../docs/PROGRESS.md#wp2-s13-b2-a-offline-synthetic-fastapi-adapter-2026-10-23).
 No dependency, canonical API, Streamlit entry point, localhost configuration, generated release
 asset, server startup, commit or publication was performed. B2-A is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**; B2-B and Milestone B closeout remain outside this authorization.
+
+
+## WP2-S15 B2-A Git integration and CI - 2026-10-23
+
+The exact four-file WP2-S14-accepted B2-A snapshot was integrated through PR #54. Publication head
+`26eaed63f272cb931275b080e66b7eb982fb9790` was based on `a31f9d610ea7922629d24c4b134cd986f634bcb4`.
+The PR jobs checked out temporary merge ref `bc547266b964924beab06e3fe732eede16326b26`, whose
+parents were the base and publication head and whose tree matched the publication-head tree. The
+squash merge and resulting `main` revision are `232c7307f75d1ae7906af621853a8753ebe81795`.
+
+PR Quality run [#39934550249](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39934550249)
+and post-merge Quality run [#39935158003](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39935158003)
+passed on Python 3.12 and 3.14. All four jobs reported 1,548 passed, 8 skipped and one existing
+Starlette/httpx deprecation warning. The temporary PR merge ref is distinct from both publication
+head and squash merge. WP2-S14 returned ACCEPT; its nonblocking WP2-S14-01 inventory regression gap
+was disclosed in PR #54 and carried forward for the B2-B test correction below.
+
+
+## WP2-S16 B2-B synthetic Streamlit dashboard implementation and validation 2026-10-23
+
+**Status:** B2-B implementation is authorized by WP2-S16 and is implemented locally on
+`feat/public-demo-synthetic-streamlit-dashboard`, based directly on `232c7307f75d1ae7906af621853a8753ebe81795`.
+This work is local, offline and fixture-backed. It authorizes no commit, push, PR, merge, bundle
+publication, listener, hosting, deployment, public release, or Milestone C work.
+
+### Architecture and trusted configuration
+
+The separate renderer is `run_demo_dashboard(services: DemoServices)` in
+`src/rossmann_forecasting/app/demo_dashboard.py`. It accepts a B1 verified service instance and calls
+its six Python methods directly; it does not use the FastAPI adapter or canonical presenters. The
+separate root entrypoint `demo_streamlit_app.py` reads only `ROSSMANN_DEMO_PROFILE` and
+`ROSSMANN_DEMO_MANIFEST_SHA256` from trusted process configuration. The profile must exactly equal
+`controlled_synthetic_demo`; the independently supplied pin must match lowercase `[0-9a-f]{64}`.
+The release root is fixed by the checked-out entrypoint, never user-selected. Missing/malformed
+configuration and missing/invalid pinned content render fixed sanitized states without a traceback,
+path or secret and never fall back to canonical services.
+
+Verified services and a fixed failure state are retained only in Streamlit's per-session state under
+the exact current profile/pin pair. A changed or invalid configuration clears any prior service
+before rendering. No process-wide resource cache is used. A service is verified once for the current
+session configuration; B1 then serves its immutable in-memory snapshot on widget reruns. Corrected or
+new release configuration requires a new verified construction, with no silent old-service reuse.
+Importing the entrypoint performs no configuration read, release scan or service construction.
+
+### Five screens and presentation contract
+
+1. **Overview & Evidence** uses `catalog()` to show fixed release/schema/evidence identities, Stores,
+   origins, Fit pairings, candidate and inventory-case IDs, all six view-availability rows, source
+   declaration, units, limitations and provenance. Bundle readiness, each view's availability and
+   this Streamlit page's rendering status remain distinct.
+2. **Historical Sales** uses `sales_history(HistoryQuery(...))` with only Stores 101/202/303 and
+   dates 2015-05-09 through 2015-07-03, at most 56 inclusive days. Tables contain only saved rows;
+   sparse dates stay absent, null Sales stays null, zero remains zero, and synthetic Open is a
+   separate Open/Closed/Unknown field. Chart-only NaN coordinates break lines across absent/null
+   dates without creating table observations.
+3. **Forecast Explorer and Uncertainty** uses `forecast_issuance(ForecastQuery(...))` for the three
+   saved origins and H1-H14. Raw and operational forecasts, availability, synthetic eligibility,
+   trajectory and `model_execution=none` remain separate. `forecast_uncertainty(UncertaintyQuery(...))`
+   is called only for `demo_fit_a`/2015-06-05 or `demo_fit_b`/2015-06-19; May 22 shows an explicit
+   unavailable state. Daily intervals and cumulative rows are saved values only, with unavailable
+   reasons, incomplete prefixes, schedule flags, units, probabilities and provenance retained.
+4. **Model Comparison** uses `model_comparison(ModelComparisonQuery(...))` and only the finite B1
+   synthetic allowlists: saved candidates, population, window, scopes, metrics, horizons and Stores.
+   It displays saved values/numerators/denominators/reasons and candidate labels; empty intersections
+   are empty, limits remain bounded, and no metric or winner is recalculated.
+5. **Inventory Comparison** uses `inventory_comparison(InventoryComparisonQuery(...))` for the two
+   saved cases. Store selection filters policy-pair detail only; the exact case-wide aggregate DTO
+   rows, population counts and denominators are displayed unchanged. Signed values and null reasons
+   remain intact, including adverse Store 303 unavailability.
+
+Every screen shows the exact persistent evidence label `CONTROLLED SYNTHETIC DEMONSTRATION - NOT
+OBSERVED ROSSMANN DATA` (the UI uses an em dash), relevant limitation text and machine-readable
+`SyntheticProvenance` fields. Presentation code may map frozen DTOs to deterministic tables and chart
+coordinates, but it does not fit models, recalculate metrics, estimate interval bounds, fill missing
+scientific values, reaggregate inventory results, invoke the Phase 10 simulator, or render unsafe
+HTML/Markdown. Matplotlib figures are closed after display.
+
+### Errors, tests and compatibility boundary
+
+B1 invalid requests, unavailable/invalid releases and bounded provider errors map to fixed user-facing
+messages. Unexpected errors also render a generic message without exception text or traceback. No
+failure triggers a retry, download, repair, or canonical fallback. AppTest uses generated temporary
+controlled-synthetic bundles and separately computed manifest pins to exercise startup/configuration,
+all five screens, filtering, empty/unavailable values, provenance, session changes, and canonical
+isolation. The permanent API inventory test compares Store-101-filtered reference detail and
+filtered adverse Store-303 detail against separate unfiltered case aggregates, including exact
+population counts and denominators; WP2-S14-01 is resolved after this regression passes.
+
+Canonical `dashboard.py`, `dashboard_presenters.py`, `api.py`, `streamlit_app.py`, `.streamlit/config.toml`,
+B1 provider/services/bundle, dependencies and scientific modules remain unchanged. ADR-024's localhost
+behavior, ADR-028's proposed scope, ADR-030's authorization boundary, WP1 limitations and Phase 13
+holdout gates remain intact. The numerical synthetic bundle remains offline and untracked. No visual
+human acceptance is inferred from AppTest; independent Sol 6.1 review is the next technical gate.
+
+### WP2-S14-01 permanent API regression correction — 2026-10-23
+
+The reference-case API request now explicitly filters policy-pair detail to Store 101 and asserts
+that this is the only returned detail row. It makes a separate unfiltered request for the same case
+and compares all case-wide aggregate rows plus metric, requested and matched population counts, and
+baseline/forecast numerators and denominators. The adverse-case Store 303 request retains its
+unavailable cost and reason assertions and applies the same filtered-versus-unfiltered aggregate
+check. `tests/test_public_demo_api.py::test_inventory_route_supports_both_cases_and_preserves_case_aggregates`
+passed both parametrized cases. This resolves the deferred WP2-S14-01 test gap without changing the
+API or B1 service behavior.
+
+### WP2-S16 implementation and validation evidence — 2026-10-23
+
+The implementation adds the isolated `run_demo_dashboard(services)` renderer in
+`src/rossmann_forecasting/app/demo_dashboard.py`, the explicitly invoked root entrypoint
+`demo_streamlit_app.py`, and fixture-only AppTest coverage in
+`tests/test_public_demo_dashboard.py`. The README documents the local process settings and run
+command. The renderer uses only the six direct B1 Python services; it imports neither canonical
+`ApplicationServices` nor the synthetic FastAPI adapter. The canonical dashboard, its presenters,
+entrypoint, configuration, API, B1 provider/services/bundle, lockfile, dependencies, CI and scientific
+modules are unchanged.
+
+The five screens render the saved catalog, sparse Sales history, forecast/uncertainty rows, finite
+model comparison results and case-wide inventory aggregates with selected Store detail. Query
+selectors stay within the release's Stores, origins, horizons, fit pairings, comparison values and
+case IDs. Null, zero, unknown Open, unavailable paths, interval reasons, schedule flags, signed cost
+differences and full-population aggregate denominators remain distinct. Charts use display-only
+coordinates, and no model, metric, quantile, inventory target or aggregate is recomputed. Each screen
+shows the exact synthetic label, a relevant limitation, verified release identity and machine-readable
+provenance when a view result is available. Startup errors are fixed and sanitized.
+
+The entrypoint reads `ROSSMANN_DEMO_PROFILE` and `ROSSMANN_DEMO_MANIFEST_SHA256` only when run. The
+profile must be exactly `controlled_synthetic_demo`; the independent pin must be lowercase 64-digit
+hex. The repository release location is fixed. Verified services or a fixed failure are scoped to
+the current Streamlit session and exact profile/pin pair; configuration changes clear the old state.
+Imports do not inspect configuration or scan for releases, and widget reruns reuse the verified
+immutable B1 snapshot without rereading release files. AppTest covered all five screens, all Stores,
+three origins, H1-H14, both approved June Fit pairings, May 22 uncertainty unavailability, unknown
+and closed eligibility, incomplete cumulative rows, valid empty queries, over-limit results, both
+inventory cases, all Store detail filters, missing/wrong/tampered releases, configuration changes,
+no canonical fallback, no release reread and no network connection.
+
+The generated numerical fixture remained **326,074 bytes**, bundle SHA-256
+`9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`. The generated manifest was
+3,708 bytes with SHA-256
+`31d4760e890cbf2f048e7aa7cdd9b33908eacdb627c3a17be3dfea5ca3851bd9` for this source revision and
+environment. Bytes were generated in memory and written only to temporary test repositories; no
+JSON release was added to Git or published.
+
+Validation used `.venv` Python 3.14.5. The final focused dashboard plus full synthetic API command
+passed **87 tests** in 29.88 seconds with one existing Starlette/httpx deprecation warning. The
+provider, services, bundle, API and canonical dashboard/API regression command passed **464 tests**,
+with one symlink test skipped for Windows WinError 1314 and the same warning, in 52.92 seconds. The
+full suite ran in a detached tracked-only worktree at the B2-A base with the exact S16 files copied
+in and no ignored artifacts: **1,576 passed, 8 skipped, 1 warning** in 369.12 seconds. Seven skips
+were Windows symlink privilege checks; one was the existing optional canonical-artifact test. Ruff
+lint passed and all 155 Python files passed the format check. Markdown validation passed for 353
+local destinations/anchors across 38 Markdown files. Offline `uv lock --check` resolved 109 locked
+packages; offline `uv pip check` found all 93 installed packages compatible; `git diff --check`
+passed. The sole warning was the existing Starlette/httpx test-client deprecation. No real Rossmann
+or protected holdout data was read. AppTest is not human visual acceptance.
+
+The current branch remains local and uncommitted at base
+`232c7307f75d1ae7906af621853a8753ebe81795`; nothing was staged, pushed or published, and no listener
+was started. B2-B is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. Milestone B remains incomplete;
+Milestone C, public bundle release, external URLs and deployment are not authorized.
