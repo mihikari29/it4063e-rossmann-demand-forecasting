@@ -1,15 +1,17 @@
 # Public Course Demonstration
 
-**Current state (2026-10-23):** WP2 Milestone A is **REVIEWED / INTEGRATED** through PR #52 at
-`086c59183e237279a21139a62265e7450890fa63`; PR and post-merge Quality passed on Python 3.12 and
-3.14. WP2-S10 authorizes only local B1 work: an offline pinned synthetic provider and typed
-read-only services. B1 is implemented on the focused branch below and awaits independent Sol 6.1
-review. Milestone B overall remains incomplete and B2 is not authorized. The generated bundle is
-not published, and the existing localhost boundary in ADR-024 remains in force.
+**Current state (2026-10-23):** Milestone A is **REVIEWED / INTEGRATED** through PR #52 at
+`086c59183e237279a21139a62265e7450890fa63`; B1 is **REVIEWED / INTEGRATED** through PR #53 at
+`a31f9d610ea7922629d24c4b134cd986f634bcb4`. PR and post-merge Quality passed on Python 3.12 and
+3.14 for both integrations. WP2-S13 authorizes local B2-A synthetic FastAPI adapter implementation
+and in-process fixture testing. B2-A is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**
+on the focused branch below; B2-B, Milestone C, publication and deployment remain unauthorized. Milestone B is
+incomplete. The generated bundle remains ignored and unpublished, and ADR-024 remains authoritative
+for the existing localhost application.
 
-**Current task branch and base:** `feat/public-demo-verified-service-provider`, from `origin/main`
-at `086c59183e237279a21139a62265e7450890fa63`. Milestone A's earlier branch and review checkpoints
-below are preserved as history.
+**Current task branch and base:** `feat/public-demo-synthetic-api-adapter`, from `origin/main` at
+`a31f9d610ea7922629d24c4b134cd986f634bcb4`. The earlier Milestone A and B1 branches and review
+checkpoints below are preserved as history.
 
 ## Accepted objective and fixed boundaries
 
@@ -37,7 +39,7 @@ per-view availability are separate concepts.
 | Milestone | Scope and exit evidence | State |
 |---|---|---|
 | A — Offline controlled-synthetic release candidate | Release contract; exact versioned schema; deterministic builder; bounded canonical JSON manifest and payload; standalone verifier with integrity and semantic checks; focused corruption, content and side-effect tests; ignored local candidate only; independent Sol 6.1 review | **REVIEWED / INTEGRATED through WP2-S8/S9 and PR #52** |
-| B — Explicit public-compatible application profile | B1 typed offline provider and services; later B2 UI/API adapters; no change to local defaults, canonical reader pins or scientific methods; locked-build and focused security/interface review | **B1 IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1. B2 NOT AUTHORIZED. Overall Milestone B INCOMPLETE.** |
+| B — Explicit public-compatible application profile | B1 typed offline provider and services; B2-A synthetic FastAPI adapter; later B2-B dashboard; no change to local defaults, canonical reader pins or scientific methods; locked-build and focused security/interface review | **B1 REVIEWED / INTEGRATED through PR #53. B2-A IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1. B2-B NOT AUTHORIZED. Overall Milestone B INCOMPLETE.** |
 | C — Staging and public release | Exact-content/rights approval, independent security review, resource/rollback plan and explicit hosting/audience/window authorization; owner-approved bundle hash; staged external checks; release and shutdown record | NOT AUTHORIZED |
 
 ## Milestone A design and acceptance
@@ -220,3 +222,94 @@ existing Milestone A and application/API/dashboard regressions, then the full fi
 tracked-only isolated workspace with no local ignored data/artifacts; Ruff, documentation, locked
 dependency, whitespace and deterministic release checks. Record actual results in PROGRESS. The
 handoff after validation is independent Sol 6.1 review of B1 only.
+
+## WP2-S12 B1 Git integration and CI identity clarification — 2026-10-23
+
+The exact seven-file B1 snapshot was accepted in WP2-S11 and integrated by squash PR #53. Its
+publication commit `626acf76726a63efe7f264e9669aaab11af90d19` was based on
+`086c59183e237279a21139a62265e7450890fa63`; merge commit and `main` are
+`a31f9d610ea7922629d24c4b134cd986f634bcb4`. PR Quality run
+[#39924005789](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39924005789)
+and post-merge Quality run
+[#39924475405](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39924475405)
+passed on Python 3.12 and 3.14. The PR jobs checked out temporary merge ref
+`f2dd84f07d1d11c22a55c140397dfe4ab2e85fb1` (publication head into base `086c59183e237279a21139a62265e7450890fa63`);
+post-merge jobs checked out squash merge `a31f9d610ea7922629d24c4b134cd986f634bcb4`.
+
+This checkpoint resolves the nonblocking WP2-S11-01 documentation finding without rewriting its
+historical checkpoint. Milestone A PR #52 Quality run
+[#39904731393](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39904731393)
+was associated with publication head `5e1722220c0a3e2944788a470af68b4c3abc949d`. Its Python 3.12
+job actually checked out temporary merge ref `ddae5428714dd9b784d12b91bcc40c00e4635eb7`, combining
+that head with then-current base `a747d7799919497dead9b98bc0498c12115adfc2`; the later squash merge
+was `086c59183e237279a21139a62265e7450890fa63`. Workflow association, tested merge-ref commit and
+final squash merge are distinct identities.
+
+## WP2-S13 B2-A synthetic FastAPI adapter implementation and validation — 2026-10-23
+
+WP2-S13 authorizes only an offline, explicitly constructed FastAPI adapter over integrated B1
+`DemoServices`, fixture tests using `TestClient`, and this plan plus `docs/PROGRESS.md`. The task
+branch is based on B1 merge `a31f9d610ea7922629d24c4b134cd986f634bcb4`. No commit, push, PR, merge,
+bundle publication, server startup, B2-B dashboard, hosting or deployment is authorized.
+
+### Construction and release availability
+
+`create_demo_app(*, profile, expected_manifest_sha256, repository_root=None)` has no defaults for
+profile or pin. It requires the exact `DemoProfile.CONTROLLED_SYNTHETIC` enum and a separate
+lowercase 64-character hexadecimal manifest SHA-256; missing or malformed configuration fails
+factory construction. It calls `DemoServices.open` once with that explicit configuration and uses no
+canonical services or fallback. If the configured release is missing, corrupt or mismatched, the
+factory retains only the provider's fixed sanitized error code/message: `/health` remains available
+as process liveness, all analytical routes return 503, and requests do not retry initialization.
+Successful construction uses B1's already verified immutable in-memory snapshot. No import-time
+scan, module-level synthetic `app`, query-supplied pin/path or network listener is introduced.
+
+### HTTP and query contract
+
+The application has exactly these GET paths, with FastAPI docs, ReDoc and OpenAPI disabled:
+
+| Route | Accepted query |
+|---|---|
+| `/health` | None; process liveness only |
+| `/api/v1/catalog` | None; B1 catalog, source declaration, six view-availability records and provenance |
+| `/api/v1/history` | Required `store_id`, `start_date`, `end_date`; Stores 101/202/303; canonical dates from 2015-05-09 through 2015-07-03; inclusive maximum 56 days |
+| `/api/v1/forecasts` | Required `store_id`, `forecast_origin`; the three B1 Stores and origins; saved H1–H14 raw/operational points and trajectory identity |
+| `/api/v1/uncertainty` | Required `store_id`, `forecast_origin`, `fit_id`; only `demo_fit_a`/2015-06-05 and `demo_fit_b`/2015-06-19 pairings |
+| `/api/v1/model-comparison` | Optional `candidate_id`, `population`, `scope`, `validation_window`, `horizon`, `store_id`, `metric`, `limit`; B1 allowlists, maximum 500 saved rows, default limit 200 |
+| `/api/v1/inventory` | Required `case_id`; optional `store_id`; only the two B1 case IDs; store filtering affects policy-pair detail while aggregates remain case-wide |
+
+Each analytical response is `{evidence_label, data, provenance}`. `data` contains the complete
+frozen typed B1 result except that its provenance field is moved to the top-level `provenance`
+object. The exact label is `CONTROLLED SYNTHETIC DEMONSTRATION — NOT OBSERVED ROSSMANN DATA`.
+Provenance retains B1's release, evidence kind, bundle/manifest SHA-256, schema, source kind, view
+ID and selected-row count without canonical phase/run identifiers. The serializer accepts only
+bounded frozen dataclasses, tuples and JSON primitives, finite numbers and exact date values;
+unsupported values fail safely. Output is bounded to 2 MiB, nesting to 12 levels, 20,000 visited
+values and 4,096 characters per string. Query strings are bounded to 4,096 bytes and individual
+values to 128 characters (dates to exactly 10); numeric fields require canonical ASCII decimal
+syntax. Unknown and repeated keys, bodies on GET, invalid bounds and unsupported filters are
+rejected before B1 service dispatch. B1 allowlists remain the final query authority.
+
+### Errors, liveness and isolation
+
+Invalid query or request shape returns fixed sanitized HTTP 422. A missing, corrupt or mismatched
+verified release returns sanitized HTTP 503. Unexpected request-time failures return sanitized HTTP
+500; unknown paths and methods return sanitized 404/405, preserving the framework's `Allow` header
+on 405. Error bodies never contain exception text, object representations, paths, environment data
+or release contents. `/health` reports only process liveness and makes no bundle/readiness claim.
+No unrestricted CORS, writes, uploads, admin routes, arbitrary file access, model execution,
+calibration, metric calculation or inventory simulation are allowed.
+
+Tests generate deterministic bundle/manifest bytes into per-test temporary repositories, independently
+hash the manifest bytes and supply that pin to the factory. Coverage includes all seven routes,
+supported query combinations and edge values, malformed/duplicate/unknown inputs and bodies,
+missing/wrong/tampered release handling, sanitized errors, health versus readiness, no canonical
+fallback, no post-construction file/network access, no model/simulator calls, route/method
+inventory, deterministic output and repeated-request isolation.
+
+The implementation is in `src/rossmann_forecasting/app/demo_api.py`, with fixture-only HTTP
+coverage in `tests/test_public_demo_api.py`. Focused regressions, the artifact-free tracked-only
+full suite, locked-environment checks, Ruff, Markdown and whitespace checks passed. Detailed
+counts and skip reasons are recorded in [PROGRESS](../../docs/PROGRESS.md#wp2-s13-b2-a-offline-synthetic-fastapi-adapter-2026-10-23).
+No dependency, canonical API, Streamlit entry point, localhost configuration, generated release
+asset, server startup, commit or publication was performed. B2-A is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**; B2-B and Milestone B closeout remain outside this authorization.
