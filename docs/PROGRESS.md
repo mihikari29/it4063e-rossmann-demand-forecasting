@@ -21,7 +21,7 @@
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
 | WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 AND S16 M2 REVIEWED / INTEGRATED; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; L3-F integrated through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. Milestone 1 was independently accepted and integrated through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; PR Quality #156 and main Quality #157 passed on Python 3.12 and 3.14. Fixture-only Milestone 2 was accepted in WP1-S17 and integrated through PR #51 at `a747d7799919497dead9b98bc0498c12115adfc2`; PR Quality #158 and post-merge Quality #159 passed on Python 3.12 and 3.14. No real-source operation or scenario analysis has run. ADR-029 remains fixture-only, and WP1-S7-01 remains unresolved under its original contract. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
-| Public course demonstration | **Milestone A REVIEWED / INTEGRATED; B1 REVIEWED / INTEGRATED; B2-A IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1** | WP2-S9 integrated Milestone A through PR #52; WP2-S12 integrated B1 through PR #53; WP2-S13 implements the offline synthetic FastAPI adapter on its local task branch. Milestone B remains incomplete; B2-B, publication, hosting and deployment are not authorized. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), [WP2-S9 evidence](#wp2-s9-milestone-a-integration-2026-10-23), [WP2-S12 B1 integration](#wp2-s12-b1-git-integration-and-ci-identity-clarification-2026-10-23), and [WP2-S13 evidence](#wp2-s13-b2-a-offline-synthetic-fastapi-adapter-2026-10-23). |
+| Public course demonstration | **Milestone A REVIEWED / INTEGRATED; B1 REVIEWED / INTEGRATED; B2-A REVIEWED / INTEGRATED; B2-B IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1** | WP2-S9 integrated Milestone A through PR #52; WP2-S12 integrated B1 through PR #53; WP2-S15 integrated the accepted B2-A snapshot through PR #54 at `232c7307f75d1ae7906af621853a8753ebe81795`; WP2-S16 implements the separate local B2-B dashboard and resolves WP2-S14-01. Milestone B remains INCOMPLETE; Milestone C, public release and deployment remain gated. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), [WP2-S15 B2-A integration](#wp2-s15-b2-a-git-integration-and-ci-2026-10-23), and [WP2-S16 B2-B implementation and validation](../plans/active/public-course-demo.md#wp2-s16-b2-b-synthetic-streamlit-dashboard-implementation-and-validation-2026-10-23). |
 
 ### WP1-S15 / S15-R1 Milestone 1 integration — 2026-10-21
 
@@ -3990,3 +3990,57 @@ B2-A is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. The work remains lo
 uncommitted. B2-B, Milestone B closeout, Git publication, bundle publication, server startup, hosting,
 public exposure and deployment remain unauthorized. The next boundary is independent Sol 6.1 review
 of B2-A only.
+
+
+### WP2-S15 B2-A Git integration and CI (2026-10-23)
+
+The exact four-file WP2-S14-accepted B2-A snapshot was integrated through PR #54. Publication head
+`26eaed63f272cb931275b080e66b7eb982fb9790` was based on `a31f9d610ea7922629d24c4b134cd986f634bcb4`.
+The PR jobs checked out temporary merge ref `bc547266b964924beab06e3fe732eede16326b26`, whose
+parents were the base and publication head and whose tree matched the publication-head tree. The
+squash merge and resulting `main` revision are `232c7307f75d1ae7906af621853a8753ebe81795`.
+
+PR Quality run [#39934550249](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39934550249)
+and post-merge Quality run [#39935158003](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39935158003)
+passed on Python 3.12 and 3.14. All four jobs reported 1,548 passed, 8 skipped and one existing
+Starlette/httpx deprecation warning. PR merge-ref, publication head and squash merge are distinct
+identities. WP2-S14 returned ACCEPT; the nonblocking WP2-S14-01 inventory regression gap was
+explicitly disclosed in PR #54 and remains open until the separately authorized B2-B regression test
+passes.
+
+### WP2-S14-01 inventory aggregate regression correction — 2026-10-23
+
+The permanent API test now filters the reference case to Store 101, asserts only that Store's
+policy-pair detail, then makes a separate unfiltered request and compares exact case-wide aggregate
+rows, populations, numerators and denominators. The filtered adverse Store 303 request receives the
+same aggregate-scope check and retains its unavailable comparison reason. The two parametrized cases
+passed in the final focused run. No API or B1 behavior changed; WP2-S14-01 is resolved.
+
+### WP2-S16 B2-B synthetic Streamlit dashboard — 2026-10-23
+
+Implemented the separate direct-service dashboard and explicit root entrypoint on
+`feat/public-demo-synthetic-streamlit-dashboard`, based on integrated main
+`232c7307f75d1ae7906af621853a8753ebe81795`. The entrypoint requires process settings
+`ROSSMANN_DEMO_PROFILE=controlled_synthetic_demo` and an independently supplied lowercase
+`ROSSMANN_DEMO_MANIFEST_SHA256`. Verified services are cached only in the current Streamlit session
+under that exact pair and invalidated on configuration changes. The five screens show only saved
+synthetic catalog/history/forecast/uncertainty/comparison/inventory values with explicit source
+labeling, provenance and null/unavailable semantics. Canonical Streamlit, FastAPI, B1 services,
+scientific behavior, dependencies and lock remain unchanged. Local run instructions are in the
+[README](../README.md#controlled-synthetic-course-dashboard-local-only); the implementation,
+validation and boundary record is in the [active plan](../plans/active/public-course-demo.md#wp2-s16-b2-b-synthetic-streamlit-dashboard-implementation-and-validation-2026-10-23).
+
+The final dashboard plus synthetic API test command passed **87 tests** in 29.88 seconds. The B1,
+bundle, synthetic API and canonical dashboard/API compatibility command passed **464 tests** with
+one Windows symlink skip. The full suite passed in an artifact-free tracked-only worktree:
+**1,576 passed, 8 skipped, 1 existing Starlette/httpx warning** in 369.12 seconds. Ruff lint and
+format, Markdown validation, offline lock and dependency checks, and whitespace validation passed.
+The generated fixture bundle was 326,074 bytes with SHA-256
+`9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`; generated manifest SHA-256
+was `31d4760e890cbf2f048e7aa7cdd9b33908eacdb627c3a17be3dfea5ca3851bd9`. Generated JSON stayed in
+temporary repositories and was not published.
+
+B2-B is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**; overall Milestone B remains INCOMPLETE.
+The work is uncommitted and unstaged. No commit, push, PR, merge, listener, public bundle release,
+external URL, hosting or deployment occurred. Milestone C remains NOT AUTHORIZED. AppTest does not
+constitute human visual acceptance.

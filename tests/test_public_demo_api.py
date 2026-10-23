@@ -329,7 +329,7 @@ def test_model_comparison_uses_closed_saved_filters_and_a_500_row_ceiling(
 @pytest.mark.parametrize(
     "params",
     [
-        {"case_id": "synthetic_demo_reference_20150605"},
+        {"case_id": "synthetic_demo_reference_20150605", "store_id": "101"},
         {"case_id": "synthetic_demo_adverse_20150605", "store_id": "303"},
     ],
 )
@@ -341,18 +341,48 @@ def test_inventory_route_supports_both_cases_and_preserves_case_aggregates(
     )
     assert body["data"]["aggregate_scope"] == "all_stores_in_case"
     assert len(body["data"]["case_level_comparisons"]) == 10
-    if params["case_id"] == "synthetic_demo_adverse_20150605":
-        assert body["data"]["policy_pairs"][0]["comparable"] is False
-        assert body["data"]["policy_pairs"][0]["forecast_minus_baseline_cost"] is None
-        assert body["data"]["case_level_comparisons"][0]["matched_store_count"] == 2
-    else:
-        unfiltered = demo_client.get(
-            "/api/v1/inventory",
-            params={"case_id": "synthetic_demo_reference_20150605"},
-        ).json()
-        assert (
-            body["data"]["case_level_comparisons"] == unfiltered["data"]["case_level_comparisons"]
+    filtered_pairs = body["data"]["policy_pairs"]
+    assert [pair["store_id"] for pair in filtered_pairs] == [int(params["store_id"])]
+    unfiltered = _assert_success(
+        demo_client.get("/api/v1/inventory", params={"case_id": params["case_id"]}),
+        "inventory_comparison",
+    )
+    filtered_aggregates = body["data"]["case_level_comparisons"]
+    unfiltered_aggregates = unfiltered["data"]["case_level_comparisons"]
+    assert filtered_aggregates == unfiltered_aggregates
+    assert [
+        (
+            row["metric"],
+            row["requested_store_count"],
+            row["baseline_standalone_store_count"],
+            row["forecast_standalone_store_count"],
+            row["matched_store_count"],
+            row["baseline_numerator"],
+            row["baseline_denominator"],
+            row["forecast_numerator"],
+            row["forecast_denominator"],
         )
+        for row in filtered_aggregates
+    ] == [
+        (
+            row["metric"],
+            row["requested_store_count"],
+            row["baseline_standalone_store_count"],
+            row["forecast_standalone_store_count"],
+            row["matched_store_count"],
+            row["baseline_numerator"],
+            row["baseline_denominator"],
+            row["forecast_numerator"],
+            row["forecast_denominator"],
+        )
+        for row in unfiltered_aggregates
+    ]
+    if params["case_id"] == "synthetic_demo_adverse_20150605":
+        assert filtered_pairs[0]["comparable"] is False
+        assert filtered_pairs[0]["forecast_minus_baseline_cost"] is None
+        assert filtered_aggregates[0]["matched_store_count"] == 2
+    else:
+        assert filtered_pairs[0]["forecast_minus_baseline_cost"] == -30
 
 
 @pytest.mark.parametrize(

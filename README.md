@@ -15,9 +15,10 @@ NOT APPROVED; independent M3 review, source preparation, rehearsal, staging, rel
 milestones retain separate gates. PR #44 integrated CC-02D's gated custodian preparation path, but
 no real-source preparation, STL evidence or public deployment exists. The protected final holdout
 remains unreleased, and Phase 14 is incomplete. ADR-030 accepts the future objective of two public
-demo URLs and authorizes only the offline synthetic Milestone A, which remains under independent
-review. ADR-028's scenario-analysis and monitoring proposals remain unaccepted. ADR-024 still governs
-the running application: localhost only until a separately authorized public release. See the
+demo URLs. Milestone A, B1 and B2-A are integrated; B2-B is implemented locally and awaits independent
+Sol 6.1 review. Overall Milestone B remains incomplete, and Milestone C, public release and deployment
+are not authorized. ADR-028's scenario-analysis and monitoring proposals remain unaccepted. ADR-024
+still governs the running application: localhost only until a separately authorized public release. See the
 [public-demo release contract](docs/PUBLIC_DEMO_RELEASE_CONTRACT.md) and
 [active plan](plans/active/public-course-demo.md). Phase 5
 additive Holt-Winters
@@ -308,9 +309,27 @@ The dashboard binds to `127.0.0.1:8501`. It does not train or infer forecasts, r
 simulation, access the Phase 10 ledger, or evaluate the protected final holdout. The user reported
 PASS on human visual review of all five screens; this acceptance is recorded as user-attested.
 Phase 12 integration and closeout evidence is in the [completed plan](plans/completed/phase-12-streamlit-dashboard.md).
-ADR-030 accepts the future two-URL objective, but Milestone A is still under independent review and
-no public runtime, listener, bundle publication or deployment exists. The current localhost scope in
-ADR-024 remains effective.
+ADR-030 accepts the future two-URL objective. Milestone A, B1 and B2-A are integrated, while B2-B is
+implemented and awaiting independent review. No public runtime, listener, bundle publication or
+deployment exists. The current localhost scope in ADR-024 remains effective.
+
+### Controlled-synthetic course dashboard (local only)
+
+The separate controlled-synthetic dashboard entrypoint is an offline, read-only view over the
+verified B1 Python services; it does not use FastAPI and does not change the canonical
+`streamlit_app.py` default. To run it locally, supply both process settings explicitly. The manifest
+digest must come from a trusted source outside the release manifest itself:
+
+```powershell
+$env:ROSSMANN_DEMO_PROFILE = "controlled_synthetic_demo"
+$env:ROSSMANN_DEMO_MANIFEST_SHA256 = "<independently supplied lowercase 64-character SHA-256>"
+uv run --locked --extra dashboard streamlit run demo_streamlit_app.py
+```
+
+The entrypoint accepts no release path or dashboard pin widget, and it fails closed if configuration
+or the fixed local release is unavailable or invalid. Every screen labels these values as controlled
+synthetic evidence; they are not observed Rossmann performance. This local entrypoint does not grant
+authority to publish the bundle, expose a public URL or deploy a service.
 
 In PowerShell, check process health, list supported cases, and try a bounded forecast or the
 canonical reference inventory case:
