@@ -13,14 +13,15 @@
 | Phase 9 — synthetic inventory layer | **COMPLETE** | [Completed plan](../plans/completed/phase-9-synthetic-inventory.md); [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19) squash-merged at `7451c50ff685d92e8e74b5014d07b3bbfaca0a22` |
 | Phase 10 - inventory simulation | **COMPLETE** | PR #23 `15bce83cd63a4edfeed6defb95788da90d0f36d9`; PR #24 `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`; closeout PR #25 merged at `d437269b9f0cf36a842cdfd496ad50a310804768`; [completed plan](../plans/completed/phase-10-inventory-simulation.md) |
 | Phase 11 — Application Services & Thin API | **COMPLETE** | PR #26 squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; [completed plan](../plans/completed/phase-11-application-services.md) |
-| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure remain out of scope under ADR-024. No public deployment exists; proposed public API/dashboard delivery is pending owner approval under ADR-028. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
+| Phase 12 - Streamlit Dashboard | **COMPLETE** — M1-M4 ACCEPTED / INTEGRATED under ADR-024's localhost-only contract | M3 PR #31 merged at `28aa42fdb2186dbbc340bef72917ce2e2ec06425`; main Quality #96 passed on Python 3.12/3.14. M4 PR #32 squash-merged at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`; main Quality #103 passed on Python 3.12/3.14. The Technical Lead independently accepted reviewed M4 head `8b4275a24030f4ceb21b2f3d5f88b2c23016aae1`; the user's five-screen visual PASS is user-attested. Approved URL `http://127.0.0.1:8501`; LAN, network, tunnel, firewall, cloud and public exposure remain out of scope under ADR-024. ADR-030 accepts a future public-demo objective, but no public runtime or deployment exists. See the [completed plan](../plans/completed/phase-12-streamlit-dashboard.md), [localhost runbook](DEPLOYMENT_LAN.md) and [M4 evidence](#phase-12-m4-integration-browser-and-local-performance-2026-10-10). |
 | Phase 13 — Sequential final evaluation | **M1–M3 INTEGRATED; Phase PLANNED / NOT APPROVED** | M1 PR #38 integrated at `6e7d11a29a593c5eddee640f7c44ca1b3b9cd923`; M2 PR #39 merged at `2a935aea30ab22110153d33d3a55dac44e67a1c8`, with main Quality #125 passing on Python 3.12/3.14. PR #40 integrated M3 and P40 corrections at `1426f29878fd8d7aaa920482310c02842498198b`. Independent M3 review, source preparation, rehearsal, staging, release, M4 and later milestones remain open and separately gated; final evaluation has not run. See the [active plan](../plans/active/phase-13-sequential-final-evaluation.md). |
 | CC-02 — weekly STL diagnostic | **REVIEWED / INTEGRATED; real-data evidence pending** | Accepted PR #41 merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`; Quality #132 passed on Python 3.12 and 3.14. No Rossmann decomposition has been run. |
 | CC-02B — development-only Sales provider | **REVIEWED / INTEGRATED; real-data operation pending** | Owner-accepted PR #42 merged at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; post-merge Quality #135 passed on Python 3.12 and 3.14. Fixture-only implementation is complete; no real bundle or approval binding exists. See the [completed plan](../plans/completed/cc-02b-trusted-development-provider.md). |
 | CC-02C — custodian preparation | **REVIEWED / INTEGRATED; real-data operation pending** | PR #43 merged at `13d762c0c622164ebf6a804ab0a1887c738bdbe8`; post-merge Quality #141 passed on Python 3.12 and 3.14. No real source access or preparation was authorized. See the [completed plan](../plans/completed/cc-02c-custodian-preparation.md). |
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
-| WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 REVIEWED / INTEGRATED; S16 M2 IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; L3-F integrated through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. Milestone 1 was independently accepted and integrated through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; PR Quality #156 and main Quality #157 passed on Python 3.12 and 3.14. WP1-S12 findings 01–03 were corrected in WP1-S13 and accepted by Sol 6.1 in WP1-S14. S16 adds only an in-memory controlled-synthetic handoff; no real-source operation or scenario analysis has run. ADR-029 remains fixture-only, and WP1-S7-01 remains unresolved under its original contract. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+| WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 AND S16 M2 REVIEWED / INTEGRATED; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; L3-F integrated through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. Milestone 1 was independently accepted and integrated through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; PR Quality #156 and main Quality #157 passed on Python 3.12 and 3.14. Fixture-only Milestone 2 was accepted in WP1-S17 and integrated through PR #51 at `a747d7799919497dead9b98bc0498c12115adfc2`; PR Quality #158 and post-merge Quality #159 passed on Python 3.12 and 3.14. No real-source operation or scenario analysis has run. ADR-029 remains fixture-only, and WP1-S7-01 remains unresolved under its original contract. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
+| Public course demonstration | **Milestone A IMPLEMENTED / UNDER REVIEW — AWAITING INDEPENDENT SOL 6.1 REREVIEW** | WP2-S2 findings were corrected by WP2-S3. WP2-S6 returned REQUEST_CHANGES for Unicode case folding in dependency-version validation; WP2-S7 corrected the ASCII bypass on the same branch, pending independent rereview. The synthetic bundle bytes remain unchanged. No public-compatible runtime, bundle publication, host provisioning, Internet exposure or deployment is authorized. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), and the [WP2-S7 checkpoint](#wp2-s7-ascii-dependency-version-validation-2026-10-22). |
 
 ### WP1-S15 / S15-R1 Milestone 1 integration — 2026-10-21
 
@@ -33,6 +34,17 @@ passed both Python 3.12 and 3.14 jobs on their respective exact revisions. The A
 human GitHub review. The S11/S12/S13 entries below remain historical implementation and review
 checkpoints. Milestone 2 is separately authorized as fixture-only work; WP1 remains incomplete and
 no real-source operation or later analytical milestone is authorized here.
+
+### WP1-S18 Milestone 2 integration — 2026-10-21
+
+The fixture-only in-memory Milestone 2 handoff from WP1-S16 was independently accepted by Sol 6.1
+in WP1-S17. PR #51 was squash-merged into `main` at
+`a747d7799919497dead9b98bc0498c12115adfc2`. PR Quality run [#158](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39600298597)
+and post-merge main Quality run [#159](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39600899559)
+passed on Python 3.12 and 3.14 at their respective exact revisions. This integrates only the
+controlled-synthetic provider handoff; it does not perform real-source access, scenario analysis,
+WP1-L4, Phase 13, publication or deployment. WP1 remains incomplete and WP1-S7-01 remains unresolved
+under its original contract.
 
 ### WP1-S16 fixture-only Milestone 2 — 2026-10-21
 
@@ -3670,3 +3682,165 @@ and format passed; `scripts/check_docs.py` passed with 277 local destinations/an
 Markdown files; `uv lock --check` resolved 109 packages; `uv pip check` passed with 91 compatible
 packages on Python 3.12 and 93 on Python 3.14; `git diff --check` passed. These local counts are
 separate from the GitHub CI run counts recorded above.
+
+### WP2-S1 offline controlled-synthetic release candidate - 2026-10-21
+
+WP2-S1 accepts the narrow future public-course objective and authorizes Milestone A only under
+ADR-030. The new branch `feat/public-demo-offline-synthetic-bundle` is based on current
+`origin/main` at `a747d7799919497dead9b98bc0498c12115adfc2`. Milestone A is
+**IMPLEMENTED / UNDER REVIEW - AWAITING INDEPENDENT SOL 6.1 REVIEW**. Milestones B and C remain
+NOT AUTHORIZED. ADR-024 localhost behavior and all forecasting, scientific, and protected-holdout
+contracts remain in force.
+
+The versioned release contract, deterministic standard-library builder, standalone verifier, CLI,
+and fixture tests are recorded in [the release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md) and
+[the active plan](../plans/active/public-course-demo.md). The only generated candidate is the
+ignored and untracked directory `artifacts/public_demo/rossmann-course-demo-synthetic-v1/`. Its
+`demo_bundle.json` is 326,074 bytes with SHA-256
+`9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`; `demo_manifest.json` is
+3,708 bytes with SHA-256
+`75a5ac794fffd01883bdf8b76b1ad669fbf2effb92d2d65a64fb1ae1288a56d4`. The manifest pin and
+deterministic regeneration both verified. The bundle contains 165 synthetic history rows, 126
+forecast rows, 6 uncertainty views, 168 daily interval rows, 252 cumulative rows, 126 comparison
+basis rows, 69 comparison rows, 2 inventory views, 6 policy-pair rows, and 20 aggregate rows.
+No source, canonical result, model, protected outcome, credential, or real-data-derived content was
+read or packaged; no network, model fitting, prediction generation, calibration, or simulation was
+performed.
+
+The 21 focused bundle tests passed. The full fixture suite passed 1,248 tests with 7 skips and 1
+existing Starlette/httpx deprecation warning in a clean isolated tracked-only worktree at the same
+base plus the scoped changes. Six skips require unavailable Windows symlink privilege; one optional
+canonical-upstream-artifact test has no fixture artifact. Ruff check and format passed; the Markdown
+checker passed with 347 local destinations/anchors across 38 files; locked dependency consistency
+resolved 109 packages and the installed environment reported 93 compatible packages; CLI build,
+verification, regeneration, and `git diff --check` passed. No dependency or lockfile changed.
+Python was 3.14.5. A standalone `uv` executable was not on this shell's PATH at closeout; the earlier
+offline lock and dependency commands completed successfully. The generated candidate remains local
+and ignored. The next authorized boundary is independent Sol 6.1 review of this exact branch; this
+entry does not authorize a public-compatible runtime, hosting, publication, or integration.
+
+### WP2-S3 correction of independent review findings — 2026-10-21
+
+The WP2-S2 red-first regression run was performed against the original snapshot in a disposable
+checkout. It produced **13 failed, 12 passed, 25 deselected**; the failures reproduced the Windows
+junction escape, incomplete or inconsistent manifest provenance, and float-valued byte-count
+acceptance. No run used real Rossmann data or canonical artifacts.
+
+The builder and directory verifier now reject symbolic links and Windows reparse-point aliases in
+existing path components, and check resolved containment under the checkout before file operations.
+Manifest validation now recomputes the configured generator digest, requires valid module/script/
+project/lock hashes and complete installed-distribution versions, validates optional Git revision
+shape, and accepts only a bounded JSON integer byte count matching the encoded bundle size. The
+tests exercise actual CLI rejection through a Windows junction, verifier and builder aliases,
+resealed provenance mutations, strict byte-count scalar types, and cleanup after failed writes or
+renames. The release contract and active plan record these controls and their race-condition limit.
+
+Post-fix `tests/test_public_demo_bundle.py -q` passed **49 tests**, with one skip because this Windows
+host does not grant directory-symlink creation. The full tracked-only fixture suite passed **1,276
+tests, 8 skipped**, with one existing Starlette/httpx deprecation warning, in an isolated checkout
+overlaid with exactly the ten scoped files. Seven skips require unavailable symlink privileges; one
+existing optional test requires canonical artifacts intentionally absent from the checkout. Ruff
+lint and format passed; `scripts/check_docs.py` passed with 347 local destinations/anchors across 38
+Markdown files; offline `uv lock --check` resolved 109 packages; both `uv pip check` (93 packages)
+and `pip check` passed; `git diff --check` passed. No dependency or lockfile changed.
+
+Independent builds in two isolated checkouts produced identical bytes. The bundle remains 326,074
+bytes with SHA-256 `9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`; ordinary
+verification and out-of-band-pinned deterministic regeneration passed. The regenerated manifest is
+3,708 bytes with SHA-256
+`6244c73cd0954fdf121209497a0425d509c687cb5c9a274b27c5f4250cefcf9c`, reflecting the corrected
+builder/source identity while preserving the synthetic bundle content. Milestone A remains
+**IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1 REREVIEW**; the corrected local outcome is
+`CORRECTED_AWAITING_SOL_REREVIEW`. The exact local snapshot is ready for independent rereview. No
+commit, push, PR, publication, deployment, host provisioning, or Milestone B/C work occurred;
+ADR-024 and all data, scientific, and holdout boundaries remain in force.
+
+### WP2-S5 correction of WP2-S4 dependency-version finding - 2026-10-21
+
+WP2-S4 independent rereview returned **REQUEST_CHANGES** because the plain verifier accepted
+malformed dependency versions `1+.` and `1a1b1` after canonical manifest resealing and with a
+matching SHA-256 pin. A test-first run reproduced both cases (**2 failed, 50 deselected**).
+
+The verifier now bounds each required installed version to 128 ASCII characters and accepts a
+normalized PEP 440-compatible subset: optional numeric epoch, dotted numeric release, at most one
+`aN`/`bN`/`rcN` pre-release, optional `.postN`, optional `.devN`, and optional local identifiers
+with nonempty alphanumeric segments. It uses local regular-expression validation; production code
+does not import `packaging`, and neither project dependencies nor `uv.lock` changed. A local
+`packaging.version.Version` oracle was used to confirm the specified valid and malformed examples.
+Ordinary verification accepts syntactically valid portable versions with a matching manifest pin;
+deterministic regeneration still requires exact current environment identity.
+
+Permanent tests apply 17 malformed values and 10 supported valid forms to all five required
+dependencies, reseal manifests canonically, and supply matching pins. They cover overlong versions,
+empty or repeated segments, punctuation, and Boolean/integer/float/null/array/object values. The
+portable-version test passes ordinary verification and is rejected by deterministic regeneration;
+the generated manifest using the actual installed versions also passes. The focused version cases
+passed **136 tests**. Existing junction containment, complete provenance, bounded integer byte
+count, and bundle identity checks remain covered.
+
+The full fixture suite passed **1,412 tests, 8 skipped**, with one existing Starlette/httpx
+deprecation warning, in the isolated tracked-only checkout (267.84 seconds). Seven skips need
+unavailable Windows symlink privilege; one optional test needs canonical upstream artifacts absent
+from the checkout. Ruff check and format passed; the Markdown checker passed with 347 local
+destinations/anchors across 38 Markdown files; `uv lock --check --offline` resolved 109 packages;
+`uv pip check` and `pip check` passed with 93 compatible packages; `git diff --check` passed.
+
+Two isolated deterministic builds produced byte-identical bundles and manifests. The unchanged
+bundle is 326,074 bytes, SHA-256
+`9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`, with 165 history rows, 126
+forecasts, 6 uncertainty views, 168 daily intervals, 252 cumulative rows, 126 comparison basis
+rows, 69 model comparison rows, 2 inventory views, 6 inventory policy pairs, and 20 aggregate
+rows. The new 3,708-byte manifest SHA-256 is
+`3ca3d770f813fbca6dac5b9ad594ac5cf75ab12b9ec908a3d308d0ccac8389cb`. Ordinary pin verification
+and pinned deterministic regeneration passed in both checkouts. The versioned synthetic release
+remains offline and uncommitted. Milestone A stays **IMPLEMENTED / UNDER REVIEW - AWAITING
+INDEPENDENT SOL 6.1 REREVIEW**; the local outcome is `CORRECTED_AWAITING_SOL_REREVIEW`. No commit,
+push, PR, publication, deployment, real-data access, or Milestone B/C work occurred.
+
+### WP2-S7: ASCII dependency version validation (2026-10-22)
+
+WP2-S6 returned **REQUEST_CHANGES** for WP2-S6-01 (MAJOR): `re.IGNORECASE` allowed Unicode
+case-fold equivalents to match the documented ASCII dependency-version grammar. Before changing
+the production validator, the new pinned regressions were run against the S6 implementation. The
+test-first command `python -m pytest tests/test_public_demo_bundle.py -q -k unicode --tb=no`
+reported **26 failed, 25 passed, 186 deselected** in 6.29 seconds: 25 dependency-field API
+mutations and the matching-pin CLI case reproduced the bypass; Unicode digits, non-ASCII local
+letters, combining marks, whitespace and a Unicode keyword lookalike were already rejected.
+
+The focused correction adds `re.ASCII` alongside `re.IGNORECASE` in
+`src/rossmann_forecasting/app/demo_bundle.py`. It preserves the existing version grammar, ASCII
+case-insensitive forms, 128-character bound, type checks, portable ordinary-verification behavior,
+and exact-environment deterministic-regeneration check. Permanent tests cover all five confirmed
+case-fold values and representative Unicode categories across all five required dependency fields,
+plus an actual CLI rejection with a matching manifest SHA-256 pin. The post-fix Unicode command
+reported **51 passed, 186 deselected** in 6.97 seconds. The independent `packaging.version.Version`
+26.3 oracle rejected all five original case-fold values; it is not a production dependency.
+
+The complete fixture suite ran in the locked Python 3.14.5 environment in a disposable tracked-only
+workspace: **1,463 passed, 8 skipped, 1 warning** in **390.45 seconds**. It included 236 passing
+public-demo tests with one unavailable directory-symlink skip and 256 application/API/dashboard
+compatibility tests. Seven skips require Windows symlink privileges; one optional test requires
+canonical artifacts absent from the isolated checkout. The sole warning is the existing
+Starlette/httpx TestClient deprecation. Ruff lint passed; Ruff format confirmed **146 files**;
+documentation validation passed with **349 local destinations/anchors across 38 Markdown files**;
+offline lock checking resolved 109 packages; `uv pip check` found 91 compatible packages;
+`git diff --check` passed. The temporary checkout printed Git LF-to-CRLF advisory messages for four
+unrelated WP1 fixture files, with no whitespace-check failures.
+
+Two independent tracked-only workspaces on Python 3.14.5 and the same locked dependency set
+produced byte-identical releases. `demo_bundle.json` remains **326,074 bytes**, SHA-256
+`9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`. Its counts remain **165 / 126
+/ 6 / 168 / 252 / 126 / 69 / 2 / 6 / 20**. Ordinary verification, out-of-band-pinned ordinary
+verification, and pinned deterministic regeneration passed in both workspaces. The corrected
+3,708-byte manifest SHA-256 is
+`6bccb0c1e19a166e34cca4fe293d1d8ee100e85db4ad4a194eb54c8eace2d462`; its generator module SHA-256
+is `ac3910f382d61296d5229048441d793383858d41ef437d859c9f264e2a35a704`. The manifest records the
+unchanged builder script, configuration, project and lock identities, Python 3.14.5, and installed
+versions FastAPI 0.143.0, NumPy 2.5.3, pandas 3.0.6, PyArrow 24.0.0, and Streamlit 1.65.0. The
+synthetic numerical bundle is byte-identical to the accepted S5 content.
+
+The final implementation, documentation and test snapshot remains **IMPLEMENTED / UNDER REVIEW —
+AWAITING SOL 6.1 REREVIEW**. No commit, push, PR, public release, deployment, real-source access,
+protected-holdout access, or Milestone B/C work. The final rereview handoff reports raw-byte SHA-256
+identities for all ten Milestone A files; the five pre-existing documentation identities match their
+WP2-S6 pre-fix values.

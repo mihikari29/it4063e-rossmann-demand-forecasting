@@ -47,8 +47,9 @@ and approval state is maintained in [PROGRESS](PROGRESS.md).
 
 **MUST-HAVE**
 
-1. Review instructor-feedback alignment and explicitly decide whether to accept proposed ADR-028.
-   Until then, ADR-024's localhost-only deployment scope remains in force.
+1. Implement the narrowly accepted synthetic-first public-demo objective under ADR-030. WP2-S1
+   covers the offline controlled-synthetic bundle only; ADR-024's localhost configuration remains
+   effective until a separately authorized public release.
 2. Write and approve a separate scenario-analysis method before running any development analysis.
    Compare LightGBM with the existing alternative forecast methods across defined Store-level
    scenarios, report accuracy, and explain supported business implications. Freeze scenario
@@ -64,17 +65,18 @@ and approval state is maintained in [PROGRESS](PROGRESS.md).
 5. Complete Phase 14's evidence-based report, slides, repository handoff, and demonstration after
    reviewed Phase 13 results are available.
 
-**HIGH-PRIORITY DELIVERY TARGET**
+**HIGH-PRIORITY DELIVERY TARGET — NARROW OBJECTIVE ACCEPTED; RELEASE PENDING**
 
-Prepare public access to both the API and dashboard for grading, using precomputed forecasts and
-existing results where feasible. This requires explicit owner acceptance of a change to ADR-024,
-then a reviewed hosting, artifact, and security implementation plan. Before release, identify the
-minimum approved artifact bundle and which data, historical observations, forecasts, and API
-responses may be exposed; review applicable redistribution and licensing restrictions; and obtain
-explicit project-owner approval of the public content scope. Keep the protected holdout, raw sources,
-credentials, and authorization records out of public artifacts. It is a delivery objective, not an
-unconditional hosting purchase. No public deployment currently exists. On-demand forecasting is not
-a prerequisite.
+The project owner accepted the future objective of two separately reachable public URLs for the
+read-only API and dashboard, using a shared approved immutable bundle and direct Python service calls
+from Streamlit (ADR-030). Milestone A is limited to a local offline controlled-synthetic bundle and
+independent verifier. Public-compatible runtime changes, hosting/security/resource review, exact
+content and rights approval, and the specific deployment/release authorization are later separate
+gates. Render is preferred for assessment, not selected or provisioned. Keep the current Streamlit
+listener on localhost under ADR-024 until a separately authorized release. Keep protected outcomes,
+raw sources, credentials and authorization records out of public artifacts. No public deployment
+currently exists, and this objective does not imply a hosting purchase. On-demand forecasting is
+not a prerequisite.
 
 **OPTIONAL BONUS**
 
@@ -377,8 +379,9 @@ summaries/plots suffice; Evidently is optional only for a demonstrated unmet nee
 **Acceptance / boundary:** Report the recorded final evaluation; no new tuning or repeated selection
 on holdout outcomes. State historical descriptive exposure, short evaluation span, simulation
 assumptions and negative results honestly. Deployment is a course demonstration, not a live
-Rossmann production claim. Public API/dashboard access is a high-priority proposal under ADR-028,
-pending owner approval to supersede ADR-024 and a separate deployment plan.
+Rossmann production claim. The future two-URL public course-demo objective is narrowly accepted in
+ADR-030; Milestone A is synthetic-only. Public runtime, exact content/rights, hosting and release
+remain separately gated, and ADR-024's localhost behavior stays in force until release approval.
 
 ## Phase 6 implementation handoff (historical)
 
