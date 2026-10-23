@@ -14,9 +14,12 @@ localhost-only scope. Phase 13 M1–M3 are integrated through PR #40, but Phase 
 NOT APPROVED; independent M3 review, source preparation, rehearsal, staging, release and later
 milestones retain separate gates. PR #44 integrated CC-02D's gated custodian preparation path, but
 no real-source preparation, STL evidence or public deployment exists. The protected final holdout
-remains unreleased, and Phase 14 is incomplete. Proposed ADR-028 records instructor feedback and a
-high-priority public API/dashboard delivery objective; the owner has not approved it, so ADR-024
-remains authoritative. Phase 5
+remains unreleased, and Phase 14 is incomplete. ADR-030 accepts the future objective of two public
+demo URLs and authorizes only the offline synthetic Milestone A, which remains under independent
+review. ADR-028's scenario-analysis and monitoring proposals remain unaccepted. ADR-024 still governs
+the running application: localhost only until a separately authorized public release. See the
+[public-demo release contract](docs/PUBLIC_DEMO_RELEASE_CONTRACT.md) and
+[active plan](plans/active/public-course-demo.md). Phase 5
 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
@@ -305,8 +308,9 @@ The dashboard binds to `127.0.0.1:8501`. It does not train or infer forecasts, r
 simulation, access the Phase 10 ledger, or evaluate the protected final holdout. The user reported
 PASS on human visual review of all five screens; this acceptance is recorded as user-attested.
 Phase 12 integration and closeout evidence is in the [completed plan](plans/completed/phase-12-streamlit-dashboard.md).
-The instructor prefers public API and dashboard access for grading, but no public deployment exists;
-that proposed scope awaits owner approval to supersede ADR-024.
+ADR-030 accepts the future two-URL objective, but Milestone A is still under independent review and
+no public runtime, listener, bundle publication or deployment exists. The current localhost scope in
+ADR-024 remains effective.
 
 In PowerShell, check process health, list supported cases, and try a bounded forecast or the
 canonical reference inventory case:
@@ -330,9 +334,10 @@ outputs or manifests are absent, catalog reports unavailable resources and a req
 missing artifact returns sanitized `503`; fixture tests still work from a clean checkout. Canonical
 local artifacts are not included in Git. Rossmann Sales are monetary turnover, not physical demand;
 simulated costs do not establish observed inventory or savings. The server binds to `127.0.0.1`;
-no public deployment exists. Public API/dashboard access using precomputed results is proposed as a
-high-priority course-delivery target under ADR-028, pending owner approval to supersede ADR-024 and
-a separate hosting/security plan. See the [Phase 11 handoff](plans/completed/phase-11-application-services.md#phase-11-m4-integration-handoff)
+no public deployment exists. The future API/dashboard objective is narrowly accepted in ADR-030;
+offline synthetic bundle work is the only current milestone, and later runtime, content, hosting,
+security and release steps each remain separately gated. See the [public-demo release contract](docs/PUBLIC_DEMO_RELEASE_CONTRACT.md)
+and [Phase 11 handoff](plans/completed/phase-11-application-services.md#phase-11-m4-integration-handoff)
 for service interfaces, artifact requirements and limitations.
 
 ## Architecture and remaining work
@@ -372,8 +377,8 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   services directly; separate API hosting and Evidently are optional.
 - Phase 12: **COMPLETE**. PR #32 integrated M4 at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`;
   main Quality #103 passed Python 3.12 and 3.14. The approved target remains
-  `http://127.0.0.1:8501` under ADR-024; public access is proposed for both API and dashboard but
-  awaits owner approval. See the [completed plan](plans/completed/phase-12-streamlit-dashboard.md) and
+  `http://127.0.0.1:8501` under ADR-024; the future two-URL objective is accepted in ADR-030, but
+  public runtime and release remain separately gated. See the [completed plan](plans/completed/phase-12-streamlit-dashboard.md) and
   [localhost deployment runbook](docs/DEPLOYMENT_LAN.md).
 - Required next evidence: approve and freeze a development-only scenario-analysis method before
   comparing forecast candidates across Store-level scenarios; separately authorize the CC-02D
@@ -382,8 +387,9 @@ The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining 
   M4, execution gates and the frozen sequential final evaluation remain future work. The protected
   holdout is unreleased and final evaluation has not run. See the
   [active Phase 13 plan](plans/active/phase-13-sequential-final-evaluation.md).
-- Phase 14: report, slides and demonstration after reviewed Phase 13 results; public hosting is a
-  high-priority proposed delivery target, and on-demand inference remains optional.
+- Phase 14: report, slides and demonstration after reviewed Phase 13 results; the future public-demo
+  objective is accepted in ADR-030, with runtime, content, hosting and release still separately
+  gated. On-demand inference remains optional.
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and formally

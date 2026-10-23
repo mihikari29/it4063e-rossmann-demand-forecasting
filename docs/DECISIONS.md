@@ -1039,3 +1039,44 @@ No real-data source/preparation/verification/binding, custody approval, scenario
 L4, Phase 13, public release or deployment is authorized. ADR-028 remains PROPOSED and ADR-024
 remains authoritative. The full course delivery objectives, later real-data WP1 work, human
 ownership review and academic-integrity/AI-assistance disclosures remain required.
+
+## ADR-030 — Narrow Public Course-Demonstration Objective and Synthetic-First Milestone A
+
+**Status: Narrow objective and Milestone A accepted by the project owner through the scoped
+WP2-S1 task on 2026-10-21.** Milestone A implementation remains **IMPLEMENTED / UNDER REVIEW**
+until independent Sol 6.1 review. This record accepts only the matters below and does not accept
+the remaining proposals in ADR-028.
+
+**Decision:** The future course-delivery objective may provide two separately reachable public
+URLs: one read-only FastAPI demonstration and one Streamlit dashboard. They may use the same
+versioned, immutable, explicitly approved demonstration bundle through a typed read-only provider;
+Streamlit continues to call Python application services directly and need not call the API over
+HTTP. Use controlled synthetic content first. A later public profile must be explicit and must not
+silently fall back between the synthetic bundle and canonical local artifacts. Render is the
+preferred hosting candidate for later assessment, subject to resource, security, content and owner
+acceptance; no host or service has been selected for deployment.
+
+The objective is accepted for future planning, not for automatic implementation of later milestones.
+WP2-S1 authorizes only local Milestone A work: a controlled-synthetic release contract, deterministic
+offline bundle builder, standalone verifier and fixture tests. This task does not authorize bundle
+publication, source-derived content or real-data extraction, content redistribution, public
+listeners, Internet exposure, hosting accounts/resources, purchases, deployment, or publication of
+URLs. Milestones B and C require separate authorization. Any public release also requires review of
+the exact content and applicable rights, an independently reviewed implementation/security
+snapshot, and explicit owner authorization for the specific deployment and audience.
+
+ADR-024 remains effective for the existing application: its Streamlit listener stays on localhost,
+and no public release is permitted until a later explicit release authorization. This accepted
+future objective is a narrow exception to ADR-017's earlier delivery sufficiency/optional-API
+hosting direction only if the owner separately authorizes deployment; it does not change current
+runtime behavior. ADR-028's proposed scenario-analysis, monitoring, retraining, cross-model
+inventory, and other methodology clauses remain **PROPOSED / NOT ACCEPTED**. Existing Store × Date
+monetary Sales meaning, forecast algorithms and metrics, development cutoff, protected holdout,
+uncertainty method, inventory method, and Phase 13 authorization gates remain unchanged.
+
+**Consequences and boundary:** Synthetic demonstration data proves only interface behavior and
+fixture arithmetic. It cannot be described as observed Rossmann history, empirical model performance,
+historical model execution, calibrated uncertainty, real quantities or stockouts, savings,
+production readiness, or validated service guarantees. Bundle readiness, process health, and each
+analytical view's availability remain distinct facts. The [WP2 public course-demo plan](../plans/active/public-course-demo.md)
+owns the milestone boundaries; [PROGRESS](PROGRESS.md) records implementation and review state.

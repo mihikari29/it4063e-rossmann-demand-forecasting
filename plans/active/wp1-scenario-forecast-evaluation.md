@@ -1,8 +1,9 @@
 # WP1 — Scenario-Based Forecast Evaluation
 
 **Current state (2026-10-21):** WP1 remains incomplete. Milestone 1 is REVIEWED / INTEGRATED
-through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; WP1-S16 fixture-only Milestone 2
-is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1** on `feat/wp1-fixture-operational-bridge`.
+through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; fixture-only Milestone 2 was
+independently accepted and integrated through PR #51 at
+`a747d7799919497dead9b98bc0498c12115adfc2`.
 L1 was reviewed and integrated through
 PR #46 at `291660108da0c3d91b065a7dba47beabe1926fae`; Quality #149 passed on Python 3.12 and
 3.14. L2 was independently accepted and integrated through PR #47 at
