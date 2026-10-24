@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current implementation and Git state — 2026-10-23
+## Current implementation and Git state — 2026-10-24
 
 | Scope | State | Integration |
 |---|---|---|
@@ -21,7 +21,7 @@
 | CC-02D — minimal custodian execution readiness | **INTEGRATED; real-data operation pending** | PR #44 merged into `main` at `8ad97f8a4d19318b31bba280ee14766c37493a23`; post-merge Quality #145 passed on Python 3.12 and 3.14. The integrated code provides a gated preparation path; no real source access, preparation, binding, STL execution, or findings publication has occurred. See the [runbook](CC-02D_CUSTODIAN_RUNBOOK.md) and [completed task plan](../plans/completed/cc-02d-custodian-execution-readiness.md). |
 | WP0-L1 — instructor feedback alignment | **DOCUMENTATION IMPLEMENTED / INTEGRATED** | PR #45 squash-merged into `main` at `2e57a2e96ea6f01a3d47be192124500011defa91`; Quality #147 passed on Python 3.12/3.14. ADR-028 remains proposed; ADR-024 remains authoritative. See the [completed task plan](../plans/completed/wp0-l1-synchronize-project-state.md). |
 | WP1 — scenario-based forecast evaluation | **L1/L2/L3-F REVIEWED / INTEGRATED; S11 M1 AND S16 M2 REVIEWED / INTEGRATED; WP1 INCOMPLETE** | L1 integrated through PR #46; independently accepted L2 through PR #47 at `29bfd0e0dbf0d42ef94ba5136d25981652921930`; L3-F integrated through PR #48 at `ed2f37cee5a1e7b3901437acf5e643c612868e55`. Milestone 1 was independently accepted and integrated through PR #50 at `8d4f1fb0b6369cf8501c6f87f5c69d88eb566b10`; PR Quality #156 and main Quality #157 passed on Python 3.12 and 3.14. Fixture-only Milestone 2 was accepted in WP1-S17 and integrated through PR #51 at `a747d7799919497dead9b98bc0498c12115adfc2`; PR Quality #158 and post-merge Quality #159 passed on Python 3.12 and 3.14. No real-source operation or scenario analysis has run. ADR-029 remains fixture-only, and WP1-S7-01 remains unresolved under its original contract. See the [active plan](../plans/active/wp1-scenario-forecast-evaluation.md). |
-| Public course demonstration | **Milestone A REVIEWED / INTEGRATED; B1 REVIEWED / INTEGRATED; B2-A REVIEWED / INTEGRATED; B2-B IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1** | WP2-S9 integrated Milestone A through PR #52; WP2-S12 integrated B1 through PR #53; WP2-S15 integrated the accepted B2-A snapshot through PR #54 at `232c7307f75d1ae7906af621853a8753ebe81795`; WP2-S16 implements the separate local B2-B dashboard and resolves WP2-S14-01. Milestone B remains INCOMPLETE; Milestone C, public release and deployment remain gated. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), [WP2-S15 B2-A integration](#wp2-s15-b2-a-git-integration-and-ci-2026-10-23), and [WP2-S16 B2-B implementation and validation](../plans/active/public-course-demo.md#wp2-s16-b2-b-synthetic-streamlit-dashboard-implementation-and-validation-2026-10-23). |
+| Public course demonstration | **Milestone B — INTEGRATED IMPLEMENTATION / CLOSEOUT PENDING** | WP2-S9 integrated Milestone A through PR #52; WP2-S12 integrated B1 through PR #53; WP2-S15 integrated the accepted B2-A snapshot through PR #54 at `232c7307f75d1ae7906af621853a8753ebe81795`; WP2-S21 integrated B2-B through PR #55 at `c78e9e2b1b517d5bb04a7f9ab02ac388c1332afb`; WP2-S22 resolves two MINOR findings pending independent Sol 6.1 review and integration. Milestone B closeout remains pending; Milestone C, public release and deployment remain gated. See the [active plan](../plans/active/public-course-demo.md), [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md), [WP2-S15 B2-A integration](#wp2-s15-b2-a-git-integration-and-ci-2026-10-23), and [WP2-S16 B2-B implementation and validation](../plans/active/public-course-demo.md#wp2-s16-b2-b-synthetic-streamlit-dashboard-implementation-and-validation-2026-10-23). |
 
 ### WP1-S15 / S15-R1 Milestone 1 integration — 2026-10-21
 
@@ -4013,8 +4013,10 @@ passes.
 The permanent API test now filters the reference case to Store 101, asserts only that Store's
 policy-pair detail, then makes a separate unfiltered request and compares exact case-wide aggregate
 rows, populations, numerators and denominators. The filtered adverse Store 303 request receives the
-same aggregate-scope check and retains its unavailable comparison reason. The two parametrized cases
-passed in the final focused run. No API or B1 behavior changed; WP2-S14-01 is resolved.
+same aggregate-scope check. This API test does not assert `difference_unavailable_reason`; the B2-B
+dashboard AppTest checks that policy field, and the service test checks the forecast's
+`availability_reason` for the synthetic fixture input. The two parametrized cases passed in the final
+focused run. No API or B1 behavior changed; WP2-S14-01 is resolved.
 
 ### WP2-S16 B2-B synthetic Streamlit dashboard — 2026-10-23
 
@@ -4044,3 +4046,73 @@ B2-B is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**; overall Milestone B
 The work is uncommitted and unstaged. No commit, push, PR, merge, listener, public bundle release,
 external URL, hosting or deployment occurred. Milestone C remains NOT AUTHORIZED. AppTest does not
 constitute human visual acceptance.
+
+### WP2-S21 B2-B integration and CI — 2026-10-24
+
+PR [#55](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/55) integrated
+the separately scoped B2-B controlled-synthetic Streamlit dashboard. Its original publication
+commit was `a3f0253c8501c98d9e2179d3b99085ea4c7d52fe`; the Python 3.12 AppTest correction was
+`f1f7f8381574ec49b9bd85db9ea37ffc7d073e68`. The final PR CI temporary merge-ref was
+`420eb91f4826b7ba65b7c9fa9fabe79ef7fb3131`, and the squash merge was
+`c78e9e2b1b517d5bb04a7f9ab02ac388c1332afb`.
+
+PR Quality run [#39995414982](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39995414982)
+and post-merge Quality run [#39996210654](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39996210654)
+both succeeded on Python 3.12 and 3.14. Each of the four matrix jobs reported **1,576 passed,
+8 skipped, 1 existing warning**. Earlier failed PR Quality run
+[#39983655453](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/39983655453)
+was superseded by a new successful run on the corrected PR head; the historical failed run was not
+retrospectively changed. Milestone B now has integrated implementations for A, B1, B2-A and B2-B;
+formal closeout remains pending.
+
+### WP2-S22 WP2-S17 MINOR corrections and closeout preparation — 2026-10-24
+
+WP2-S17-01 adds a persistent Inventory Comparison legend in the isolated synthetic dashboard. It
+labels demand, fulfilled, unmet, available target and inventory-state values as
+`synthetic_retail_equivalent_turnover_value`; baseline/forecast cost proxies and signed cost
+differences as `synthetic_cost_proxy_units`; value-fill, stockout-rate proxy, receipt-cycle service
+rate and relative differences as dimensionless ratios; and Store/population counts plus
+population-count denominators as counts. No currency, realized cost or savings claim is implied.
+The existing `Aggregate scope: all_stores_in_case` caption and controlled-synthetic evidence label
+remain visible. Saved values, nulls, unavailable reasons and case-wide aggregation are unchanged.
+
+The new rendered Streamlit AppTest exercises reference, adverse and reference Store-filtered views.
+It asserts both unit labels, dimensionless-ratio language, count semantics, all-Store aggregate
+scope, the persistent synthetic evidence label and no implied currency. The existing unannotated
+`_dashboard_app(services)` helper and early AppTest exception assertion are preserved.
+
+WP2-S17-02 corrects the active-plan statement about the WP2-S14-01 API test. The adverse Store 303
+API request asserts `comparable is False`, null `forecast_minus_baseline_cost`,
+`matched_store_count == 2`, selected-Store-only detail, and exact filtered/unfiltered case-wide
+aggregates including counts, numerators and denominators. It does not directly assert
+`difference_unavailable_reason`. The dashboard AppTest checks that policy field; the service test
+separately checks the forecast's `availability_reason` for the synthetic fixture input. No API
+implementation or regression test was changed.
+
+On the locked local Python 3.14.5 environment, the dashboard suite passed **31 tests** in 63.92
+seconds; dashboard plus public-demo API passed **90 tests** with one existing Starlette/httpx
+deprecation warning in 36.76 seconds; and relevant synthetic service/inventory plus canonical API
+and dashboard regressions passed **184 tests** with the same warning in 58.80 seconds. A locked
+Python 3.12.15 environment also passed dashboard plus public-demo API: **90 passed**, with the same
+existing warning, in 47.10 seconds.
+
+The full fixture suite ran in a detached tracked-only checkout based at
+`c78e9e2b1b517d5bb04a7f9ab02ac388c1332afb`, with the WP2-S22 files copied in and no canonical or
+Rossmann artifacts: **1,579 passed, 8 skipped, 1 existing Starlette/httpx warning** in 341.65
+seconds on Python 3.14.5. Seven symlink tests skipped because Windows denied symlink creation with
+WinError 1314; the optional inventory test skipped because ignored canonical artifacts were absent.
+The numerical synthetic bundle was generated in memory and remained **326,074 bytes** with SHA-256
+`9b7ee60df204d11a4a993a84ceb236c5885c373168b0d6a767c99654683ecfdb`. No bundle or manifest JSON
+was written to the repository or published.
+
+In the isolated checkout, Ruff lint passed; format check found **155 files already formatted**;
+Markdown validation passed for **354 local destinations/anchors across 38 Markdown files**;
+offline `uv lock --check` resolved **109 packages** without a lock change; offline `uv pip check`
+found all **91 installed packages compatible**; and `git diff --check` passed. No dependency or
+lockfile change was made. The sole test warning was the existing Starlette/httpx TestClient
+deprecation.
+
+Milestone B is **INTEGRATED IMPLEMENTATION / CLOSEOUT PENDING**. Both WP2-S17 corrections are
+**IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. The active plan contains a closeout-readiness
+checklist; it remains active and is not archived. No bundle or manifest was published, no human
+visual acceptance is inferred from AppTest, and Milestone C remains separately gated.
