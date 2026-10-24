@@ -494,7 +494,16 @@ def _show_inventory(services: DemoServices, catalog: DemoCatalog) -> None:
     )
     if result is None:
         return
-    st.caption(f"Aggregate scope: {result.aggregate_scope} · units: {catalog.inventory_cost_unit}")
+    st.caption(f"Aggregate scope: {result.aggregate_scope}")
+    st.caption(
+        "Units: demand, fulfilled, unmet, available target and inventory-state values use "
+        "synthetic_retail_equivalent_turnover_value (illustrative monetary-equivalent values; "
+        "no currency is implied). Baseline and forecast cost proxies and signed "
+        "forecast-minus-baseline cost differences use synthetic_cost_proxy_units (not realized "
+        "costs or documented savings). Value-fill rates, stockout-rate proxies, receipt-cycle "
+        "service rates and relative differences are dimensionless ratios. Store/population "
+        "counts and population-count denominators remain counts."
+    )
     st.subheader("All Stores in the selected synthetic case")
     st.dataframe(_records(result.case_level_comparisons), hide_index=True, width="stretch")
     st.subheader(

@@ -91,6 +91,35 @@ def _set_key(app: AppTest, collection_name: str, key: str, value: Any) -> None:
     item.set_value(value).run()
 
 
+@pytest.mark.parametrize(
+    ("case_id", "store_id"),
+    [
+        ("synthetic_demo_reference_20150605", None),
+        ("synthetic_demo_adverse_20150605", None),
+        ("synthetic_demo_reference_20150605", 202),
+    ],
+)
+def test_inventory_screen_renders_truthful_unit_legend(
+    services: DemoServices, case_id: str, store_id: int | None
+) -> None:
+    app = _app(services, "Inventory Comparison")
+    if case_id != "synthetic_demo_reference_20150605":
+        _set_key(app, "selectbox", "demo_inventory_case", case_id)
+    if store_id is not None:
+        _set_key(app, "selectbox", "demo_inventory_store", store_id)
+
+    text = _visible(app)
+    assert not app.exception
+    assert _LABEL in text
+    assert "Aggregate scope: all_stores_in_case" in text
+    assert "synthetic_retail_equivalent_turnover_value" in text
+    assert "synthetic_cost_proxy_units" in text
+    assert "dimensionless ratios" in text
+    assert "population-count denominators remain counts" in text
+    assert "no currency is implied" in text
+    assert "documented savings" in text
+
+
 @pytest.fixture(scope="module")
 def release_bytes() -> tuple[bytes, bytes]:
     return demo_bundle.generate_release_bytes(Path.cwd())

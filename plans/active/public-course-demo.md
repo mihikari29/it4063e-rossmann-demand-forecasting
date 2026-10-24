@@ -1,16 +1,17 @@
 # Public Course Demonstration
 
-**Current state (2026-10-23):** Milestone A is **REVIEWED / INTEGRATED** through PR #52 at
+**Current state (2026-10-24):** Milestone A is **REVIEWED / INTEGRATED** through PR #52 at
 `086c59183e237279a21139a62265e7450890fa63`; B1 is **REVIEWED / INTEGRATED** through PR #53 at
 `a31f9d610ea7922629d24c4b134cd986f634bcb4`. B2-A is **REVIEWED / INTEGRATED** through PR #54 at
-`232c7307f75d1ae7906af621853a8753ebe81795`. WP2-S16 authorizes local B2-B synthetic Streamlit
-dashboard implementation and offline AppTest validation on `feat/public-demo-synthetic-streamlit-dashboard`.
-B2-B is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. Milestone B remains incomplete; Milestone C,
-release, hosting and deployment remain unauthorized under ADR-024 and ADR-030.
+`232c7307f75d1ae7906af621853a8753ebe81795`. B2-B is **REVIEWED / INTEGRATED** through PR #55 at
+`c78e9e2b1b517d5bb04a7f9ab02ac388c1332afb`. Milestone B is **INTEGRATED IMPLEMENTATION / CLOSEOUT
+PENDING**. The WP2-S22 snapshot corrects WP2-S17-01 and WP2-S17-02 and is **IMPLEMENTED / UNDER
+REVIEW — AWAITING SOL 6.1**. Milestone C, release, hosting and deployment remain separately gated
+under ADR-024 and ADR-030.
 
-**Current task branch and base:** `feat/public-demo-synthetic-streamlit-dashboard`, from
-`origin/main` at `232c7307f75d1ae7906af621853a8753ebe81795`. The earlier Milestone A, B1 and B2-A
-branches and review checkpoints below are preserved as history.
+**Current task branch and base:** `fix/public-demo-milestone-b-minor-findings`, from `origin/main`
+at `c78e9e2b1b517d5bb04a7f9ab02ac388c1332afb`. The earlier Milestone A, B1, B2-A and B2-B
+implementation checkpoints below are preserved as history.
 
 ## Accepted objective and fixed boundaries
 
@@ -38,7 +39,7 @@ per-view availability are separate concepts.
 | Milestone | Scope and exit evidence | State |
 |---|---|---|
 | A — Offline controlled-synthetic release candidate | Release contract; exact versioned schema; deterministic builder; bounded canonical JSON manifest and payload; standalone verifier with integrity and semantic checks; focused corruption, content and side-effect tests; ignored local candidate only; independent Sol 6.1 review | **REVIEWED / INTEGRATED through WP2-S8/S9 and PR #52** |
-| B - Explicit public-compatible application profile | B1 typed offline provider and services; B2-A synthetic FastAPI adapter; B2-B separate direct-service Streamlit dashboard; no change to local defaults, canonical reader pins or scientific methods | **B1 and B2-A REVIEWED / INTEGRATED through PR #53 and PR #54. B2-B IMPLEMENTED / UNDER REVIEW awaiting Sol 6.1 under WP2-S16. Overall Milestone B INCOMPLETE.** |
+| B - Explicit public-compatible application profile | B1 typed offline provider and services; B2-A synthetic FastAPI adapter; B2-B separate direct-service Streamlit dashboard; no change to local defaults, canonical reader pins or scientific methods | **INTEGRATED IMPLEMENTATION / CLOSEOUT PENDING. B1, B2-A and B2-B REVIEWED / INTEGRATED through PRs #53-#55. WP2-S22 corrections await independent review and integration.** |
 | C — Staging and public release | Exact-content/rights approval, independent security review, resource/rollback plan and explicit hosting/audience/window authorization; owner-approved bundle hash; staged external checks; release and shutdown record | NOT AUTHORIZED |
 
 ## Milestone A design and acceptance
@@ -411,9 +412,13 @@ human acceptance is inferred from AppTest; independent Sol 6.1 review is the nex
 The reference-case API request now explicitly filters policy-pair detail to Store 101 and asserts
 that this is the only returned detail row. It makes a separate unfiltered request for the same case
 and compares all case-wide aggregate rows plus metric, requested and matched population counts, and
-baseline/forecast numerators and denominators. The adverse-case Store 303 request retains its
-unavailable cost and reason assertions and applies the same filtered-versus-unfiltered aggregate
-check. `tests/test_public_demo_api.py::test_inventory_route_supports_both_cases_and_preserves_case_aggregates`
+baseline/forecast numerators and denominators. The adverse-case Store 303 request asserts
+non-comparability, null forecast-minus-baseline cost and `matched_store_count == 2`; it also
+preserves exact case-wide aggregate rows, population counts, numerators and denominators under Store
+filtering. This API test does not assert `difference_unavailable_reason`. The dashboard AppTest
+separately asserts that displayed policy field, while the service test checks the forecast's
+`availability_reason` for the synthetic fixture input.
+`tests/test_public_demo_api.py::test_inventory_route_supports_both_cases_and_preserves_case_aggregates`
 passed both parametrized cases. This resolves the deferred WP2-S14-01 test gap without changing the
 API or B1 service behavior.
 
@@ -472,3 +477,47 @@ The current branch remains local and uncommitted at base
 `232c7307f75d1ae7906af621853a8753ebe81795`; nothing was staged, pushed or published, and no listener
 was started. B2-B is **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. Milestone B remains incomplete;
 Milestone C, public bundle release, external URLs and deployment are not authorized.
+
+### WP2-S21 B2-B integration and CI — 2026-10-24
+
+PR #55 integrated B2-B. Its publication, Python 3.12 correction, temporary PR merge-ref, squash
+merge, and successful PR/post-merge Quality identities are recorded in the
+[WP2-S21 progress checkpoint](../../docs/PROGRESS.md).
+B2-B is **REVIEWED / INTEGRATED**; this integration does not itself close Milestone B.
+
+### WP2-S22 minor findings and Milestone B closeout preparation — 2026-10-24
+
+WP2-S17-01 is corrected in this local snapshot with a visible Inventory Comparison legend. It
+distinguishes `synthetic_retail_equivalent_turnover_value`, `synthetic_cost_proxy_units`,
+dimensionless ratios, and population counts while retaining the all-Store aggregate-scope caption.
+Rendered AppTest coverage exercises the reference case, adverse case, and Store-filtered view and
+checks the persistent controlled-synthetic evidence label. Existing saved values, nulls, unavailable
+reasons and aggregation behavior remain unchanged.
+
+WP2-S17-02 is corrected in this local snapshot. The WP2-S14-01 description now matches the API test:
+the adverse Store 303 request asserts non-comparability, null forecast-minus-baseline cost,
+`matched_store_count == 2`, and exact case-wide aggregates under Store filtering. It does not assert
+`difference_unavailable_reason`; the dashboard AppTest checks that policy field, and the service
+test separately checks the forecast's `availability_reason`. Both corrections are
+**IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**.
+
+#### Milestone B closeout readiness checklist
+
+This checklist prepares for a later closeout decision; it does not approve closure.
+
+- [x] Milestone A deterministic synthetic bundle and verifier are reviewed and integrated.
+- [x] B1 pinned immutable synthetic provider and services are reviewed and integrated.
+- [x] B2-A isolated synthetic FastAPI adapter is reviewed and integrated.
+- [x] B2-B isolated five-screen Streamlit dashboard is reviewed and integrated.
+- [x] Approved controlled-synthetic provenance remains in use.
+- [x] Python 3.12 and 3.14 Quality CI passed for integrated B2-B.
+- [x] WP2-S14-01 is resolved.
+- [ ] WP2-S17-01 correction awaits independent review and integration.
+- [ ] WP2-S17-02 correction awaits independent review and integration.
+- [ ] Human visual review has not yet been established as completed.
+- [x] Generated bundle and manifest remain unpublished.
+- [x] Milestone C remains separately gated.
+
+**Milestone B — INTEGRATED IMPLEMENTATION / CLOSEOUT PENDING.** The active plan remains open until
+the two corrections receive independent review and integration and the required closeout evidence
+is explicitly accepted. AppTest is not human visual acceptance.
