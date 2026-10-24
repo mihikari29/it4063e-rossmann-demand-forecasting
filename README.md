@@ -1,27 +1,170 @@
 # Retail Demand Forecasting for Inventory Optimization (FMCG)
 
-IT4063E Business Analytics project: forecast Rossmann monetary `Sales` at **Store × Date** for
-14 days, then demonstrate inventory-value decisions under explicit simulated assumptions.
-It provides no SKU forecasts, physical demand, real inventory data or verified Rossmann savings.
+**IT4063E – Introduction to Business Analytics · Semester 20261**
+
+Forecast each Rossmann store's daily monetary `Sales` at **Store × Date** over a primary
+**14-calendar-day horizon (H14)**, then compare inventory-value decisions under documented
+synthetic operating assumptions. The business question is how expected turnover and uncertainty
+inform conditional service/cost trade-offs.
+
+Rossmann supplies observed monetary turnover, without product quantities, SKU-level sales, real
+inventory or observed stockouts. Synthetic lead times, stock, costs and equivalent units support
+simulation; they cannot establish actual procurement needs or historical savings. The
+instructor-aligned Store-level scope is recorded in ADR-028; its additional methodological
+proposals remain unaccepted.
+
+[Proposal](docs/PROPOSAL.md) · [Project plan](docs/PROJECT_PLAN.md) ·
+[Decisions](docs/DECISIONS.md) · [Progress and results](docs/PROGRESS.md) ·
+[Data Dictionary](docs/DATA_DICTIONARY.md) · [Local setup](#environment-and-quick-start)
 
 ## Current state
 
-`main` has Phases 0–12 formally complete. Phase 11 PR #26 was squash-merged at
-`725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; M1-M4 are accepted and findings M3-01, M4-01 and
-FR-01 are resolved. See the [completed Phase 11 plan](plans/completed/phase-11-application-services.md)
-and [PROGRESS](docs/PROGRESS.md) for closeout evidence. Phase 12 is complete under ADR-024's
-localhost-only scope. Phase 13 M1–M3 are integrated through PR #40, but Phase 13 remains PLANNED /
-NOT APPROVED; independent M3 review, source preparation, rehearsal, staging, release and later
-milestones retain separate gates. PR #44 integrated CC-02D's gated custodian preparation path, but
-no real-source preparation, STL evidence or public deployment exists. The protected final holdout
-remains unreleased, and Phase 14 is incomplete. ADR-030 accepts the future objective of two public
-demo URLs. Milestone A, B1 and B2-A are integrated; B2-B is implemented locally and awaits independent
-Sol 6.1 review. Overall Milestone B remains incomplete, and Milestone C, public release and deployment
-are not authorized. ADR-028's scenario-analysis and monitoring proposals remain unaccepted. ADR-024
-still governs the running application: localhost only until a separately authorized public release. See the
-[public-demo release contract](docs/PUBLIC_DEMO_RELEASE_CONTRACT.md) and
-[active plan](plans/active/public-course-demo.md). Phase 5
-additive Holt-Winters
+Status as recorded on **2026-10-24**; [PROGRESS](docs/PROGRESS.md) owns detailed evidence.
+Implemented components and accepted methods do not by themselves complete course delivery.
+
+| Workstream | Verified state | Remaining boundary |
+|---|---|---|
+| Forecasting and application core | Phases 0–12 COMPLETE; selected Global LightGBM trial A / 180 rounds; accepted Fit B uncertainty frozen | Existing API/dashboard use localhost under ADR-024 |
+| Scenario evaluation (WP1) | L1/L2/L3-F and fixture-only Milestones 1/2 REVIEWED / INTEGRATED | No real-data scenario analysis; real inputs, volume segmentation and L4 execution remain gated |
+| Controlled-synthetic demonstration | A, B1, B2-A and B2-B integrated through PRs #52–#55; WP2-S22 corrections present on current `origin/main` | Milestone B INTEGRATED IMPLEMENTATION / CLOSEOUT PENDING; independent corrective review and formal closeout not recorded |
+| Final evaluation and monitoring | Phase 13 M1–M3 integrated through PR #40; phase PLANNED / NOT APPROVED | Independent M3 review, source preparation, rehearsal, staging, release, M4 and later gates; final replay has not run |
+| Public delivery and reporting | ADR-030 accepts the future two-URL objective | No public deployment or live public URL; Milestone C unauthorized; Phase 14 incomplete |
+
+The protected final period **2015-07-04 through 2015-07-31 remains unreleased**. Earlier
+full-source descriptive exposure is disclosed in [EDA findings](docs/EDA_FINDINGS.md); it does not
+authorize new target inspection or tuning. CC-02/CC-02D readiness code is integrated, but no real
+custodian preparation, development bundle, STL decomposition or published STL findings exist.
+Git places the minor corrections at `a8edc487`; the older pending-integration wording in PROGRESS
+and the public-demo plan is a recorded checkpoint, not evidence of independent acceptance.
+
+## Project Requirements and Deliverables
+
+The assignment requires all eight modules, Rossmann as the base dataset, and documented synthetic
+operational/supply-chain data. Illustrative synthetic fields do not require fabricating every
+example field or product-level observation.
+
+| Assignment module | Existing capability and evidence | Remaining work / acceptance gap |
+|---|---|---|
+| 1. Business Understanding and Data Generation | [Proposal](docs/PROPOSAL.md), [Dictionary](docs/DATA_DICTIONARY.md), completed [Phase 9 generator](plans/completed/phase-9-synthetic-inventory.md) | Maintain assumption/provenance disclosure in final business interpretation |
+| 2. Exploratory Data Analysis | Source-faithful preparation, notebooks and [descriptive findings](docs/EDA_FINDINGS.md) | Separately authorized CC-02 source/provider/STL/findings operations; no real STL evidence yet |
+| 3. Data Cleaning | [Validation evidence](docs/DATA_VALIDATION.md), sparse dates and source nulls preserved | Document limitations in final report; no unsupported gap filling or anomaly correction |
+| 4. Feature Engineering | Frozen 29-predictor [Feature Contract](docs/FEATURE_CONTRACT.md), exact-calendar lags and recursive history APIs | Preserve origin-time availability assumptions and approved schema |
+| 5. Model Development | Three-model development comparison, accepted selection, daily/cumulative uncertainty and [inventory simulation](plans/completed/phase-10-inventory-simulation.md) | Real-data WP1 scenario comparisons and separately authorized frozen final evaluation |
+| 6. Model Deployment | Shared services, local read-only FastAPI, five-screen Streamlit, offline synthetic adapters | Two accessible public URLs after content, security, hosting and explicit release approval |
+| 7. Model Monitoring | Integrity checks and accepted ADR-026 descriptive final-replay design | Execute authorized replay and deliver monitoring evidence; additional drift/trigger methods need approval and implementation |
+| 8. Final Report and Presentation | Versioned methodology, code, results and review history | Consolidated PDF, slides and demonstration after reviewed final evidence |
+
+Final delivery checklist:
+
+- [x] Source code on [GitHub](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting), with reproducible local commands.
+- [x] [Data Dictionary](docs/DATA_DICTIONARY.md) covering current real, engineered and simulated fields; update for later approved outputs.
+- [ ] Publicly accessible, read-only FastAPI demonstration URL — **pending**.
+- [ ] Publicly accessible Streamlit dashboard URL — **pending**.
+- [ ] Monitoring report or dashboard with chronological errors, availability and simulated business interpretation — **pending**.
+- [ ] Final PDF report — **pending**.
+- [ ] Presentation slides — **pending**.
+- [ ] Final live or recorded demonstration — **pending**; accepted local UI review is narrower evidence.
+
+## System architecture
+
+```text
+Immutable Rossmann sources -> validation/preparation -> point-in-time features
+  -> Seasonal Naive / additive Holt-Winters / global LightGBM
+  -> development comparison + selected recipe + daily/cumulative uncertainty
+Synthetic operating scenarios -------------------------> inventory-value simulation
+Pinned development artifacts -> shared Python services -> local FastAPI / Streamlit
+
+Separate controlled-synthetic bundle -> verified demonstration services
+                                    -> synthetic FastAPI / direct-service Streamlit
+Frozen final protocol -> authorized sequential replay -> monitoring + final report
+```
+
+FastAPI and Streamlit reuse Python services; Streamlit calls them directly without requiring HTTP
+communication with the API. Precomputed outputs suffice for demonstration. On-demand inference is
+optional and is not an existing application capability. The controlled-synthetic bundle illustrates
+interfaces and behavior; it is not Rossmann-derived analytical evidence or a fitted model result.
+
+## Model comparison and scenario analysis
+
+The accepted ladder is **Seasonal Naive → additive Holt-Winters → global recursive LightGBM**.
+ADR-020's development-only selection chose `global_lightgbm_gbdt_regression_l1`, trial A at exactly
+180 rounds. Comparisons retain the three approved chronological H14 origins, observed source
+`Open=1` eligibility, primary MAE, supplementary RMSE/cautious MAPE/WAPE and explicit forecast
+availability. Future actual Sales and Customers never enter recursive prediction. An approved
+opening schedule routes operational outputs after the full raw path; Open remains outside the
+predictor matrix. Operational routing requires a supplied/planned or explicitly assumed origin-known
+schedule, with unknown values unresolved. Protected future actual Open cannot substitute for a plan.
+
+Required [WP1 scenario evaluation](plans/active/wp1-scenario-forecast-evaluation.md) compares the
+same candidates on identical eligible/available rows at the same origins, with segment counts,
+denominators, missing predictions and failure cases. Fixture-tested L2 supports origin,
+horizon/week blocks, weekday and optional Promo, StoreType, Assortment and holiday metadata views;
+the current fixture provider enables Promo only. Its MAE/RMSE/WAPE and directional summaries do not
+add a new MAPE contract. Competition strata, development-only volume cohorts, metadata sources and
+additional methods require their applicable design/input approvals; volume segmentation remains
+blocked. No real-data scenario result exists. LightGBM need not win every stratum. Synthetic
+inventory stresses remain separate; cross-model inventory simulation is optional bonus work.
+See the [proposal](docs/PROPOSAL.md) for proposed analytical commitments and pending decisions.
+
+## Inventory simulation interpretation
+
+The completed Phase 9 generator supplies reproducible synthetic lead times, starting stock,
+service targets and costs. Phase 10 compares historical-mean and frozen LightGBM standing targets
+under common inputs. Daily review advances a simulated order queue and lost-sales state against
+targets fixed once at origin; it supplies no continuously refreshed protection-period forecast.
+
+Daily two-sided prediction intervals and one-sided cumulative protection bounds are distinct;
+daily upper endpoints cannot be summed. Stock, orders and demand use retail-equivalent monetary
+value; costs and equivalent units are synthetic. The accepted development comparison found higher
+simulated holding-plus-shortfall cost for the forecast policy in the reported synthetic-base and
+historical-reference cases; unfavorable findings remain valid. Canonical evidence is in
+[PROGRESS](docs/PROGRESS.md) and the [Phase 10 plan](plans/completed/phase-10-inventory-simulation.md).
+Phase 13's accepted A-bounded scope retains two independent origin-frozen H14 episodes, with no
+claim of continuous rolling 28-day inventory validation, calibrated later-review suffixes or actual
+SKU procurement capability.
+
+## Monitoring and retraining review
+
+| Dimension | Commitment and current boundary |
+|---|---|
+| Data quality | Schema, duplicate Store-Date keys, nulls, missing dates, invalid values, forecast availability and unresolved operational inputs. Validation/integrity checks exist; ADR-026 selects deterministic final-replay alerts. |
+| Data characteristics / drift | Descriptive feature, Sales-history, Promo and Store-segment shifts. Additional statistical drift detection/reference rules remain proposed. |
+| Forecast performance | Chronological MAE, cautious MAPE, WAPE, bias where supported, forecast availability and empirical interval coverage, scored only after actuals become available. Final-replay monitoring has not run. |
+| Simulated business | Stockout-rate proxy, value fill rate, completed positive-demand receipt-cycle service proxy and holding/shortfall costs, with denominators; these are simulations, never observed savings. |
+
+ADR-026 selects daily and trailing 7/14-calendar-day descriptive summaries by origin/horizon,
+plus deterministic integrity/data-quality alerts. It selects no statistical drift, error,
+interval-coverage or service alarm thresholds. The [proposal](docs/PROPOSAL.md) adds a concrete
+**proposed, unvalidated operational trigger policy** using development-only references, explicit
+windows/support floors and persistent deterioration, with warning, unavailable-evidence and
+human-review-required states. Those parameters and additional methods need a new approved decision
+and implementation; ADR-028 remains proposed. Automatic retraining is unnecessary. No triggered
+retraining or adaptive model/policy/interval changes are permitted in frozen Phase 13. A 28-day
+replay cannot establish persistent production drift.
+
+## API/dashboard demonstration status
+
+Final delivery commits to **one public read-only FastAPI URL and one public Streamlit URL** under
+ADR-030's narrow objective. Both are **pending**; no live public link exists to list here. ADR-030
+allows a narrow exception to ADR-017's optional API-hosting direction only upon separately
+authorized deployment. ADR-024 still governs current localhost operation. See the
+[release contract](docs/PUBLIC_DEMO_RELEASE_CONTRACT.md) and
+[active public-demo plan](plans/active/public-course-demo.md).
+
+The canonical local app reads bounded history and pinned Rossmann-derived development artifacts.
+The separate integrated synthetic API/dashboard consume an immutable controlled-synthetic bundle;
+their local behavior does not prove historical accuracy, calibrated uncertainty or real inventory.
+Public runtime/listener changes, exact bundle/content and rights approval, independent security
+review, hosting/resource/rollback assessment and explicit owner release authorization remain gates.
+Possible later source-derived public content needs separate provenance, rights and release approval.
+Raw sources, protected outcomes, credentials and authorization records stay out of public bundles.
+
+## Development integration history
+
+<details>
+<summary>Expand accepted development results and integration evidence</summary>
+
+Phase 5 additive Holt-Winters
 was integrated with the architecture/governance review by [PR #7](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/7)
 at squash-merge commit `76707a03b7d10dbaa79d3ef26b39e31994431d70`; its formal closeout preserves
 the development-only results and does not evaluate the final holdout. Phase 6's approved global
@@ -72,6 +215,8 @@ merge at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`; M1-M4 are accepted and M3-0
 are resolved. Its [completed plan](plans/completed/phase-11-application-services.md) records the
 formal closeout. The protected final holdout remains unreleased.
 
+</details>
+
 ## Environment and quick start
 
 Python **3.12–3.14** is supported; **3.14** is the reference environment. Install pinned
@@ -87,15 +232,20 @@ On macOS/Linux use `source .venv/bin/activate`. Both Python 3.12 and 3.14 passed
 in isolated locked Windows environments. `pyproject.toml` is the hand-maintained dependency source;
 `uv.lock` pins resolved packages/hashes. The optional `api` extra installs FastAPI, Uvicorn and the
 HTTP test client for the local adapter and its fixture tests. The optional `dashboard` extra installs
-Streamlit for the M1 dashboard and AppTest suite. Neither extra is a core forecasting dependency.
+Streamlit for the dashboard and AppTest suite. Neither extra is a core forecasting dependency.
 Add `--extra acquisition` to sync only if using Kaggle API; manual acquisition needs no credentials
 in this repo. See [workflow](docs/WORKFLOW.md) for lock updates, CI, branch lifecycle and contribution
 authority.
 
+<details>
+<summary>Expand data-pipeline commands and detailed development evidence</summary>
+
 ## Data setup and commands
 
-Obtain official Kaggle files through the [acquisition guide](docs/DATA_ACQUISITION.md), preserve
-them under `data/raw/rossmann/`, then validate and prepare:
+These are reproducibility references for their separately authorized scopes, not permission to
+access protected data. They were not executed for this documentation task. Obtain official Kaggle
+files through the [acquisition guide](docs/DATA_ACQUISITION.md), preserve them under
+`data/raw/rossmann/`, then validate and prepare only within the applicable authorization:
 
 ```powershell
 python scripts/validate_data.py --report reports/validation/rossmann.json
@@ -110,7 +260,9 @@ Preparation retains source rows/nulls, asserts many-to-one metadata joins, and w
 train/test Parquet. Feature artifacts use the frozen 29-predictor
 [contract](docs/FEATURE_CONTRACT.md). Historical feature rows are for fitting through an origin;
 validation-target lags must be rebuilt recursively. Default Kaggle inference uses origin July 31
-and must not be reused as development inference.
+and must not be reused as development inference. Source validation, preparation and default feature
+generation have broader historical contact than the development forecast runners; this command
+list does not authorize inspection or regeneration of protected-period data.
 
 Forecast runners apply the 2015-07-03 label ceiling at read time and use the three approved
 14-day windows. Phase 6's LightGBM runner saves ignored artifacts under `data/processed/lightgbm/`
@@ -272,6 +424,8 @@ accepted, findings M3-01, M4-01 and FR-01 are resolved, and post-merge Quality #
 3.12 and 3.14. The [completed Phase 11 plan](plans/completed/phase-11-application-services.md)
 records the formal closeout. The protected final holdout remains unreleased.
 
+</details>
+
 ## Phase 11 local/demo API
 
 The read-only FastAPI adapter exposes the accepted M2 services through seven GET routes. Fixture
@@ -288,6 +442,29 @@ Start the local server from the repository root:
 ```powershell
 uv run --locked --extra dev --extra api python -m uvicorn rossmann_forecasting.app.api:app --host 127.0.0.1 --port 8000
 ```
+
+In PowerShell, check process health, list supported cases, and try a bounded forecast or the
+canonical reference inventory case:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/catalog
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/forecasts?store_id=1&forecast_origin=2015-06-19"
+Invoke-RestMethod "http://127.0.0.1:8000/api/v1/inventory?case_id=synthetic_base-20150605-r00--reference"
+```
+
+Portable shells can use `curl` with the same URLs. Stop Uvicorn with **Ctrl+C**.
+
+The seven GET routes are `/health`, `/api/v1/catalog`, `/api/v1/forecasts`,
+`/api/v1/uncertainty`, `/api/v1/model-comparison`, `/api/v1/inventory`, and `/api/v1/history`.
+They read pinned development results or bounded historical Sales through shared services, adding
+no inference or simulation. Historical access ends 2015-07-03. Error bodies use stable sanitized
+JSON codes. Health `200` reports process responsiveness, not artifact integrity. Missing ignored
+canonical Phase 7–10 artifacts make catalog resources unavailable and dependent requests return
+sanitized `503`; fixture tests still work from a clean checkout. Canonical artifacts are not in Git.
+The server binds to `127.0.0.1`; public delivery remains gated. See the
+[Phase 11 handoff](plans/completed/phase-11-application-services.md#phase-11-m4-integration-handoff)
+for service interfaces, artifact requirements and limitations.
 
 ## Phase 12 dashboard
 
@@ -309,9 +486,10 @@ The dashboard binds to `127.0.0.1:8501`. It does not train or infer forecasts, r
 simulation, access the Phase 10 ledger, or evaluate the protected final holdout. The user reported
 PASS on human visual review of all five screens; this acceptance is recorded as user-attested.
 Phase 12 integration and closeout evidence is in the [completed plan](plans/completed/phase-12-streamlit-dashboard.md).
-ADR-030 accepts the future two-URL objective. Milestone A, B1 and B2-A are integrated, while B2-B is
-implemented and awaiting independent review. No public runtime, listener, bundle publication or
-deployment exists. The current localhost scope in ADR-024 remains effective.
+ADR-030 accepts the future two-URL objective. Milestone A, B1, B2-A and B2-B are integrated.
+Milestone B closeout is pending; WP2-S22 corrections are present on `origin/main`, while
+independent corrective review and formal closeout are not recorded.
+No public runtime, listener, bundle publication or deployment exists. ADR-024 remains effective.
 
 ### Controlled-synthetic course dashboard (local only)
 
@@ -331,40 +509,12 @@ or the fixed local release is unavailable or invalid. Every screen labels these 
 synthetic evidence; they are not observed Rossmann performance. This local entrypoint does not grant
 authority to publish the bundle, expose a public URL or deploy a service.
 
-In PowerShell, check process health, list supported cases, and try a bounded forecast or the
-canonical reference inventory case:
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/health
-Invoke-RestMethod http://127.0.0.1:8000/api/v1/catalog
-Invoke-RestMethod "http://127.0.0.1:8000/api/v1/forecasts?store_id=1&forecast_origin=2015-06-19"
-Invoke-RestMethod "http://127.0.0.1:8000/api/v1/inventory?case_id=synthetic_base-20150605-r00--reference"
-```
-
-Portable shells can use `curl` with the same URLs. Stop Uvicorn with **Ctrl+C**.
-
-The routes are `/health`, `/api/v1/catalog`, `/api/v1/forecasts`, `/api/v1/uncertainty`,
-`/api/v1/model-comparison`, `/api/v1/inventory`, and `/api/v1/history`. They read pinned
-development results or bounded historical Sales through the shared services; the adapter adds no
-inference or simulation. Inventory values remain synthetic monetary comparisons, and historical
-access ends 2015-07-03. Error bodies use stable sanitized JSON codes. Health `200` reports only that
-the process responds; it does not certify artifact integrity. If ignored canonical Phase 7–10
-outputs or manifests are absent, catalog reports unavailable resources and a request requiring a
-missing artifact returns sanitized `503`; fixture tests still work from a clean checkout. Canonical
-local artifacts are not included in Git. Rossmann Sales are monetary turnover, not physical demand;
-simulated costs do not establish observed inventory or savings. The server binds to `127.0.0.1`;
-no public deployment exists. The future API/dashboard objective is narrowly accepted in ADR-030;
-offline synthetic bundle work is the only current milestone, and later runtime, content, hosting,
-security and release steps each remain separately gated. See the [public-demo release contract](docs/PUBLIC_DEMO_RELEASE_CONTRACT.md)
-and [Phase 11 handoff](plans/completed/phase-11-application-services.md#phase-11-m4-integration-handoff)
-for service interfaces, artifact requirements and limitations.
-
 ## Architecture and remaining work
 
 Implemented packages: `data/` (provenance/preparation), `analysis/` (descriptive EDA),
 `features/` (shared static/history contract), `forecasting/` (baselines/evaluation/runners and
-development-only model selection), and `inventory/` (Phase 9 origin-safe scenarios and the reviewed
-Phase 10 policy simulator).
+development-only model selection), `inventory/` (Phase 9 origin-safe scenarios and the reviewed
+Phase 10 policy simulator), and `app/` (shared services and thin adapters).
 Thin command scripts expose reusable logic; notebooks are exploration/presentation.
 
 **WP1-L3-F is fixture-only test support, not a production input path.**
@@ -375,40 +525,26 @@ Output limits are checked after Arrow materialization; there is no hard peak-mem
 erroneous fixtures may exhaust memory or terminate the process. WP1-S7-01 remains
 **UNRESOLVED UNDER ORIGINAL CONTRACT — RESTRICTED FIXTURE CONTRACT APPROVED** under
 [ADR-029](docs/DECISIONS.md#adr-029--wp1-l3-f-restricted-trusted-fixture-contract).
-L3-F remains IMPLEMENTED / UNDER REVIEW; hashes, receipts and synthetic bindings grant no real-source
+L3-F is REVIEWED / INTEGRATED; hashes, receipts and synthetic bindings grant no real-source
 access, L4 execution or publication authority. Real WP1 inputs and analysis remain separately gated;
 passing fixture tests does not establish completion of the course deliverables.
 
-The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and groups remaining milestones:
+The [roadmap](docs/PROJECT_PLAN.md) keeps Phase 0–14 IDs and their dependencies. Remaining work is:
 
-- Phases 6–7: complete; ADR-020's development-only decision selected the frozen LightGBM method
-  for the offline CPU course demonstration.
-- Phase 8: **COMPLETE** after PR #15/#16 integration, independent results acceptance and explicit
-  closeout. Fit B values are frozen for the canonical run; cumulative tables support approved
-  origin-anchored prefixes only.
-- Phase 9: **COMPLETE**; the accepted generator creates exogenous synthetic scenario inputs only.
-  See the [completed plan](plans/completed/phase-9-synthetic-inventory.md).
-- Phase 10: COMPLETE following integration of closeout PR #25 into `main`; its [completed design,
-  implementation and closeout record](plans/completed/phase-10-inventory-simulation.md) is preserved
-  in the completed plan.
-- Phase 11: **COMPLETE**; the [completed plan](plans/completed/phase-11-application-services.md)
-  records the shared Python services and thin local/demo FastAPI adapter. Streamlit calls the same
-  services directly; separate API hosting and Evidently are optional.
-- Phase 12: **COMPLETE**. PR #32 integrated M4 at `5527e780d1a59108c041bb4ca33a32dbb3bc3aca`;
-  main Quality #103 passed Python 3.12 and 3.14. The approved target remains
-  `http://127.0.0.1:8501` under ADR-024; the future two-URL objective is accepted in ADR-030, but
-  public runtime and release remain separately gated. See the [completed plan](plans/completed/phase-12-streamlit-dashboard.md) and
-  [localhost deployment runbook](docs/DEPLOYMENT_LAN.md).
-- Required next evidence: approve and freeze a development-only scenario-analysis method before
-  comparing forecast candidates across Store-level scenarios; separately authorize the CC-02D
-  source/preparation/STL/finding steps. Cross-model inventory simulation is optional.
-- Phase 13: M1–M3 are integrated through PR #40; the phase remains PLANNED / NOT APPROVED. M3 review,
-  M4, execution gates and the frozen sequential final evaluation remain future work. The protected
-  holdout is unreleased and final evaluation has not run. See the
-  [active Phase 13 plan](plans/active/phase-13-sequential-final-evaluation.md).
-- Phase 14: report, slides and demonstration after reviewed Phase 13 results; the future public-demo
-  objective is accepted in ADR-030, with runtime, content, hosting and release still separately
-  gated. On-demand inference remains optional.
+- Authorize safe real-data WP1 inputs and frozen scenario analysis; resolve applicable
+  competition/volume designs without changing accepted Phase 7 selection.
+- Separately authorize CC-02D source/preparation/provider/STL/findings operations.
+- Complete [Phase 13](plans/active/phase-13-sequential-final-evaluation.md) independent M3 review,
+  readiness, rehearsal, staging, resources, release and later milestones before frozen final replay.
+- Close public-demo Milestone B and obtain Milestone C content/security/hosting/release approvals
+  before delivering the two public URLs. The local Phase 12 implementation remains COMPLETE under
+  ADR-024; its [completed plan](plans/completed/phase-12-streamlit-dashboard.md) preserves PR #32,
+  merge `5527e780d1a59108c041bb4ca33a32dbb3bc3aca` and Quality #103 evidence.
+- Approve and implement any additional drift or retraining-review methods, then consolidate
+  reviewed analytical results, monitoring, PDF, slides and demonstration in Phase 14.
+
+These commitments authorize no source operation, holdout release, retraining or public deployment.
+On-demand inference, cross-model inventory simulation and Evidently remain optional.
 
 The [historical Phase 6 implementation handoff](docs/PROJECT_PLAN.md#phase-6-implementation-handoff-historical)
 records the inputs, origins, metrics, artifacts and tests used. Phases 5–9 are integrated and formally
@@ -438,7 +574,7 @@ docs/               business intent, contracts, decisions and evidence
 plans/active/       current scoped plans awaiting their completion boundary
 plans/completed/    preserved historical execution records
 scripts/            pipeline entry points and repository checks
-src/rossmann_forecasting/{data,analysis,features,forecasting,inventory}/
+src/rossmann_forecasting/{data,analysis,features,forecasting,inventory,app}/
 notebooks/          thin descriptive presentation
 tests/              constructed-fixture behavioral tests
 pyproject.toml      package/tool configuration
@@ -456,6 +592,12 @@ Sales turnover reflects prices/promotions and may not reveal unconstrained deman
 values, costs, equivalent units, stockouts and policy benefits are simulated. Three late-season
 windows do not establish year-round robustness; pooled empirical intervals do not guarantee each
 store's service level. Fair negative results or retaining the baseline are valid project outcomes.
+
+Earlier full-source validation/EDA included the later holdout dates. Subsequent learned references,
+cohorts, tuning and calibration must use eligible development/origin history. Final evaluation is
+separately gated and is not a pristine unseen-label experiment. Synthetic interface illustrations
+cannot replace real analytical evidence. AI-assisted implementation/review does not establish
+human authorship or course compliance; team ownership and disclosure obligations remain.
 
 Start with the [proposal](docs/PROPOSAL.md), [roadmap](docs/PROJECT_PLAN.md),
 [decisions](docs/DECISIONS.md), [progress](docs/PROGRESS.md), [agent contract](AGENTS.md),

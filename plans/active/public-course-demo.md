@@ -5,13 +5,24 @@
 `a31f9d610ea7922629d24c4b134cd986f634bcb4`. B2-A is **REVIEWED / INTEGRATED** through PR #54 at
 `232c7307f75d1ae7906af621853a8753ebe81795`. B2-B is **REVIEWED / INTEGRATED** through PR #55 at
 `c78e9e2b1b517d5bb04a7f9ab02ac388c1332afb`. Milestone B is **INTEGRATED IMPLEMENTATION / CLOSEOUT
-PENDING**. The WP2-S22 snapshot corrects WP2-S17-01 and WP2-S17-02 and is **IMPLEMENTED / UNDER
-REVIEW — AWAITING SOL 6.1**. Milestone C, release, hosting and deployment remain separately gated
-under ADR-024 and ADR-030.
+PENDING**. WP2-S22's corrections for WP2-S17-01 and WP2-S17-02 are **IMPLEMENTATION INTEGRATED**
+in `origin/main` at `a8edc48747db566c02d3276ce24d662f678a87c4`; independent Sol 6.1 acceptance
+and Milestone B closeout are not recorded. Milestone C, release, hosting and deployment remain
+separately gated under ADR-024 and ADR-030.
 
-**Current task branch and base:** `fix/public-demo-milestone-b-minor-findings`, from `origin/main`
-at `c78e9e2b1b517d5bb04a7f9ab02ac388c1332afb`. The earlier Milestone A, B1, B2-A and B2-B
-implementation checkpoints below are preserved as history.
+**WP2-S22 implementation branch and base (historical):**
+`fix/public-demo-milestone-b-minor-findings`, from `origin/main` at
+`c78e9e2b1b517d5bb04a7f9ab02ac388c1332afb`. Dated implementation checkpoints below preserve
+their original pre-integration status; the current summary above owns this plan's present state.
+
+**Delivery handoff:** The two public demonstration URLs are P0 deliverables in the
+[remaining delivery roadmap](../../docs/PROJECT_PLAN.md#remaining-delivery-roadmap).
+Next is independent Sol 6.1 review of the integrated WP2-S22 corrections, then evidenced Milestone B
+closeout. Milestone C still requires exact content/rights, security, resource/rollback and specific
+owner release approvals before staging or deployment. This workstream can progress independently
+of real-data WP1/Phase 13 operations; synthetic behavior does not substitute for their evidence.
+P1 supporting quality and P2 optional inference follow the roadmap's priority policy; on-demand
+inference is not a deployment prerequisite. ADR-024's localhost boundary remains effective.
 
 ## Accepted objective and fixed boundaries
 
@@ -39,7 +50,7 @@ per-view availability are separate concepts.
 | Milestone | Scope and exit evidence | State |
 |---|---|---|
 | A — Offline controlled-synthetic release candidate | Release contract; exact versioned schema; deterministic builder; bounded canonical JSON manifest and payload; standalone verifier with integrity and semantic checks; focused corruption, content and side-effect tests; ignored local candidate only; independent Sol 6.1 review | **REVIEWED / INTEGRATED through WP2-S8/S9 and PR #52** |
-| B - Explicit public-compatible application profile | B1 typed offline provider and services; B2-A synthetic FastAPI adapter; B2-B separate direct-service Streamlit dashboard; no change to local defaults, canonical reader pins or scientific methods | **INTEGRATED IMPLEMENTATION / CLOSEOUT PENDING. B1, B2-A and B2-B REVIEWED / INTEGRATED through PRs #53-#55. WP2-S22 corrections await independent review and integration.** |
+| B - Explicit public-compatible application profile | B1 typed offline provider and services; B2-A synthetic FastAPI adapter; B2-B separate direct-service Streamlit dashboard; no change to local defaults, canonical reader pins or scientific methods | **INTEGRATED IMPLEMENTATION / CLOSEOUT PENDING. B1, B2-A and B2-B REVIEWED / INTEGRATED through PRs #53-#55. WP2-S22 corrections integrated at `a8edc48747db566c02d3276ce24d662f678a87c4`; independent Sol 6.1 acceptance and closeout remain unrecorded.** |
 | C — Staging and public release | Exact-content/rights approval, independent security review, resource/rollback plan and explicit hosting/audience/window authorization; owner-approved bundle hash; staged external checks; release and shutdown record | NOT AUTHORIZED |
 
 ## Milestone A design and acceptance

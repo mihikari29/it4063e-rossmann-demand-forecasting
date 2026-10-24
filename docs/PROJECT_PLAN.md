@@ -6,8 +6,8 @@ a milestone, not a requirement for a separate plan, branch, PR, or closeout cere
 
 ## Execution packages and gates
 
-Preserve Phase 0–14 IDs for auditability; do not renumber completed work. Organize the remaining
-work into four manageable packages:
+Preserve Phase 0–14 IDs for auditability; do not renumber completed work. The historical milestone
+groups remain useful for traceability; current remaining work is in the delivery matrix below:
 
 | Package | Milestones | Exit evidence |
 |---|---|---|
@@ -16,79 +16,73 @@ work into four manageable packages:
 | Usable demonstration | 11–13 | Shared services/API/UI, frozen protocol, one sequential final evaluation |
 | Delivery | 14 | Consolidated results, reproducible demo, report and slides |
 
-A package may share one concise execution plan, but each model/methodology approval and phase
-boundary stays explicit. Phase 8 is COMPLETE following accepted results and explicit closeout.
-Phase 9 is **COMPLETE** under ADR-022; its [completed plan](../plans/completed/phase-9-synthetic-inventory.md)
-preserves the design, implementation and review record. Phase 10's [completed plan](../plans/completed/phase-10-inventory-simulation.md)
-and ADR-023 record the accepted methodology, integrated implementation, corrective review and formal
-closeout. Phase 10 is COMPLETE on `main` after PR #25 merged at
-`d437269b9f0cf36a842cdfd496ad50a310804768`, as recorded in [PROGRESS](PROGRESS.md). Phase 11 is
-COMPLETE: M1-M4 are accepted, findings M3-01, M4-01 and FR-01 are resolved, and PR #26 was
-squash-merged into `main` at `725d30a59d7c8e04e44f3bcbcce9186f8a1183be`. Its
-[completed plan](../plans/completed/phase-11-application-services.md) records formal closeout.
-No final holdout scoring belongs to Phase 7: model/preprocessing/refit recipes, interval calibration,
-inventory policy/scenarios, and monitoring windows/deterministic alert conditions must all be frozen
-before authorized Phase 13 replay (ADR-015/016). Phase 5 is complete on `main` through PR #7. Phase
-6 is complete on `main` through
-PR #10. Phase 7 is complete on `main` through PR #13, preserving ADR-020's selected LightGBM
-trial A / 180-round recipe. Phase 8 methodology is approved in ADR-021; implementation PR
-[#15](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/15) was squash-merged
-into `main` at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821`. PR #16 recorded independent numerical
-review acceptance and Fit B freeze, and was squash-merged into `main` at
-`4dd7717fed57ff3b1f14789b980772c1968f3cba`. Phase 8 is **COMPLETE** as of the explicit
-2026-10-07 closeout in the [completed plan](../plans/completed/phase-8-forecast-uncertainty.md).
-The frozen values apply only to the canonical artifact identities in [PROGRESS](PROGRESS.md).
+A package may share one concise execution plan; required methodology approvals and phase boundaries
+stay explicit. [PROGRESS](PROGRESS.md) owns closeout, integration and canonical run evidence for
+completed Phases 0–12. Retain ADR-020's selected LightGBM trial A / 180-round recipe and ADR-021's
+reviewed Fit B freeze for its exact artifact identities. The phase contracts and completed plans
+below preserve historical milestones; their dated next-phase statements are not current task authority.
+No final holdout scoring belongs to Phase 7. Freeze the model/preprocessing/refit recipe, uncertainty,
+inventory policies/scenarios and selected deterministic monitoring rules before separately authorized
+Phase 13 execution (ADR-015/025/026).
 
 ## Remaining delivery roadmap
 
-The detailed phase contracts below remain authoritative. This dependency-aware handoff separates
-required course evidence from preferred delivery scope and optional extensions; current integration
-and approval state is maintained in [PROGRESS](PROGRESS.md).
+The [proposal](PROPOSAL.md#23-assignment-requirement-traceability) maps all eight assignment
+modules, and its [deliverables](PROPOSAL.md#30-final-deliverables) define the final artifacts.
+This matrix owns future priorities, dependencies and acceptance; [PROGRESS](PROGRESS.md) plus
+Git/code own actual state. Current status summaries are orientation, not new completion evidence.
 
-**MUST-HAVE**
+### Priorities
 
-1. Implement the narrowly accepted synthetic-first public-demo objective under ADR-030. WP2-S1
-   covers the offline controlled-synthetic bundle only; ADR-024's localhost configuration remains
-   effective until a separately authorized public release.
-2. Write and approve a separate scenario-analysis method before running any development analysis.
-   Compare LightGBM with the existing alternative forecast methods across defined Store-level
-   scenarios, report accuracy, and explain supported business implications. Freeze scenario
-   definitions, eligible populations, and analysis rules in advance; use development evidence only
-   and keep the Phase 7 selection unchanged unless separately authorized.
-3. Obtain the distinct source-access, preparation, verification, provider-binding, STL, and findings
-   approvals required by the CC-02D runbook before producing real-data STL/EDA evidence. Merged
-   readiness code is not a completed source operation or decomposition.
-4. Complete the existing Phase 13 gates under ADR-025/026: independent M3 review, separately
-   authorized rehearsal and source staging, required M4 and later milestones, the approved resource
-   gate, chronological releases, monitoring, independent review, and explicit closeout. Preserve its
-   frozen two-block protocol and comparator; the final evaluation has not been run.
-5. Complete Phase 14's evidence-based report, slides, repository handoff, and demonstration after
-   reviewed Phase 13 results are available.
+- **P0 — Required for course completion:** scenario evidence, authorized final evaluation,
+  public API and dashboard, monitoring/retraining-review design, supported inventory interpretation,
+  and final repository/report/presentation/demonstration delivery, including their necessary inputs.
+- **P1 — Quality and reproducibility improvements:** supporting EDA, documentation, provenance
+  and robustness work needed to make results defensible. A required supporting check remains an
+  acceptance dependency for its affected deliverable; it is not permission to skip a safeguard.
+- **P2 — Optional extensions:** on-demand inference, additional models/features, cross-model
+  inventory simulation, longer horizons, SHAP/Evidently/Spark/Docker or other infrastructure only
+  for a demonstrated approved need. These do not block P0 delivery and require their own scope approval.
 
-**HIGH-PRIORITY DELIVERY TARGET — NARROW OBJECTIVE ACCEPTED; RELEASE PENDING**
+### Remaining work packages
 
-The project owner accepted the future objective of two separately reachable public URLs for the
-read-only API and dashboard, using a shared approved immutable bundle and direct Python service calls
-from Streamlit (ADR-030). Milestone A is limited to a local offline controlled-synthetic bundle and
-independent verifier. Public-compatible runtime changes, hosting/security/resource review, exact
-content and rights approval, and the specific deployment/release authorization are later separate
-gates. Render is preferred for assessment, not selected or provisioned. Keep the current Streamlit
-listener on localhost under ADR-024 until a separately authorized release. Keep protected outcomes,
-raw sources, credentials and authorization records out of public artifacts. No public deployment
-currently exists, and this objective does not imply a hosting purchase. On-demand forecasting is
-not a prerequisite.
+| Priority / objective | Dependencies and current evidence | Required output and observable acceptance | Blocking approval or release gate | Next actionable step |
+|---|---|---|---|---|
+| **P0 — Safe analytical inputs:** prepare the inputs needed by WP1 and Phase 13 | Source/field/date identities and operator/custody design; fixture readiness is integrated, but no real WP1 preparation or Phase 13 execution is established in PROGRESS | Independently verified, versioned views/bundles with exact hashes, allowed purposes/dates/fields, availability assumptions and effective external bindings; no unauthorized protected values reach development layers | Separate source access, preparation, verification, binding/provider and protected staging authorizations under each work package; a grant for one context does not authorize another | Specify the pending real-input operation and trust boundary in the existing plan for owner review; do not execute fixture decoders on real inputs |
+| **P0 — Forecast scenario comparison:** explain where the three accepted candidates differ | [WP1 plan](../plans/active/wp1-scenario-forecast-evaluation.md); L1/L2/L3-F and fixture M1/M2 integrated; real inputs and L4 analysis pending | Reproducible development-only paired comparisons, same three H14 origins/common eligible rows, primary MAE and supported supplementary metrics, coverage/missingness/segment counts, business interpretation and failure cases; reviewed results without reselection | Real-source handoff and L4 authorization; pending competition/volume/other extensions require an approved design. H segmentation remains blocked; ADR-028 is not accepted wholesale | Reuse accepted L1/L2 definitions; resolve pending input/method prerequisites and freeze the authorized analysis scope rather than restart model selection |
+| **P0 — Final evaluation:** assess the frozen system once | [Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md); M1–M3 integrated, phase PLANNED / NOT APPROVED; final replay unrun | Reviewed immutable issue-before-reveal ledger, exact two H14 blocks, LightGBM with Seasonal Naive contextual comparator, point/interval/availability results, monitoring and environment identity; explicit phase closeout | Independent M3 review, remaining milestones, provenance/custody preflight, approved resource budget, separately authorized rehearsal, mechanical staging and chronological analytical release | Obtain the pending independent read-only M3 review; advance only the next separately authorized milestone |
+| **P0 — Public FastAPI demonstration:** deliver one reachable read-only API URL | [Public-demo plan](../plans/active/public-course-demo.md); synthetic bundle/provider/API integrated, S22 corrections present in Git, independent corrective review/B closeout unrecorded; no public deployment | Approved reachable URL with bounded read-only routes, explicit synthetic labels, health/readiness/view-availability distinctions, sanitized errors and recorded external checks against the pinned bundle | B review/closeout; Milestone C content/rights/security/resource/rollback/hosting/audience/window and explicit owner release approval; ADR-024 remains effective | Complete the existing independent Sol 6.1 corrective review, then prepare the C release decision for approval; no listener or host change now |
+| **P0 — Public Streamlit demonstration:** deliver one reachable dashboard URL | Same approved immutable bundle and B/C gates as API; separate synthetic dashboard integrated; existing canonical dashboard COMPLETE locally | Approved reachable URL and tested relevant views, direct Python services, truthful evidence/unavailable states, trusted manifest pin and no fallback to canonical artifacts; recorded release/shutdown checks | Same release gates, including any required visual/security review; a future objective or local visual PASS is not public-release authority | Share the API release review and bundle approval; verify dashboard-specific acceptance within the same coherent release work package |
+| **P0 — Monitoring and retraining review:** deliver a functioning report/dashboard and defined review triggers | ADR-026 selects narrow descriptive replay monitoring; implementation/results pending. [Proposal Sections 23–24](PROPOSAL.md#23-model-monitoring) describe broader commitments and an unvalidated candidate policy | Reproducible data-quality, characteristic, delayed forecast-performance and simulated-business views with populations/denominators; documented warning/unavailable/review states, development-only reference/windows/support/persistence and human dispositions | Later Phase 13 monitoring milestone for frozen summaries; separate accepted methodology/implementation scope for broader numeric triggers/bias/drift. ADR-028 and proposal policy parameters remain proposed | Prepare one concise extension design reusing the proposal, justify parameters only on eligible development evidence, and obtain approval before implementation; no adaptive final-test retraining |
+| **P0 — Inventory recommendations and business interpretation:** report conditional policy trade-offs | Completed Phase 9/10 generator/simulator and adverse development evidence; any final episodes depend on authorized Phase 13 | Interpretable monetary targets/recommendations and matched service/cost/sensitivity results with exact denominators, missingness and terminal exposure; retain adverse findings. Final scope is two independent origin-frozen H14 episodes | ADR-025/026 execution/resource/release gates for final evidence; no new policy, rolling suffix calibration or assumptions without approval | Draft interpretation from reviewed development evidence now; incorporate reviewed final episodes later without claiming SKU procurement, observed savings or continuous 28-day optimization |
+| **P0 — Final report and presentation:** deliver the course artifacts | GitHub source, dictionary and development evidence exist; final conclusions depend on reviewed WP1/Phase 13/monitoring evidence and authorized public links | Working repository handoff, complete Data Dictionary, reproducibility/evidence index, PDF report, PPTX slides and demonstration; checked claims/links and human ownership/AI-assistance disclosure | Completion/review of required evidence and each release/publication authorization; no invented URLs or unrun results | Draft report/slides structure and evidence index in parallel; finalize analytical claims and demonstration only after their dependencies pass |
+| **P1 — Supporting source preparation and EDA:** produce the pending bounded STL evidence | [CC-02D runbook](CC-02D_CUSTODIAN_RUNBOOK.md); preparation/provider/diagnostic code integrated; no real bundle, binding or Rossmann STL findings | Authorized development-only bundle, independent verification/binding, reproducible decomposition/status/figures and reviewed findings with historical exposure and sparse-date limitations | Distinct source-access, preparation, verification, binding/provider-loading, STL and findings-publication approvals; mixed-source reads are protected access | Review the runbook's exact source/operator/purpose/implementation approval packet before any source read; keep this evidence separate from model selection |
+| **P1 — Reproducibility and evidence audit:** make required outputs reviewable | Existing lock, fixture CI, canonical evidence and contracts; apply to each changed deliverable | Task-appropriate checks, original manifest/run identities, complete dictionary coverage, working local commands, consistent status/claims and reviewable handoffs; canonical numbers stay in PROGRESS | Data/artifact access, regeneration, file edits and publication stay within task authority; no historical reruns for cosmetic documentation changes | Audit only the affected links/interfaces/claims alongside each P0 task; record out-of-scope corrections for their owner |
 
-**OPTIONAL BONUS**
+### Parallel work and genuine dependencies
 
-Add on-demand inference if a later approved design demonstrates a useful course need. A fair
-forecast-driven inventory-impact comparison across Seasonal Naive, Holt-Winters, and LightGBM is
-also optional and must have its own approved design; it remains separate from the required
-scenario-based forecast comparison.
+- Independent M3 review and the public-demo S22 corrective review can proceed in parallel with
+  pending input/monitoring design and report-outline work. An available review/implementation
+  agent may assist; retain each package's specified reviewer and owner gates.
+- Controlled-synthetic public-demo readiness and release planning do not require Rossmann source
+  access, WP1 results or final-holdout release. The API/dashboard share a release bundle and review
+  package; neither must add on-demand inference or HTTP coupling. Render remains a candidate for
+  assessment, not a selected host or authorized purchase.
+- WP1 real analysis needs its approved real-input chain and analysis scope. CC-02 STL needs its
+  own runbook authorizations. Phase 13 needs its own remaining implementation, provenance, resource,
+  rehearsal, staging and release gates. Sharing source identities never transfers access permission.
+- Broader operational monitoring can be designed as a separate development/synthetic demonstration.
+  It is not a prerequisite for implementing ADR-026's already selected descriptive method. Resolve
+  any proposal that would affect final-test choices before protected release; do not add numeric
+  alarms, recalibration, retraining or model/policy changes during the frozen replay.
+- Report outlines, dictionary/evidence audits and interpretation of reviewed development results
+  can progress now. Final empirical conclusions require reviewed analytical results; live public
+  claims require the actual authorized URLs. Synthetic interface examples cannot replace those results.
 
-Scenario methodology must be approved and frozen before development analysis. Resolve any proposed
-change that could affect final-evaluation methods or selection before protected holdout release.
-This roadmap authorizes no source access, scenario analysis, public deployment, or Phase 13
-execution.
+The [workflow](WORKFLOW.md) defines proportional plans/checks and handoff evidence. Reuse current
+plans and one coherent PR per work package when publication is authorized; no routine correction
+needs a new ADR or dedicated closeout branch. This roadmap grants no new implementation, source
+access, scenario analysis, hosting, deployment, artifact generation or Phase 13 release authority.
 
 ## Phase 0 — Repository Foundation
 
@@ -374,14 +368,22 @@ summaries/plots suffice; Evidently is optional only for a demonstrated unmet nee
 ## Phase 14 — Final Documentation, Report & Demo
 
 **Objective:** Deliver reproducible, evidence-based course outputs.
-**Dependencies:** Reviewed preceding milestones and the frozen Phase 13 result.
-**Deliverables:** Repository, dictionary, report PDF, slides, demonstration and consolidated results.
+**Dependencies:** Final analytical claims require reviewed WP1, frozen Phase 13 and monitoring
+evidence; public demonstration links require their own authorized release. Outlines, evidence
+indexing and development-result interpretation can proceed in parallel before those final inputs.
+**Deliverables:** GitHub repository handoff, complete Data Dictionary, reproducibility/evidence
+index, PDF report, PPTX slides, demonstration, monitoring report/dashboard and consolidated results;
+one public read-only FastAPI URL and one public Streamlit URL under the separately approved release.
 **Acceptance / boundary:** Report the recorded final evaluation; no new tuning or repeated selection
 on holdout outcomes. State historical descriptive exposure, short evaluation span, simulation
 assumptions and negative results honestly. Deployment is a course demonstration, not a live
 Rossmann production claim. The future two-URL public course-demo objective is narrowly accepted in
 ADR-030; Milestone A is synthetic-only. Public runtime, exact content/rights, hosting and release
 remain separately gated, and ADR-024's localhost behavior stays in force until release approval.
+Verify delivered artifacts and reachable authorized views, report unavailable evidence and
+adverse findings, and include human ownership/AI-assistance disclosure. Monitoring trigger
+parameters in the proposal remain proposed until justified and approved in their separate scope;
+Phase 14 reporting does not authorize adaptive retraining or reopen frozen evaluation choices.
 
 ## Phase 6 implementation handoff (historical)
 

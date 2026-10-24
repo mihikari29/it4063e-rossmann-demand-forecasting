@@ -16,6 +16,16 @@ scenario analysis has run, scenario results are not accepted, and ADR-028 remain
 The WP1-S11 implementation, WP1-S13 corrections, WP1-S14 independent acceptance and WP1-S15
 integration evidence are preserved in the corresponding [PROGRESS checkpoints](../../docs/PROGRESS.md#wp1-s15--s15-r1-milestone-1-integration--2026-10-21).
 
+**Delivery handoff:** Real-data scenario comparison is P0 in the
+[remaining delivery roadmap](../../docs/PROJECT_PLAN.md#remaining-delivery-roadmap).
+Next is review of the safe real-input design and its source/custody authorization prerequisites
+for L3-C/V/B; fixture integration grants no real-source operation. L4 requires approved safe inputs,
+frozen analysis rules, separate execution authorization and independent results review. H volume
+segmentation remains blocked. P1 supporting-quality work must preserve disclosure that WP1-S7-01
+remains unresolved under its original contract. P2 cross-model inventory simulation remains optional
+under a separate design and is not a prerequisite for forecast scenario comparison. This handoff
+authorizes no input access or analysis.
+
 ## WP1-S15 / S15-R1 Milestone 1 integration closeout — 2026-10-21
 
 The exact corrected six-file Milestone 1 snapshot was independently accepted by Sol 6.1 in
@@ -441,7 +451,7 @@ Execution sequence:
 | L2 — metrics and scenario views | Approved metrics, summaries, and in-memory JSON serialization for synthetic fixtures | REVIEWED / INTEGRATED by PR #47; main Quality #151 passed |
 | L3-F — fixture input verification | Restricted trusted synthetic M/C snapshots and reference consistency under ADR-029 | REVIEWED / INTEGRATED through PR #48; main Quality #153 passed on Python 3.12/3.14; no hard memory containment |
 | WP1-S11 Milestone 1 — fixture preparation and verification core | Synthetic-only source projection, candidate validation, independent source-reference check and deterministic manifest/receipt | **REVIEWED / INTEGRATED through PR #50**; S14 Sol 6.1 ACCEPT; PR Quality #156 and main Quality #157 passed on Python 3.12/3.14 |
-| WP1-S16 Milestone 2 — operational fixture bridge and verified provider | In-memory synthetic C → V → B handoff, exact binding consistency and copy-safe L1/L2 inputs | **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**; synthetic fixtures only; no filesystem or real-source operation |
+| WP1-S16 Milestone 2 — operational fixture bridge and verified provider | In-memory synthetic C → V → B handoff, exact binding consistency and copy-safe L1/L2 inputs | **REVIEWED / INTEGRATED through PR #51**; WP1-S17 acceptance and main Quality #159 recorded in PROGRESS; synthetic fixtures only; no filesystem or real-source operation |
 | L3-C/V/B — real input operations | Custodian preparation, independent real verification, and external binding | Separately gated; real M/C/H access is NO-GO |
 | L4 — development analysis | Run frozen scenario analysis on approved cached development evidence and document interpretation | Requires safe inputs, execution authorization, independent review, and disclosure of limitations |
 

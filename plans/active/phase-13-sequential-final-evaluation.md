@@ -10,6 +10,14 @@ operator and resource approvals, rehearsal, staging, analytical release, M4, and
 milestones remain open. No real-source or protected-outcome access is authorized. Phase 14 has not
 started.
 
+**Delivery handoff:** This plan tracks the required P0 final-evaluation, monitoring and simulated
+business evidence in the [remaining delivery roadmap](../../docs/PROJECT_PLAN.md#remaining-delivery-roadmap).
+Next is read-only independent M3 review of the integrated synthetic adapter and recorded evidence;
+integration alone does not establish acceptance. Source/preparation, rehearsal, staging, analytical
+release, M4 and later milestones remain separately gated. P1 supporting-quality work and P2
+optional extensions follow the roadmap's priority policy; optional work is not a P0 prerequisite.
+This handoff changes no method, data-access permission or execution authorization.
+
 ## 1. Objective, scope, and non-goals
 
 Record the selected reproducible, leakage-controlled final evaluation of the accepted Rossmann
