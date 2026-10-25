@@ -1,14 +1,42 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import date
+from decimal import Decimal
+from fractions import Fraction
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
 from rossmann_forecasting.inventory import scenarios, simulation
+
+INVALID_DAY_IDENTITIES = [
+    pytest.param(2.5, id="fractional"),
+    pytest.param(-2.5, id="negative_fractional"),
+    pytest.param(np.float64(2.5), id="numpy_fractional"),
+    pytest.param(Decimal("2.0000000000000000000000000001"), id="decimal_fractional"),
+    pytest.param(Fraction(5, 2), id="rational_fractional"),
+    pytest.param(True, id="true"),
+    pytest.param(False, id="false"),
+    pytest.param(np.bool_(True), id="numpy_true"),
+    pytest.param(np.bool_(False), id="numpy_false"),
+    pytest.param(None, id="none"),
+    pytest.param(pd.NA, id="pandas_na"),
+    pytest.param(np.nan, id="nan"),
+    pytest.param(np.inf, id="infinity"),
+    pytest.param(-np.inf, id="negative_infinity"),
+    pytest.param("bad", id="malformed_string"),
+    pytest.param("2.5", id="fractional_string"),
+    pytest.param("2.0", id="decimal_string"),
+    pytest.param("2e0", id="exponent_string"),
+    pytest.param("0_2", id="underscore_string"),
+    pytest.param(0, id="zero"),
+    pytest.param(-1, id="negative"),
+]
 
 
 def _target_inputs(
@@ -232,6 +260,221 @@ def test_target_builder_rejects_unapproved_domain_and_fit(changes, message):
         frame[column] = value
     with pytest.raises(simulation.SimulationIntegrityError, match=message):
         simulation.build_policy_targets(frame)
+
+
+@pytest.mark.parametrize(
+    "column, value",
+    [("SupplierLeadTime", 2.5), ("ReviewPeriod", 1.5), ("ProtectionPeriod", 3.5)],
+)
+def test_fractional_target_periods_are_rejected(column, value):
+    frame = _target_inputs()
+    frame[column] = value
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.build_policy_targets(frame)
+
+
+def test_fractional_target_horizons_are_rejected():
+    frame = _target_inputs()
+    frame["horizon"] = [1.5, 2.5, 3.5]
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.build_policy_targets(frame)
+
+
+@pytest.mark.parametrize("column, value", [("SupplierLeadTime", 2.5), ("ProtectionPeriod", 3.5)])
+def test_fractional_simulation_periods_are_rejected(column, value):
+    target = _target(simulation.POLICY_IDS[0])
+    target[column] = value
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.simulate_case(target, _demand([10.0] * 14), common_input_identity="fractional")
+
+
+def test_fractional_demand_horizons_are_rejected():
+    target = _target(simulation.POLICY_IDS[0])
+    path = _demand([10.0] * 14)
+    for row in path:
+        row["horizon"] += 0.5
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.simulate_case(target, path, common_input_identity="fractional")
+
+
+@pytest.mark.parametrize(
+    "column", ["SupplierLeadTime", "ReviewPeriod", "ProtectionPeriod", "horizon"]
+)
+@pytest.mark.parametrize("value", INVALID_DAY_IDENTITIES)
+def test_target_day_identities_fail_before_calculation_and_preserve_input(
+    column, value, monkeypatch
+):
+    frame = _target_inputs()
+    frame[column] = frame[column].astype(object)
+    frame.at[0, column] = value
+    before = frame.copy(deep=True)
+    monkeypatch.setattr(
+        simulation, "_number", lambda *args, **kwargs: pytest.fail("Target calculation attempted.")
+    )
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.build_policy_targets(frame)
+    pd.testing.assert_frame_equal(frame, before)
+
+
+@pytest.mark.parametrize(
+    "column", ["SupplierLeadTime", "ReviewPeriod", "ProtectionPeriod", "horizon"]
+)
+@pytest.mark.parametrize("value", INVALID_DAY_IDENTITIES)
+def test_simulation_day_identities_fail_before_state_and_preserve_inputs(
+    column, value, monkeypatch
+):
+    target = _target(simulation.POLICY_IDS[0])
+    path = _demand([10.0] * 14)
+    if column == "horizon":
+        path[0][column] = value
+    else:
+        target[column] = value
+    before_target, before_path = deepcopy(target), deepcopy(path)
+    monkeypatch.setattr(
+        simulation, "_number", lambda *args, **kwargs: pytest.fail("State calculation attempted.")
+    )
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.simulate_case(target, path, common_input_identity="invalid-identity")
+    pd.testing.assert_series_equal(pd.Series(target), pd.Series(before_target))
+    pd.testing.assert_frame_equal(pd.DataFrame(path), pd.DataFrame(before_path))
+
+
+@pytest.mark.parametrize("column", ["SupplierLeadTime", "ProtectionPeriod", "horizon"])
+def test_missing_simulation_day_identity_has_explicit_error(column):
+    target = _target(simulation.POLICY_IDS[0])
+    path = _demand([10.0] * 14)
+    del (path[0] if column == "horizon" else target)[column]
+    with pytest.raises(simulation.SimulationIntegrityError, match=column):
+        simulation.simulate_case(target, path, common_input_identity="missing-identity")
+
+
+@pytest.mark.parametrize(
+    "column, value",
+    [
+        ("SupplierLeadTime", 1),
+        ("SupplierLeadTime", 8),
+        ("ReviewPeriod", 2),
+        ("ProtectionPeriod", 2),
+        ("ProtectionPeriod", 4),
+        ("ProtectionPeriod", 15),
+        ("horizon", 15),
+    ],
+)
+def test_integral_but_unapproved_periods_and_horizons_are_rejected(column, value):
+    frame = _target_inputs()
+    frame[column] = value
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.build_policy_targets(frame)
+    target = _target(simulation.POLICY_IDS[0])
+    path = _demand([10.0] * 14)
+    (path[0] if column == "horizon" else target)[column] = value
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.simulate_case(target, path, common_input_identity="unapproved-domain")
+
+
+@pytest.mark.parametrize("horizons", [[1, 1, 3], [1, "1", 3], [1, 1.0, 3], [1, 3], [1, 2, 3, 4]])
+def test_target_prefix_rejects_duplicate_missing_and_extra_horizons(horizons, monkeypatch):
+    frame = pd.concat([_target_inputs().iloc[[0]]] * len(horizons), ignore_index=True)
+    frame["horizon"] = pd.Series(horizons, dtype=object)
+    monkeypatch.setattr(
+        simulation, "_number", lambda *args, **kwargs: pytest.fail("Target calculation attempted.")
+    )
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.build_policy_targets(frame)
+
+
+@pytest.mark.parametrize(
+    "horizons",
+    [
+        [1, 1, *range(3, 15)],
+        [1, "1", *range(3, 15)],
+        [1, 1.0, *range(3, 15)],
+        list(range(1, 14)),
+        list(range(1, 16)),
+        [*range(1, 14), 15],
+    ],
+)
+def test_demand_grid_rejects_duplicate_missing_and_extra_horizons(horizons, monkeypatch):
+    target = _target(simulation.POLICY_IDS[0])
+    path = _demand([10.0] * len(horizons))
+    for row, horizon in zip(path, horizons, strict=True):
+        row["horizon"] = horizon
+    monkeypatch.setattr(
+        simulation, "_number", lambda *args, **kwargs: pytest.fail("State calculation attempted.")
+    )
+    with pytest.raises(simulation.SimulationIntegrityError):
+        simulation.simulate_case(target, path, common_input_identity="invalid-grid")
+
+
+def test_boolean_review_in_later_prefix_row_is_rejected():
+    frame = _target_inputs()
+    frame["ReviewPeriod"] = frame["ReviewPeriod"].astype(object)
+    frame.at[2, "ReviewPeriod"] = np.bool_(True)
+    with pytest.raises(simulation.SimulationIntegrityError, match="ReviewPeriod"):
+        simulation.build_policy_targets(frame)
+
+
+@pytest.mark.parametrize("lead", [2, 7])
+@pytest.mark.parametrize(
+    "representation",
+    [int, float, np.int32, np.int64, np.float32, np.float64, Decimal, Fraction, str],
+)
+def test_supported_integer_representations_preserve_targets_and_trajectories(lead, representation):
+    for missing_quantile in (False, True):
+        frame = _target_inputs(
+            open_values=(1,) * (lead + 1),
+            point_values=(20.0,) * (lead + 1),
+            quantile=None if missing_quantile else 30.0,
+            quantile_available=not missing_quantile,
+        )
+        frame["SupplierLeadTime"], frame["ProtectionPeriod"] = lead, lead + 1
+        expected = simulation.build_policy_targets(frame)
+        for column in ("SupplierLeadTime", "ReviewPeriod", "ProtectionPeriod", "horizon"):
+            frame[column] = [representation(value) for value in frame[column]]
+        frame = frame.iloc[::-1].copy(deep=True)
+        before = frame.copy(deep=True)
+        actual = simulation.build_policy_targets(frame)
+        assert actual.equals(expected)
+        pd.testing.assert_frame_equal(frame, before)
+        assert actual["ProtectionPeriod"].to_pylist() == [lead + 1, lead + 1]
+
+    for availability in ("complete", "missing_demand", "target_unavailable"):
+        target = _target(simulation.POLICY_IDS[1], lead=lead)
+        path = _demand([40.0, 30.0, 20.0, 0.0, 110.0, 10.0, 0.0] * 2)
+        if availability == "missing_demand":
+            path[4].update(demand_available=False, demand_value=None, unavailable_reason="fixture")
+        elif availability == "target_unavailable":
+            target.update(target_available=False, target_value=None, availability_reason="fixture")
+        expected = simulation.simulate_case(target, path, common_input_identity="integer-identity")
+        for column in ("SupplierLeadTime", "ReviewPeriod", "ProtectionPeriod"):
+            target[column] = representation(target[column])
+        for row in path:
+            row["horizon"] = representation(row["horizon"])
+        path.reverse()
+        before_target, before_path = deepcopy(target), deepcopy(path)
+        actual = simulation.simulate_case(target, path, common_input_identity="integer-identity")
+        assert actual == expected
+        pd.testing.assert_series_equal(pd.Series(target), pd.Series(before_target))
+        pd.testing.assert_frame_equal(pd.DataFrame(path), pd.DataFrame(before_path))
+
+
+@pytest.mark.parametrize("dtype", ["Int8", "Int64", "Float64"])
+def test_nullable_pandas_integer_representations_preserve_targets(dtype):
+    frame = _target_inputs()
+    expected = simulation.build_policy_targets(frame)
+    for column in ("SupplierLeadTime", "ReviewPeriod", "ProtectionPeriod", "horizon"):
+        frame[column] = frame[column].astype(dtype)
+    before = frame.copy(deep=True)
+    assert simulation.build_policy_targets(frame).equals(expected)
+    pd.testing.assert_frame_equal(frame, before)
+
+
+def test_simulation_preserves_implicit_daily_review_for_existing_minimal_mapping():
+    target = _target(simulation.POLICY_IDS[0])
+    path = _demand([10.0] * 14)
+    expected = simulation.simulate_case(target, path, common_input_identity="daily-review")
+    del target["ReviewPeriod"]
+    assert simulation.simulate_case(target, path, common_input_identity="daily-review") == expected
 
 
 def test_unsupported_origin_is_rejected_before_any_artifact_access(monkeypatch, tmp_path):

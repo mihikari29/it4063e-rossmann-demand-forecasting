@@ -4116,3 +4116,427 @@ Milestone B is **INTEGRATED IMPLEMENTATION / CLOSEOUT PENDING**. Both WP2-S17 co
 **IMPLEMENTED / UNDER REVIEW — AWAITING SOL 6.1**. The active plan contains a closeout-readiness
 checklist; it remains active and is not archived. No bundle or manifest was published, no human
 visual acceptance is inferred from AppTest, and Milestone C remains separately gated.
+
+### A1 / D02 shared LightGBM temporal-boundary correction — 2026-10-24
+
+The authorized A1 correction uses `fix/lightgbm-temporal-boundary`, based on fetched `origin/main`
+at `10c0c46ce1ae4db22c9869cd13770e23aef5a939`. The initial worktree was clean on
+`docs/instructor-proposal-readme`. An in-memory recording booster reproduced the audit case:
+fit origin 2015-05-08, requested origin 2015-04-24, **14 forecast rows and 14 prediction calls**.
+The shared recursive API validated history dates but did not compare the model's fit origin.
+Both future-origin regressions failed before the correction because no exception was raised.
+
+`recursive_lightgbm_forecasts` now rejects a model origin after the requested origin with
+`InvalidFeatureSchema` before feature construction or prediction. Missing, malformed, numeric,
+timezone-aware or non-midnight model origins fail closed; missing or timezone-aware requested
+origins cannot bypass the comparison. Matching and earlier fits remain valid in this shared API.
+Requested-origin calendar normalization is preserved. Phase 13's existing fresh-fit equality
+checks are unchanged; its origin-mismatch regression now mocks fitting and checks both earlier
+and later origins without native training.
+
+New shared-API regressions assert zero prediction attempts on rejection, exact matching/earlier-fit
+output values and schema, availability reasons, horizon/Store ordering, recursive feedback, and
+unchanged caller frames and model-origin metadata. The final locked Python 3.14.5 fixture run
+passed **167 tests, 4 deselected, in 39.64 seconds**, with **zero `lightgbm.train` calls** under a
+spy that raises if training is attempted. It selected `tests/test_lightgbm.py`,
+`tests/test_phase13_inputs.py`, `tests/test_phase13_adapters.py`, and these issuer tests:
+
+- `test_only_two_precommitted_origins_are_constructible`
+- `test_fitted_origin_mismatch_fails_before_recursive_prediction`
+- `test_overlapping_sales_mismatch_fails_before_any_issuer_work`
+- `test_block2_sales_conflict_stops_before_fit_without_new_outcome_reads`
+
+The selection excluded native-fitting tests with
+`-k "not (exact_lightgbm_lock_version or training_continuation or shared_dataset or fixed_seed_fixture_fit)"`.
+Other issuer tests and the full suite were not run. Focused Ruff lint and format checks passed
+(three Python files). Offline uv 0.12.23 checks confirmed the lock, compatible installed packages,
+and no environment changes needed for the locked dev/API/dashboard extras. Documentation validation
+passed for 403 local destinations/anchors across 38 Markdown files; `git diff --check` passed.
+
+Self-review found no change to the recipe, predictors, feature adaptation, recursive algorithm,
+output schema, uncertainty, inventory contracts or historical results. No Rossmann data, ignored
+canonical artifact or protected outcome was accessed; no real-data pipeline or native training ran.
+The development pipeline remains unvalidated for this correction because real-input access and
+retraining are outside its authorization.
+
+The correction is **IMPLEMENTED / UNDER REVIEW**, locally tested and self-reviewed. Independent
+review, CI, integration and phase/project completion are not claimed. All four changed files remain
+uncommitted and unstaged; no publication or deployment occurred. The next recommended work package
+is **A2 / D01**, requiring separate authorization; it was not started.
+
+
+### A2 / D01 inventory period and horizon validation correction — 2026-10-24
+
+A2 continues on `fix/lightgbm-temporal-boundary` at
+`10c0c46ce1ae4db22c9869cd13770e23aef5a939`, preserving A1's four unstaged, uncommitted files.
+Inspection confirmed A1's source, tests and progress entry; their initial byte identities were
+recorded for preservation checks. This task authorizes A2 only and does not change A1's review state.
+
+In-memory fixtures reproduced all seven audit cases: target construction accepted L=2.5, R=1.5,
+P=3.5 and horizons [1.5, 2.5, 3.5]; simulation accepted L=2.5, P=3.5 and a complete fractional
+horizon sequence. Integer casts silently truncated these identities. The seven new regressions
+failed before implementation because no `SimulationIntegrityError` was raised.
+
+Only `inventory/simulation.py` and `tests/test_inventory_simulation.py` change for A2, alongside
+this appended checkpoint. A small shared `_integer` validator checks original values before
+conversion. `build_policy_targets` validates every L/R/P/horizon value on its private frame copy
+before duplicate detection or sorting, then retains exact h1..hP completeness and approved domains.
+`simulate_case` validates L/P and any supplied R, validates copied demand horizons before sorting,
+and requires exactly h1..h14. Existing minimal mappings without R retain their implicit R=1.
+All invalid identities raise `SimulationIntegrityError` before target or state calculations.
+
+Exactly integral floats remain supported, as do Python/NumPy integer scalars, integral Decimal and
+Fraction values, existing integer-text representations and pandas nullable numeric columns.
+Fractional values, Python/NumPy Booleans, nulls, non-finite values, malformed text, out-of-domain
+integers, duplicate horizons and incomplete/extra grids are rejected. Regressions also cover
+L=2/L=7, P=L+1, reversed input order, availability reasons, complete/unavailable trajectories,
+and unchanged caller frames, mappings and sequences. Pre/post synthetic snapshots matched exactly
+for both boundary lead times, paired target rows and complete/missing-demand ledger/summary outputs.
+
+Validation used the existing locked Python 3.14.5 / uv 0.12.23 environment:
+
+- `python -m pytest tests/test_inventory_simulation.py -k 'not test_protected_path_and_hash_spies_are_quiet_for_pinned_inputs' -q`: **268 passed, 1 deselected in 6.51 seconds**.
+- `python -m pytest tests/test_phase13_inputs.py tests/test_phase13_adapters.py -q`: **96 passed in 20.04 seconds**.
+- Both runs had **zero skips and zero warnings**. The canonical-artifact-dependent test was
+  explicitly deselected before execution; no ignored-artifact presence probe was used.
+- Focused Ruff lint and format checks passed for the two A2 Python files. Offline lock/dependency
+  checks passed; locked dev/API/dashboard extras required no environment changes.
+- Documentation validation passed for 403 local destinations/anchors across 38 Markdown files;
+  `git diff --check` passed.
+
+Self-review confirmed unchanged target arithmetic, receipt queues, ADR-023 event ordering, holding
+and lost-sales costs, terminal exposures, KPI denominators and ADR-025/026 episode boundaries.
+No Rossmann source, ignored canonical artifact, protected outcome, credential or authorization
+record was accessed. No model training, real-data pipeline or canonical regeneration ran. The
+full repository suite and native-training issuer tests were not run; real-data validation remains
+outside this authorization.
+
+A2 is **IMPLEMENTED / UNDER REVIEW**, locally tested and self-reviewed; independent REVIEWED,
+INTEGRATED and new phase/project COMPLETE claims are not made. A1 remains intact and unreviewed
+by this task. The branch now has six modified files, all unstaged and uncommitted; no Git publication,
+deployment or public release occurred. The next recommended package is **A3 / D03**; it requires
+separate authorization and was not started here.
+
+### A3 / D03 source identifier and weekday domain correction — 2026-10-24
+
+A3 continues on `fix/lightgbm-temporal-boundary` at
+`10c0c46ce1ae4db22c9869cd13770e23aef5a939`. Initial inspection found eight modified,
+unstaged files and a combined diff of 950 insertions / 21 deletions, rather than the handoff's
+six files / 546 insertions / 18 deletions. The difference was existing A3 validation code and
+tests in the two authorized Python files. Those changes were inspected and continued; A1/A2
+implementation/test bytes and the complete pre-existing PROGRESS content were checkpointed
+for preservation. No branch switch, reset, stash or publication occurred.
+
+Loading the committed validator into memory reproduced all eight per-file audit cases:
+Store=0 and Store=1.5 in train/test/store, plus DayOfWeek=99 in train/test, each returned PASS
+with zero errors. Store previously had only generic numeric/nonnegative/required-value checks;
+DayOfWeek had no domain check. The existing A3 work rejected those cases and initially passed
+207 fixture tests. Additional synthetic CSV probes found that pandas inference could round
+precise fractional text to an integer before validation. All 15 added CSV regressions failed
+before the loader correction and passed afterward.
+
+`data/validation.py` now uses `_validate_integer_domain` in `_validate_train`, `_validate_test`
+and `_validate_store_metadata`. Store must be a positive integer, with no new upper bound;
+present, non-null DayOfWeek must be an integer from 1 through 7. Python/NumPy Booleans,
+fractions, non-finite values and malformed numeric text are rejected. Supported integral
+numeric scalars/text and nullable numeric columns remain valid. Missing Store retains
+`MISSING_REQUIRED_VALUE`; DayOfWeek remains optional and its nulls remain informational.
+Field-specific ERROR codes `INVALID_STORE_ID` and `INVALID_DAY_OF_WEEK` include file, column,
+invalid non-null row count and bounds. Generic numeric findings remain available.
+
+`_load_csv` retains a separate string-token view of Store/DayOfWeek for these domain checks,
+using the same pandas missing-value parsing. `validate_dataset` passes that view to the
+per-file validators while retaining the normal inferred frames for schema/dtype reporting,
+duplicate checks, date profiling and metadata joins. In-memory validators check their original
+inputs directly. No source value is truncated, rounded, imputed or overwritten by validation.
+The report schema, deterministic JSON serialization and CLI exit contract are unchanged.
+`_numeric_series`, date checks, key checks, category rules and metadata-join logic are
+AST-identical to HEAD. Phase 3's separate ISO-weekday consistency check is unchanged; none was
+added to Phase 1.
+
+Validation used the locked Python 3.14.5 / uv 0.12.23 environment:
+
+- `.venv/Scripts/python.exe -m pytest tests/test_data_validation.py -q`:
+  **246 passed in 6.81 seconds**.
+- `.venv/Scripts/python.exe -m pytest tests/test_data_preparation.py tests/test_feature_engineering.py -q`:
+  **42 passed in 2.10 seconds**. Both final runs had **zero failures, deselections, skips and
+  warnings**; all input files were explicit temporary synthetic fixtures or in-memory frames.
+- Tests cover every Store/DayOfWeek entry point, adversarial values, supported integer
+  representations, nullable/mixed columns, exact error counts, missing columns/nulls, input
+  preservation, deterministic JSON, CLI failure, duplicate keys and metadata cardinality.
+- Seven synthetic dataset variants produced complete reports exactly equal to the committed
+  validator: minimum valid data, integral floats, absent/null weekdays, unknown future Open,
+  sparse dates, and existing category/closed-store warnings. Their CSV bytes stayed unchanged.
+- Repository-wide Ruff lint passed; format check found **155 files already formatted**.
+  Markdown validation passed for **403 local destinations/anchors across 38 Markdown files**;
+  `git diff --check` passed.
+- Offline lock check resolved **109 packages**; dependency checking found **93 installed
+  packages compatible**. Locked dev/API/dashboard dry-run checked **91 packages** and required
+  no environment changes. No dependency or lockfile edits were made.
+
+Self-review confirmed the A3 changes stay within `data/validation.py`,
+`tests/test_data_validation.py` and this appended checkpoint. All five A1/A2 implementation/test
+files remain byte-identical to the initial worktree; earlier progress records are preserved.
+Forecasting, feature/model selection, uncertainty and inventory methods remain unchanged. No
+Rossmann source, ignored canonical artifact, protected outcome, source authorization or custody
+material was accessed, hashed or enumerated. No official report was regenerated. Real-source
+validation and the development pipeline remain unexecuted because access is outside this scope;
+the full test suite, A1/A2 test reruns, native training and remote CI were not run for A3.
+
+A3 is **IMPLEMENTED / UNDER REVIEW** and **TESTED** locally, with self-review only.
+Independent **REVIEWED** acceptance is pending; **INTEGRATED** and **COMPLETE** are not claimed.
+The combined A1+A2+A3 work remains on the same branch, with eight modified files, unstaged and
+uncommitted. The recommended checkpoint is independent Sol 6.1 review of the combined diff,
+followed by a separately authorized Git integration step. Neither was performed. **A4 / E01**
+remains a separately authorized next package and was not started; no later phase, final
+evaluation, public release or deployment was executed.
+
+### A1 / D02 R1 precision-safe model-origin correction — 2026-10-24
+
+The R1 review correction continues on `fix/lightgbm-temporal-boundary`, HEAD
+`10c0c46ce1ae4db22c9869cd13770e23aef5a939`. The initial eight-file unstaged diff exactly
+matched the independently reviewed snapshot: 69,086 bytes, SHA-256
+`e0e05b2ea9a3da8755f3500ad043b44697ab7b97ac5346374b0e4e20cad68c69`, with 1,193 insertions
+and 32 deletions. All eight file preimages were checkpointed outside the repository.
+
+Both reviewer examples were reproduced before implementation: model-origin strings
+`2015-04-24T00:00:00.0000000001` and `2015-04-24T00:00:00.00000000001` each yielded 14
+forecasts and 14 mocked prediction calls. `pd.Timestamp` discarded the nonzero fraction before
+the midnight check. The earlier A1 checkpoint's broad rejection statement had this exception;
+its historical text is preserved. The independent verdict on that snapshot was CHANGES REQUIRED.
+No future-calendar-day leakage was demonstrated by R1.
+
+`recursive_lightgbm_forecasts` now inspects original string/NumPy datetime metadata before
+Timestamp conversion. It rejects nonzero high-precision fractions of zero-valued components,
+covering parsers that discard digits beyond microseconds or nanoseconds. Nonzero integral clock
+components remain subject to the existing parsed midnight check. Padded-year dotted dates are
+preserved rather than mistaken for fractional times. Date-only values, exact-midnight datetime
+and Timestamp objects, supported NumPy midnight values, and all-zero fractional forms remain
+valid. The existing type, missingness, timezone, midnight and future-origin guards remain intact.
+No model metadata, caller frame or recursive history is rewritten by the precheck.
+
+The new rejection test covers 16 adversarial representations, including both reviewer examples,
+ordinary non-midnight values, nanoseconds, compact/comma/abbreviated time strings, a 101-digit
+fraction and NumPy picosecond/femtosecond/attosecond scalars. It asserts no prediction or history
+cache construction, unchanged inputs and unchanged metadata. The initial 15-case red run produced
+11 failures / 4 passes / 89 deselections, exposing the loss before the correction; one additional
+unit-suffixed case was subsequently added. Expanded valid-origin cases assert exact full forecast
+frames, ordering, availability reasons and recursive feedback for matching and earlier origins.
+Future-day rejection, malformed metadata and Phase 13's stricter fresh-fit equality remain tested.
+
+Final validation used locked Python 3.14.5 / uv 0.12.23 with bytecode and pytest caches disabled,
+external temporary directories, and an external runner that prohibits native LightGBM training:
+
+- Combined LightGBM, Phase 13 input/adapter, inventory, source-validation, preparation and
+  feature/key fixtures plus the four previously selected safe issuer test nodes:
+  **765 passed, 5 deselected in 69.93 seconds; zero skips/warnings; zero native training calls**.
+  Exclusions were `test_protected_path_and_hash_spies_are_quiet_for_pinned_inputs` and
+  `-k "not (exact_lightgbm_lock_version or training_continuation or shared_dataset or fixed_seed_fixture_fit)"`.
+- The reviewer's two external R1 regressions now pass: **2 passed in 4.01 seconds**, with no
+  skips, deselections or warnings. These are implementation checks, not independent acceptance.
+- Repository-wide Ruff lint and format checks passed: **155 files already formatted**.
+  Scoped PROGRESS Markdown validation passed **60 local destinations/anchors, zero errors**;
+  `git diff --check` passed. Full-document validation was not run for this correction.
+- Offline lock check resolved **109 packages**; all **93 installed packages** were compatible;
+  the locked dev/API/dashboard dry-run checked **91 packages** and required no environment changes.
+
+Self-review compared the R1 delta with the reviewed snapshot: only `lightgbm.py`,
+`tests/test_lightgbm.py` and this appended checkpoint change. Apart from the new precheck, the
+recursive function's AST and every other production function/class are unchanged. A2/A3 source
+and test files plus `tests/test_phase13_issuer.py` remain byte-identical; all earlier PROGRESS
+bytes are preserved. R2 remains pre-existing, out of scope and unfixed. No recipe, feature,
+selection, uncertainty, inventory or Phase 13 protocol change was made.
+
+Precision already discarded upstream, for example before constructing Timestamp metadata,
+cannot be recovered here. The regressions establish rejection of the original invalid values
+still observable at this API boundary; they do not establish a new real-data result. The full
+suite, other issuer/native-fitting tests, real-data development pipeline, canonical evaluation
+and remote CI were not run. No source data, ignored canonical artifact, protected outcome or
+source authorization/custody material was accessed.
+
+R1 is **IMPLEMENTED / UNDER REVIEW** and **TESTED** locally, ready for independent Sol 6.1
+re-review of the corrected combined snapshot. **REVIEWED**, **INTEGRATED** and **COMPLETE** are
+not claimed. All eight tracked modifications remain unstaged and uncommitted on the same branch.
+No commit, push, PR, merge, deployment or A4/E01 work was performed.
+
+## R1 timestamp correction follow-up — 2026-10-24
+
+The initial worktree was on `fix/lightgbm-temporal-boundary` at
+`10c0c46ce1ae4db22c9869cd13770e23aef5a939`, with the expected eight-file patch (77,930 bytes;
+SHA-256 `6ba5102cad228a3aa739cafc54635a981cdaea75b07d6dad895e8127a3b3e07b`). Before editing,
+both newly reported strings were reproduced against the synthetic LightGBM fixture: each returned
+14 forecasts after 14 predictions. A red run of the independent table then showed five additional
+fractional-hour/minute representations bypassing the prior length-based check.
+
+The origin string grammar is now matched in full before conversion. Date forms are `YYYY-M-D`,
+`YYYYMMDD`, `M/D/YYYY`, `D Month YYYY`, `YYYY.M.D`, and `D.M.YYYY`/`M.D.YYYY` with leading zeroes
+allowed on the final four-digit year. A timestamp may append `T` or a space and one clock form:
+`H[:M[:S]]`, compact `HH`, `HHMM`, or `HHMMSS`, or ordered `h`, `m`, `s` components. A decimal
+fraction using `.` or `,` may follow any clock component. Each clock integer and fraction is checked
+digit-by-digit and must contain only zeroes before pandas sees the string. `Z` and signed hour or
+hour-minute offsets are recognized, then rejected by the existing timezone-naive origin contract.
+Calendar validity is checked by `pd.Timestamp` only after the complete string and clock components
+have passed validation. Unsupported or malformed strings raise `InvalidFeatureSchema`.
+
+Python `date` values are time-free; Python `datetime` values are checked through their original
+hour/minute/second/microsecond fields and timezone; pandas `Timestamp` and NumPy `datetime64` values
+are serialized from their stored NumPy representation and checked by the same grammar before
+conversion. Matching and earlier naive-midnight origins remain valid, future origins still fail,
+and Phase 13 retains its separate exact fresh-fit identity check. Precision discarded before an
+object reaches this API cannot be recovered.
+
+The focused four-regression test and independent 26-case table passed together (**30 passed**).
+Coverage includes the two original subnanosecond strings, both new Sol strings, other fractional
+second/hour/minute precisions, ordinary non-midnight values, timezone-aware values, invalid syntax,
+date-only inputs and Python/pandas/NumPy types. Rejections assert no history-cache construction or
+prediction, and inputs/metadata remain unchanged. Existing valid-origin tests compare complete
+recursive forecast frames for matching and earlier fits.
+
+The combined A1/A2/A3 synthetic selection, including the four selected Phase 13 issuer checks,
+passed (**795 passed, 5 deselected**); an external `lightgbm.train` spy recorded zero calls. The
+canonical-artifact-dependent inventory check and established native-fitting exclusions were
+applied. Scoped Ruff lint and formatting passed, `scripts/check_docs.py` passed 403 local
+destinations/anchors across 38 Markdown files, and `git diff --check` passed. No source data,
+canonical artifact, protected outcome or full-data training was accessed.
+
+Self-review against the external initial checkpoint confirms only `lightgbm.py`,
+`tests/test_lightgbm.py` and this appended PROGRESS entry changed during this correction. Existing
+A1/A2/A3 work remains present; every file outside this correction's scope is byte-identical to the
+initial checkpoint, including A2/A3 and Phase 13 issuer-test files. The separate large-Store
+identifier R2 remains out of scope. R1 is **IMPLEMENTED / TESTED**, pending independent Sol 6.1
+review. No integration, completion, A4/E01 work or Git publication is claimed.
+
+## R1 timezone-suffix rejection correction — 2026-10-25
+
+This narrow correction continues on `fix/lightgbm-temporal-boundary`, HEAD
+`10c0c46ce1ae4db22c9869cd13770e23aef5a939`. The initial eight-file unstaged,
+uncommitted patch matched the requested snapshot exactly: 89,089 bytes, SHA-256
+`892d3ba582372bcece2689fd3a1e78172c89c746c79d3d38fc1f8b04ba55f140`.
+All eight working files and the raw diff were checkpointed outside the repository before edits.
+
+Before the production change, all nine combinations of clocks `00m`, `00s`,
+`00.000000m` and suffixes `-00`, `-0000`, `-00:00` returned 14 available
+forecasts, constructed one history cache and made 14 prediction calls each. The new nine-case
+regression failed for every combination (**9 failed in 7.02 seconds**), with zero native
+training calls. The original grammar consumed the optional timezone suffix outside the
+zero-checked clock group; pandas could discard that suffix, defeating the later tzinfo check.
+
+The accepted model-origin string grammar now contains only the existing date and optional
+clock forms. Its full-string match rejects appended timezone syntax before the original
+model-origin string can reach pandas. No suffix blacklist, parser fallback or new heuristic
+was added. The precision-safe digit checks, native date/datetime/Timestamp/NumPy handling,
+future-fit comparison and Phase 13 fresh-fit equality remain unchanged. Apart from the helper
+docstring, every production function/class AST is identical to the initial snapshot; only
+the grammar constant changes behavior. The model recipe, features and recursive algorithm
+are unchanged.
+
+Sixty new parametrized regressions cover the nine reported combinations plus 51 Z/UTC,
+positive/negative/zero-offset and unsupported-suffix combinations across colon, compact and
+unit clocks. Every case asserts InvalidFeatureSchema, zero cache constructions and predictions,
+unchanged input frames and unchanged original model metadata. The nine-case external before/after
+probe confirms all nine now reject with zero cache/prediction calls.
+
+Validation used locked Python 3.14.5, disabled bytecode/pytest caches, external temporary
+directories and a runner that prohibits both native LightGBM training entry points:
+
+- New suffix regressions plus the four earlier precision regressions:
+  **64 passed in 2.09 seconds**.
+- The previous review's external matrix, copied without changing its expectations:
+  **308 passed in 87.80 seconds**. This includes all 40 valid-origin comparisons, the previous
+  259 correctly rejected cases and the nine newly corrected suffix cases.
+- Combined LightGBM, Phase 13 input/adapter, inventory, source-validation, preparation and
+  feature fixtures plus the established four safe issuer functions:
+  **855 passed, 5 deselected in 98.33 seconds**.
+- All three final runs had zero skips/warnings and zero native training calls. The explicit
+  exclusions were the canonical-artifact-dependent inventory test and the four established
+  native-fitting LightGBM tests. Other issuer tests and the full repository suite were not run.
+- Scoped Ruff lint passed; formatting found seven files already formatted. Documentation
+  validation passed 403 local destinations/anchors across 38 Markdown files. An extra blank
+  line in the appended checkpoint was removed before the final whitespace check. Offline
+  lock/dependency checks passed: 109 packages resolved and all 93 installed packages compatible;
+  no dependency changes were made.
+
+The valid-origin matrix preserves complete forecast frames, schema, values, ordering,
+availability/reasons and recursive feedback for supported strings and native date/datetime,
+Timestamp and NumPy values, including matching and earlier fits. Future origins still reject;
+the selected Phase 13 earlier/later mismatch fixtures pass before recursive prediction.
+
+A separate exploratory synthetic probe found an additional pre-existing non-timezone
+malformed-date acceptance: `00 s 2015` passes both the initial and corrected date grammar,
+pandas returns `0001-01-01 00:00:00`, and the synthetic API returns 14 available forecasts.
+This observation concerns the existing alphabetic-month date alternative and pandas conversion,
+rather than timezone suffixes. It is recorded for reviewer triage, not fixed under this narrow
+authorization; no future-day leakage or real-data consequence was established. The unrelated
+large-Store R2 also remains outside scope and unchanged.
+
+Only `lightgbm.py`, `tests/test_lightgbm.py` and this appended checkpoint change during this
+correction. A2/A3 source and tests and `tests/test_phase13_issuer.py` remain byte-identical
+to the initial snapshot; all earlier PROGRESS bytes are preserved. No Rossmann source,
+canonical artifact, protected outcome, authorization/custody material, actual model training,
+real-data pipeline, final evaluation, deployment or remote CI was accessed or run.
+
+The timezone correction is **IMPLEMENTED / TESTED** only, pending independent Sol 6.1
+re-review of the corrected boundary, regression/compatibility evidence and combined patch
+preservation, with the separate malformed-date observation explicitly available for triage.
+No independent acceptance, integration, phase completion, staging, commit, push, PR, merge,
+branch switch, reset, stash, R2 implementation or A4/E01 work is claimed.
+
+## A1 / D02 malformed model-origin date correction — 2026-10-25
+
+The correction continues on `fix/lightgbm-temporal-boundary` at HEAD
+`10c0c46ce1ae4db22c9869cd13770e23aef5a939`. The initial eight-file worktree matched the
+reviewed timezone-correction snapshot: 96,510 diff bytes, SHA-256
+`0f5477eb0ca191d15b96f487b728d2066a9947df1f01d63c4184d0e13d16682f`. Before the code change,
+the five independent malformed-date probes each returned 14 available forecasts, built one
+history cache and made 14 predictions. No native fitting occurred.
+
+The origin parser now maps only full English month names and standard three-letter English
+abbreviations (case-insensitive) to calendar month numbers. It validates the complete original
+date and clock text, resolves each supported numeric layout explicitly, and constructs the
+calendar date with `datetime.date` before converting that validated date to pandas. Impossible
+dates and year zero fail. Slash and day/month-first dotted forms are accepted only when one
+component exceeds 12 and establishes the ordering; ambiguous pairs fail closed. Padded four-digit
+years in the previously supported dotted form remain accepted. The existing date-only,
+timezone-naive midnight clock, fractional-precision, and timezone-suffix rules remain in force.
+No arbitrary origin string reaches pandas date inference.
+
+Twenty-eight malformed/ambiguous cases now assert `InvalidFeatureSchema`, zero cache
+constructions and predictions, and unchanged frames/model metadata. They cover all five review
+probes, unsupported/partial months, invalid day/year components, impossible dates, ambiguous
+slash/dot values and mixed syntax. Added valid full-month, three-letter abbreviation, case-variant
+and leap-day origins use the existing full-frame expected-output contract for schema, values,
+ordering, availability and recursive feedback. Matching, earlier and future-fit behavior remains
+covered. Phase 13 implementation and issuer tests are unchanged; the selected issuer mismatch
+fixture still verifies its exact fresh-fit-origin guard.
+
+Validation used the existing locked Python 3.14.5 environment, disabled pytest caches, external
+temporary test directories, and a runner that rejects both native LightGBM training entry points:
+
+- The five red malformed-date regressions were reproduced before the change: **5 failed**.
+- The focused parser/compatibility selection passed **170 tests, 64 deselected**. It includes the
+  new malformed and valid-date cases, the four precision regressions, 60 timezone suffix cases,
+  the prior independent adversarial table and fit-order cases.
+- A separate independent standard-library date oracle for eight supported string formats passed
+  with the malformed-date cases: **36 passed, 206 deselected**.
+- The combined safe A1/A2/A3 fixtures and four selected Phase 13 issuer functions passed
+  **897 tests, 5 deselected in 79.98 seconds; zero native training calls**. Exclusions were the
+  canonical-artifact-dependent inventory test and the established native-fitting tests selected
+  by `-k "not (exact_lightgbm_lock_version or training_continuation or shared_dataset or fixed_seed_fixture_fit)"`.
+- The previous independent adversarial matrix passed unchanged: **308 passed in 66.76 seconds**,
+  with zero native training calls. This retains its independent expected classifications for the
+  prior valid-origin, precision and timezone cases.
+- Ruff lint and formatting checks passed for all seven changed Python files; formatting found
+  **seven files already formatted**. Documentation validation passed **403 local destinations /
+  anchors across 38 Markdown files**; `git diff --check` passed.
+
+Only `lightgbm.py`, `tests/test_lightgbm.py` and this appended entry change for the correction.
+The A2 inventory source/tests, A3 validation source/tests and Phase 13 issuer source/tests remain
+byte-identical to the accepted snapshot. Earlier PROGRESS content is preserved. No dependency,
+model, feature, forecast output, recursive calculation, uncertainty or inventory-method change was
+made. No Rossmann source, canonical artifact, protected holdout, full-data training, final
+evaluation or deployment was accessed or run. The large-Store R2 remains out of scope; A4/E01
+remains not started.
+
+The correction is **IMPLEMENTED / TESTED**, pending independent Sol 6.1 re-review of the scoped
+parser diff, adversarial cases and combined safe-fixture evidence. **REVIEWED**, **INTEGRATED** and
+phase/project **COMPLETE** are not claimed. All modified files remain unstaged and uncommitted.
