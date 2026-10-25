@@ -6,10 +6,12 @@ import argparse
 import json
 import math
 from dataclasses import asdict, dataclass, field
+from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from pandas.errors import EmptyDataError, ParserError
 
@@ -160,7 +162,7 @@ def _normalise_category(value: Any) -> str:
     return str(value).strip()
 
 
-def _load_csv(path: Path, report: ValidationReport) -> pd.DataFrame | None:
+def _load_csv(path: Path, report: ValidationReport) -> tuple[pd.DataFrame, pd.DataFrame] | None:
     name = path.name
     before_hash = sha256_file(path)
     metadata: dict[str, Any] = {
@@ -171,6 +173,14 @@ def _load_csv(path: Path, report: ValidationReport) -> pd.DataFrame | None:
 
     try:
         frame = pd.read_csv(path, low_memory=False)
+        # Keep the normal inferred frame for profiling, keys and joins. Domain checks
+        # also need the original tokens: float inference can round a fraction to an integer.
+        identity_columns = [column for column in ("Store", "DayOfWeek") if column in frame]
+        source_identities = (
+            pd.read_csv(path, usecols=identity_columns, dtype=str, low_memory=False)
+            if identity_columns
+            else pd.DataFrame(index=frame.index)
+        )
     except (EmptyDataError, ParserError, OSError, UnicodeError) as error:
         report.files[name] = metadata | {"readable": False}
         report.add(
@@ -203,7 +213,7 @@ def _load_csv(path: Path, report: ValidationReport) -> pd.DataFrame | None:
 
     if frame.empty:
         report.add(Severity.ERROR, "EMPTY_TABLE", f"{name} contains no data rows.", file=name)
-    return frame
+    return frame, source_identities
 
 
 def _validate_columns(
@@ -310,6 +320,53 @@ def _numeric_series(
                 count=negative_count,
             )
     return numeric
+
+
+def _validate_integer_domain(
+    frame: pd.DataFrame,
+    column: str,
+    filename: str,
+    report: ValidationReport,
+    *,
+    code: str,
+    minimum: int,
+    maximum: int | None = None,
+    require_complete: bool = False,
+) -> None:
+    """Check original integer identities without rounding or changing source values."""
+    numeric = _numeric_series(
+        frame, column, filename, report, non_negative=True, require_complete=require_complete
+    )
+    if numeric is None:
+        return
+
+    def in_domain(value: Any) -> bool:
+        if isinstance(value, (bool, np.bool_)):
+            return False
+        try:
+            number = Decimal(str(value).strip())
+        except InvalidOperation:
+            return False
+        return (
+            number.is_finite()
+            and number == number.to_integral_value()
+            and number >= minimum
+            and (maximum is None or number <= maximum)
+        )
+
+    original = frame[column]
+    invalid = original.notna() & (numeric.isna() | ~original.map(in_domain))
+    if invalid.any():
+        report.add(
+            Severity.ERROR,
+            code,
+            f"{filename}.{column} contains values outside its integer domain.",
+            file=filename,
+            column=column,
+            count=int(invalid.sum()),
+            minimum=minimum,
+            maximum=maximum,
+        )
 
 
 def _validate_binary(
@@ -510,11 +567,28 @@ def _profile_numeric(
         }
 
 
-def _validate_train(frame: pd.DataFrame, report: ValidationReport) -> None:
+def _validate_train(
+    frame: pd.DataFrame,
+    report: ValidationReport,
+    *,
+    source_identities: pd.DataFrame | None = None,
+) -> None:
     filename = "train.csv"
+    identities = frame if source_identities is None else source_identities
     _validate_store_date_key(filename, frame, report)
     _validate_dates(filename, frame, report)
-    _numeric_series(frame, "Store", filename, report, non_negative=True, require_complete=True)
+    _validate_integer_domain(
+        identities,
+        "Store",
+        filename,
+        report,
+        code="INVALID_STORE_ID",
+        minimum=1,
+        require_complete=True,
+    )
+    _validate_integer_domain(
+        identities, "DayOfWeek", filename, report, code="INVALID_DAY_OF_WEEK", minimum=1, maximum=7
+    )
     sales = _numeric_series(
         frame, "Sales", filename, report, non_negative=True, require_complete=True
     )
@@ -596,11 +670,28 @@ def _validate_train(frame: pd.DataFrame, report: ValidationReport) -> None:
     )
 
 
-def _validate_test(frame: pd.DataFrame, report: ValidationReport) -> None:
+def _validate_test(
+    frame: pd.DataFrame,
+    report: ValidationReport,
+    *,
+    source_identities: pd.DataFrame | None = None,
+) -> None:
     filename = "test.csv"
+    identities = frame if source_identities is None else source_identities
     _validate_store_date_key(filename, frame, report)
     _validate_dates(filename, frame, report)
-    _numeric_series(frame, "Store", filename, report, non_negative=True, require_complete=True)
+    _validate_integer_domain(
+        identities,
+        "Store",
+        filename,
+        report,
+        code="INVALID_STORE_ID",
+        minimum=1,
+        require_complete=True,
+    )
+    _validate_integer_domain(
+        identities, "DayOfWeek", filename, report, code="INVALID_DAY_OF_WEEK", minimum=1, maximum=7
+    )
     open_values = _validate_binary(frame, "Open", filename, report, require_complete=False)
     if open_values is not None and open_values.isna().any():
         report.add(
@@ -627,9 +718,23 @@ def _validate_test(frame: pd.DataFrame, report: ValidationReport) -> None:
         )
 
 
-def _validate_store_metadata(frame: pd.DataFrame, report: ValidationReport) -> None:
+def _validate_store_metadata(
+    frame: pd.DataFrame,
+    report: ValidationReport,
+    *,
+    source_identities: pd.DataFrame | None = None,
+) -> None:
     filename = "store.csv"
-    _numeric_series(frame, "Store", filename, report, non_negative=True, require_complete=True)
+    identities = frame if source_identities is None else source_identities
+    _validate_integer_domain(
+        identities,
+        "Store",
+        filename,
+        report,
+        code="INVALID_STORE_ID",
+        minimum=1,
+        require_complete=True,
+    )
     if "Store" in frame.columns:
         duplicate_count = int(frame.duplicated("Store", keep=False).sum())
         if duplicate_count:
@@ -806,6 +911,7 @@ def validate_dataset(data_dir: str | Path | None = None) -> ValidationReport:
     directory = resolve_data_dir(data_dir)
     report = ValidationReport(data_dir=str(directory))
     frames: dict[str, pd.DataFrame] = {}
+    source_identities: dict[str, pd.DataFrame] = {}
 
     if not directory.is_dir():
         report.add(
@@ -828,9 +934,9 @@ def validate_dataset(data_dir: str | Path | None = None) -> ValidationReport:
             report.files[filename] = {"present": False}
             continue
         report.files[filename] = {"present": True}
-        frame = _load_csv(path, report)
-        if frame is not None:
-            frames[filename] = frame
+        loaded = _load_csv(path, report)
+        if loaded is not None:
+            frames[filename], source_identities[filename] = loaded
 
     schemas = {
         "train.csv": (TRAIN_REQUIRED_COLUMNS, TRAIN_KNOWN_COLUMNS),
@@ -853,11 +959,11 @@ def validate_dataset(data_dir: str | Path | None = None) -> ValidationReport:
     sample = frames.get("sample_submission.csv")
 
     if train is not None:
-        _validate_train(train, report)
+        _validate_train(train, report, source_identities=source_identities["train.csv"])
     if stores is not None:
-        _validate_store_metadata(stores, report)
+        _validate_store_metadata(stores, report, source_identities=source_identities["store.csv"])
     if test is not None:
-        _validate_test(test, report)
+        _validate_test(test, report, source_identities=source_identities["test.csv"])
     if train is not None and stores is not None:
         _validate_join("train.csv", train, stores, report)
     if test is not None and stores is not None:

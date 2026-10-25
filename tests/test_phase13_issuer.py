@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -378,13 +377,23 @@ def test_only_two_precommitted_origins_are_constructible():
         RequestedForecastGrid("2015-07-10", store_ids=STORES)
 
 
-def test_fitted_origin_mismatch_fails_before_recursive_prediction(block1_issue, monkeypatch):
-    provider, _, _ = _provider(block1_issue.grid)
-    wrong = replace(
-        block1_issue.fitted,
-        forecast_origin=pd.Timestamp(ORIGIN_2),
-    )
-    monkeypatch.setattr(issuer_module, "fit_lightgbm", lambda prepared, **kwargs: wrong)
+@pytest.mark.parametrize("fit_origin", [date(2015, 6, 19), ORIGIN_2])
+def test_fitted_origin_mismatch_fails_before_recursive_prediction(fit_origin, monkeypatch):
+    grid = RequestedForecastGrid(ORIGIN_1, store_ids=STORES)
+    provider, _, _ = _provider(grid)
+
+    def wrong_fit(prepared, **kwargs):
+        return FittedLightGBM(
+            booster=None,
+            category_vocabularies=prepared.category_vocabularies,
+            fit_row_count=prepared.eligible_row_count,
+            forecast_origin=pd.Timestamp(fit_origin),
+            model_parameters=lightgbm_parameters(issuer_module.TRIAL_PARAMETERS["A"]),
+            failure_reason="model_fit_failure",
+        )
+
+    monkeypatch.setattr(issuer_module, "make_lightgbm_dataset", lambda prepared: None)
+    monkeypatch.setattr(issuer_module, "fit_lightgbm", wrong_fit)
     monkeypatch.setattr(
         issuer_module,
         "recursive_lightgbm_forecasts",

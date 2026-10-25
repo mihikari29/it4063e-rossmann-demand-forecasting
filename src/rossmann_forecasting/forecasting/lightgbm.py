@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
+from datetime import date, datetime
 from typing import Any
 
 import lightgbm as lgb
@@ -401,6 +403,99 @@ def _source_missing_reason(row: pd.Series) -> str | None:
     return None
 
 
+_ORIGIN_DATE_TEXT = (
+    r"(?:\d{4}-\d{1,2}-\d{1,2}|\d{8}|\d{1,2}/\d{1,2}/\d{4}|"
+    r"\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}|\d{4}\.\d{1,2}\.\d{1,2}|"
+    r"\d{1,2}\.\d{1,2}\.0*\d{4})"
+)
+_MONTH_NAMES = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
+_MONTH_NUMBERS = {
+    token[:length].casefold(): number
+    for number, token in enumerate(_MONTH_NAMES, start=1)
+    for length in (3, len(token))
+}
+_ORIGIN_CLOCK_NUMBER = r"\d{1,2}(?:[.,]\d+)?"
+_ORIGIN_UNIT_CLOCK_TEXT = (
+    rf"(?:{_ORIGIN_CLOCK_NUMBER}h(?:{_ORIGIN_CLOCK_NUMBER}m(?:{_ORIGIN_CLOCK_NUMBER}s)?)?|"
+    rf"{_ORIGIN_CLOCK_NUMBER}m(?:{_ORIGIN_CLOCK_NUMBER}s)?|"
+    rf"{_ORIGIN_CLOCK_NUMBER}s)"
+)
+_ORIGIN_CLOCK_TEXT = (
+    rf"(?:{_ORIGIN_CLOCK_NUMBER}(?::{_ORIGIN_CLOCK_NUMBER}){{0,2}}|"
+    r"\d{2}(?:\d{2}){0,2}(?:[.,]\d+)?|"
+    rf"{_ORIGIN_UNIT_CLOCK_TEXT})"
+)
+_MODEL_ORIGIN_TEXT = re.compile(
+    rf"(?P<date>{_ORIGIN_DATE_TEXT})"
+    rf"(?:[T ](?P<time>{_ORIGIN_CLOCK_TEXT}))?"
+)
+
+
+def _parse_exact_midnight_origin_text(value: str) -> date | None:
+    """Resolve the complete supported date grammar without permissive date parsing."""
+    match = _MODEL_ORIGIN_TEXT.fullmatch(value)
+    if match is None:
+        return None
+    time_text = match.group("time")
+    if time_text is not None and any(
+        digit != "0" for component in re.findall(r"\d+", time_text) for digit in component
+    ):
+        return None
+
+    date_text = match.group("date")
+    if components := re.fullmatch(r"(\d{4})-(\d{1,2})-(\d{1,2})", date_text):
+        year, month, day = map(int, components.groups())
+    elif components := re.fullmatch(r"(\d{4})(\d{2})(\d{2})", date_text):
+        year, month, day = map(int, components.groups())
+    elif components := re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{4})", date_text):
+        month, day, year = map(int, components.groups())
+        if month <= 12 and day <= 12:
+            return None
+    elif components := re.fullmatch(r"(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})", date_text):
+        day_text, month_text, year_text = components.groups()
+        month = _MONTH_NUMBERS.get(month_text.casefold())
+        if month is None:
+            return None
+        year, day = int(year_text), int(day_text)
+    elif components := re.fullmatch(r"(\d{4})\.(\d{1,2})\.(\d{1,2})", date_text):
+        year, month, day = map(int, components.groups())
+    elif components := re.fullmatch(r"(\d{1,2})\.(\d{1,2})\.(0*\d{4})", date_text):
+        first, second, year_text = components.groups()
+        first_value, second_value = int(first), int(second)
+        if first_value <= 12 and second_value <= 12:
+            return None
+        if first_value > 12 and second_value <= 12:
+            day, month = first_value, second_value
+        elif first_value <= 12 and second_value > 12:
+            month, day = first_value, second_value
+        else:
+            return None
+        try:
+            year = int(year_text)
+        except ValueError:
+            return None
+    else:
+        return None
+
+    try:
+        return date(year, month, day)
+    except (OverflowError, ValueError):
+        return None
+
+
 def recursive_lightgbm_forecasts(
     requested_target_keys: pd.DataFrame,
     *,
@@ -410,9 +505,65 @@ def recursive_lightgbm_forecasts(
     model: FittedLightGBM,
     forecast_horizon: int = 14,
 ) -> pd.DataFrame:
-    """Build label-free recursive raw paths from actuals through origin and prior predictions."""
+    """Build label-free recursive raw paths using a fit from the same or an earlier origin."""
 
-    origin = pd.Timestamp(forecast_origin).normalize()
+    origin = pd.Timestamp(forecast_origin)
+    if pd.isna(origin) or origin.tz is not None:
+        raise InvalidFeatureSchema(
+            "forecast_origin must be a non-missing, timezone-naive calendar date."
+        )
+    origin = origin.normalize()
+    model_origin_value = getattr(model, "forecast_origin", None)
+    model_origin_error = (
+        "Model forecast_origin must be a non-missing, timezone-naive midnight calendar date."
+    )
+    if isinstance(model_origin_value, pd.Timestamp):
+        if pd.isna(model_origin_value) or model_origin_value.tz is not None:
+            raise InvalidFeatureSchema(model_origin_error)
+        try:
+            model_origin_text = str(np.datetime_as_string(model_origin_value.asm8, unit="auto"))
+        except (TypeError, ValueError, OverflowError) as error:
+            raise InvalidFeatureSchema(model_origin_error) from error
+        model_origin_value = _parse_exact_midnight_origin_text(model_origin_text)
+        if model_origin_value is None:
+            raise InvalidFeatureSchema(model_origin_error)
+    elif isinstance(model_origin_value, np.datetime64):
+        try:
+            model_origin_text = str(np.datetime_as_string(model_origin_value, unit="auto"))
+        except (TypeError, ValueError, OverflowError) as error:
+            raise InvalidFeatureSchema(model_origin_error) from error
+        model_origin_value = _parse_exact_midnight_origin_text(model_origin_text)
+        if model_origin_value is None:
+            raise InvalidFeatureSchema(model_origin_error)
+    elif isinstance(model_origin_value, str):
+        model_origin_value = _parse_exact_midnight_origin_text(model_origin_value)
+        if model_origin_value is None:
+            raise InvalidFeatureSchema(model_origin_error)
+    elif isinstance(model_origin_value, datetime):
+        if (
+            model_origin_value.tzinfo is not None
+            or model_origin_value.hour
+            or model_origin_value.minute
+            or model_origin_value.second
+            or model_origin_value.microsecond
+        ):
+            raise InvalidFeatureSchema(model_origin_error)
+    elif not isinstance(model_origin_value, date):
+        raise InvalidFeatureSchema(model_origin_error)
+    try:
+        model_origin = pd.Timestamp(model_origin_value)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise InvalidFeatureSchema(model_origin_error) from error
+    if (
+        pd.isna(model_origin)
+        or model_origin.tz is not None
+        or model_origin != model_origin.normalize()
+    ):
+        raise InvalidFeatureSchema(model_origin_error)
+    if model_origin > origin:
+        raise InvalidFeatureSchema(
+            "Model forecast_origin must not be after the requested forecast_origin."
+        )
     if not 1 <= forecast_horizon <= 14:
         raise ValueError("forecast_horizon must be between 1 and 14.")
     requested = canonicalize_store_date_keys(requested_target_keys, name="requested target keys")

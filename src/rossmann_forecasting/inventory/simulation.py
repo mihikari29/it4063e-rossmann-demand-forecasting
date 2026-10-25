@@ -12,6 +12,7 @@ import json
 import math
 import os
 import platform
+import re
 import shutil
 import subprocess
 import tempfile
@@ -20,6 +21,8 @@ from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
+from numbers import Real
 from pathlib import Path
 from typing import Any
 
@@ -369,6 +372,23 @@ def _number(value: Any, name: str, *, nonnegative: bool = False) -> float:
     return result
 
 
+def _integer(value: Any, name: str) -> int:
+    """Validate an original integer identity before converting its representation."""
+    message = f"{name} must be a finite integer, excluding Boolean values."
+    if isinstance(value, (bool, np.bool_)):
+        raise SimulationIntegrityError(message)
+    try:
+        if isinstance(value, str):
+            valid = re.fullmatch(r"[+-]?\d+", value.strip()) is not None
+        else:
+            valid = isinstance(value, (Real, Decimal)) and math.isfinite(value) and value % 1 == 0
+        if valid:
+            return int(value)
+    except (TypeError, ValueError, ArithmeticError) as error:
+        raise SimulationIntegrityError(message) from error
+    raise SimulationIntegrityError(message)
+
+
 def _close(actual: float, expected: float) -> bool:
     return abs(actual - expected) <= 1e-9 * max(1.0, abs(expected))
 
@@ -404,6 +424,10 @@ def build_policy_targets(target_inputs: pd.DataFrame) -> pa.Table:
     source = target_inputs.copy(deep=True)
     if source.empty:
         return pa.Table.from_pylist([], schema=POLICY_TARGET_SCHEMA)
+    for column in ("SupplierLeadTime", "ReviewPeriod", "ProtectionPeriod", "horizon"):
+        source[column] = [_integer(value, column) for value in source[column].array]
+    if not source["horizon"].between(1, HORIZON_DAYS).all():
+        raise SimulationIntegrityError("Target horizons must be within h1..h14.")
     grouping = ["case_id", "Store"]
     if source.duplicated(grouping + ["horizon"]).any():
         raise SimulationIntegrityError("Target input has duplicate case/Store/horizon keys.")
@@ -420,7 +444,7 @@ def build_policy_targets(target_inputs: pd.DataFrame) -> pa.Table:
             raise SimulationIntegrityError("Invalid L/R/P target domain.")
         if protection > HORIZON_DAYS:
             raise SimulationIntegrityError("Protection period exceeds H14.")
-        if set(block["horizon"].astype(int)) != set(range(1, protection + 1)):
+        if set(block["horizon"]) != set(range(1, protection + 1)):
             raise SimulationIntegrityError("Target prefix must contain exactly h1 through hP.")
         for column in TARGET_INPUT_COLUMNS:
             if column in {"horizon", "schedule_open", "raw_point_forecast", "forecast_available"}:
@@ -641,14 +665,20 @@ def simulate_case(
     if target.get("policy_id") not in POLICY_IDS:
         raise SimulationIntegrityError("Unknown policy ID.")
     origin = _validate_origin(target["forecast_origin"])
-    lead = int(target["SupplierLeadTime"])
-    protection = int(target["ProtectionPeriod"])
-    if lead not in ALLOWED_LEAD_TIMES or protection != lead + 1:
+    lead = _integer(target.get("SupplierLeadTime"), "SupplierLeadTime")
+    review = _integer(target.get("ReviewPeriod", REVIEW_PERIOD), "ReviewPeriod")
+    protection = _integer(target.get("ProtectionPeriod"), "ProtectionPeriod")
+    if lead not in ALLOWED_LEAD_TIMES or review != REVIEW_PERIOD or protection != lead + review:
         raise SimulationIntegrityError("Invalid lead/protection period in simulation target.")
     if len(demand_path) != HORIZON_DAYS:
         raise SimulationIntegrityError("Simulation demand path must contain h1..h14.")
-    ordered_path = sorted((dict(item) for item in demand_path), key=lambda row: int(row["horizon"]))
-    if [int(row["horizon"]) for row in ordered_path] != list(range(1, HORIZON_DAYS + 1)):
+    ordered_path = [dict(item) for item in demand_path]
+    for row in ordered_path:
+        row["horizon"] = _integer(row.get("horizon"), "demand_path horizon")
+        if not 1 <= row["horizon"] <= HORIZON_DAYS:
+            raise SimulationIntegrityError("Simulation demand horizons must be within h1..h14.")
+    ordered_path.sort(key=lambda row: row["horizon"])
+    if [row["horizon"] for row in ordered_path] != list(range(1, HORIZON_DAYS + 1)):
         raise SimulationIntegrityError("Simulation demand path must be exactly h1..h14.")
     c = _number(target["ProcurementCostRatio"], "ProcurementCostRatio", nonnegative=True)
     annual = _number(target["AnnualHoldingRate"], "AnnualHoldingRate", nonnegative=True)
@@ -699,7 +729,7 @@ def simulate_case(
     )
     broken_reason: str | None = None
     for day in ordered_path:
-        horizon = int(day["horizon"])
+        horizon = day["horizon"]
         current = origin + timedelta(days=horizon)
         ledger = {
             **_origin_record(target),

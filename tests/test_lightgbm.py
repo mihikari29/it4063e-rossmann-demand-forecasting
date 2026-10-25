@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime
+from datetime import date as calendar_date
 from pathlib import Path
+from unittest.mock import patch
 
 import lightgbm as lgb
 import numpy as np
@@ -27,9 +30,11 @@ from rossmann_forecasting.forecasting.lightgbm import (
     FIXED_PARAMETERS,
     FORECAST_COLUMN,
     FUTURE_COVARIATE_COLUMNS,
+    MODEL_NAME,
     CategoricalAdapterIncompatibility,
     FittedLightGBM,
     InvalidFeatureSchema,
+    _parse_exact_midnight_origin_text,
     adapt_prediction_features,
     fit_lightgbm,
     make_lightgbm_dataset,
@@ -239,14 +244,439 @@ def _forecast(
     covariates: pd.DataFrame | None = None,
     keys: pd.DataFrame | None = None,
     history: pd.DataFrame | None = None,
+    forecast_origin: str | pd.Timestamp = ORIGIN,
 ) -> pd.DataFrame:
     return recursive_lightgbm_forecasts(
         _requested_keys() if keys is None else keys,
         future_covariates=_future_covariates() if covariates is None else covariates,
         actual_history_through_origin=_actual_history() if history is None else history,
-        forecast_origin=ORIGIN,
+        forecast_origin=forecast_origin,
         model=_model() if model is None else model,
     )
+
+
+@pytest.mark.parametrize(
+    "fit_origin",
+    [
+        ORIGIN + pd.Timedelta(days=1),
+        pd.Timestamp("2015-05-08"),
+        "2015-04-25T00:00:00.000000000000",
+    ],
+)
+def test_future_model_origin_is_rejected_before_prediction_without_mutating_inputs(
+    fit_origin: object,
+) -> None:
+    model = _model()
+    model.forecast_origin = fit_origin
+    keys, covariates, history = _requested_keys(), _future_covariates(), _actual_history()
+    copies = [frame.copy(deep=True) for frame in (keys, covariates, history)]
+
+    with patch.object(model, "predict_features", wraps=model.predict_features) as predict:
+        with pytest.raises(InvalidFeatureSchema, match="Model forecast_origin.*after"):
+            _forecast(model=model, keys=keys, covariates=covariates, history=history)
+        predict.assert_not_called()
+
+    assert isinstance(model.booster, _RecordingBooster)
+    assert model.booster.calls == []
+    assert model.forecast_origin == fit_origin
+    for original, copy in zip((keys, covariates, history), copies, strict=True):
+        assert_frame_equal(original, copy)
+
+
+@pytest.mark.parametrize(
+    "fit_origin",
+    [
+        ORIGIN,
+        ORIGIN - pd.Timedelta(days=14),
+        calendar_date(2015, 4, 24),
+        datetime(2015, 4, 24),
+        np.datetime64("2015-04-24"),
+        np.datetime64("2015-04-24T00:00:00.000000000"),
+        "2015-04-24",
+        "2015-04-10",
+        "04/24/2015",
+        "24 April 2015",
+        "24 January 2015",
+        "24 JANUARY 2015",
+        "24 jAn 2015",
+        "24 FEB 2015",
+        "29 February 2012",
+        "29 Feb 2012",
+        "2015.04.24",
+        "24.04.0002015",
+        "24.04.0000002015",
+        "04.24.0002015",
+        "24.04.0002015 00:00",
+        "20150424T000000",
+        "2015-04-24T00:00:00",
+        "2015-04-24T00:00:00.0",
+        "2015-04-24T00:00:00.0000000000",
+        "2015-04-24T00:00:00.000000000000000000",
+        "2015-04-24T00:00:00,00000000000",
+        "2015-04-24T00:00.0000000",
+        "2015-04-24 00h00m00.0000000s",
+        "2015-04-24 00.0000000s",
+        np.datetime64(0, "ps"),
+        np.datetime64(0, "fs"),
+        np.datetime64(0, "as"),
+    ],
+)
+def test_matching_and_earlier_model_origins_preserve_recursive_results(
+    fit_origin: object,
+) -> None:
+    model = _model(output=lambda features, step: np.full(len(features), float(step)))
+    model.forecast_origin = fit_origin
+    keys = _requested_keys(stores=(2, 1)).iloc[::-1].reset_index(drop=True)
+    covariates = _future_covariates(stores=(2, 1))
+    history = _actual_history(stores=(2, 1))
+    copies = [frame.copy(deep=True) for frame in (keys, covariates, history)]
+
+    result = _forecast(model=model, keys=keys, covariates=covariates, history=history)
+
+    expected = pd.DataFrame(
+        [
+            {
+                "Store": store,
+                "forecast_origin": ORIGIN,
+                "Date": ORIGIN + pd.Timedelta(days=horizon),
+                "horizon": horizon,
+                "model": MODEL_NAME,
+                "model_forecast_unclipped": float(horizon) if store == 1 else np.nan,
+                FORECAST_COLUMN: float(horizon) if store == 1 else np.nan,
+                "recursive_state_value": float(horizon) if store == 1 else np.nan,
+                "forecast_was_clipped": False if store == 1 else None,
+                "forecast_available": store == 1,
+                "unavailable_reason": None if store == 1 else "unseen_store_category",
+                "unseen_state_holiday": False,
+                "unseen_store_type": False,
+                "unseen_assortment": False,
+            }
+            for horizon in range(1, 15)
+            for store in (1, 2)
+        ]
+    )
+    assert_frame_equal(result, expected)
+    assert isinstance(model.booster, _RecordingBooster)
+    assert len(model.booster.calls) == 14
+    assert model.booster.calls[1]["sales_lag_1"].iloc[0] == 1.0
+    assert model.forecast_origin == fit_origin
+    for original, copy in zip((keys, covariates, history), copies, strict=True):
+        assert_frame_equal(original, copy)
+
+
+@pytest.mark.parametrize(
+    ("fit_origin", "expected_date"),
+    [
+        ("24 April 2015", calendar_date.fromisoformat("2015-04-24")),
+        ("24 APR 2015", calendar_date.fromisoformat("2015-04-24")),
+        ("24 jAn 2015", calendar_date.fromisoformat("2015-01-24")),
+        ("29 FEB 2012", calendar_date.fromisoformat("2012-02-29")),
+        ("24.04.0002015", calendar_date.fromisoformat("2015-04-24")),
+        ("04.24.0002015", calendar_date.fromisoformat("2015-04-24")),
+        ("2015-4-24", calendar_date.fromisoformat("2015-04-24")),
+        ("20150424", calendar_date.fromisoformat("2015-04-24")),
+    ],
+)
+def test_supported_origin_dates_match_independent_calendar_oracle(
+    fit_origin: str, expected_date: calendar_date
+) -> None:
+    assert _parse_exact_midnight_origin_text(fit_origin) == expected_date
+
+
+@pytest.mark.parametrize(
+    "fit_origin",
+    [
+        "2015-04-24T00:00:00.0000000001",
+        "2015-04-24T00:00:00.00000000001",
+        "2015-04-24T00:00:00.000000001",
+        "2015-04-24T00:00:01",
+        ORIGIN + pd.Timedelta(nanoseconds=1),
+        datetime(2015, 4, 24, microsecond=1),
+        "20150424T000000.0000000001",
+        "2015-04-24 000000.0000000001",
+        "2015-04-24T00:00:00,0000000001",
+        "2015-04-24T00:00.0000001",
+        "2015-04-24 00h00m00.0000001s",
+        "2015-04-24 00.0000001s",
+        "2015-04-24T00:00:00." + "0" * 100 + "1",
+        np.datetime64(1, "ps"),
+        np.datetime64(1, "fs"),
+        np.datetime64(1, "as"),
+    ],
+)
+def test_original_nonmidnight_model_origin_is_rejected_before_history_or_prediction(
+    fit_origin: object,
+) -> None:
+    model = _model()
+    model.forecast_origin = fit_origin
+    keys, covariates, history = _requested_keys(), _future_covariates(), _actual_history()
+    copies = [frame.copy(deep=True) for frame in (keys, covariates, history)]
+
+    with (
+        patch.object(model, "predict_features", wraps=model.predict_features) as predict,
+        patch("rossmann_forecasting.forecasting.lightgbm.OriginHistoryFeatureCache") as cache,
+    ):
+        with pytest.raises(InvalidFeatureSchema, match="Model forecast_origin"):
+            _forecast(model=model, keys=keys, covariates=covariates, history=history)
+        predict.assert_not_called()
+        cache.assert_not_called()
+
+    assert isinstance(model.booster, _RecordingBooster)
+    assert model.booster.calls == []
+    assert model.forecast_origin is fit_origin
+    for original, copy in zip((keys, covariates, history), copies, strict=True):
+        assert_frame_equal(original, copy)
+
+
+@pytest.mark.parametrize(
+    "fit_origin",
+    [
+        pytest.param("2015-04-24T00:00:00.0000000001", id="original-subnanosecond-1"),
+        pytest.param("2015-04-24T00:00:00.00000000001", id="original-subnanosecond-2"),
+        pytest.param("2015-04-24 00.000001h", id="fractional-hour"),
+        pytest.param("2015-04-24 00h00.000001m", id="fractional-minute"),
+    ],
+)
+def test_four_reported_r1_regressions_reject_before_cache_or_prediction(
+    fit_origin: object,
+) -> None:
+    model = _model()
+    model.forecast_origin = fit_origin
+    keys, covariates, history = _requested_keys(), _future_covariates(), _actual_history()
+    copies = [frame.copy(deep=True) for frame in (keys, covariates, history)]
+
+    with (
+        patch.object(model, "predict_features", wraps=model.predict_features) as predict,
+        patch("rossmann_forecasting.forecasting.lightgbm.OriginHistoryFeatureCache") as cache,
+    ):
+        with pytest.raises(InvalidFeatureSchema, match="Model forecast_origin"):
+            _forecast(model=model, keys=keys, covariates=covariates, history=history)
+        predict.assert_not_called()
+        cache.assert_not_called()
+
+    assert isinstance(model.booster, _RecordingBooster)
+    assert model.booster.calls == []
+    assert model.forecast_origin is fit_origin
+    for original, copy in zip((keys, covariates, history), copies, strict=True):
+        assert_frame_equal(original, copy)
+
+
+@pytest.mark.parametrize("clock", ["00m", "00s", "00.000000m"])
+@pytest.mark.parametrize("timezone_suffix", ["-00", "-0000", "-00:00"])
+def test_reported_timezone_suffixes_reject_before_cache_or_prediction(
+    clock: str, timezone_suffix: str
+) -> None:
+    _assert_timezone_origin_rejected(f"2015-04-24 {clock}{timezone_suffix}")
+
+
+@pytest.mark.parametrize("clock", ["00:00:00", "000000", "00h00m00s"])
+@pytest.mark.parametrize(
+    "timezone_suffix",
+    [
+        "Z",
+        "z",
+        " UTC",
+        "UTC",
+        "+00",
+        "-00",
+        "+0000",
+        "-0000",
+        "+00:00",
+        "-00:00",
+        "+07:00",
+        "-05:30",
+        "+00:00:00",
+        "-00:00:00",
+        "[UTC]",
+        " Europe/Paris",
+        "Zjunk",
+    ],
+)
+def test_timezone_qualified_or_unsupported_origin_suffixes_reject_before_cache_or_prediction(
+    clock: str, timezone_suffix: str
+) -> None:
+    _assert_timezone_origin_rejected(f"2015-04-24 {clock}{timezone_suffix}")
+
+
+def _assert_model_origin_rejected(fit_origin: str) -> None:
+    model = _model()
+    model.forecast_origin = fit_origin
+    keys, covariates, history = _requested_keys(), _future_covariates(), _actual_history()
+    copies = [frame.copy(deep=True) for frame in (keys, covariates, history)]
+
+    with (
+        patch.object(model, "predict_features", wraps=model.predict_features) as predict,
+        patch("rossmann_forecasting.forecasting.lightgbm.OriginHistoryFeatureCache") as cache,
+    ):
+        with pytest.raises(InvalidFeatureSchema, match="Model forecast_origin"):
+            _forecast(model=model, keys=keys, covariates=covariates, history=history)
+        predict.assert_not_called()
+        cache.assert_not_called()
+
+    assert isinstance(model.booster, _RecordingBooster)
+    assert model.booster.calls == []
+    assert model.forecast_origin is fit_origin
+    for original, copy in zip((keys, covariates, history), copies, strict=True):
+        assert_frame_equal(original, copy)
+
+
+def _assert_timezone_origin_rejected(fit_origin: str) -> None:
+    _assert_model_origin_rejected(fit_origin)
+
+
+@pytest.mark.parametrize(
+    "fit_origin",
+    [
+        "00 s 2015",
+        "00 s 2099",
+        "00 seconds 2015",
+        "00 S 2015",
+        "00 s 2015T00:00:00",
+        "24 Smarch 2015",
+        "24 Septem 2015",
+        "24 Janu 2015",
+        "24 Ja 2015",
+        "24 J 2015",
+        "00 January 2015",
+        "32 Jan 2015",
+        "31 April 2015",
+        "29 February 2015",
+        "2015-02-29",
+        "2015-04-31",
+        "2015-13-01",
+        "2015-00-01",
+        "0000-01-01",
+        "10000-01-01",
+        "01/02/2015",
+        "04.05.2015",
+        "13.13.2015",
+        "04/31/2015",
+        "04/24/015",
+        "2015/04/24",
+        "2015-04-24T00:00Z",
+        "2015-04-24 00:00T00:00",
+    ],
+)
+def test_malformed_or_ambiguous_origin_date_rejects_before_cache_or_prediction(
+    fit_origin: str,
+) -> None:
+    _assert_model_origin_rejected(fit_origin)
+
+
+@pytest.mark.parametrize(
+    ("description", "fit_origin", "expected_rejection"),
+    [
+        ("original subnanosecond regression 1", "2015-04-24T00:00:00.0000000001", True),
+        ("original subnanosecond regression 2", "2015-04-24T00:00:00.00000000001", True),
+        ("fractional second, one digit", "2015-04-24T00:00:00.1", True),
+        ("fractional second, six digits", "2015-04-24T00:00:00.000001", True),
+        ("fractional second, nine digits", "2015-04-24T00:00:00.000000001", True),
+        ("fractional minute, six digits", "2015-04-24T00:00.000001", True),
+        ("fractional hour with unit", "2015-04-24 00.000001h", True),
+        ("fractional hour, shorter precision", "2015-04-24 00.0001h", True),
+        ("fractional hour, nanosecond precision", "2015-04-24 00.0000001h", True),
+        ("fractional minute with units", "2015-04-24 00h00.000001m", True),
+        ("fractional minute, shorter precision", "2015-04-24 00h00.0001m", True),
+        ("ordinary non-midnight hour", "2015-04-24T01:00:00", True),
+        ("ordinary non-midnight minute", "2015-04-24T00:01:00", True),
+        ("Python datetime microsecond", datetime(2015, 4, 24, microsecond=1), True),
+        ("pandas Timestamp nanosecond", ORIGIN + pd.Timedelta(nanoseconds=1), True),
+        ("NumPy microsecond", np.datetime64(1, "us"), True),
+        ("NumPy nanosecond", np.datetime64(1, "ns"), True),
+        ("NumPy picosecond", np.datetime64(1, "ps"), True),
+        ("timezone-aware ISO string", "2015-04-24T00:00:00Z", True),
+        ("timezone offset ISO string", "2015-04-24T00:00:00+00:00", True),
+        ("timezone-aware Python datetime", datetime(2015, 4, 24, tzinfo=UTC), True),
+        ("date-only ISO string", "2015-04-24", False),
+        ("Python date", calendar_date(2015, 4, 24), False),
+        ("Python datetime midnight", datetime(2015, 4, 24), False),
+        ("pandas Timestamp midnight", ORIGIN, False),
+        ("NumPy datetime64 midnight", np.datetime64("2015-04-24T00:00:00.000000000"), False),
+    ],
+    ids=lambda value: value if isinstance(value, str) else None,
+)
+def test_independent_origin_adversarial_table(
+    description: str, fit_origin: object, expected_rejection: bool
+) -> None:
+    """Literal expectations independently classify exact midnight and non-midnight values."""
+    model = _model()
+    model.forecast_origin = fit_origin
+    keys, covariates, history = _requested_keys(), _future_covariates(), _actual_history()
+    copies = [frame.copy(deep=True) for frame in (keys, covariates, history)]
+
+    if expected_rejection:
+        with (
+            patch.object(model, "predict_features", wraps=model.predict_features) as predict,
+            patch("rossmann_forecasting.forecasting.lightgbm.OriginHistoryFeatureCache") as cache,
+        ):
+            with pytest.raises(InvalidFeatureSchema, match="Model forecast_origin"):
+                _forecast(model=model, keys=keys, covariates=covariates, history=history)
+            predict.assert_not_called()
+            cache.assert_not_called()
+        assert isinstance(model.booster, _RecordingBooster)
+        assert model.booster.calls == []
+    else:
+        with patch.object(model, "predict_features", wraps=model.predict_features) as predict:
+            result = _forecast(model=model, keys=keys, covariates=covariates, history=history)
+            assert len(result) == 14
+            assert result["forecast_origin"].eq(ORIGIN).all()
+            assert len(predict.call_args_list) == 14
+
+    assert model.forecast_origin is fit_origin
+    for original, copy in zip((keys, covariates, history), copies, strict=True):
+        assert_frame_equal(original, copy)
+
+
+@pytest.mark.parametrize(
+    "fit_origin",
+    [
+        None,
+        pd.NaT,
+        pd.NA,
+        "",
+        "NaT",
+        "not-a-date",
+        0,
+        np.int64(0),
+        1.0,
+        True,
+        [],
+        ORIGIN + pd.Timedelta(seconds=1),
+        ORIGIN.tz_localize("UTC"),
+    ],
+)
+def test_invalid_model_origin_metadata_is_rejected_before_prediction(fit_origin: object) -> None:
+    model = _model()
+    model.forecast_origin = fit_origin
+
+    with patch.object(model, "predict_features", wraps=model.predict_features) as predict:
+        with pytest.raises(InvalidFeatureSchema, match="Model forecast_origin"):
+            _forecast(model=model)
+        predict.assert_not_called()
+    assert isinstance(model.booster, _RecordingBooster)
+    assert model.booster.calls == []
+
+
+def test_missing_model_origin_metadata_is_rejected_before_prediction() -> None:
+    model = _model()
+    del model.forecast_origin
+
+    with patch.object(model, "predict_features", wraps=model.predict_features) as predict:
+        with pytest.raises(InvalidFeatureSchema, match="Model forecast_origin"):
+            _forecast(model=model)
+        predict.assert_not_called()
+
+
+@pytest.mark.parametrize("forecast_origin", [None, pd.NaT, "NaT", ORIGIN.tz_localize("UTC")])
+def test_unidentified_requested_origin_cannot_bypass_model_origin_guard(
+    forecast_origin: object,
+) -> None:
+    model = _model()
+
+    with patch.object(model, "predict_features", wraps=model.predict_features) as predict:
+        with pytest.raises(InvalidFeatureSchema, match="forecast_origin"):
+            _forecast(model=model, forecast_origin=forecast_origin)
+        predict.assert_not_called()
 
 
 def test_predictor_schema_order_and_forbidden_fields_are_exact() -> None:
