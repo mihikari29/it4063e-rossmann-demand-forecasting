@@ -23,7 +23,7 @@ from rossmann_forecasting.forecasting.lightgbm import (
     select_requested_raw_forecasts,
 )
 from rossmann_forecasting.forecasting.metrics import (
-    summarize_development_evaluation,
+    _summarize_development_metric_tables,
     summarize_forecast_metrics,
 )
 from rossmann_forecasting.forecasting.validation import (
@@ -148,7 +148,7 @@ def attach_lightgbm_labels(
 def summarize_lightgbm_development(records: pd.DataFrame) -> dict[str, Any]:
     """Use the shared approved metric function for windows, pooled rows and horizons."""
 
-    summary = summarize_development_evaluation(records, forecast_column=FORECAST_COLUMN)
+    summary = _summarize_development_metric_tables(records, forecast_column=FORECAST_COLUMN)
     window_frame = summary["by_window"]
     rates = pd.to_numeric(window_frame["open_label_forecast_coverage_rate"], errors="coerce")
     passed = bool(rates.notna().all() and rates.ge(COVERAGE_GUARDRAIL).all())

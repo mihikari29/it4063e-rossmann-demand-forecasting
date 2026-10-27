@@ -65,7 +65,8 @@ The application checks record bytes and identity; it does **not** authenticate s
 custody. Before preparing the packet, the trusted operator must verify the owner/custodian
 signatures and confirm that each approval is current and covers this exact operation. Record IDs
 or arbitrary approval strings by themselves never satisfy the evidence-file, runtime, identity,
-expiry, and one-use checks. The owner and machine administrator remain trusted under weekly STL method; this
+expiry, and one-use checks. The [STL custody rules](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic)
+assume a trusted owner and machine administrator; this
 is not an OS-enforced security boundary. The account comparison uses `getpass.getuser()`, which is
 an environment-derived username hint, not authenticated Windows process-principal identity. The
 trusted operator must independently verify the actual Windows principal and approved host before

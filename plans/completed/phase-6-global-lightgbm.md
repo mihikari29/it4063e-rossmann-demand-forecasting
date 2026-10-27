@@ -164,7 +164,8 @@ For each inner or outer origin, forecast calendar steps h=1 through h=14 recursi
    the clipped raw forecast, and unknown Open routes operational output to null. This routing never
    changes raw forecasts, model inputs, or recursive history.
 
-This intentionally preserves application/recursion contract's known limitation: historical training lag/rolling state
+This preserves the [documented limitation of raw recursion](../../docs/DECISIONS.md#adr-017--proportionate-application-and-forecast-extension-scope):
+historical training lag/rolling state
 includes actual closed-day zero Sales, while raw future recursive history does not automatically
 replace predictions with closure zeros. This train/inference mismatch must be reported, not fixed
 implicitly. Closure-aware feedback or direct multi-horizon modeling requires a separate reviewed

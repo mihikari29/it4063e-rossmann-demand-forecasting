@@ -345,7 +345,7 @@ Targets are frozen once at origin, the outstanding-order queue evolves, and due-
 orders remain separate terminal exposures without cancellation or salvage.
 
 For Phase 13, the owner has approved the A-bounded inventory scope and its explicit
-acceptance limitation under bounded inventory scope: inventory evaluation uses two independent origin-frozen H14
+acceptance limitation in the [approved inventory scope](DECISIONS.md#adr-025--phase-13-a-bounded-inventory-evaluation-scope): inventory evaluation uses two independent origin-frozen H14
 episodes at the same July 3 and July 17 origins as the primary forecast evaluation. Each episode
 executes the accepted Phase 10 standing-target policies from targets frozen at its origin.
 Subsequent daily reviews advance simulated inventory state against those same targets; they are not
@@ -552,8 +552,8 @@ rollback assessment, specific hosting/audience/window owner approval and externa
 
 The final monitoring report or dashboard must distinguish four dimensions. Existing validation,
 forecast-availability and simulated-KPI components provide building blocks; they do not constitute
-a completed monitoring report. Phase 13's selected monitoring design in selected final-evaluation method is narrower than
-the broader instructor-feedback proposals in broader instructor-feedback proposal. Its monitoring implementation and final
+a completed monitoring report. Phase 13's [selected monitoring method](DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology) is narrower than
+the [broader monitoring proposal](DECISIONS.md#adr-028--instructor-feedback-alignment-and-public-demonstration). Its monitoring implementation and final
 replay evidence remain pending.
 
 ## 23.1. Data Quality Monitoring
@@ -565,7 +565,8 @@ from a failed declared input contract. Report forecast availability and unresolv
 schedule provenance or protection-period inputs with counts, reasons and affected Store/origin/
 horizon. Unavailable operational values remain unavailable rather than zero.
 
-Existing validators and integrity/availability checks support these diagnostics. selected final-evaluation method selects
+Existing validators and integrity/availability checks support these diagnostics. The
+[final-replay protocol](DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology) selects
 precommitted deterministic integrity/data-quality alerts for the future replay; the exact rule
 catalog and output still require the relevant implementation/review gates.
 
@@ -578,7 +579,7 @@ availability assumptions. Sales-history summaries use only observations already 
 the relevant origin; they do not create new target-derived cohorts or feed revealed within-block
 actuals back into a previously issued forecast.
 
-Descriptive frequency/quantile shifts fit selected final-evaluation method. Numeric distribution-shift alerts, new tests,
+The final-replay protocol permits descriptive frequency/quantile shifts. Numeric distribution-shift alerts, new tests,
 competition/volume cohorts or learned drift methods require a separate approved methodology.
 A changed mix can reflect eligibility or missing data rather than a changing business process.
 
@@ -664,19 +665,22 @@ already authorized and revealed through its origin. A later adaptive retraining 
 a separate synthetic or development replay and must not be reported as the same frozen test.
 
 The forecast and inventory scopes are distinct. Primary forecast evaluation retains exactly the
-two non-overlapping H14 issue-before-reveal blocks. The approved A-bounded inventory scope in
-bounded inventory scope runs two independent origin-frozen H14 episodes on those same origins; daily KPI updates
+two non-overlapping H14 issue-before-reveal blocks. Under the
+[approved inventory scope](DECISIONS.md#adr-025--phase-13-a-bounded-inventory-evaluation-scope),
+Phase 13 runs two independent origin-frozen H14 episodes on those same origins; daily KPI updates
 follow the sequential reveal while each policy continues to use its original frozen target. Those
 daily state transitions are not new calibrated rolling forecast decisions, and unsupported
 later-review protection coverage is not scored. No new rolling operational forecast origin or
 daily suffix recalibration is introduced. The inventory scope does not imply continuous
-rolling 28-day validation. bounded inventory scope approves inventory scope only. selected final-evaluation method records the selected
+rolling 28-day validation. The inventory decision approves scope only. The
+[final-replay decision](DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology) records the selected
 forecast-input/availability assumptions, synthetic planned-Open schedule, Fit B transport, A2
 custody, runtime/reproducibility, monitoring, and score/comparator methods. Source identity,
 provenance, safe preparation, operator/partition provenance, resource approval, and separate
 implementation, rehearsal, staging, and analytical-release gates remain pending.
 
-The selected Phase 13 methods are recorded in selected final-evaluation method. Source identity, covariate provenance,
+The [Phase 13 methodology decision](DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology)
+records the selected methods. Source identity, covariate provenance,
 historical availability assumptions, safe acquisition and authorized preparation remain preflight
 requirements. Scope and method selection do not authorize a source read, extraction, protected-data
 staging, or analytical release. If required covariates exist only in a combined source containing
@@ -687,12 +691,12 @@ any access to that source; column projection alone does not establish physical i
 
 ## 24.1. Monitoring Alert Rules
 
-**Selected Phase 13 method (selected final-evaluation method):** report descriptive daily, trailing 7-calendar-day, and
+**[Selected Phase 13 monitoring method](DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology):** report descriptive daily, trailing 7-calendar-day, and
 trailing 14-calendar-day summaries, stratified by forecast origin and horizon. Show descriptive
 feature-distribution shifts and post-release forecast errors and interval coverage with their
 populations and denominators. Precommit deterministic integrity and data-quality alerts only.
 Statistical drift, forecast-performance, interval-coverage, and service-level alarm thresholds are
-not selected. Alert definitions must be independent of final outcomes. uncertainty calibration sample
+not selected. Alert definitions must be independent of final outcomes. Uncertainty calibration sample
 floors do not establish monitoring reliability, and this short replay does not support claims of
 statistically reliable drift or service detection. Simple summaries remain sufficient; Evidently is
 optional only for a demonstrated unmet need.
@@ -707,8 +711,9 @@ evidence of persistent production drift or a validated production alert policy.
 **PROPOSED / NOT APPROVED OR IMPLEMENTED.** The following concrete candidate policy addresses
 the final delivery requirement to define retraining conditions. It is a reviewable extension to
 be designed and approved under a new or superseding decision before implementation in a separate
-development-only or synthetic monitoring demonstration. It does not change selected final-evaluation method, operate during
-the frozen Phase 13 replay, authorize automatic retraining, or accept broader instructor-feedback proposal wholesale.
+development-only or synthetic monitoring demonstration. It does not change the approved final-replay method, operate during
+the frozen Phase 13 replay, authorize automatic retraining, or approve the
+[broader instructor-feedback proposal](DECISIONS.md#adr-028--instructor-feedback-alignment-and-public-demonstration) as a whole.
 
 All numeric values below are **proposed operational policy parameters**, chosen to demonstrate
 minimum-support and persistence rules; none is empirically validated or calibrated here.
@@ -718,7 +723,7 @@ parameters and metric/segment rules before use. The final holdout must never cal
 | Policy element | Proposed testable rule and evidence requirement |
 |---|---|
 | Reference and windows | Version a development-only reference from approved chronological forecasts earlier than the assessment windows, using identical eligibility, metric definitions and comparable origin/horizon/segment populations. Exclude assessed rows from the reference. Assess completed, consecutive **non-overlapping 14-calendar-day windows**; show daily and trailing 7/14-day descriptive views separately. Freeze reference values and boundaries before assessment. |
-| Minimum evidence | For a performance or feature-shift decision require at least **10 distinct observed target dates, 100 distinct stores and 1,000 eligible paired rows** in each assessed window and its reference. Use the fixed common-row comparison population; disclose total eligible rows and availability separately. For availability checks apply the same date/store/row floors to the eligible observed-label roster **before** filtering missing forecasts, so an outage cannot hide itself. WAPE comparisons additionally require a positive reference WAPE and actual-value denominator. Unsupported/sparse subgroups, zero denominators or partial windows are **UNAVAILABLE EVIDENCE**, never a passing result. These monitoring floors are distinct from uncertainty contract's calibration floors. |
+| Minimum evidence | For a performance or feature-shift decision require at least **10 distinct observed target dates, 100 distinct stores and 1,000 eligible paired rows** in each assessed window and its reference. Use the fixed common-row comparison population; disclose total eligible rows and availability separately. For availability checks apply the same date/store/row floors to the eligible observed-label roster **before** filtering missing forecasts, so an outage cannot hide itself. WAPE comparisons additionally require a positive reference WAPE and actual-value denominator. Unsupported/sparse subgroups, zero denominators or partial windows are **UNAVAILABLE EVIDENCE**, never a passing result. These monitoring floors are distinct from the [uncertainty calibration floors](DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay). |
 | Performance warning | If supported window WAPE exceeds **1.20 times** its comparable development reference, issue **WARNING** with MAE/MAPE, error direction and segment/coverage context. One window does not trigger retraining. Reference mismatches or missing labels are unavailable evidence. |
 | Availability warning | Warn if raw forecast availability falls below **99%** of eligible observed open-label targets in a complete window. This is a proposed monitoring parameter, not a measured service guarantee; it does not change model-selection coverage rules. Count missing predictions instead of excluding them from availability. |
 | Characteristic warning | For a preapproved feature, warn on an absolute category-frequency change of at least **10 percentage points**, or a numeric median shift greater than **0.5 reference interquartile ranges**, with comparable populations and explicit missingness. Zero reference spread, changed category semantics or insufficient support give unavailable evidence for that check. These are descriptive effect-size rules, not significance tests or a new learned drift model. |

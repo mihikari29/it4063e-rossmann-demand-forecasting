@@ -234,7 +234,8 @@ The approved 50-path floor allows a finite extreme 0.98 rank; n=49 also has a va
 but is below this pragmatic floor. Neither floor demonstrates tail reliability.
 No pooling across k, clipping residuals to positive errors or fallback to daily interval bounds.
 
-For a complete issued operational forecast prefix, use monetary inventory contract's accepted equations:
+For a complete issued operational forecast prefix, use the
+[accepted monetary-bound formulas](../../docs/DECISIONS.md#adr-016--inventory-proxy-values-and-cumulative-uncertainty):
 
 ```text
 D_k = sum(h=1..k) operational_forecast_h

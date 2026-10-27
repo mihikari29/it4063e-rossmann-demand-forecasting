@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from rossmann_forecasting.forecasting.holt_winters_evaluation import (
+    summarize_holt_winters_development,
+)
+from rossmann_forecasting.forecasting.lightgbm_evaluation import summarize_lightgbm_development
 from rossmann_forecasting.forecasting.metrics import (
     summarize_development_evaluation,
     summarize_forecast_metrics,
@@ -94,3 +98,120 @@ def test_pooled_metrics_are_computed_from_rows_and_horizon_table_is_complete() -
     assert result["by_horizon"].shape[0] == 14
     assert result["by_horizon"]["horizon"].tolist() == list(range(1, 15))
     assert result["by_horizon"].loc[2, "mae"] is None or pd.isna(result["by_horizon"].loc[2, "mae"])
+
+
+@pytest.mark.parametrize(
+    "summarizer,forecast_column",
+    [
+        pytest.param(
+            summarize_holt_winters_development, "raw_statistical_forecast", id="holt_winters"
+        ),
+        pytest.param(summarize_lightgbm_development, "raw_lightgbm_forecast", id="lightgbm"),
+    ],
+)
+@pytest.mark.parametrize("empty", [False, True], ids=["populated", "empty"])
+@pytest.mark.parametrize(
+    "missing_columns,error_type,error_args",
+    [
+        (("validation_window",), KeyError, ("validation_window",)),
+        (
+            ("horizon",),
+            ValueError,
+            ("Forecast records are missing metric fields: ['horizon'].",),
+        ),
+        (("validation_window", "horizon"), KeyError, ("validation_window",)),
+        (
+            ("horizon", "actual_sales"),
+            ValueError,
+            ("Forecast records are missing metric fields: ['actual_sales', 'horizon'].",),
+        ),
+    ],
+)
+def test_model_summary_preserves_original_missing_field_errors(
+    summarizer, forecast_column, empty, missing_columns, error_type, error_args
+) -> None:
+    records = _records([10.0], [8.0], [1.0]).rename(
+        columns={"raw_baseline_forecast": forecast_column}
+    )
+    if empty:
+        records = records.iloc[:0]
+    records = records.drop(columns=list(missing_columns))
+    original = records.copy(deep=True)
+
+    with pytest.raises(error_type) as error:
+        summarizer(records)
+
+    assert type(error.value) is error_type
+    assert error.value.args == error_args
+    assert str(error.value) == str(error_type(*error_args))
+    pd.testing.assert_frame_equal(records, original)
+
+
+@pytest.mark.parametrize(
+    "missing_columns",
+    [("validation_window",), ("horizon",), ("validation_window", "horizon")],
+)
+def test_baseline_summary_preserves_explicit_development_field_guard(missing_columns) -> None:
+    records = _records([10.0], [8.0], [1.0]).drop(columns=list(missing_columns))
+
+    with pytest.raises(ValueError) as error:
+        summarize_development_evaluation(records)
+
+    assert type(error.value) is ValueError
+    assert error.value.args == (
+        "Development forecast records require validation_window and horizon.",
+    )
+
+
+@pytest.mark.parametrize(
+    "summarizer,forecast_column,extra_keys",
+    [
+        pytest.param(
+            summarize_holt_winters_development,
+            "raw_statistical_forecast",
+            ("clipping",),
+            id="holt_winters",
+        ),
+        pytest.param(summarize_lightgbm_development, "raw_lightgbm_forecast", (), id="lightgbm"),
+    ],
+)
+@pytest.mark.parametrize(
+    "actual,forecast,open_values",
+    [
+        ([10.0, 30.0, 0.0, 7.0], [8.0, 31.0, 0.0, None], [1.0, 1.0, 1.0, 1.0]),
+        ([10.0, 0.0, None, 5.0], [8.0, 20.0, 4.0, 6.0], [1.0, 0.0, 1.0, None]),
+        ([0.0, 0.0], [0.0, 4.0], [1.0, 1.0]),
+        ([10.0, 20.0], [None, None], [1.0, 1.0]),
+        ([], [], []),
+    ],
+    ids=["partial", "mixed_labels", "zero_denominators", "unavailable", "empty"],
+)
+def test_model_summary_retains_shared_metric_tables_and_output_schema(
+    summarizer, forecast_column, extra_keys, actual, forecast, open_values
+) -> None:
+    baseline_records = _records(actual, forecast, open_values)
+    baseline_records["validation_window"] = [
+        f"validation_{index % 3 + 1}" for index in range(len(baseline_records))
+    ]
+    expected = summarize_development_evaluation(baseline_records)
+    records = baseline_records.rename(columns={"raw_baseline_forecast": forecast_column})
+    records["model_forecast_unclipped"] = records[forecast_column]
+    records["forecast_was_clipped"] = False
+    original = records.copy(deep=True)
+
+    actual_summary = summarizer(records)
+
+    assert tuple(actual_summary) == (
+        "by_window",
+        "pooled",
+        "by_horizon",
+        *extra_keys,
+        "coverage_guardrail_threshold",
+        "coverage_guardrail_passed",
+        "requires_coverage_review",
+    )
+    for key in ("by_window", "by_horizon"):
+        pd.testing.assert_frame_equal(actual_summary[key], expected[key], check_exact=True)
+    assert actual_summary["pooled"] == expected["pooled"]
+    assert actual_summary["coverage_guardrail_threshold"] == 0.99
+    pd.testing.assert_frame_equal(records, original)

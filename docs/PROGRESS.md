@@ -252,3 +252,12 @@ Locked environment sync, dependency/lock consistency, Ruff lint/format, local-li
 inventory/custody logic, dependencies, CI and runtime exposure remain unchanged. No real-source or
 canonical artifact contents, protected outcomes, analytical pipeline, listener or deployment were
 accessed/run. Fixture fits use artificial inputs only. No performance improvement is claimed.
+
+Follow-up corrections restore the original missing-field exception types/messages through a shared
+metric-table builder, while preserving the Seasonal Naive wrapper's explicit guard. Twenty-nine
+regression cases were added: 16 for model-summary errors, three for the baseline guard and ten for
+valid tables/schemas. The focused metrics file passed 32 tests; seven forecasting fixture suites
+passed 417 tests. Eighteen complete pre-cleanup/current summary comparisons matched exactly.
+Targeted documentation wording and decision links were corrected without changing scientific
+definitions, proposal math or approval gates. Ruff, formatting, local links, lock/dependency and
+whitespace checks passed. Independent reviewer acceptance remains outstanding.

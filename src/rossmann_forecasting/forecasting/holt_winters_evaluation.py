@@ -12,7 +12,7 @@ from rossmann_forecasting.forecasting.holt_winters import (
     forecast_holt_winters,
 )
 from rossmann_forecasting.forecasting.metrics import (
-    summarize_development_evaluation,
+    _summarize_development_metric_tables,
     summarize_forecast_metrics,
 )
 from rossmann_forecasting.forecasting.validation import (
@@ -131,7 +131,7 @@ def build_development_holt_winters_evaluation(
 def summarize_holt_winters_development(records: pd.DataFrame) -> dict[str, Any]:
     """Summarize standalone Phase 4-compatible metrics and forecast coverage."""
 
-    summary = summarize_development_evaluation(records, forecast_column=FORECAST_COLUMN)
+    summary = _summarize_development_metric_tables(records, forecast_column=FORECAST_COLUMN)
     window_frame = summary["by_window"]
     rates = pd.to_numeric(window_frame["open_label_forecast_coverage_rate"], errors="coerce")
     guardrail_passed = bool(rates.notna().all() and rates.ge(COVERAGE_GUARDRAIL).all())

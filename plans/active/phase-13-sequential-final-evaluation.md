@@ -283,7 +283,8 @@ substitute another table, source, horizon, or model. This check establishes conf
 declared UNVALIDATED transport contract only. It is not evidence that June quantiles transport
 statistically to July or that empirical coverage will be achieved.
 
-**A. Fit B calibration evidence (historical observations).** uncertainty contract's daily calibration residuals
+**A. Fit B calibration evidence (historical observations).** Under the
+[accepted uncertainty method](../../docs/DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay), daily calibration residuals
 are signed `actual_sales_h - raw_forecast_h` on its accepted observed-Open=1 population. Partial
 paths contribute eligible individual observations, pooled equally across Store-origin rows at each
 exact horizon; do not borrow across horizons, stores, or candidate models or substitute the
@@ -421,7 +422,8 @@ with their populations and denominators. Feature summaries use origin-safe refer
 Sales-derived cohorts. Precommit deterministic integrity and data-quality alerts only, such as
 changed identities, duplicate/missing keys, invalid schema/value, blocked-path attempt, out-of-order
 event, or incomplete provider response. Alert definitions remain independent of final outcomes.
-An unavailable prediction or unknown planned Open remains explicit with its reason. uncertainty contract's
+An unavailable prediction or unknown planned Open remains explicit with its reason. The
+[uncertainty method's](../../docs/DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay)
 40-row daily and 50-prefix cumulative floors define calibration estimators only; they do not
 establish monitoring reliability. Under the owner-approved A-bounded inventory scope, update
 inventory state and descriptive KPIs after each authorized daily release; label episode-to-date
@@ -434,7 +436,7 @@ alert. Do not claim statistically reliable drift from two forecast blocks or 28 
 
 ### Owner approval — scope only
 
-**Owner decision, 2026-10-10: Option A-bounded inventory scope APPROVED — SCOPE ONLY.** bounded inventory scope records two independent H14 origin-frozen standing-target episodes at the July 3 and July 17 origins, the full precommitted scenario/sensitivity panel subject to its resource-feasibility gate, daily chronological simulated state/KPI evaluation under Phase 10 mechanics, and the accepted limitation that later reviews have no fresh calibrated protection-period forecast. The owner also explicitly accepts that these episodes do not demonstrate continuous rolling 28-day inventory validation. The Technical Lead selected the remaining P13 methods under the selected final-evaluation method. Method selection is not implementation approval; source/preparation provenance, operator, resource, implementation, rehearsal, staging, and analytical-release preconditions remain open.
+**Owner decision, 2026-10-10: Option A-bounded inventory scope APPROVED — SCOPE ONLY.** The [approved inventory scope](../../docs/DECISIONS.md#adr-025--phase-13-a-bounded-inventory-evaluation-scope) specifies two independent H14 origin-frozen standing-target episodes at the July 3 and July 17 origins, the full precommitted scenario/sensitivity panel subject to its resource-feasibility gate, daily chronological simulated state/KPI evaluation under Phase 10 mechanics, and the accepted limitation that later reviews have no fresh calibrated protection-period forecast. The owner also explicitly accepts that these episodes do not demonstrate continuous rolling 28-day inventory validation. The Technical Lead selected the remaining P13 methods under the [final-evaluation methodology](../../docs/DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology). Method selection is not implementation approval; source/preparation provenance, operator, resource, implementation, rehearsal, staging, and analytical-release preconditions remain open.
 
 ### Approved bounded episodes
 
@@ -466,7 +468,7 @@ The explicit coverage limitation is:
 - Not every later review has complete forecast-supported protection-period coverage.
 - The episodes do not demonstrate continuous calibrated 28-day inventory operation.
 
-The simulation evaluates the precommitted standing policy's daily state transitions and paired H14 outcomes. It cannot describe each later order as a newly forecast, calibrated protection-period recommendation. The owner accepted this explicit Phase 13 scope exception in bounded inventory scope; the selected execution method is recorded in selected final-evaluation method. Method selection does not satisfy implementation or data-access gates.
+The simulation evaluates the precommitted standing policy's daily state transitions and paired H14 outcomes. It cannot describe each later order as a newly forecast, calibrated protection-period recommendation. The [inventory scope decision](../../docs/DECISIONS.md#adr-025--phase-13-a-bounded-inventory-evaluation-scope) accepts this exception; the [final-evaluation methodology](../../docs/DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology) defines execution. Method selection does not satisfy implementation or data-access gates.
 
 ### July contexts, schedules and uncertainty
 
@@ -487,7 +489,7 @@ For the observed-Sales-reference case, consume only each authorized day's unchan
 
 Initialize both policies with the same origin-safe stock, zero on-order pipeline and zero backorders. Share schedule, lead time, c/a/g costs, family, replicate, variant and exogenous demand path. Keep separate policy inventory states and order queues after their decisions diverge.
 
-For each released date, apply accepted inventory simulation contract event order: receive due orders once at BO; apply that day's demand; calculate fulfilled and unmet monetary turnover; charge holding and shortfall costs; update stock and outstanding orders; calculate inventory position; then, on days 1–13, replenish toward the unchanged origin target. An EOD order placed on day t arrives at BO-day t+L+1. Lost sales create no backlog. Day 14 processes due receipts and demand but suppresses the final order. Checkpoint both policy states atomically after the day's transitions.
+For each released date, follow the [accepted inventory event order](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting): receive due orders once at BO; apply that day's demand; calculate fulfilled and unmet monetary turnover; charge holding and shortfall costs; update stock and outstanding orders; calculate inventory position; then, on days 1–13, replenish toward the unchanged origin target. An EOD order placed on day t arrives at BO-day t+L+1. Lost sales create no backlog. Day 14 processes due receipts and demand but suppresses the final order. Checkpoint both policy states atomically after the day's transitions.
 
 Report holding cost, shortfall penalty, total simulated holding-plus-shortfall cost, value fill, positive-demand stockout-day rate, completed positive-demand receipt-cycle service proxy, average ending stock, unmet turnover, terminal stock, terminal pipeline, and late orders. Preserve accepted KPI denominators, null zero-denominator ratios, and right-censoring of the final receipt cycle. Apply common H14 terminal accounting to both policies; include terminal stock cost and outstanding procurement commitment as exposures outside the primary objective. No numeric service threshold, actual-stock claim, realized-savings claim, or causal-effect claim is authorized.
 
@@ -568,7 +570,7 @@ source staging, rehearsal, or analytical release.
 
 | Area | Proposed acceptance evidence | Release prerequisite? |
 |---|---|---|
-| Phase and scope | A-bounded scope accepted in bounded inventory scope; method selected under the selected final-evaluation method; implementation, rehearsal, staging, analytical release and closeout remain distinct | Yes |
+| Phase and scope | Approved [inventory scope](../../docs/DECISIONS.md#adr-025--phase-13-a-bounded-inventory-evaluation-scope) and [evaluation method](../../docs/DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology); implementation, rehearsal, staging, analytical release and closeout remain distinct | Yes |
 | Git/artifacts | Branch based on verified origin/main; Phase 7–10 artifacts/manifests unchanged; new outputs immutable and identified | Yes |
 | Recipe/forecast | Two exact trial-A fits; ordered 29 predictors; fixed params, cutoffs, categories, seeds; complete H14 grids; raw/operational separation | Yes |
 | Chronology/custody | Two forecast origins; immutable block issue before outcome access; A2 provider boundary or approved alternative; durable per-day intent; chronological release | Yes |

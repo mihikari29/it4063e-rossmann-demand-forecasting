@@ -80,7 +80,7 @@ rows under the deterministic rule “at least 30 earlier exact-context rows, una
 `resolution_uncertain = true` and match counts/rates. This is a historical-context candidate, not
 observed future status or guaranteed ground truth. The source `Open` column remains null, and the
 candidate rule uses no future Sales or Customers. Phase 3 subsequently resolved the downstream
-policy in accepted feature contract and the [Feature Contract](FEATURE_CONTRACT.md): these candidates remain
+policy in the [Feature Contract](FEATURE_CONTRACT.md): these candidates remain
 audit-only, never establish evaluation eligibility, and never force an operational zero. Missing
 source Open remains unknown rather than a known closure.
 

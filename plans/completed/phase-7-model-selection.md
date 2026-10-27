@@ -196,7 +196,8 @@ definition, complete vectors where available, missingness/failure/clipping diagn
 and refit/provenance identities. It owns daily/cumulative interval calibration, chronological
 earlier-calibration/later-assessment assignment and all interval calculations. All outer windows
 have already informed selection: later development assessment is not an independent final test.
-Respect monetary inventory contract: do not sum marginal upper bounds or assume independent errors. Phase 8 cannot
+Follow the [cumulative-uncertainty rules](../../docs/DECISIONS.md#adr-016--inventory-proxy-values-and-cumulative-uncertainty):
+do not sum marginal upper bounds or assume independent errors. Phase 8 cannot
 revise selection from interval outcomes without a separately authorized methodological review.
 
 ## 6. Provenance compatibility

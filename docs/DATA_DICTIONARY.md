@@ -89,7 +89,8 @@ inputs use only history available at the
 simulation origin, and compared policies share inputs, demand paths, seeds, and starting stocks.
 The [completed Phase 9 plan](../plans/completed/phase-9-synthetic-inventory.md) records the accepted
 design and completed scenario generator. Section D.1 summarizes the accepted illustrative
-assumptions. monetary inventory contract's monetary basis remains in force; these assumptions are not observed Rossmann
+assumptions. The [valuation rules](DECISIONS.md#adr-016--inventory-proxy-values-and-cumulative-uncertainty)
+still apply; these assumptions are not observed Rossmann
 operating data or measured business costs. Phase 9 does not implement the inventory simulator.
 
 | Name | Category | Source | Meaning | Unit | Known Range | Generation / Derivation Rule | Availability at Forecast Time | Notes |
@@ -151,7 +152,8 @@ grains are listed in the completed plan and canonical run manifest. `ReorderPoin
 source/planned Open; an unresolved required forecast makes the target unavailable rather than
 silently supplying zero.
 
-The [approved Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md) and accepted inventory simulation contract
+The [inventory specification](../plans/completed/phase-10-inventory-simulation.md) and
+[accepted policy decision](DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
 define the refinements below. The implementation and corrected canonical development run are accepted;
 the formal closeout is recorded in the completed plan.
 They retain Phase 9's accepted monetary inputs and Phase 8's origin-prefix definitions. V denotes

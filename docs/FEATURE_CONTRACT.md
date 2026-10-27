@@ -115,12 +115,13 @@ rows only; use the reviewed LightGBM unseen-category policy. Preserve source-con
 in feature artifacts. Any model-specific null conversion belongs in the adapter and must not turn
 absent history into zero or silently change the frozen predictor contract.
 
-The initial recursive state under application/recursion contract is the finite, non-negative clipped **raw** prediction.
+Under the [approved recursion rules](DECISIONS.md#adr-017--proportionate-application-and-forecast-extension-scope),
+the initial recursive state is the finite, non-negative clipped **raw** prediction.
 Generate the full raw path before applying Open routing to operational outputs; future Open is
 neither a predictor nor recursive feedback. A closure-aware feedback strategy would require a
 separately reviewed methodology change. The implemented LightGBM specification fixes clipping, missing future
 covariates/internal calendar states, training/tuning policies and regression coverage. Reuse the windows and metric contract linked from the
-[project roadmap](PROJECT_PLAN.md); The accepted development selection remains fixed.
+[project roadmap](PROJECT_PLAN.md). The accepted development selection remains fixed.
 
 ## Final Holdout Firewall
 

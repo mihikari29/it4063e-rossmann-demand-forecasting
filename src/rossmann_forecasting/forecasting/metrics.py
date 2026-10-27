@@ -181,15 +181,12 @@ def summarize_forecast_metrics(
     }
 
 
-def summarize_development_evaluation(
+def _summarize_development_metric_tables(
     records: pd.DataFrame,
     *,
     forecast_column: str = "raw_baseline_forecast",
 ) -> dict[str, Any]:
-    """Summarize each approved window, pooled development rows, and horizons 1..14."""
-
-    if "validation_window" not in records or "horizon" not in records:
-        raise ValueError("Development forecast records require validation_window and horizon.")
+    """Build common tables, preserving window lookup before metric-field validation."""
 
     by_window = [
         summarize_forecast_metrics(
@@ -212,6 +209,24 @@ def summarize_development_evaluation(
         )
         for step in range(1, 15)
     ]
+    return {
+        "by_window": pd.DataFrame(by_window),
+        "pooled": pooled,
+        "by_horizon": pd.DataFrame(by_horizon),
+    }
+
+
+def summarize_development_evaluation(
+    records: pd.DataFrame,
+    *,
+    forecast_column: str = "raw_baseline_forecast",
+) -> dict[str, Any]:
+    """Summarize each approved window, pooled development rows, and horizons 1..14."""
+
+    if "validation_window" not in records or "horizon" not in records:
+        raise ValueError("Development forecast records require validation_window and horizon.")
+
+    summary = _summarize_development_metric_tables(records, forecast_column=forecast_column)
     coverage_fields = (
         "scope",
         "validation_window",
@@ -227,8 +242,6 @@ def summarize_development_evaluation(
         "open_label_coverage_unavailable_reason",
     )
     return {
-        "by_window": pd.DataFrame(by_window),
-        "pooled": pooled,
-        "by_horizon": pd.DataFrame(by_horizon),
-        "coverage_by_window": pd.DataFrame(by_window).loc[:, coverage_fields],
+        **summary,
+        "coverage_by_window": summary["by_window"].loc[:, coverage_fields],
     }
