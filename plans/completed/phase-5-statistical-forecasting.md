@@ -1,61 +1,8 @@
-# Phase 5 — Statistical Forecasting (Design and Execution Plan)
+# Holt-Winters Evaluation
 
-**Status:** COMPLETE. The user explicitly approved the Phase 5 methodology on 2026-10-05; the
-accepted design is recorded in ADR-014. Implementation and development-only evaluation were
-integrated by PR #7, squash-merged into `main` at
-`76707a03b7d10dbaa79d3ef26b39e31994431d70`. This plan is archived as part of the explicit
-closeout. No final-holdout forecast or evaluation was performed.
+The fixed statistical comparison is complete. This reference specifies the implemented model, history and failure contracts.
 
-The design/approval sections preserve their checkpoint history. Current environment policy is
-ADR-018 (Python 3.12–3.14 and a generated lock); the statistical specification and development
-evaluation are unchanged. ADR-015 discloses earlier full-source descriptive exposure and defines
-the later holdout release boundary. PROGRESS owns current Git state and maintained result tables.
-
-## 1. Objective and current state
-
-Phase 4 is COMPLETE. Its Seasonal Naive implementation and development evaluation were merged in
-PR #5; formal closeout was merged in PR #6. The Phase 4 plan is archived at
-`plans/completed/phase-4-seasonal-naive.md`, and accepted ADR-013 remains the source of truth for
-the fixed windows, baseline, routing, eligibility, and metric contract.
-
-Phase 5 evaluates one classical additive Holt-Winters candidate against the reviewed Seasonal
-Naive implementation on the same three development windows. This phase evaluates a fixed candidate,
-not the final project model. At the original approval checkpoint no statistical model had been
-fitted or forecast; the implementation results are recorded in Section 15. The final holdout remains
-excluded from Phase 5 forecasting, scoring and model selection.
-
-## 2. Fixed project constraints — already accepted
-
-These constraints are inherited from the proposal and earlier accepted phases; this plan does not
-reopen them:
-
-- Unit: Store × Date. Target: monetary Rossmann `Sales`; this is not SKU or physical-unit demand.
-- Primary horizon: 14 calendar days.
-- Use exactly the approved, chronological Phase 4 development windows and compare to Seasonal
-  Naive on those same origins and target dates:
-
-  | Window | Forecast origin | Target dates |
-  |---|---|---|
-  | `validation_1` | 2015-05-22 | 2015-05-23 through 2015-06-05 |
-  | `validation_2` | 2015-06-05 | 2015-06-06 through 2015-06-19 |
-  | `validation_3` | 2015-06-19 | 2015-06-20 through 2015-07-03 |
-
-- Final holdout: 2015-07-04 through 2015-07-31; it remains unevaluated and inaccessible to model
-  fitting, validation, tuning, or reporting in this phase.
-- Primary metric: MAE. Also report RMSE, MAPE with the approved caution/zero handling, and WAPE.
-- Primary metric population: observed target rows with actual source `Open == 1`, observed Sales,
-  and an available raw forecast.
-- Preserve the Phase 4 raw-forecast versus operational-forecast separation. After raw forecast
-  generation, known source `Open == 0` routes operational output to zero; `Open == 1` routes to the
-  raw output; unknown Open routes to null.
-- Future actual Sales and future Customers are prohibited as forecast inputs. No random shuffling.
-- Recompute Seasonal Naive through the reviewed Phase 4 implementation for comparisons; do not
-  depend on a pre-existing generated forecast artifact or change the Phase 4 algorithm.
-
-The Phase 4 zero-handling contract is unchanged: MAPE uses only eligible rows with actual Sales
-greater than zero, adds no epsilon, and reports excluded-zero counts and coverage. WAPE is null
-with a reason if the eligible actual-Sales denominator is zero. Pooled metrics are calculated on
-the pooled eligible rows, not as averages of window metrics.
+[Verified results](../../docs/PROGRESS.md) · [Decisions](../../docs/DECISIONS.md)
 
 ## 3. Approved primary model
 
@@ -130,7 +77,7 @@ This is a calendar/history-availability result only. Under the proposed threshol
 no date-history eligibility loss in these windows, so insufficient history alone does not appear
 to create a material coverage issue or require a fallback design. It does not establish that Sales
 is usable or that a statistical fit will succeed; numerical fit failures and resulting forecast
-coverage had not been measured at that design checkpoint; Section 15 records the later run.
+coverage and numerical fit success are reported separately in the results summary.
 
 ## 5. Approved forecasting semantics
 
@@ -169,7 +116,7 @@ Do not silently fall back to Seasonal Naive: it is Model 0 and using it as a fal
 the candidate comparison. Do not fall back to Holt or Simple Exponential Smoothing. The date-only
 audit finds no Stores below the proposed history threshold, so there is no date-availability
 evidence requiring a short-history fallback. Numerical failure prevalence was unknown at design
-approval and was measured in Section 15. Keep failures explicit and coverage visible; if numerical
+approval; actual coverage is recorded in the results summary. Keep failures explicit and coverage visible; if numerical
 failures later appear material, return for design review rather than silently changing the model
 contract.
 
@@ -226,7 +173,7 @@ origin-censored training series, not validation hyperparameter tuning. The appro
 is `statsmodels>=0.15,<0.16`; no other direct dependency is added solely for a transitive need.
 
 At approval, the project required Python `>=3.14,<3.15` (Python 3.14.5); external review verified
-statsmodels 0.15.0 support. ADR-018 now supersedes that interpreter restriction with
+statsmodels 0.15.0 support. portable locked-environment policy now supersedes that interpreter restriction with
 `>=3.12,<3.15` and a generated dependency lock. The statsmodels bound/model settings and recorded
 numerical results remain unchanged; install through the current locked project workflow.
 
@@ -309,158 +256,3 @@ The protected holdout is 2015-07-04 through 2015-07-31. Any eventual Phase 5 run
 inputs to dates no later than 2015-07-03 before model fitting/evaluation code can access target
 outcomes. This planning task performed only a date-only key-availability audit through 2015-07-03.
 No holdout Sales, distributions, forecast, or metrics were read or produced.
-
-## 12. Tests required after approval
-
-Use synthetic fixtures; no final-holdout outcomes or real-data model-performance tests are allowed.
-
-| ID | Required test |
-|---|---|
-| A | Exact origin censoring: fitting history includes no date after the origin. |
-| B | Extract the complete most-recent contiguous daily segment ending at the origin. |
-| C | A missing calendar date breaks the usable contiguous segment. |
-| D | An older pre-gap segment is not bridged into the recent segment. |
-| E | No observed Store row on the origin makes statistical history unavailable. |
-| F | Minimum-history threshold behavior, including 27 versus 28 consecutive observations. |
-| G | The model fit receives only Sales through the origin. |
-| H | Mutating target-window Sales cannot change raw statistical forecasts. |
-| I | Mutating target Open cannot change raw statistical forecasts. |
-| J | Output emits only observed target Store × Date keys. |
-| K | The model creates all internal horizons `h=1..14` in one forecast operation. |
-| L | Each emitted horizon equals calendar `Date - forecast_origin`. |
-| M | Negative forecasts preserve the unclipped value and are clipped only under the approved rule. |
-| N | Open routing is separate from raw forecasts; closed/unknown/open cases follow the contract. |
-| O | Primary evaluation population matches Phase 4 source-Open rules. |
-| P | MAPE and WAPE zero handling remains exactly Phase 4-compatible. |
-| Q | Paired comparison uses identical Seasonal Naive/Holt-Winters target rows. |
-| R | Fit or forecast failures become explicit unavailable forecasts, never silent fallbacks. |
-| S | Caller-owned DataFrames are not mutated. |
-| T | No Customers or future actual fields enter model-fitting inputs. |
-| U | Validation windows are exactly the Phase 4 windows. |
-| V | Final holdout dates are rejected/excluded before fitting and evaluation. |
-
-Also assert output-key uniqueness, fit-series row counts/endpoints, clipping counts/minimum
-diagnostics, explicit coverage denominators, and that Sales/Open labels are attached only after raw
-forecasts are complete. No test may fit against or calculate performance on holdout outcomes.
-
-## 13. Approved Phase 5 implementation scope
-
-The implementation includes only:
-
-- reusable per-Store, per-origin fixed Holt-Winters fitting and origin-safe 14-step forecasting;
-- contiguous-history eligibility and explicit failure diagnostics;
-- clipped raw forecasts and post-forecast Open routing;
-- Phase 4-compatible standalone evaluation and fair paired Seasonal Naive comparison;
-- deterministic ignored development artifacts, focused tests, and a thin runner if useful.
-
-Do not add SARIMA, large ETS searches, validation-driven variant tuning, Global LightGBM, final
-model selection, holdout evaluation, uncertainty intervals, inventory simulation, API, or dashboard
-in Phase 5.
-
-## 14. Approval record and approved implementation clarifications
-
-The user explicitly approved the methodology in Sections 3–13 on 2026-10-05. The durable contract
-is recorded in ADR-014. Additional approved implementation clarifications are:
-
-- Any history ineligibility, model-construction exception, fit exception, forecast exception,
-  forecast length other than 14, non-numeric/non-finite forecast, or other unusable model output
-  makes that Store-origin forecast unavailable. No fallback model is permitted.
-- Record deterministic sanitized failure categories without stack traces in forecast artifacts.
-  Capture relevant warnings and aggregate warning/failure counts by category. Record optimizer or
-  convergence status separately from forecast availability when the installed result API exposes
-  it.
-- Before interpreting accuracy, calculate Open-label forecast availability by window. If any
-  window is below 99%, produce auditable forecasts, coverage, and diagnostics, mark the result as
-  requiring coverage review, report affected Store-origin fits, and suppress comparative
-  superiority/inferiority interpretation. If every window is at least 99%, continue to the paired
-  comparison. This is a precommitted coverage-quality guardrail, not a tuning parameter.
-- Generate Holt-Winters raw forecasts before attaching target Sales, Open, or validation labels;
-  target-window Sales and Open mutations must not affect raw statistical forecasts.
-- Recompute Seasonal Naive through the reviewed Phase 4 implementation and preserve its algorithm
-  and existing metric outputs. Shared/column-aware metric logic must have regression coverage.
-
-No methodology question remained open at the approval checkpoint. This approval record does not
-alter the later closeout recorded at the end of this archived plan.
-
-## 15. Historical Implementation and Development Result Snapshot
-
-This dated checkpoint preserves reviewed evidence. Current maintained numerical results and
-validation/state updates are in [PROGRESS](../../docs/PROGRESS.md); new fixes should reference
-that record rather than independently editing duplicate metric tables here.
-
-At this historical implementation checkpoint, implementation was complete on `feat/holt-winters`
-and Phase 5 was **IMPLEMENTED / UNDER REVIEW**. Source code, tests, and documentation were ready
-for external review. That checkpoint did not merge the branch, archive this plan, or select the final
-project model.
-
-The runner uses statsmodels 0.15.0 and completed against Phase 2 `train.parquet`. At the Parquet
-read boundary it projects Store, Date, Sales, and Open and filters to Date <= 2015-07-03. It
-recomputed the Phase 4 Seasonal Naive comparator from the reviewed implementation. The raw Rossmann
-and Phase 2 provenance checks passed before and after the run. No final-holdout forecast, score,
-target statistic, or metric was produced.
-
-Across the three windows, there were 3,345 Store-origin fits and 46,830 observed target records.
-All fits succeeded, all 14-step forecasts were finite, and there were no warnings, failures, or
-optimizer non-convergence flags. Forecast availability was 100% both overall and among Open=1
-labels in every window, so the approved 99% coverage guardrail passed. The paired comparison
-contains 38,553 identical Open=1, observed-Sales, two-model-available rows.
-
-Standalone Holt-Winters metrics on eligible open-label rows:
-
-| Window | Eligible rows | MAE | RMSE | MAPE | WAPE |
-|---|---:|---:|---:|---:|---:|
-| validation_1 | 11,678 | 1,195.5661 | 1,617.4146 | 15.2155% | 0.155442 |
-| validation_2 | 13,438 | 1,136.8306 | 1,483.1660 | 16.9474% | 0.162669 |
-| validation_3 | 13,437 | 1,501.5664 | 1,974.7435 | 22.5253% | 0.212929 |
-| Pooled | 38,553 | 1,281.7446 | 1,708.3073 | 18.3669% | 0.177439 |
-
-Identical-row paired MAE comparison (difference = Holt-Winters minus Seasonal Naive):
-
-| Population | Paired rows | Holt-Winters MAE | Seasonal Naive MAE | Difference | Relative change | Lower MAE |
-|---|---:|---:|---:|---:|---:|---|
-| validation_1 | 11,678 | 1,195.5661 | 1,101.5940 | +93.9721 | +8.5306% | Seasonal Naive |
-| validation_2 | 13,438 | 1,136.8306 | 2,269.7721 | -1,132.9415 | -49.9143% | Holt-Winters |
-| validation_3 | 13,437 | 1,501.5664 | 1,596.5170 | -94.9506 | -5.9474% | Holt-Winters |
-| Pooled | 38,553 | 1,281.7446 | 1,681.2703 | -399.5257 | -23.7633% | Holt-Winters |
-
-Holt-Winters had lower paired development MAE in two windows and pooled, while Seasonal Naive was
-lower in validation_1. This is a report of the fixed candidates on the approved development rows,
-not a declaration of the final model. Clipping affected 1,085 / 46,830 internal forecasts (2.3169%);
-the minimum unclipped forecast was -4,175.2857. The minimum is retained for audit and was not used
-to tune the model.
-
-Ignored reproducible artifacts are under `data/processed/holt_winters/`, including observed-key
-forecasts, full internal paths, per-fit diagnostics, standalone and paired metrics, coverage
-guardrail, clipping diagnostics, and a provenance/hash manifest. All 46,830 target keys are unique
-and dates end on 2015-07-03.
-
-Initial implementation validation: full `pytest` suite **95 passed**; Ruff check and format check
-passed. All planned artifact destinations passed `git check-ignore`. The real-data runner completed
-with exit code 0. At this historical checkpoint, Phase 5 remained under external review; no holdout
-evaluation, merge, final model selection, plan archival, or Phase 6 work was included.
-
-### External-review follow-up — 2026-10-05
-
-External review identified that the reusable forecaster accepted horizons from 1 through 14 but
-always requested and emitted 14 forecast steps. The implementation now applies the validated
-horizon to the model call, output-length check, and internal path, records it in every per-fit
-diagnostic, and calculates clipping rates using the sum of successful requested horizons. Added
-regression coverage verifies 7- and 14-step calls and paths, target bounds, forecast-length
-validation, failed-fit unavailable states, and horizon-aware clipping rates. The Phase 5 runner
-continues to use the approved 14-day horizon; its rerun reproduced the previously recorded counts,
-metrics, paired comparison, clipping results, and passed 99% coverage guardrail unchanged. The
-ignored fit-diagnostics schema now includes `forecast_horizon`, so generated artifact hashes were
-regenerated; numerical results did not change. Full-repository validation passed: 102 pytest tests,
-`ruff check .`, `ruff format --check .`, `git diff --check`, and relative Markdown-link validation
-across 19 files. At this post-review-fix checkpoint Phase 5 remained IMPLEMENTED / UNDER REVIEW;
-the holdout, methodology, model specification, fallback policy, and active-plan status were unchanged.
-
-## 16. Formal Phase 5 Closeout — 2026-10-05
-
-PR #7 was squash-merged into `main` at `76707a03b7d10dbaa79d3ef26b39e31994431d70`. GitHub's
-reported merge SHA matches fetched `origin/main` and the base commit of the clean
-`docs/phase-5-closeout` branch. The merged tree contains the Holt-Winters forecaster, development
-runner and evaluation modules, and regression tests. Phase 5 is **COMPLETE**. Its approved fixed
-additive specification, development windows, metrics, and historical result tables are unchanged.
-No final-holdout forecast or evaluation was performed. Phase 6 remains planned; this closeout does
-not start Phase 6 implementation.

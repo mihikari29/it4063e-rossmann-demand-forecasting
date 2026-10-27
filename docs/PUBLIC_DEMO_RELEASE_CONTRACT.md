@@ -1,6 +1,6 @@
 # Public Demo Release Contract — Controlled Synthetic v1
 
-**Status:** Milestone A implementation contract under ADR-030. This document describes an offline
+**Status:** Milestone A implementation contract under gated public-demo objective. This document describes an offline
 release candidate. It grants no permission to publish its files or expose an application.
 
 ## Purpose and evidence label
@@ -168,9 +168,9 @@ to local canonical artifacts when its bundle is missing.
 
 ## Authorization boundary
 
-ADR-030 accepts the future two-URL objective and authorizes this offline synthetic Milestone A only.
+gated public-demo objective accepts the future two-URL objective and authorizes this offline synthetic Milestone A only.
 The bundle is a private local release candidate, not `PUBLIC`, `RELEASED` or `COMPLETE`. Public
 content approval, redistribution-rights review, Milestone B, independent staging/security review,
 host selection/provisioning, purchases, deployment, public listeners and URL publication each remain
-outside this authorization. ADR-024's localhost behavior and the scientific, development-cutoff,
+outside this authorization. localhost boundary's localhost behavior and the scientific, development-cutoff,
 holdout, Phase 13, WP1-L4, monitoring and scenario-analysis boundaries remain in force.

@@ -42,7 +42,7 @@ from different downloads.
 ## Optional Kaggle API Workflow
 
 The API workflow remains available after competition access and credentials are configured outside
-the repository. Use the [locked environment](../README.md#environment-and-quick-start), adding the
+the repository. Use the [locked environment](../README.md#installation-and-quick-start), adding the
 acquisition extra:
 
 ```powershell

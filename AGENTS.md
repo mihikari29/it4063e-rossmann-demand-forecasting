@@ -26,8 +26,9 @@ order, using current working-tree documents and inspecting affected code interfa
 
 Read `docs/DATA_DICTIONARY.md` for field/valuation semantics and `docs/FEATURE_CONTRACT.md`
 for feature work. Acquisition, validation, and EDA docs own their historical evidence.
-Active plans own scoped execution details; link to canonical evidence instead of copying result
-tables or full histories. Read only what the task needs; minor corrections need no full-project reread.
+Active plans own scoped execution details; completed plans retain useful method specifications.
+Git owns implementation/review chronology and structured manifests own machine provenance; do not
+copy task logs, hashes or duplicate result tables into human-facing Markdown. Read only what the task needs; minor corrections need no full-project reread.
 Higher-level intent does not silently override an accepted implementation contract: identify the
 conflict and record an authorized clarification/superseding ADR. Edit the proposal only when the
 task authorizes it; preserve its approved `$...$` inline-math formatting.

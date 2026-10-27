@@ -1,1082 +1,400 @@
-# Architecture and Methodology Decision Log
+# Architecture and Methodology Decisions
 
-Only durable decisions supported by the authoritative proposal or explicitly approved phase design
-belong here. Changes require a new or superseding decision record rather than a silent rewrite.
-Explicitly labelled proposed ADRs record reviewable changes and have no authority until accepted.
+These records explain accepted choices, rationale and boundaries. Stable decision headings support
+existing references; prose uses descriptive links. Proposed work has no authority until accepted.
+Method changes require an explicit superseding decision. Current implementation and results live
+in [Progress](PROGRESS.md), rather than approval histories or build logs here.
 
 ## ADR-001 — Forecast Granularity
 
-**Status:** Accepted
-
-**Decision:** Forecast at the Store × Date level.
-
-**Reason:** Rossmann provides daily observations for stores, and this is the finest demand granularity supported by the selected data.
-
-**Consequences:** Data keys, features, forecasts, metrics, and dashboard views must preserve store-day granularity.
+**Accepted.** Forecast at Store × Date, the finest supported granularity. Preserve store-day
+keys in features, forecasts, metrics and application views.
 
 ## ADR-002 — Forecast Target
 
-**Status:** Accepted
-
-**Decision:** Use Rossmann `Sales` as the store-level monetary demand signal.
-
-**Reason:** `Sales` is the available historical outcome associated with store demand, but it represents turnover rather than physical quantity.
-
-**Consequences:** Forecasts and core inventory calculations use monetary-value units and must not be described as product-unit demand.
+**Accepted.** Use `Sales` as daily monetary turnover. It is a demand proxy affected by price,
+mix and potentially unmet demand, without identifying unconstrained physical demand.
 
 ## ADR-003 — No SKU-Level Forecasting
 
-**Status:** Accepted
-
-**Decision:** Do not claim SKU-level forecasting or production SKU replenishment capability from the Rossmann dataset.
-
-**Reason:** The dataset contains neither product identifiers nor physical quantities sold.
-
-**Consequences:** Equivalent units may appear only as explicitly simulated illustrations based on a synthetic average unit value.
+**Accepted.** Rossmann has neither SKU identifiers nor quantities. Do not claim SKU forecasts
+or procurement. Equivalent units may be displayed only under a declared synthetic unit-value assumption.
 
 ## ADR-004 — Primary Forecast Horizon
 
-**Status:** Accepted
-
-**Decision:** Use 14 days as the primary forecast horizon for model comparison and evaluation.
-
-**Reason:** The proposal defines two weeks as the standard planning horizon while allowing optional 7-day and 28-day dashboard views.
-
-**Consequences:** Validation windows and primary comparisons must produce 14 forecast steps and should report performance by horizon.
+**Accepted.** Compare models over 14 calendar days. A seven-day view is a subset; 28-step
+forecasting needs a separate reviewed design. A 28-day final period does not imply 28-step support.
 
 ## ADR-005 — Synthetic Operational Layer
 
-**Status:** Accepted
-
-**Decision:** Simulate supply-chain and inventory fields absent from Rossmann and keep them explicitly separated from real data.
-
-**Reason:** Lead time, inventory position, unit value, and cost inputs are required for decision support but are unavailable in the source dataset.
-
-**Consequences:** Generation rules, assumptions, dependencies, ranges, and fixed seeds must be documented. Business conclusions remain conditional on those assumptions.
+**Accepted.** Keep simulated supply-chain/stock/cost inputs separate from observed data.
+Document ranges, dependencies and seeds; business conclusions are conditional on these assumptions.
 
 ## ADR-006 — Forecasting Baseline
 
-**Status:** Accepted
-
-**Decision:** Use Seasonal Naive with a seven-day lag as the required primary baseline.
-
-**Reason:** Daily store sales exhibit weekly seasonality, and advanced models must demonstrate value over a transparent benchmark.
-
-**Consequences:** Every candidate model must be evaluated against the same baseline using the same time-ordered windows and metrics.
+**Accepted.** Use weekly Seasonal Naive as the transparent baseline. Advanced candidates must
+justify complexity on identical chronological windows and eligible rows.
 
 ## ADR-007 — Main Machine-Learning Strategy
 
-**Status:** Accepted
-
-**Decision:** Use one global LightGBM model across stores as the primary machine-learning candidate rather than 1,115 independent machine-learning models.
-
-**Reason:** A global model can share information across stores and use store, calendar, promotion, competition, lag, and rolling features efficiently.
-
-**Consequences:** Store identity and store characteristics become model inputs. LightGBM must still earn final selection through validation.
+**Accepted.** Use one global LightGBM across stores to share information and avoid 1,115
+separate ML models. The later development-selection decision fixes the chosen recipe.
 
 ## ADR-008 — Validation Strategy
 
-**Status:** Accepted
-
-**Clarification (2026-10-05):** ADR-015 defines the current final-evaluation release and discloses
-earlier full-source descriptive exposure; "untouched" below means excluded from selection,
-not a claim that the labels were never inspected.
-
-**Decision:** Use rolling-origin / walk-forward validation and keep the latest 28 labeled days as a final untouched holdout during feature and model selection.
-
-**Reason:** Time-ordered evaluation represents forecasting conditions and prevents future information from contaminating model selection.
-
-**Consequences:** Random shuffling is prohibited. At least three 14-day validation windows are planned, primary metrics use `Open = 1`, and the final holdout is evaluated only after the methodology is locked.
+**Accepted; clarified by the final-release decision below.** Use walk-forward evaluation,
+never shuffled splits. Reserve July 4–31 for final forecasting evaluation, excluding it from
+selection. Earlier full-source descriptive exposure means the labels are not pristine unseen data.
 
 ## ADR-009 — Spark Is Optional
 
-**Status:** Accepted
-
-**Decision:** Keep Spark off the critical path; PySpark may be used only as an optional ETL demonstration.
-
-**Reason:** The dataset is manageable on personal computers and does not require distributed processing for the proposed workflow.
-
-**Consequences:** Core deliverables must not depend on Spark infrastructure or an optional PySpark experiment.
+**Accepted.** Spark is optional. The dataset is manageable locally; distributed ETL must not
+block course delivery or add dependencies without a concrete implemented need.
 
 ## ADR-010 - Python Environment and Packaging
 
-**Status:** Accepted
-
-**Supersession note (2026-10-05):** ADR-018 replaces the single-minor Python restriction and
-deferred-lock policy. The original rationale below is retained as historical evidence.
-
-**Decision:** Use Python 3.14 and `pyproject.toml` as the supported development baseline and single
-hand-maintained source for package metadata, dependencies, command entry points, pytest, and Ruff.
-Keep acquisition and development tools in optional extras.
-
-**Reason:** The available Python 3.14.5 environment supports the current stable Phase 1 packages.
-A standard `src/` package and one configuration file keep reusable logic importable and avoid
-duplicated dependency lists.
-
-**Consequences:** Contributors create a repository-local virtual environment and install the
-appropriate extras. Later-phase dependencies are added only when needed. Deployment-specific lock
-or constraints files may be generated later instead of manually duplicating requirements.
+**Accepted, with environment policy superseded by the portable-lock decision below.**
+Use a standard `src/` package and `pyproject.toml` as the only hand-maintained source for metadata,
+dependencies, entrypoints and quality configuration. Generate `uv.lock`; do not duplicate requirements.
 
 ## ADR-011 - Official, Immutable Raw Data
 
-**Status:** Accepted
-
-**Decision:** Acquire Rossmann files only from the official Kaggle competition into the ignored
-`data/raw/rossmann/` directory. Acquisition is atomic and refuses overwrite; validation is
-read-only and checks file hashes.
-
-**Reason:** A single authoritative source and immutable local files make provenance reproducible
-without committing restricted data or credentials.
-
-**Consequences:** Each contributor must obtain authorized competition access. A source refresh
-requires explicitly moving the existing raw directory aside and rerunning acquisition and
-validation. Derived data must be written elsewhere in a later phase.
+**Accepted.** Acquire official Kaggle inputs atomically into ignored `data/raw/rossmann/`;
+refuse overwrite, validate read-only and retain immutable source identities. Contributors need
+authorized competition access. Source refresh and any mixed-source read/hash require their own scope.
 
 ## ADR-012 - Phase 3 Point-in-Time Feature Contract
 
-**Status:** Accepted for Phase 3 implementation; contract version `phase-3-v1`.
-
-**Decision:** Use one ordered 29-predictor schema for historical training and inference. Preserve
-`Store` unchanged as both a key and later categorical model input; keep Date key-only and Sales as
-label/history source. Dynamic target-history features use exact calendar dates, complete trailing
-windows, and origin-censored actual history with optional earlier recursive predictions. Missing
-exact history stays null. Competition opening status/age use month-level semantics, and invalid or
-missing metadata is not imputed. Open-resolution candidates remain audit-only. The latest 28
-labeled days are protected by a holdout firewall.
-
-**Reason:** This preserves source precision and sparse coverage while making target-history
-availability explicit for recursive forecasting; it also prevents train/inference schema drift and
-future actuals from leaking through precomputed historical rows.
-
-**Consequences:** The detailed, versioned field manifest and output roles are defined in
-[`FEATURE_CONTRACT.md`](FEATURE_CONTRACT.md). Phase 3 adds no model-specific encoding, scaling,
-same-weekday features, imputation, or forecasting model. Any later contract change must be reviewed,
-regenerated, and must not be selected using final-holdout outcomes.
+**Accepted; version `phase-3-v1`.** The [feature contract](FEATURE_CONTRACT.md) fixes 29 ordered
+predictors and shared train/inference dtypes. Store remains an unchanged key and categorical input;
+Date is key-only; Sales is label/history; Customers and Open-derived audit fields are excluded.
+Use exact-calendar lags, complete trailing windows and actuals censored at origin plus earlier
+predictions from that same run. Missing dates stay missing. Competition age uses month precision;
+invalid/missing metadata is not imputed. Learned categories are fit-only adapter state.
 
 ## ADR-013 - Phase 4 Seasonal Naive Evaluation Contract
 
-**Status:** Accepted by explicit user approval on 2026-10-05.
+**Accepted.** Use exactly these development windows:
 
-**Lifecycle note:** Phase 4 has since been reviewed, merged and closed; PROGRESS owns current
-state. The final paragraph below records the original review/closeout requirement.
+| Window | Origin | Target dates |
+|---|---|---|
+| `validation_1` | 2015-05-22 | 2015-05-23–2015-06-05 |
+| `validation_2` | 2015-06-05 | 2015-06-06–2015-06-19 |
+| `validation_3` | 2015-06-19 | 2015-06-20–2015-07-03 |
 
-**Decision:** Implement the weekly Seasonal Naive baseline on exactly three non-overlapping,
-chronological 14-day development windows: `validation_1` (origin 2015-05-22, targets 2015-05-23
-through 2015-06-05), `validation_2` (origin 2015-06-05, targets 2015-06-06 through 2015-06-19),
-and `validation_3` (origin 2015-06-19, targets 2015-06-20 through 2015-07-03). For each Store and
-origin, forecast the exact same-Store calendar date seven days earlier. Horizons 1–7 use actual
-Sales only through the origin; horizons 8–14 recursively use the already generated raw forecast
-from seven days earlier. Teacher forcing is prohibited. Missing exact weekly history remains
-unavailable/null, with no prior-row fallback, interpolation, imputation, or zero fill. For each
-Store with at least one observed target key in a window, construct internal forecast states for all
-14 calendar horizons, but emit/evaluate only source-observed Store × Date target keys; internal
-states have no target labels and may feed later recursive horizons.
+Seasonal Naive uses exact same-Store d−7 actuals at h1–7 and earlier raw predictions at h8–14.
+Missing exact history is unavailable, without prior-row substitution, interpolation or zero fill.
+Build internal states for all 14 horizons for stores with observed targets; emit/evaluate only
+source-observed target keys. Attach Sales/Open labels after raw generation. Known Open=0 routes
+operational output to zero, Open=1 retains raw, unknown stays unresolved; `Open_resolved` is audit-only.
 
-Keep pure `raw_baseline_forecast` separate from post-forecast `operational_forecast`: known source
-`Open == 0` routes operational output to zero only after raw generation; `Open == 1` retains the raw
-forecast; unknown Open remains unresolved and is not treated as closed. `Open_resolved` is not
-source truth. Attach actual Sales, source Open, and the validation label only after raw forecast
-generation. Primary metrics use observed source `Open == 1` targets with actual Sales and an
-available raw forecast. MAE is primary; RMSE, MAPE, and WAPE are secondary under the approved
-metric contract. MAPE excludes zero-actual eligible rows only from MAPE (no epsilon) and reports
-the excluded count and coverage. WAPE is unavailable/null with a reason when the actual denominator
-is zero. Report availability coverage with explicit numerators and denominators. The final holdout,
-2015-07-04 through 2015-07-31, is not forecast or evaluated during Phase 4.
-
-**Reason:** The fixed weekly rule is a transparent benchmark for the approved 14-day horizon. Exact
-calendar lookup and origin-censored recursion preserve time-series integrity and sparse source
-coverage; separating raw predictions, operational routing, and labels prevents leakage and keeps
-model quality distinct from the closed-store business rule.
-
-**Consequences:** Results are development-only and are reported by validation window, pooled over
-eligible observations, and by horizon. Missing raw forecasts remain visible in output and coverage
-summaries rather than silently changing the metric population. No validation window, missing-history
-rule, metric, or routing rule may be changed based on final-holdout outcomes. Phase 4 remains under
-review until its implementation and results are externally reviewed and explicitly closed.
+Primary metrics use available raw forecasts on observed Open=1 rows with Sales. MAE is primary;
+RMSE, cautious MAPE and WAPE supplement it. MAPE alone excludes zero actuals, without epsilon,
+and reports exclusions/coverage. Zero-total WAPE is unavailable with a reason. Report window,
+pooled-row and horizon metrics plus explicit availability numerators/denominators. No teacher forcing.
+The implementation in [validation](../src/rossmann_forecasting/forecasting/validation.py) and
+[metrics](../src/rossmann_forecasting/forecasting/metrics.py) owns the executable contract.
 
 ## ADR-014 - Phase 5 Holt-Winters Statistical Forecasting Contract
 
-**Status:** Accepted by explicit user approval on 2026-10-05.
+**Accepted.** Fit one statsmodels `ExponentialSmoothing` per Store/origin with additive trend,
+undamped additive weekly seasonality (`seasonal_periods=7`), estimated initialization,
+`use_boxcox=False` and optimized smoothing parameters. Use `statsmodels>=0.15,<0.16`.
+The current Python range is defined by the portable-lock decision below.
 
-**Packaging clarification (2026-10-05):** ADR-018 supersedes only this record's Python-version
-restriction. The model, dependency bound, 14-day development evaluation and failure policy remain
-unchanged. The reviewed public API also honors requested horizons 1–14; Phase 5 uses 14, and
-length validation/per-fit diagnostics use the requested horizon (see PROGRESS review-fix record).
+Use the entire most recent contiguous observed daily Sales segment ending at origin, requiring
+at least 28 days and retaining observed closed-day zeros. Do not compress dates or fill gaps.
+Missing origin, short history, model/forecast exceptions, wrong-length or nonfinite output makes
+the fit unavailable, without fallback. Public horizons are 1–14; development requests 14.
+Retain unclipped values and diagnostics, clip raw at zero, then apply separate Open routing.
 
-**Decision:** Evaluate one univariate statsmodels Holt-Winters / `ExponentialSmoothing` model per
-Store and forecast origin, using `trend="add"`, `damped_trend=False`, `seasonal="add"`,
-`seasonal_periods=7`, `initialization_method="estimated"`, `use_boxcox=False`, and optimized
-smoothing parameters. Use no exogenous inputs and do not tune model structure using validation
-results. The runtime dependency is bounded to `statsmodels>=0.15,<0.16`; retain the repository's
-Python `>=3.14,<3.15` requirement.
-
-Fit on the regular daily series from the most recent contiguous observed Store × Date Sales segment
-ending at the origin. Include observed closed-day Sales, including zeros. Do not remove closed days,
-fill gaps, interpolate, compress to business days, or use Open as a regressor. Require at least 28
-consecutive daily observations and use the entire eligible contiguous segment. An absent origin key,
-insufficient history, model construction/fit/forecast exception, a forecast other than 14 finite
-numeric values, or other unusable model output makes that Store-origin unavailable. No fallback to
-Seasonal Naive, Holt, or Simple Exponential Smoothing is permitted; record sanitized failure
-categories and capture warning/convergence diagnostics without hiding them.
-
-Retain direct `model_forecast_unclipped` values and define
-`raw_statistical_forecast = max(0, model_forecast_unclipped)`. Record clipping flags and aggregate
-clipping count/rate/minimum diagnostics. After raw generation, route source `Open == 0` to an
-operational zero, `Open == 1` to the raw statistical forecast, and unknown Open to null. Never use
-target Sales or Open to generate raw forecasts; attach labels/routing fields only afterward.
-
-Use exactly the Phase 4 development windows and Phase 4 primary metric, open-label eligibility,
-MAPE/WAPE zero handling, and pooled/horizon aggregation contract. Report standalone Holt-Winters
-coverage and metrics. Recompute Seasonal Naive through the reviewed Phase 4 implementation and
-compare models only on identical primary-evaluation rows where both raw forecasts are available.
-Report paired counts, metrics, MAE difference and relative MAE change, and lower-MAE candidate by
-window, pooled, and horizon.
-
-Before comparative interpretation, require at least 99% Holt-Winters forecast availability among
-open-label targets in every development window. If any window is below 99%, retain auditable
-forecasts, coverage, and fit diagnostics, flag coverage review, report affected fits, and suppress
-claims that either candidate is superior or inferior. This is a precommitted coverage-quality
-guardrail, not a selection hyperparameter.
-
-The final holdout remains 2015-07-04 through 2015-07-31 and is not forecast or evaluated in Phase 5.
-Phase 5 evaluates a fixed candidate but does not select the final project model; Phase 7 remains
-responsible for model-ladder selection after LightGBM exists.
-
-**Reason:** The proposal requires level, trend, and weekly seasonality. This fixed additive
-candidate is transparent and can accommodate zero observations without a multiplicative seasonal
-form. Contiguous-history rules preserve actual calendar spacing and prevent implicit gap filling.
-Explicit failure handling keeps coverage visible and avoids conflating the statistical candidate
-with Model 0. Identical-row pairing and the availability guardrail keep the baseline comparison
-auditable.
-
-**Consequences:** Phase 5 results are development-only and must report fit/warning/failure and
-clipping diagnostics alongside standalone and paired metrics. Do not change model structure from
-validation performance, add automatic fallback, access holdout outcomes, or mark Phase 5 complete
-until external review and explicit closeout.
+Use the shared windows/metrics, report standalone coverage and compare Seasonal Naive on identical
+eligible available rows. Require at least 99% open-label availability in every window before
+superiority/inferiority interpretation; otherwise flag review and suppress those claims. Record
+warning, convergence, clipping and failure counts. The structure is fixed, without validation tuning.
 
 ## ADR-015 — Final Evaluation Release and Historical Exposure
 
-**Status:** Accepted for the user-authorized repository architecture review, 2026-10-05.
+**Accepted.** Development label reads filter Date ≤ 2015-07-03 before modeling/evaluation;
+every fit/history input also stops at its origin. Protect July 4–31 from tuning, feature/cohort
+selection, learned preprocessing, calibration and policy/monitoring decisions.
 
-**Clarifies:** ADR-008/012–014; replaces the roadmap's Phase 7 holdout-scoring deliverable.
+After a separately approved frozen protocol, final evaluation may issue two H14 blocks at July 3
+and July 17, persist each complete issuance before revealing its outcomes chronologically, and
+use only already released history for the scheduled second refit. Freeze the recipe, uncertainty,
+policies/scenarios and monitoring rules; never adapt them to final performance. Phase 14 reports
+that sole replay, without a second selection/test. Mixed-source preparation, mechanical staging
+and analytical release have distinct approval gates.
 
-**Decision:** Phase 7 selects the model using development only. Freeze model/preprocessing specifications,
-refit recipe, interval calibration, inventory policies/scenarios and monitoring thresholds before
-the explicitly authorized Phase 13 final evaluation. Its primary point protocol has two 14-day
-blocks: July 3 origin forecasts July 4–17, then July 17 origin forecasts July 18–31. Each block is
-issued before revealing its labels daily. The second origin may consume already revealed actuals
-under the frozen recipe. Scheduled model/preprocessing refitting may relearn fitted state only
-when precommitted, on eligible already revealed training rows; specifications/hyperparameters
-cannot change and interval calibration stays frozen. It may not retune or recalibrate from final
-outcomes. Monitoring triggers are alerts, not automatic changes to the final-test model.
-Phase 14 reports the frozen outputs. Any extra daily
-operational forecast origins/protection horizons and common terminal censoring must be precommitted
-in the replay plan; overlapping forecasts are not extra independent primary test observations.
-
-**Evidence and reason:** The old roadmap scored the holdout in Phase 7 before uncertainty and
-inventory design, then described a new sequential reveal in Phase 13. That could leak evaluation
-feedback into later policy/calibration decisions. Also, Phase 1 quality checks and Phase 2 EDA
-summarized full historical labels, including July 4–31, before the Phase 3 firewall. Preserve that
-evidence: this is not a pristine never-inspected dataset. No holdout forecasting metrics or model
-comparison have been produced; future learned statistics/cohorts must use origin training or
-development data, never the full-period EDA tiers/representatives.
-
-**Consequences:** Existing model windows/results remain intact. Development runners retain the
-July 3 read filter; no evaluation is authorized by this review. Later final reporting discloses
-descriptive exposure and the short holdout span; a replay is one final evaluation, not an
-independent second test. Supplementary development origins require an approved common protocol.
+Earlier source quality checks and EDA included the eventual holdout; disclose this exposure and
+never reuse full-history EDA cohorts as development inputs. No final forecasting metrics have
+been produced. The [active protocol](../plans/active/phase-13-sequential-final-evaluation.md)
+defines the remaining requirements.
 
 ## ADR-016 — Inventory Proxy Values and Cumulative Uncertainty
 
-**Status:** Accepted for the user-authorized repository architecture review, 2026-10-05.
+**Accepted.** Simulated demand, stock, orders and targets use retail-equivalent monetary value
+matching turnover. Procurement cost needs an explicit synthetic conversion. Use lost sales, an
+outstanding-order queue and common inputs/starting stocks for policy comparison. On-order is
+zero only at initialization, not throughout replay.
 
-**Clarifies:** ADR-002/005 and proposal uncertainty/inventory scope.
-
-**Decision:** Interpret simulated demand, stock, outstanding orders, ROP and replenishment on a
-retail-equivalent monetary basis matching Sales turnover. Procurement cost requires an explicit
-synthetic conversion; no quantity, actual stockout, unconstrained demand or Rossmann savings can
-be inferred. Use common scenario paths/seeds/starting stocks for policy comparison. The default
-simulation models lost sales, maintains an outstanding-order queue, and does not reset OnOrder to
-zero merely because Rossmann has no such source field.
-
-For daily review R=1 and lead time L=2–7, use protection P=L+R within the 14-day supported horizon.
-Lead-time ROP is a separate continuous-review illustration; the simulator orders toward a
-protection-period target. For complete out-of-sample Store-origin residual paths, form cumulative
-error E_k = sum(e_h, h=1..k), then U_k = max(0, D_k + q_p(E_k)), where p is the cycle-service target.
-Safety stock is max(0, U_k-D_k); ROP or order-up-to target is max(D_k,U_k), not necessarily U_k when
-the empirical quantile is negative. Never sum marginal daily 95% upper bounds or assume independent
-daily errors silently. Daily intervals and cumulative service bounds have distinct calibration
-populations/levels. Calibrate on earlier development residuals and assess later origins; pooled
-empirical coverage is not a guarantee for each store or a conformal claim.
-
-**Reason:** Common monetary units alone do not equate sales revenue with procurement-cost inventory.
-Marginal intervals do not establish cumulative lead-time risk, and static stock subtraction is not
-a stateful replenishment simulator.
-
-**Consequences:** Phase 10 must freeze event order, receipt/order lead convention, availability and
-terminal-censoring rules before running comparisons. Dictionary definitions distinguish cycle
-service from monetary fill rate, positive-demand stockout rate, daily holding-cost rate and cost
-per unmet monetary unit. Results demonstrate a conditional heuristic/tradeoff, not proven optimal
-inventory or verified real-business improvement. Unknown/incomplete operational paths remain
-unavailable; synthetic DiscountDepth is scenario context, never a measured Rossmann predictor.
+For R=1 and L=2–7, protection P=L+R lies in 3–8 within H14. On complete origin prefixes use
+`E_k=sum(actual-operational_forecast)`, `D_k=sum(operational_forecast)`,
+`U_k=max(0,D_k+q_p(E_k))`, `SafetyStock_k=max(0,U_k-D_k)` and `Target_k=max(D_k,U_k)`.
+Keep signed q; never sum marginal daily upper endpoints or assume independent errors.
+Daily intervals and cumulative bounds have different populations/levels. Incomplete operational
+paths remain unavailable; costs/service are conditional proxies, not savings or guaranteed service.
 
 ## ADR-017 — Proportionate Application and Forecast Extension Scope
 
-**Status:** Accepted for the user-authorized repository architecture review, 2026-10-05.
+**Accepted, with future delivery scope narrowly extended by the public-demo objective below.**
+Keep the three-model ladder and raw recursive feedback: clip finite raw predictions at zero,
+complete the raw path, then route operational values with supplied/planned Open. Closed historical
+actuals versus raw recursive states remain a disclosed mismatch. Closure-aware feedback, direct
+multi-horizon forecasting, extra predictors and models require a separate reviewed design.
 
-**Clarifies:** ADR-004/007/012 and the planned application/monitoring scope.
-
-**Decision:** Retain the three-model ladder and recursive global LightGBM first. Its initial raw
-recursive state uses clipped raw predictions without future Open or outcome labels; operational
-Open routing follows the full raw path. This preserves comparison/feature boundaries and does not
-change reviewed baselines. Report the mismatch between closed actual history and raw recursive
-history; closure-aware feedback/direct multi-horizon methods need a separately approved design
-and development evidence. Optional SARIMA, extra features or broad model searches are not required.
-
-Use a shared Python application service layer, a thin local/demo FastAPI adapter, and Streamlit
-calling the same services directly. One deployed Streamlit demonstration suffices for the planned
-application deployment; independent API hosting is optional. Evidently, SHAP, Docker and Spark
-remain optional only for a concrete need. Simple drift/error/coverage summaries and alerts meet
-the historical monitoring objective. A 7-day view is a subset of 14 days; 28-day support is a
-separately designed/evaluated extension, not an existing promise.
-
-**Reason:** Separate hosting, HTTP coupling and monitoring infrastructure add little to a five-person
-course demonstration. Raw recursion makes the information boundary explicit without changing
-accepted model results. Demonstrated baseline value or honest negative findings are legitimate
-analytics outcomes; model/business improvement is a hypothesis, not a completion prerequisite.
-
-**Consequences:** Keep Phase IDs for traceability but group future work packages; do not require
-separate docs-only branches for design and closeout. Application and synthetic modules are created
-only when implemented. The original course announcement is not in this repository; the thin API
-retains the existing API objective without asserting an unverified requirement for two cloud
-deployments. Deployment details can be settled in the application plan.
+Use shared Python services, a thin FastAPI adapter and Streamlit calling services directly.
+The original single-dashboard delivery sufficiency is extended only by the later gated two-URL
+objective. On-demand inference, HTTP coupling, SHAP, Evidently, Docker and Spark remain optional.
 
 ## ADR-018 — Portable Locked Environment and Quality CI
 
-**Status:** Accepted and implemented in this user-authorized repository review, 2026-10-05.
+**Accepted.** Support Python >=3.12,<3.15 with 3.14 as reference and py312-compatible syntax.
+Use uv 0.12.23, generated universal `uv.lock`, explicit direct dependencies and optional acquisition,
+API/dashboard and development extras. CI checks locked fixtures, package consistency, Ruff and local
+Markdown links on Python 3.12 and 3.14 without Rossmann data. Lock changes are deliberate and tested;
+new manifests record code/environment/lock identity. Historical manifests remain immutable.
 
-**Supersedes:** ADR-010 single-minor Python/deferred-lock policy and only ADR-014's Python clause.
-
-**Decision:** Support Python >=3.12,<3.15 with 3.14 as reference; use py312-compatible syntax/Ruff.
-Keep pyproject.toml as the single hand-maintained dependency source and generate one universal
-uv.lock (uv 0.12.23). Make NumPy explicit because the package imports it directly. Preserve reviewed
-numerical versions in the lock; adding LightGBM remains Phase 6 work. CI runs locked dev-only
-fixture tests, dependency consistency, Ruff and Markdown links on Python 3.12 and 3.14, requiring
-no Kaggle credentials/data or holdout outcomes.
-
-**Evidence and reason:** The old single-minor bound reflected the available machine, not a model
-requirement. Three parenthesis-free exception tuples were the only 3.12 syntax incompatibilities;
-adding parentheses preserves behavior. Isolated locked environments passed the complete fixture
-suite on both 3.12.15 and 3.14.5, retaining the reviewed numerical package versions; current
-validation counts are in PROGRESS.
-Unbounded transitive installs and missing CI weakened reproducibility before the ML phase.
-See [uv locking](https://docs.astral.sh/uv/concepts/projects/sync/) and
-[GitHub integration](https://docs.astral.sh/uv/guides/integration/github/).
-
-**Consequences:** Lock updates are deliberate and validated; no parallel maintained requirements
-file. Future artifact manifests include code revision and environment/lock hash. Existing manifests
-and results remain historical evidence, not regenerated merely for this documentation review.
-The workflow defines a quality check, but remote execution awaits publication. Main protection is
-recommended; GitHub reported main unprotected during this review, and no settings were changed.
+This replaces the former single-minor/deferred-lock restriction. Repository protections are a
+recommendation, without a claim that hosting settings are enabled; settings changes need authorization.
 
 ## ADR-019 — Global Recursive LightGBM Phase 6 Contract
 
-**Status:** Accepted after external methodology review, 2026-10-06.
+**Accepted.** Train one global CPU GBDT for untransformed monetary Sales using regression L1 and
+the 29-predictor schema. Fit labels require source Open=1; all observed pre-origin Sales, including
+closed zeros, remain in recursive history. Learn category vocabularies only from fit rows; preserve
+native numeric missingness and explicit unseen-category diagnostics. Future Customers/Open are excluded.
 
-**Decision:** Phase 6 will evaluate one global CPU GBDT LightGBM model for untransformed Store ×
-Date monetary Sales, trained with regression_l1 and exactly the frozen Phase 3 29-predictor
-contract. Fit labels are restricted to training_label_eligible/source Open=1, while all observed
-pre-origin Sales (including closed-day zeros) remain available only for lag/rolling history.
-Forecast recursively for 14 days using finite predictions clipped at zero for raw output and
-feedback; non-finite predictions are unavailable. Keep future Open out of raw prediction/state and
-apply operational Open routing only after the raw path. Learn categorical vocabularies from
-eligible fitting data only; preserve the specified native numeric missing behavior and explicit
-unavailability reasons.
-
-Tune only the four predeclared configurations at the 2015-04-24 inner origin using recursive
-open-label MAE and the 99% coverage requirement; freeze the chosen configuration/round count before
-the three approved outer development windows. Recompute Seasonal Naive and additive Holt-Winters
-and compare on identical eligible rows. Do not fall back to a baseline for unavailable forecasts.
-Treat future holiday, school-holiday, promotion-plan, Promo2 schedule, competition, and Store
-metadata as known at the origin for this course replay only; this is an explicit
-operational/evaluation assumption, not historically verified Rossmann information availability.
-Preserve the mismatch between actual closed-day zeros in historical state and raw recursive
-feedback; do not add closure-aware feedback or direct multi-horizon modeling in Phase 6.
-
-**Reason:** This adds the intended global feature-based candidate to the approved model ladder
-while retaining origin-censored temporal evaluation, the existing forecast contract, and the
-baseline-comparison boundary.
-
-**Consequences:** The detailed specification, fixed configurations, windows, diagnostics, tests,
-failure policy, and artifacts are in the [completed Phase 6 plan](../plans/completed/phase-6-global-lightgbm.md).
-Acceptance authorizes Phase 6 implementation only after PR #9 integrates the design into main. It
-does not authorize Phase 7 model selection, final-holdout access, or any final-holdout forecast or
-evaluation.
+Use the fixed four inner-origin trials, coverage gates, ten-round recursive checkpoints and finite
+stopping budget in the [LightGBM specification](../plans/completed/phase-6-global-lightgbm.md).
+Outer development windows share the approved raw/routing/metric/failure contracts. No fallback,
+future actual recursion, inventory input or final-period outcome may influence training/selection.
 
 ## ADR-020 — Development-Only Model Selection and Frozen Refit Policy
 
-**Status:** Accepted after external Phase 7 methodology review, 2026-10-06. Approval was
-synchronized for PR #12 reviewed head `1c15ab0b6ee94f3ecccb8f04c84da97d58bbb225`. PR #12 was the
-required design-integration gate at methodology approval and later merged into `main` at
-`64dbf2359c34cc06d81ee4fc1640ad7225db3973` before Phase 7 implementation began.
+**Accepted; selection completed.** Compare exactly Seasonal Naive, additive Holt-Winters and
+global LightGBM on identical three-way common open-label rows, alongside standalone/pairwise
+coverage and supplementary metrics. Require 99% coverage in every window for each candidate and
+the common population, with exact key/label/mask/configuration/original-artifact integrity.
 
-**Decision:** Compare exactly Seasonal Naive, additive Holt-Winters and the frozen global LightGBM
-on the three approved chronological H14 development windows. Use primary MAE on identical three-way
-eligible/available open-label rows, while reporting standalone, pairwise and common coverage and
-supplementary RMSE/MAPE/WAPE, window, horizon-block and individual-horizon diagnostics. Require at
-least 99% open-label coverage in every window for each standalone candidate and the three-way common
-population, and pass all key, label, mask, configuration and original-manifest integrity checks;
-otherwise stop selection and suppress superiority claims.
+Use the simplicity ladder SN → HW → LightGBM. Promotion requires ≥5% pooled MAE improvement,
+MAE wins in ≥2/3 windows, no window regression >10% and no pooled h1–7/h8–14 regression >10%.
+Ties or failed gates retain the incumbent; failed HW promotion still allows LightGBM versus SN.
+These project heuristics were chosen after initial results, not preregistered significance tests.
+Report unfavorable individual horizons without adding a later veto. The offline CPU operational
+assessment does not prove production latency, throughput or resource needs.
 
-Apply the fixed simplicity ladder SN → HW → LightGBM. Promote from the current incumbent only when
-pooled MAE improves by at least 5%, MAE is lower in at least two of three windows, no window has
-more than 10% regression, and neither pooled horizon block (1–7, 8–14) has more than 10% regression.
-Exact ties, smaller gains, fewer window wins or a failed regression gate retain the simpler
-incumbent. A failed HW promotion does not prevent comparing LightGBM to SN. Keep unavailable values
-null and apply each reviewed failure policy; no fallback or model mixing. Report every individual
-horizon, including unfavorable and sparse Sunday results; no per-horizon veto is added.
-
-These numeric thresholds and the simplicity preference were proposed after Phase 4–6 results had
-been observed. They are transparent project decision heuristics, not preregistered thresholds,
-statistical significance tests or estimates. Three late-season windows, repeated Friday origins,
-shared stores and correlated Store × Date errors do not establish independent out-of-sample
-confirmation, universal horizon/Store dominance or year-round generalization.
-
-For the existing offline CPU course demonstration, qualitative operational assessment is accepted;
-a new performance benchmark is not a precondition to selection. This does not establish API
-latency, throughput, production reliability, comparative end-to-end runtime, measured memory needs
-or operational savings. Any later implementation must record versioned operational inputs and
-their evidence; this acceptance does not extend to unexamined deployment environments.
-
-Accept the cached development evidence lineage within this scope: verify original manifest hashes,
-target keys, labels, masks, model/configuration identities and stop on any mismatch. Preserve old
-source/version metadata; do not rewrite manifests or claim historical runs were regenerated from
-current `main`. SN/HW legacy provenance and the recorded modified LightGBM worktree remain disclosed.
-
-Freeze only the reviewed recipes, not fitted model state: SN exact d−7 lookup then prior raw
-recursive values; Holt-Winters additive trend and weekly seasonality 7 on each store's latest
-contiguous history of at least 28 days; LightGBM trial A at exactly 180 rounds with its reviewed
-Phase 6 predictors, shared parameters, fit-only categories and recursive feedback. Use only
-information available through each authorized origin. Phase 8 receives selected identity/config,
-out-of-sample records, residual definitions, masks, complete/partial paths, missingness and
-provenance; Phase 8 owns uncertainty intervals.
-
-The Phase 7 development firewall continues through 2015-07-03. This ADR does not authorize any
-2015-07-04–31 target access or final forecast/evaluation. Final release remains subject to ADR-015's
-separately authorized frozen sequential Phase 13 protocol. Methodology approval itself did not
-select a model. At that approval checkpoint, Phase 7 implementation could begin only after design
-PR #12 merged into `main`; it later did, and the subsequent implementation and selection results
-are maintained in [PROGRESS](PROGRESS.md).
-
-**Reason:** A pooled MAE lead alone does not account for practical gain, consistency, coverage,
-horizon tradeoffs, complexity or artifact lineage. A fixed simple-first rule makes those project
-choices reproducible without overstating the evidence.
-
-**Consequences:** Full thresholds, descriptive evidence, candidate recipes, implementation checks,
-artifacts and Phase 8 handoff are in the [completed Phase 7 plan](../plans/completed/phase-7-model-selection.md).
-At methodology approval, the Phase 7 plan was approved, its runner was not implemented, and no
-model had been selected. PR #12 was the implementation integration boundary and merged before
-implementation began. Later implementation and selection results are maintained in
-[PROGRESS](PROGRESS.md); Phase 8 and final-holdout release remain separate future work.
+Selected LightGBM uses trial A at exactly 180 rounds, reviewed shared parameters and fit-only
+categories. Freeze recipes rather than fitted future state. Preserve original cached provenance,
+including legacy SN/HW manifests and the historical modified LightGBM worktree; do not rewrite
+manifests or claim current-code regeneration. [Results](PROGRESS.md) records selection evidence.
 
 ## ADR-021 — Chronological Empirical Forecast Uncertainty and Conditional Operational Replay
 
-**Status:** Accepted after external Phase 8 methodology review, 2026-10-06.
+**Accepted; reviewed Fit B fitted values frozen.** Keep the point recipe unchanged. Fit A
+calibrates validation_1 and assesses validation_2; Fit B calibrates validation_1+2 and assesses
+validation_3. Calibration labels stop at issuance; own-window/later labels are excluded. Do not
+refit quantiles on validation_3 to increase support.
 
-**Clarifies:** ADR-015–017, ADR-019–020; [completed Phase 8 plan](../plans/completed/phase-8-forecast-uncertainty.md).
+Daily signed residuals `actual_sales-raw_forecast` use eligible observed Open=1 individual rows,
+including partial paths, pooled equally by exact h1–14. For sorted n residuals use 1-indexed ranks
+`floor((n+1)/40)` and `ceil(39*(n+1)/40)`, n≥40 and valid ranks. Retain ties, without interpolation,
+clamping, borrowing or fallback. Add signed tails to the nonnegative raw point and independently
+clip endpoints at zero; retain pre-clipping values/flags, reject nonfinite/inverted bounds and do
+not force the point inside. These nominal 95% intervals are marginal, without conformal,
+simultaneous, per-store or guaranteed coverage.
 
-**Context:** ADR-020 selected `global_lightgbm_gbdt_regression_l1`, trial A at exactly 180
-boosting rounds with the approved ordered 29 predictors. Three selected development origins
-provide sparse and dependent residual evidence. Saved historical Open supports reproducing
-operational routing only under a conditional course-replay assumption; it does not prove that a
-schedule was available at any forecast origin. ADR-015 protects July 4–31 outcomes for a
-separately authorized sequential Phase 13 evaluation.
+Cumulative operational errors require every valid component h1..k; missing later components do
+not invalidate a shorter prefix. Sum in ascending horizon order and pool complete prefixes at
+exact k. For p={.90,.95,.98}, use upper rank `ceil((n+1)*p)`, n≥50 and valid rank. Keep signed q
+and the monetary formulas above. Never substitute summed daily endpoints or a later-review suffix.
 
-**Decision:** Keep the selected point model and its recipe unchanged. Approve only the following
-development uncertainty protocol:
+Development operational routing permits `saved_source_open_assumed_known_at_origin` only as a
+conditional historical replay, without evidence of historical schedule availability. Known closure
+routes to [0,0], unknown stays unavailable. Report Open=1/0/pooled results and closure inflation.
+For final issuance actual future Open/Sales/Customers cannot be read/hashed as schedule inputs;
+separately approved origin-known or synthetic schedule provenance is required.
 
-- Daily residuals are signed `actual_sales - raw_forecast` on the observed Open=1 primary-eligible
-  population. Partial paths contribute eligible individual observations. Pool Store-origin rows
-  equally within each exact horizon h=1..14; do not borrow across horizons, stores, or candidate
-  models, and do not replace this population with the 32-store raw-complete H14 subset.
-- For sorted residuals `e_(1)..e_(n)`, use 1-indexed ranks
-  `floor((n+1)/40)` and `ceil(39*(n+1)/40)` for the nominal two-sided 95% tails. Retain ties,
-  use no interpolation or rank clamping, require n>=40 and both ranks in 1..n, and leave
-  unsupported horizons unavailable with explicit reasons. The 40-row floor is a pragmatic rule,
-  not a reliability guarantee. Fit B h2/h9 contain 65/64 rows but only 33/32 distinct stores,
-  so their Sunday estimates remain fragile. Add signed quantiles to the saved clipped nonnegative point;
-  clip each bound independently at zero, preserve pre-clipping values/flags, reject nonfinite or
-  inverted bounds, and do not force the point inside the interval. Fit A h2/h3/h9 remain
-  unavailable; Fit B Sunday support remains fragile and must be disclosed. These are nominal
-  marginal horizon-specific intervals, not conformal, simultaneous, per-store, or guaranteed
-  95% coverage.
-- Use only the approved chronological fits: Fit A calibrates validation_1 and assesses
-  validation_2, with calibration labels through 2015-06-05 at that issuance; Fit B calibrates
-  validation_1+validation_2 and assesses validation_3, with labels through 2015-06-19. Calibration
-  labels must be available by the assessment origin; the assessment's own labels are excluded.
-  No other origins/windows or automatic protocol changes are allowed. Later-origin evidence is
-  descriptive because all windows participated in point-model selection.
-- For each Store-origin and exact prefix k=1..14, construct signed cumulative operational error
-  `E_k=sum(actual_sales_h-operational_forecast_h)` only from complete valid components h=1..k.
-  Missing later components do not invalidate a shorter prefix; missing components are never filled
-  with zero. Pool complete prefixes at the same k, preserving paths and within-path dependence.
-  For p={0.90,0.95,0.98}, use the 1-indexed upper rank `ceil((n+1)*p)`, no interpolation or rank
-  clamping, and require at least 50 complete prefixes and a valid rank; otherwise the stratum is
-  unavailable. Retain signed q, including negative values. Under ADR-016, use
-  `D_k=sum(operational_forecast_h)`, `U_k=max(0,D_k+q_p(E_k))`,
-  `SafetyStock_k=max(0,U_k-D_k)`, and `Target_k=max(D_k,U_k)`. These terminal cumulative
-  monetary bounds are not realized inventory cycle-service probabilities. Never sum marginal
-  daily upper endpoints or assume independent daily errors.
-- Permit `saved_source_open_assumed_known_at_origin` only to reproduce existing DEVELOPMENT
-  operational forecasts as a **conditional historical course replay**. This assumption is not
-  evidence of origin-time schedule availability; label operational calibration and assessment
-  accordingly. A closed-day `[0,0]` route is valid only for an explicitly known or approved
-  assumed closure and describes turnover, not latent demand. Keep Open=1, Open=0, and pooled
-  operational diagnostics separate and disclose deterministic-closure inflation. A development
-  replay does not authorize final-holdout operational replay.
-- For Phase 13, never read, hash, load, or substitute final-holdout actual Open as planned schedule
-  before the corresponding forecast issuance. Do not expose protected July 4–31 Open, Sales, or
-  Customers early. Operational issuance requires separately reviewed origin-known schedule
-  provenance or a separately approved synthetic/conditional schedule that is not derived from
-  protected future actual Open. Without an authorized schedule, operational forecasts, routed
-  intervals, and prefixes requiring future Open remain unavailable. Join actual Open only after
-  issuance and the separately authorized sequential outcome reveal. Raw forecasts and raw
-  interval calibration must not use future actual Open as predictors.
-- Approve origin-anchored complete prefixes only for the Phase 10 handoff. Preserve ADR-016's
-  R=1, L=2..7, and P=3..8 context. A later daily-review suffix is a different error population;
-  q_P for an origin prefix cannot be reused as its calibrated bound. Phase 10 must obtain a
-  separately reviewed suffix method or restrict its demonstration to supported origin-anchored
-  decisions.
-- Keep the limitations prominent: only three Friday development origins; shared stores/common-date
-  shocks and serial dependence; weekday/horizon confounding; sparse Sunday Open=1 evidence; weak
-  h10 point performance; only 96 complete raw-primary H14 paths from 32 stores repeated across
-  three origins; 3,345 operational paths depend on the conditional saved-Open interpretation;
-  historical counts are not independent temporal replications; development windows were involved
-  in point-model selection; and original candidate/selection provenance limitations remain.
-  Make no significance, confidence, bootstrap, conformal, or guaranteed-coverage claims and invent
-  no empirical coverage results.
-
-The approved calibration policy does not freeze any fitted quantile values. Fit B tables,
-diagnostics, hashes, and availability must receive external implementation/results review before
-their values are frozen. Do not automatically change the predeclared protocol in response to
-diagnostics or refit on validation_3 merely to increase sample size. Do not mix models, use other
-windows, or conduct final evaluation under this ADR.
-
-**Reason:** These fixed empirical estimators preserve the accepted point-model and chronology
-boundaries, expose sparse strata instead of hiding them with fallback, and retain cumulative
-within-path dependence while keeping the opening-schedule assumption and holdout firewall explicit.
-
-**Consequences:** The full estimator, diagnostics, artifacts, fixture criteria, operational
-failure behavior, and Phase 10 handoff are specified in the completed plan. Acceptance authorizes
-implementing and evaluating only this protocol after PR #14 integrates into `main`; this approval
-sync does not implement an uncertainty runner, calculate intervals or quantile tables, or freeze
-fitted values. External review of implementation results is required before fitted-table freeze.
-No final-holdout outcome access or Phase 13 evaluation is authorized; ADR-015 still requires a
-separate frozen sequential protocol. Phase 9/10 implementation remains outside this decision.
+Three Friday origins, repeated stores/common shocks, sparse Sunday tails, weak h10 and selection
+on all development windows limit inference. Fit A h2/h3/h9 remain unavailable; Fit B h2/h9 have
+65/64 rows from 33/32 distinct stores. No significance, confidence, bootstrap or service guarantee
+is inferred. Full estimator and diagnostics: [uncertainty specification](../plans/completed/phase-8-forecast-uncertainty.md).
 
 ## ADR-022 — Synthetic Monetary Scenario Contract
 
-**Status:** ACCEPTED after external methodology review, 2026-10-07.
+**Accepted.** Initialize from 56 calendar days through origin, requiring 28 valid observed
+Open=1 rows. Retain sparse dates/valid zero anchors, leave unavailable anchors/stock/demand null
+without fallback, and start with an empty pipeline. Stock=m×coverage on a retail-equivalent value basis.
 
-**Extends:** ADR-016 with explicit synthetic initialization, conversion/cost and stress
-assumptions. ADR-015/016/020/021 remain unchanged. Full approved schema, deterministic algorithm,
-artifacts, fixtures and acceptance criteria:
-[completed Phase 9 plan](../plans/completed/phase-9-synthetic-inventory.md).
-The design is based on PR #17's merged Phase 8 closeout at
-`f08a62aa980d0670186ed25ae1f6e5a018ff3781`.
+Use illustrative c∈[.55,.85), annual a∈[.10,.30), goodwill g∈[.10,.75), holding rate=c*a/365 and
+shortfall penalty=(1-c)+g exactly once. Equivalent units are display-only. Use seed 4209, the exact
+SHA-256 keyed draws, five paired replicates, eight synthetic families and a historical reference
+at June 5 and June 19. Weekly factors Monday–Sunday [.95,.98,1,1.02,1.10,1.15,.80] average one
+per calendar week, but 1.033333… per default open day; do not renormalize the formula.
 
-**Accepted decision — four approved methodological choices:**
-
-1. **Origin-safe initialization and value semantics.** Use the 56 calendar days through origin
-   with at least 28 observed Open=1 records. Do not impute or fall back; preserve valid zero
-   anchors. Initialize stock from the origin-safe observed turnover anchor times synthetic
-   reference open-day coverage. Begin with an empty outstanding-order pipeline. Stock and
-   demand remain retail-equivalent monetary proxies, not physical units or observed Rossmann
-   inventory; Sales does not identify latent demand or real stockouts.
-2. **Illustrative synthetic costs.** Use procurement ratio c in [0.55,0.85), annual holding
-   rate a in [0.10,0.30), and goodwill rate g in [0.10,0.75). Set
-   HoldingCostRate=c*a/365 and StockoutPenalty=(1-c)+g. Equivalent units are display-only.
-   These are not measured business costs, margins or savings.
-3. **Deterministic scenario contract.** Use master seed 4209 and the exact SHA-256 keyed-draw
-   grammar; five paired replicates; eight synthetic families and a separate historical
-   reference. Use the specified synthetic weekly schedules/promotions, shared shocks and
-   declared coupled stress. Replicates imply no empirical likelihood or statistical power.
-   Synthetic paths remain separate from observed Sales, frozen point forecasts and frozen
-   Phase 8 estimates.
-4. **Development chronology and artifact integrity.** Use origins 2015-06-05 and 2015-06-19,
-   H14 ending by 2015-07-03, with Fit A/B compatibility. Use origin-safe projected history;
-   preserve the protected holdout; verify frozen Phase 7/8 bindings; publish immutable artifacts;
-   fail closed on integrity violations. Preserve unavailable inputs without repair/fallback.
-
-**Weekday-factor clarification accepted by the reviewer:** The approved values remain Monday–
-Sunday [0.95, 0.98, 1.00, 1.02, 1.10, 1.15, 0.80], and the approved generation formula is
-unchanged. These factors average 1 over seven calendar days, while the default Monday–Saturday
-open-day mean is 6.20/6 = 1.033333…. They are illustrative synthetic multipliers, not
-open-day-normalized factors that preserve the historical anchor's mean. This clarification
-changes neither the factor values nor the formula.
-
-**Reason:** Rossmann supplies turnover, not supply/stock/cost records. Explicit synthetic
-assumptions make a reproducible course demonstration possible while preventing fabricated
-operations from becoming observations, predictors or guaranteed inventory recommendations.
-Bounded paired stresses expose shared-shock and cold-start risks without tuning to later outcomes.
-
-**Alternatives considered:** Open-day versus calendar-day turnover initialization; empty versus
-synthetic warm-start pipeline; direct retail-value costs versus explicit procurement conversion;
-independent versus shared/coupled stress; empirical/heavy-tailed versus bounded illustrative
-draws; synthetic versus conditional historical schedules. The active plan records their
-tradeoffs. Rolling-review/suffix calibration and simulation conventions require a separate
-Phase 10 design and are not decided by this ADR.
-
-**Consequences:** The Phase 9 design is approved; implementation is NOT STARTED by this
-synchronization. Future implementation must follow this design and report fixture and
-development-only evidence separately. This ADR does not start Phase 10 or approve rolling suffix
-calibration, simulation event timing, an order queue, replenishment policies or inventory KPIs.
-Preserve Phase 8's origin-anchored prefix-only use and conditional historical replay. Calibration
-does not transport to synthetic stress. Fit B raw-primary coverage remains below nominal 95%;
-sparse Sunday support and store/origin dependence remain. No conformal, per-store, production or
-service-level guarantee is introduced. The protected holdout remains unreleased.
+Synthetic stresses remain separate from observed Sales, forecasts and uncertainty. Verify frozen
+upstream bindings, preserve immutable publication and unavailable states, and never access protected
+outcomes. The [scenario specification](../plans/completed/phase-9-synthetic-inventory.md) fixes
+schemas, draw grammar, factors and overrides. Cold starts and artificial distributions limit inference.
 
 ## ADR-023 — Origin-Frozen Daily Inventory Policy Simulation and Finite-Window Accounting
 
-**Status:** ACCEPTED after explicit human methodology approval, 2026-10-07.
+**Accepted.** Use independent June 5/Fit A and June 19/Fit B H14 episodes. Freeze exactly two
+targets before outcomes: baseline `S=m*sum(planned_open_h,h=1..P)` and forecast
+`D_P=sum(operational_points)`, `U_P=max(0,D_P+q_(p,P))`, `S=max(D_P,U_P)`.
+Use p=.95 plus .90/.98 sensitivities. Later daily reviews reuse S; there is no forecast refresh,
+suffix calibration, uncertainty scaling or refit. The target may become stale.
 
-**Review evidence:** Initial technical methodology review ACCEPT; fresh independent methodology
-review `INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`. No blocking findings or required methodology
-changes. Human approval is recorded in the Phase 10 plan and PROGRESS; this is not a claim of
-GitHub-native reviewer approval.
+R=1, integer L=2–7, P=L+1. End-of-day t orders arrive before demand at day t+L+1. At origin
+verify/freeze, initialize and order. Days 1–13 receive, reveal consumption, fulfil, record lost
+sales, charge costs, calculate position and order; day 14 suppresses new review/orders.
+`IP=ending_stock+outstanding_before_new_order`; `Q=max(0,S-IP)`. No backlog or SKU rounding.
+Require exact identities/complete prefixes/schedule and finite inputs; unavailability never becomes
+a zero, baseline or point-only substitute. Synthetic schedule routing leaves raw points unchanged;
+historical q on synthetic stress is explicitly uncalibrated (`calibration_transport_valid=false`).
 
-**Lifecycle note:** At the 2026-10-07 approval synchronization, implementation had not started.
-Implementation was subsequently reviewed and integrated through PR #23 at
-`15bce83cd63a4edfeed6defb95788da90d0f36d9` and corrective PR #24 at
-`fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The final independent external/model-assisted technical
-review accepted the corrective implementation; formal Phase 10 closeout is recorded in the completed
-Phase 10 plan. This lifecycle note does not change the accepted methodology or authorize holdout
-access.
+Primary cost is `sum(h*ending_stock+b*unmet)`. Do not add procurement/lost margin again or call it
+profit. Report terminal c×stock and c×pipeline exposure separately. Value fill, positive-demand
+stockout rate and completed positive-demand receipt-cycle service have explicit denominators;
+cycle service counts complete cycles between two observed positive receipts, with zero-demand and
+censored intervals reported. Pool ratios from totals; zero denominator is null. Missing consumption
+stops dependent state; incomplete tracks cannot support paired complete comparisons.
 
-**Scope extension:** ADR-016/021/022's Phase 10 handoff only. Accepted Phases 0–9 methodology,
-selected LightGBM recipe and Phase 8 fitted tables remain unchanged. Full proposal:
-[completed Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md).
-
-**Context:** Phase 9 is COMPLETE and supplies exogenous monetary scenarios, not inventory policies.
-Phase 8 supplies cumulative uncertainty for approved origin-anchored prefixes only; it provides
-no calibrated later-review suffix. A daily forecast-refresh simulator would exceed that handoff.
-Technical and independent methodology reviews supported the proposal; at the approval checkpoint,
-explicit human approval authorized implementation only as a separate next task.
-
-**Accepted decision:** Use separate H14 development episodes at end-of-day June 5/Fit A and
-June 19/Fit B, ending by July 3. Set exactly two standing targets once at origin: baseline
-`S=m*sum(origin-known open indicators over h1..P)` from the Phase 9 turnover anchor, and selected
-LightGBM `D_P=sum(operational points)`, `U_P=max(0,D_P+q_(p,P))`,
-`Safety=max(0,U_P-D_P)`, `S=max(D_P,U_P)`. Preserve signed q. Reference p=0.95;
-additional sensitivity p is 0.90/0.98 only. Later daily reviews execute that unchanged target;
-no forecast refresh, suffix generation, quantile scaling, rolling uncertainty, recalibration or fit.
-The target can become stale; standing inventory decisions claim no later-review calibration.
-
-Use R=1, L integer 2–7 and P=L+1=3–8 <=14. L counts full intervening calendar demand days:
-EOD-t orders arrive at BO-day t+L+1 (L=2 => receipt before day-3 demand). At origin verify
-identities/schedule and freeze targets before loading outcomes, then initialize stock/empty
-pipeline and order. Days 1–13 receive, reveal consumption, fulfil, record lost sales, charge ending-
-stock holding/shortfall costs, calculate position and order. Day 14 processes outcomes/state/costs
-but suppresses the final order review. Maintain an explicit simulated order queue; no backlog.
-`IP=ending on-hand+outstanding before new order`, `Q=max(0,S-IP)` in continuous monetary V.
-
-Require exact model/recipe/origin/fit/P/p, complete operational prefix, compatible schedule and
-finite inputs. Unavailable targets remain null with reasons, never zero/baseline/point-only or
-another stratum. Historical replay preserves the accepted conditional saved-source-Open assumption
-and unchanged development Sales, not realized inventory truth. Synthetic schedules route the
-unchanged raw points; frozen historical q is only an illustrative uncalibrated stress-test buffer,
-with `calibration_transport_valid=false`. No nominal synthetic coverage/service claim.
-
-Share demand, starting stocks, lead time, schedule, costs, family, replicate, variant and upstream
-identity between policies. Use Phase 9 `h=c*a/365`, `b=(1-c)+g` and primary
-**simulated holding-plus-shortfall cost** `sum(h*ending_stock+b*unmet)` over H14. Do not add
-procurement expenditure/lost margin again, subtract Sales or call it profit. Report c*terminal
-stock and c*outstanding orders as separate exposure diagnostics, outside the objective.
-
-Freeze value fill/positive-demand stockout denominators, ending-stock inventory mean and additive
-cost/unmet fields. The cycle output is **completed positive-demand receipt-cycle service rate**,
-a project-specific simulated CSL proxy: no-unmet positive-demand cycles / completed positive-demand
-cycles bounded by two observed positive receipt dates. Report policy-dependent denominators,
-zero-demand cycles and censored intervals; zero denominators give null. Pool ratios from totals.
-Missing consumption stops dependent state; incomplete tracks are not complete comparison evidence.
-Closed synthetic days consume zero when available; receipts/reviews/carrying continue.
-
-Retain all orders placed through day 13, including those due after T=origin+14; due-on-T receipts
-precede consumption. No cancellation, refund, acceleration, extension or salvage. Apply identical
-terminal treatment, report inventory/pipeline/late orders/commitments and do not call exposure
-savings. Use all Phase 9 scenarios at p=0.95 plus nine one-factor-at-a-time synthetic_base overlays
-for L, p, a, g and starting coverage; do not modify/regenerate Phase 9 or infer replicate likelihood.
-
-Future outputs are ignored immutable, schema/key/null/hash-validated runs with pinned Phase 7/8/9
-lineage, staged reread, input recheck, manifest-last and atomic publication. Fail closed and preserve
-earlier runs/pointer. No protected outcomes may be read or hashed; ADR-015 release remains separate.
-
-**Reason:** A simple standing-target comparison preserves daily inventory mechanics without
-inventing forecast availability or calibrated suffix uncertainty. Explicit valuation, chronology,
-finite-window exposure and denominators make a defensible course demonstration possible.
-
-**Alternatives and limitations:** Supported-origin-only ordering would provide a narrower mechanics
-demonstration; rolling issuance/suffix calibration would need separate evidence and approval.
-The proposed standing target may be stale. Two origins, dependent Stores, cold starts, H14
-truncation, artificial costs, uncalibrated stress transport and endogenous cycles limit inference.
-This is policy simulation/comparison, not industrial optimization or proof of superiority.
-
-**Consequences:** Implementation followed this accepted ADR and completed plan; the corrective
-implementation and external/model-assisted technical review were integrated through PR #23 and PR #24.
-The accepted canonical development run and formal closeout are recorded in the completed Phase 10 plan
-and PROGRESS. At approval, implementation had not started; that historical checkpoint is preserved
-above. Phase 9 remains COMPLETE. Phase 11 remains NOT STARTED / NOT AUTHORIZED. No
-final holdout evaluation or access was part of Phase 10 or this closeout.
+Retain all orders placed through day 13 even when due after T; on-T receipts precede consumption.
+No cancellation, refund, acceleration, extension or salvage. Compare common inputs/starts and the
+full scenario panel plus nine one-factor synthetic-base overlays. The
+[inventory specification](../plans/completed/phase-10-inventory-simulation.md) fixes the detailed
+accounting. Short episodes, cold starts, endogenous cycles and artificial costs preclude optimality,
+actual inventory, savings or service guarantees.
 
 ## ADR-024 - Phase 12 Localhost-Only Demonstration Boundary
 
-**Status:** Accepted for Phase 12 M4 by the user's explicit scope decision on 2026-10-10.
-
-**Context:** The initial Phase 12 design compared private-LAN and hosted alternatives. M4's earlier draft acceptance language treated an independent LAN viewer and trusted network as deployment gates. The user clarified that the dashboard is for local development, analysis and live demonstration on the user's own Windows computer; remote viewers and network exposure are not required.
-
-**Decision:** M4's approved deployment target is localhost at `http://127.0.0.1:8501`. Preserve the Streamlit settings `server.address = "127.0.0.1"`, `server.enableStaticServing = false`, `server.enableCORS = true` and `server.enableXsrfProtection = true`. Private-LAN access, network-profile changes, firewall rules, port forwarding, public tunnels, cloud deployment and public hosting are out of scope. Independent LAN-viewer testing is not a mandatory acceptance criterion and has not been performed.
-
-**Acceptance and consequences:** Retain the accepted analytical services, data boundaries and canonical results without modification. M4 still requires automated checks and CI, the existing browser/security/performance evidence, a human visual review of the localhost application, and an independent final review of PR #32. Automated browser interactions do not substitute for human visual review. Keep PR #32 Draft and unmerged until independent final review; this ADR did not itself authorize Phase 12 closeout, data/artifact regeneration or Phase 13 access. The earlier LAN proposal remains historical design in the Phase 12 plan, now archived under `plans/completed/`.
+**Accepted; current runtime boundary.** The dashboard remains at `http://127.0.0.1:8501` with
+`server.address="127.0.0.1"`, static serving off, CORS and XSRF protection on. LAN/network-profile,
+firewall, forwarding, tunnels and hosting changes require separate authorization. Local acceptance
+included automated checks, browser/security/performance checks, user-attested human visual review
+and independent review. Automated UI interaction cannot substitute for human visual acceptance.
+The later public-demo objective does not itself change this runtime boundary.
 
 ## ADR-025 — Phase 13 A-bounded Inventory Evaluation Scope
 
-**Status:** ACCEPTED — SCOPE ONLY by the owner's explicit decision on 2026-10-10. The decision
-was recorded after PR #35 merged into `main` at
-`2d34e20d5ae9fdb29af610dd28aefd3b80023946`.
+**Accepted for scope only.** Final inventory evaluation comprises independent H14 episodes at
+July 3 and July 17 using the same two origin-frozen policies and finite-window event/terminal
+accounting. Retain the full scenario/sensitivity panel subject to measured resource feasibility
+and explicit approval. Exceeding budget requires a scope/resource decision, without silent sampling.
 
-**Clarifies:** The Phase 13 inventory deliverable and its acceptance boundary in
-`PROJECT_PLAN.md`. This scope record does not revise the accepted forecasting, uncertainty,
-synthetic-generation, or Phase 10 simulation methods in ADR-015, ADR-020, ADR-021, ADR-022, or
-ADR-023.
-
-**Decision:** Include the following bounded simulated inventory evaluation in Phase 13:
-
-- Run two independent H14 episodes at the existing July 3 and July 17 origins, for July 4–17 and
-  July 18–31 respectively. Each episode freezes its two Phase 10 standing targets at its origin:
-  `historical_mean_standing_target` and `lightgbm_buffer_standing_target`.
-- Retain the full precommitted Phase 10 scenario and sensitivity panel as the requested scope,
-  subject to a measured resource-feasibility gate before a full-panel run. If the declared host
-  budget is exceeded, stop for an explicit scope/resource decision; do not silently sample stores,
-  cases, replicates, policies, or overlays.
-- Replay daily inventory state and KPIs in chronological order as each matching outcome is
-  separately authorized for evaluation. Later daily reviews execute the existing origin-frozen
-  targets; they do not add rolling operational forecast origins, issue new forecasts, or perform
-  daily suffix recalibration or calibrated protection-period recommendations.
-- Accept for this bounded scope the explicit exception to the earlier Phase 13 requirement for
-  complete fresh forecast-supported protection coverage at every daily inventory review. Do not
-  score unsupported later-review protection coverage as evidence. The two independent H14 episodes
-  make no claim of continuous rolling 28-day inventory validation.
-- Preserve paired Phase 10 policy comparison and its common finite-window event and terminal
-  accounting. Retain the existing adverse Phase 10 development evidence recorded in
-  `PROGRESS.md`; this decision does not select a winning policy or imply favorable July results.
-
-The inventory quantities remain simulated retail-equivalent monetary proxies. This scope does not
-claim actual Rossmann inventory, physical demand, real service levels, causal improvement, or
-business savings.
-
-**Approval boundary:** This decision approves inventory scope and its stated acceptance limitation
-only. It does not approve July predictor/covariate provenance or retrospective conditional input
-extraction; a planned-Open schedule for the observed-Sales reference; Fit B transport to July fits
-or synthetic cases; A2 versus A1 custody controls; runtime save/load tolerances; monitoring windows,
-statistics, or alert thresholds; a comparator/score protocol; or M1 implementation. None of those
-approvals may be inferred from the A-bounded scope decision. Implementation, development rehearsal,
-mechanical protected-source staging, and analytical outcome release each retain their separate
-authorization gates. Phase 13 as a whole remains PLANNED / NOT AUTHORIZED.
+This accepts the exception that later daily reviews have no fresh calibrated protection forecast;
+unsupported protection coverage cannot be scored as evidence. It is not continuous rolling 28-day
+operation. Preserve adverse development results; scope does not select a policy or promise savings.
+Method, inputs, schedules, transport, custody, implementation, rehearsal, staging and analytical
+release retain separate approvals.
 
 ## ADR-026 — Phase 13 Selected Sequential Evaluation Methodology
 
-**Status:** ACCEPTED — METHOD SELECTION ONLY under the delegated Technical Lead decision on
-2026-10-10. This ADR records the selected technical method. It does not authorize implementation,
-rehearsal, source access, protected-data staging, analytical release, or Phase 13 completion.
+**Accepted for method selection only.** The [active final-evaluation protocol](../plans/active/phase-13-sequential-final-evaluation.md)
+selects these applications of the existing contracts, without authorizing execution:
 
-**Supersedes:** The M0.3 proposal's pending-method recommendations for P13-01 through P13-08,
-including the detailed execution method for P13-05. ADR-025's owner-approved A-bounded inventory
-scope and its daily-protection limitation remain unchanged. Accepted ADR-013, ADR-015, ADR-020,
-ADR-021, ADR-022, and ADR-023 remain in force; this ADR selects their Phase 13 application without
-changing their methods or historical evidence.
+1. Issue and persist two full H14 blocks before any matching outcomes are revealed. Release dates
+   in order with durable intent/checkpoints. The July 17 fresh fit uses only already released history.
+2. Use the 1,115-store grid, exact predictors and separately versioned origin-safe covariates.
+   Retrospective assumed-known availability remains an assumption. Planned Open is synthetic
+   Monday–Saturday open/Sunday closed; keep actual Open and ScenarioOpen distinct. Preserve positive
+   actual Sales even when the planned schedule says closed and report mismatches after release.
+3. Use logical/operator-enforced custody: separately staged provider views, default-deny paths,
+   dates/fields, immutable issuance and append-only journals. Separate Windows identities/ACLs are
+   optional. The trusted operator/owner/admin can bypass local checks; no strict isolation claim.
+   New partitions require persisted issuance/intent before separately authorized mechanical staging;
+   existing partitions require documented authorization/provenance. Analytical release is separate.
+4. Apply exact frozen June Fit B unchanged to July fresh fits as **UNVALIDATED transport**. Preserve
+   ranks, floors, signed values, clipping, prefix semantics and unavailable reasons. No recalibration.
+5. Keep two independent origin-frozen inventory episodes and the approved measured resource gate.
+6. Monitor descriptive daily/trailing 7/14-calendar-day views by origin/horizon, including feature
+   shifts and post-release errors/coverage. Precommit deterministic integrity/data-quality alerts
+   only, without numeric drift/performance/coverage/service alarms or adaptive retraining.
+7. Use locked Windows x64/Python 3.14 and exact recipe/configuration/feature/category identities.
+   Same-environment booster save/load comparisons use `rtol=1e-12`, `atol=1e-9`; fixture failure
+   needs a reviewed tolerance decision before protected results. Measure/approve full-panel resources.
+8. Final LightGBM has frozen Seasonal Naive as contextual comparator on standalone/common rows.
+   Do not reselect, add candidates or use Holt-Winters as a final comparator.
 
-**Selected decisions:**
-
-1. **Protocol and release order (P13-01).** Issue exactly two complete, frozen H14 forecast blocks:
-   origin 2015-07-03 for July 4–17, then origin 2015-07-17 for July 18–31. Finish, validate, and
-   persist each block before any outcome in that block is analytically revealed. Release each date
-   chronologically and checkpoint it before advancing. The second scheduled fresh fit may use only
-   Block 1 history already authorized and released through July 17. No post-outcome model, interval,
-   target, or policy adaptation is allowed.
-2. **Inputs, roster, and operating schedule (P13-02).** Retain the 1,115-store requested grid and
-   exact ordered 29-feature schema. The selected input method uses separately versioned,
-   origin-safe covariates and records retrospective assumed-known availability where historical
-   availability is unverified. A Monday–Saturday-open / Sunday-closed schedule is a conditional,
-   explicitly synthetic planning assumption for scenario and observed-Sales-reference simulations.
-   Keep calendar values, static metadata, conditionally assumed future covariates, planned Open,
-   `ScenarioOpen`, and post-release actual Open distinct. Preserve positive observed Sales even when
-   the synthetic planned schedule says closed; after release, report planned-versus-actual schedule
-   mismatches. Never use future actual Open as planned Open, a predictor, or an issuance-time input.
-   Source identity, provenance, safe acquisition, and authorized preparation remain execution
-   preconditions, not permissions granted by this method selection. If needed covariates exist only
-   in a combined source containing protected Sales/Open, require a separately reviewed safe
-   preparation and custody procedure before any access to that source. Column projection alone is
-   not physical isolation. Fail closed when provenance cannot be established.
-3. **Custody and chronology (P13-03).** Select A2 logical/operator-enforced custody: separately
-   staged provider views, default-deny provider/path/date/field guards, immutable issuance, durable
-   per-date release intents, append-only journals, and idempotent checkpoints. A1 Windows identities
-   and NTFS ACLs are optional hardening. Disclose the trusted-operator assumption; A2 does not claim
-   strict physical isolation from an operator, machine owner, or administrator. For a new partition,
-   complete and persist issuance, persist the next date's intent, separately authorize mechanical
-   staging, and create/access only that date's projection. Existing partitions require documented
-   staging authorization and provenance. Mechanical reads are protected-data access but are distinct
-   from analytical outcome revelation; prior reads authorize no new access. Staging and analytical
-   release require separate authorizations.
-4. **Uncertainty (P13-04).** Apply the exact frozen June Fit B tables unchanged to each July fresh
-   fit as an explicitly **UNVALIDATED transport assumption**. Preserve accepted identities, signed
-   residual values, exact horizon/prefix semantics, sample floors, availability/reason fields,
-   endpoint clipping, and ADR-021 formulas. Do not recalibrate, refit or retune quantiles; do not
-   borrow origin-prefix quantiles for later-review suffixes; and make no July or synthetic coverage
-   guarantee. July actuals may assess error and empirical coverage only after their authorized
-   chronological revelation; they never enter issuance.
-5. **Inventory (P13-05).** Preserve ADR-025 Option A-bounded: two independent H14 standing-target
-   episodes and the full precommitted scenario/sensitivity panel, subject to an explicitly measured
-   and approved resource-feasibility gate. Preserve the accepted Phase 10 paired policies, event
-   order, metrics, costs, and common finite-window terminal accounting. The episodes do not claim
-   fresh calibrated protection coverage at each daily review or continuous rolling 28-day operation.
-6. **Monitoring (P13-06).** Use descriptive daily, trailing 7-calendar-day, and trailing
-   14-calendar-day summaries, stratified by forecast origin and horizon. Show descriptive
-   feature-distribution shifts and post-release forecast errors and interval coverage. Precommit
-   deterministic integrity and data-quality alerts only. Do not set arbitrary statistical drift,
-   performance, interval-coverage, or service-level alarm thresholds; alert definitions must not
-   depend on final outcomes.
-7. **Runtime and reproducibility (P13-07).** Use the locked Windows x64 / Python 3.14 reference
-   environment and exact frozen LightGBM recipe. Require exact configuration, feature, category,
-   identity, and hash checks. For same-environment booster save/load predictions, use the
-   precommitted comparison `rtol=1e-12`, `atol=1e-9`. A fixture failure stops work for a new reviewed
-   tolerance decision; tolerances are never loosened after protected results are seen. Record full
-   environment, native build, and runtime identity. Measure the full-panel host memory/runtime
-   budget and obtain explicit approval before execution.
-8. **Scores and comparator (P13-08).** LightGBM is the primary final system. Include the existing
-   frozen Seasonal Naive as a contextual baseline with immutable H14 issuance before outcome
-   revelation. Preserve exact standalone and common-row metrics and populations. Do not perform
-   new model selection, add a candidate, or use Holt-Winters as a final comparator.
-
-**Unresolved execution preconditions:** The selected method does not identify or authorize a real
-source, prove any covariate's historical availability, authorize source preparation/acquisition,
-name the trusted staging/release operator, establish provenance for existing partitions, approve a
-host resource budget, or authorize implementation. A separately reviewed safe-preparation and
-custody procedure is required before any access if model covariates share a combined source with
-protected Sales/Open. No source/outcome access, hashing, extraction, staging, rehearsal, or analytical
-release is authorized by this ADR. M1 remains NOT AUTHORIZED, and the protected July holdout remains
-unreleased. Record prior mechanical reads separately from analytical releases; neither category
-alone authorizes any new access.
-
-**Consequences:** Phase 13 can proceed to a separately authorized synthetic-fixture implementation
-only after Technical Lead review of this documentation proposal and explicit M1 authorization.
-Development rehearsal, mechanical staging, and each analytical daily release remain separate gates.
-This method selection does not mark Phase 13 APPROVED for implementation, REVIEWED, or COMPLETE.
+Real source identity, safe preparation/custody, named operator, partition provenance, resources,
+remaining implementation, rehearsal, staging and each analytical release remain pending gates.
+A projection/manifest/binding is not access permission. Phase 13 remains PLANNED / NOT APPROVED.
 
 ## ADR-027 — CC-02 Development-Only Weekly STL Diagnostic
 
-**Status:** Accepted; CC-02 implementation is **REVIEWED / INTEGRATED**. PR #41 was accepted and
-merged at `1c83bb4e629b9b8726ea6613a0888e75deb3fbcc`. PR #42 integrated its trusted development-only
-provider at `3efbda248af09231f69a6e461bf5246b2fbb3e3a`; Quality #135 passed on Python 3.12 and 3.14.
-Real-source preparation, real-data STL, and findings publication remain separately unauthorized.
+**Accepted; fixture implementation reviewed/integrated.** Use robust weekly STL (period 7)
+on uninterrupted finite daily Sales segments ending by July 3. Require 56 days, choose latest end
+then latest start, retain latest 112 rows and analyze first three eligible Store IDs ascending.
+Zeros stay; gaps/nonfinite/missing observations split segments without smoothing/interpolation.
+Report per-Store availability, component reconstruction and retrospective descriptive figures.
 
-**Context:** The proposal includes Sales decomposition as an EDA method, while the historical Phase
-2 EDA implemented trends, weekday summaries, autocorrelation and anomaly analysis without an
-explicit Trend/Seasonal/Residual decomposition. The course-compliance remediation requires a
-reproducible weekly decomposition without changing the accepted forecasting system.
-
-**Decision:** Use `statsmodels.tsa.seasonal.STL` with period 7 and robust fitting on finite,
-uninterrupted daily Sales segments ending by 2015-07-03. Require 56 days, select the latest eligible
-segment by end date then start date, trim to its latest 112 rows, and analyze the first three
-eligible Store IDs in ascending order. Retain source zeros. Missing calendar dates and missing or
-non-finite numeric observations split segments; do not interpolate or fill values, or
-smooth/modify observed Sales before fitting.
-Return explicit per-Store availability and reason metadata, check component reconstruction, and
-label figures as retrospective descriptions rather than forecasts or causal explanations.
-
-**Data boundary and scoped custody clarification:** The reusable API accepts an already-authorized
-in-memory Store/Date/Sales frame and rejects any date beyond the development ceiling. The accepted
-fixed-path provider validates one immutable development-only bundle using an external binding; it
-does not authenticate its issuer or establish custody. Its production STL CLI remains fail-closed.
-
-The approved preparation design uses the documented official `data/raw/rossmann/train.csv`
-snapshot. A custodian reading or hashing this mixed-source CSV mechanically accesses bytes that
-include the protected period, even when parsing in chunks. Such source access is a distinct,
-narrow operation requiring a later explicit authorization naming the owner-approved source,
-custodian, purpose, implementation and scope. It grants no analytical inspection or summaries of
-protected values, holdout modeling/scoring, methodology changes, Phase 13 staging/release or replay.
-
-Preparation emits only eligible Store/Date/Sales rows with Date no later than 2015-07-03 into the
-fixed development bundle. This separate artifact and logical date/field checks do not prove OS-level
-physical isolation. Under the accepted operator-enforced claim, the custodian/operator and machine
-owner/administrator are trusted; separate Windows identities and restrictive NTFS ACLs are optional
-hardening. Make no strict-isolation claim against a privileged operator, machine owner or
-administrator. Stronger OS-enforced separation requires separately reviewed identities and ACLs.
-
-Manifest authorization-reference fields identify external records. Stable references may be
-reserved before preparation, but reserved provider-loading and preflight records remain PENDING
-and grant no permission. Preparation authorization must be effective before source access. After
-preparation, a separately authorized independent verifier validates the isolated bundle; a delegated
-external approver then binds its exact Parquet and manifest hashes and activates provider-loading
-and preflight approvals. The immutable manifest is not edited when those external states change.
-Provider loading, STL execution and publication of findings each require their own explicit owner
-approval. The current provider schema supports these references without a schema change, but the
-trustworthy lifecycle is enforced by the external operator process, not Python.
-
-This clarification does not authorize real Rossmann access, source partition creation, protected-
-period analysis, EDA execution, or a final-holdout operation. The preparation CLI defaults to
-fail-closed and has only the separate fixed-source `--execute-once` gate; no authorization packet
-or real approval is configured. The STL CLI remains fail-closed. CC-02D documents the later
-operator handoff in [the custodian runbook](CC-02D_CUSTODIAN_RUNBOOK.md). No real partition or
-approval binding is configured.
-
-**Consequences:** PR #41 integrates the bounded diagnostic and PR #42 integrates its fixed-path
-provider. Synthetic fixtures remain the only execution evidence; no Rossmann decomposition has
-been run. Outputs, when separately authorized, are descriptive-only component tables, figures and
-provenance manifests under the ignored generated-report convention. The diagnostic is not part of
-`phase-3-v1`, forecast evaluation, selection, inventory decisions, or Phase 13; all accepted
-forecasting methods and release gates remain unchanged.
+The in-memory API requires authorized Store/Date/Sales. The fixed provider verifies one immutable
+development-only bundle against an external binding; it does not authenticate issuer/custody.
+The [custodian runbook](CC-02D_CUSTODIAN_RUNBOOK.md) controls future mixed-source preparation:
+separately effective source/preparation authorization before any read/hash, independent verification,
+external exact-hash binding, then separately approved provider loading, STL and publication.
+Reserved pending references grant no permission; immutable manifests are not edited to activate them.
+The one-use preparation CLI is default-deny and has no source override; STL CLI stays fail-closed.
+No real bundle or Rossmann STL results exist. Trust is operator-enforced, without administrator-proof
+isolation. This diagnostic is outside features, selection, inventory and final evaluation.
 
 ## ADR-028 — Instructor Feedback Alignment and Public Demonstration
 
-**Status: PROPOSED — awaiting explicit project-owner acceptance.** This record captures instructor
-guidance and a proposed delivery direction. It does not supersede an accepted decision or authorize
-implementation, data access, public exposure, scenario analysis, or final evaluation.
+**PROPOSED; broader methods await owner acceptance.** Instructor guidance accepts Store × Date
+monetary H14 scope, requests public API/dashboard demonstrations, Store-level comparisons of the
+three existing methods, monitoring across data quality/characteristics/performance and supported
+simulated business indicators, plus human retraining-review conditions. Precomputed forecasts suffice;
+on-demand inference and cross-model inventory simulation are optional.
 
-**Instructor guidance:** The instructor accepts Store × Date monetary `Sales` forecasting with the
-existing 14-day primary horizon. The instructor prefers both the API and dashboard to be publicly
-accessible for grading; precomputed forecasts are sufficient, and on-demand forecasting is optional.
-Monitoring should show multiple indicators spanning data quality, data characteristics, and forecast
-performance, with business-performance indicators where the existing simulation supports them.
-The instructor also requires scenario-based comparisons of LightGBM and alternative forecasting
-methods, with accuracy evidence and business interpretation using available Store-level
-characteristics. LightGBM need not outperform simpler methods in every scenario. A matched
-cross-model inventory simulation is desirable bonus work, distinct from the scenario-based forecast
-comparison.
-
-**Proposed project direction:** Prepare a public course demonstration of the existing FastAPI and
-Streamlit interfaces using precomputed forecasts and existing result artifacts. Keep on-demand
-forecast generation optional. Design a development-only scenario analysis that compares existing
-forecast candidates across approved Store-level scenarios and interprets accuracy and supported
-business impacts. Before analysis, document and obtain approval for scenario definitions, eligible
-populations, comparison methods, and interpretation limits. Use only development evidence and
-preserve the accepted forecast information boundary. A forecast-driven, matched inventory comparison
-across Seasonal Naive, Holt-Winters, and LightGBM remains an optional extension; it is not required
-to satisfy the scenario-comparison objective. Monitoring should support human review of the indicators
-and recommendations to consider retraining when documented conditions or triggers are met. The latest
-instructor feedback does not explicitly require automatic retraining and does not waive the original
-project requirement to define retraining conditions and triggers. Automatic retraining remains
-optional pending a separate approved design. This proposal adds no numeric thresholds or model
-changes and authorizes no adaptive retraining during the frozen Phase 13 evaluation; the protocol
-remains unchanged.
-
-**Relationship to accepted decisions:** ADR-024 remains authoritative: the dashboard's approved
-deployment target is localhost, and network/public exposure remains out of scope. ADR-017 accepted
-one deployed Streamlit demonstration as sufficient and independent API hosting as optional. This
-proposal would supersede those delivery choices only for the owner-approved course-demonstration
-audience and access scope; its model ladder and application-service architecture remain unchanged.
-Owner acceptance of that change and a separate implementation/hosting/security plan and
-authorization are required before public deployment; instructor preference does not require a
-hosting purchase. No public URL or deployment currently exists. The accepted Store × Date target,
-14-day horizon, feature and data contracts, model selection, uncertainty and simulation methods,
-ADR-013 metrics and origins, ADR-015 holdout boundary, and ADR-025/026 Phase 13 scope and protocol
-remain unchanged. Present the requested monitoring categories within existing approved evidence;
-do not introduce thresholds or alter ADR-026 monitoring methods without an accepted methodology.
-
-**Approval and implementation boundary:** Instructor guidance is recorded above; the project owner
-has not accepted this ADR. The existing localhost application is implemented, but public API or
-dashboard hosting, instructor-requested scenario analysis, and cross-model inventory evaluation are
-not implemented by this proposal. Any change that could affect final evaluation must be reviewed and
-resolved before the protected holdout is released. Until the owner accepts a superseding decision,
-follow ADR-024 and all existing Phase 13 authorization gates.
+Proposed scenario definitions, eligible populations, support/comparison/interpretation rules and
+broader monitoring triggers require separate accepted designs and development-only evidence.
+Automatic retraining is optional, with no adaptive final replay. Instructor preference authorizes
+neither hosting purchases nor data/release operations. The later narrow public-demo objective
+accepts only its stated delivery direction; the remaining proposal is not accepted wholesale.
 
 ## ADR-029 — WP1-L3-F Restricted Trusted-Fixture Contract
 
-**Status:** Accepted by explicit project-owner approval on 2026-10-20 of WP1-S8's
-`RECOMMEND_RESTRICTED_FIXTURE_CONTRACT`. Implementation remains subject to independent Sol 6.1
-review; acceptance of this design does not accept the implementation or complete WP1.
+**Accepted restricted fixture contract; implementation reviewed/integrated.**
+`verify_trusted_scenario_fixture_snapshot` may decode only reviewed project-controlled synthetic
+fixture bytes and controlled test mutations. Synthetic origin is a caller precondition that the
+verifier cannot authenticate. Hashes, receipts, custody labels and matching bindings prove
+consistency, without trust, availability, real-source access or analysis authority.
 
-**Context:** WP1-S7 returned REQUEST_CHANGES for WP1-S7-01. R1 reached
-DESIGN_REVIEW_REQUIRED: footer estimates and post-materialization Arrow output checks cannot
-prevent excessive decoder allocation. The original generic/untrusted decoder claim is rejected
-for L3-F. Historical failure evidence remains in [PROGRESS](PROGRESS.md).
+Byte/JSON/footer/schema/output thresholds remain, but Arrow output is checked after materialization.
+Python/native temporaries have no hard peak-memory budget. Malformed fixtures can exhaust memory
+or terminate the process. The original untrusted-decoder memory requirement remains unresolved;
+the owner accepted residual risk only for restricted fixture testing. Eventual output rejection
+is not allocation prevention. No real/untrusted decoder or production ingestion use is approved.
 
-**Decision:** L3-F may decode only bytes supplied by reviewed, project-controlled synthetic fixture
-generators and controlled synthetic test mutations. This is a caller precondition; the verifier
-cannot authenticate synthetic origin. SHA-256, manifests, receipts, custodian or authorization
-references, `input_kind`, environment variables and bindings do not prove trust or issue authority.
-This verifier is not designed for untrusted or real Rossmann input decoding. It must not prepare,
-verify, bind or load actual WP1 development datasets or enter a production ingestion path.
-
-Rename the public API to `verify_trusted_scenario_fixture_snapshot`; remove
-`verify_scenario_bundle_snapshot` without an alias. Keep `validate_scenario_input_binding` and
-the immutable records, using the existing limitations tuple to expose fixture-only conformance,
-unauthenticated origin/custody, unverified historical availability and real observed-roster
-completeness, no real-source permission, no hard peak-memory guarantee and no L4 authority.
-Purpose and permitted-use declarations remain synthetic-only; matching bindings establish identity
-consistency only. Scientific validation, candidate identities, sparse keys, metadata coverage,
-availability classifications and the development/holdout boundary remain unchanged.
-
-Preserve all v1 byte, JSON, schema, footer, row, column, row-group, string and logical-output bounds.
-Input bytes are limited before decoding; footer estimates are untrusted admission/rejection hints;
-Arrow output checks run after materialization. PyArrow can allocate more than the accepted output
-size. Python, Arrow, pandas and native temporary allocations have no hard process-memory budget.
-Malformed or erroneous fixture bytes may exhaust memory or terminate the process. The owner accepts
-this residual risk only for the restricted development/testing context. WP1-S7-01 is
-**UNRESOLVED UNDER ORIGINAL CONTRACT — RESTRICTED FIXTURE CONTRACT APPROVED**; it is not technically
-repaired. Bounded reproductions test eventual output rejection, never prevention of allocation.
-
-The authorized local scope is exactly `src/rossmann_forecasting/data/wp1_inputs.py`,
-`tests/test_wp1_inputs.py`, `plans/active/wp1-scenario-forecast-evaluation.md`, `docs/PROGRESS.md`,
-`docs/DECISIONS.md` and `README.md`. No dependency, module, CLI, loader or production integration is
-added. An OS-memory-limited isolated worker is deferred because it requires a separately reviewed
-process architecture, platform controls and bounded handoff for any later real/untrusted decoder.
-A custom Parquet pre-reader is not pursued because maintaining and validating a format parser
-exceeds this fixture-support scope. Neither option is replaced by a claimed in-process hard limit.
-
-**Consequences:** Validate only in the isolated fixture environment and obtain independent Sol 6.1
-acceptance of the exact six-file snapshot before any separately authorized publication/CI step.
-No real-data source/preparation/verification/binding, custody approval, scenario execution, L3-C/V/B,
-L4, Phase 13, public release or deployment is authorized. ADR-028 remains PROPOSED and ADR-024
-remains authoritative. The full course delivery objectives, later real-data WP1 work, human
-ownership review and academic-integrity/AI-assistance disclosures remain required.
+Keep `validate_scenario_input_binding`, exact scientific/key/roster/metadata checks and explicit
+limitations. The generic verifier name was removed without alias. A later isolated worker needs a
+separate process/security design; a custom Parquet parser was rejected as disproportionate.
+Real preparation/verification/binding, volume segmentation, scenario execution and final release
+remain separately gated; independent Sol 6.1 review requirements remain in the active plan.
 
 ## ADR-030 — Narrow Public Course-Demonstration Objective and Synthetic-First Milestone A
 
-**Status: Narrow objective and Milestone A accepted by the project owner through the scoped
-WP2-S1 task on 2026-10-21.** Milestone A implementation remains **IMPLEMENTED / UNDER REVIEW**
-until independent Sol 6.1 review. This record accepts only the matters below and does not accept
-the remaining proposals in ADR-028.
+**Accepted narrow future objective.** Provide separately reachable public read-only FastAPI and
+Streamlit URLs after release approval, sharing an immutable explicitly approved bundle through a
+typed provider. Streamlit uses direct Python services. Start with controlled synthetic content;
+a public profile is explicit and never falls back to canonical local artifacts. Render is a
+candidate for assessment, without a selected host/service or purchase authority.
 
-**Decision:** The future course-delivery objective may provide two separately reachable public
-URLs: one read-only FastAPI demonstration and one Streamlit dashboard. They may use the same
-versioned, immutable, explicitly approved demonstration bundle through a typed read-only provider;
-Streamlit continues to call Python application services directly and need not call the API over
-HTTP. Use controlled synthetic content first. A later public profile must be explicit and must not
-silently fall back between the synthetic bundle and canonical local artifacts. Render is the
-preferred hosting candidate for later assessment, subject to resource, security, content and owner
-acceptance; no host or service has been selected for deployment.
-
-The objective is accepted for future planning, not for automatic implementation of later milestones.
-WP2-S1 authorizes only local Milestone A work: a controlled-synthetic release contract, deterministic
-offline bundle builder, standalone verifier and fixture tests. This task does not authorize bundle
-publication, source-derived content or real-data extraction, content redistribution, public
-listeners, Internet exposure, hosting accounts/resources, purchases, deployment, or publication of
-URLs. Milestones B and C require separate authorization. Any public release also requires review of
-the exact content and applicable rights, an independently reviewed implementation/security
-snapshot, and explicit owner authorization for the specific deployment and audience.
-
-ADR-024 remains effective for the existing application: its Streamlit listener stays on localhost,
-and no public release is permitted until a later explicit release authorization. This accepted
-future objective is a narrow exception to ADR-017's earlier delivery sufficiency/optional-API
-hosting direction only if the owner separately authorizes deployment; it does not change current
-runtime behavior. ADR-028's proposed scenario-analysis, monitoring, retraining, cross-model
-inventory, and other methodology clauses remain **PROPOSED / NOT ACCEPTED**. Existing Store × Date
-monetary Sales meaning, forecast algorithms and metrics, development cutoff, protected holdout,
-uncertainty method, inventory method, and Phase 13 authorization gates remain unchanged.
-
-**Consequences and boundary:** Synthetic demonstration data proves only interface behavior and
-fixture arithmetic. It cannot be described as observed Rossmann history, empirical model performance,
-historical model execution, calibrated uncertainty, real quantities or stockouts, savings,
-production readiness, or validated service guarantees. Bundle readiness, process health, and each
-analytical view's availability remain distinct facts. The [WP2 public course-demo plan](../plans/active/public-course-demo.md)
-owns the milestone boundaries; [PROGRESS](PROGRESS.md) records implementation and review state.
+The bundle/provider/API/dashboard are integrated; [current status](PROGRESS.md) records pending
+corrective review and closeout. [Milestone C](../plans/active/public-course-demo.md) still requires
+exact-content/rights/provenance, independent implementation/security review, resource/rollback and
+specific owner approval for hosting, audience and window. No public listener, bundle publication,
+source-derived release, deployment or URL is authorized by this objective. Current localhost rules
+remain effective. Synthetic content proves interfaces/arithmetic, not Rossmann history, accuracy,
+calibrated uncertainty, physical quantities, stockouts, savings, service or production readiness.

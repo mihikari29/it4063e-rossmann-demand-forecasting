@@ -1,43 +1,8 @@
-# Phase 9 — Synthetic Supply-Chain / Inventory Layer Design
+# Synthetic Operational Scenarios
 
-**Status: COMPLETE (2026-10-07).** ADR-022's methodology is ACCEPTED, and the external
-implementation and numerical review are ACCEPTED. PR #19 was merged into `main` at squash SHA
-`7451c50ff685d92e8e74b5014d07b3bbfaca0a22`. See [PR #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/19)
-and Section 16 for the formal closeout. Sections 13–15 preserve the historical approval,
-implementation and review checkpoints. Phase 10 remains PLANNED / NOT STARTED / METHODOLOGY NOT
-APPROVED.
+The deterministic scenario generator is complete. This reference defines synthetic assumptions, schemas, draws and failure semantics. These are not observed Rossmann operations.
 
-## 1. Authority, integration and scope
-
-The historical design branch `docs/phase-9-inventory-design` started from fetched `origin/main`
-at `f08a62aa980d0670186ed25ae1f6e5a018ff3781`. GitHub reports
-[PR #17](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/17) merged at that
-squash commit, integrating the formal Phase 8 closeout. The base also contains implementation
-PR #15 and accepted-results PR #16 at `c694f5922a1c1e58ffaf9c2437fd9698ca3e5821` and
-`4dd7717fed57ff3b1f14789b980772c1968f3cba`.
-
-The design approval synchronization
-[PR #18](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/18) merged into
-`main` at `97795ca5d868b512e5c2f6cae59bcec1d6ce19a4`. The implementation branch
-`feat/phase-9-synthetic-inventory` starts from that commit.
-
-Read together with [AGENTS](../../AGENTS.md), [workflow](../../docs/WORKFLOW.md),
-[proposal](../../docs/PROPOSAL.md), [roadmap](../../docs/PROJECT_PLAN.md),
-[decisions](../../docs/DECISIONS.md), [dictionary](../../docs/DATA_DICTIONARY.md),
-[PROGRESS](../../docs/PROGRESS.md) and the
-[completed Phase 8 plan](../completed/phase-8-forecast-uncertainty.md).
-Accepted [ADR-022](../../docs/DECISIONS.md#adr-022--synthetic-monetary-scenario-contract)
-records the approved synthetic assumptions without superseding ADR-015, ADR-016, ADR-020 or
-ADR-021. Historical proposal checkpoints remain in this completed plan and PROGRESS.
-
-**Phase 9 delivers:** origin-censored initialization evidence, deterministic exogenous
-operational parameters, separately labelled synthetic turnover paths, validation reports and
-immutable manifests. It would neither fit a forecast nor run an inventory policy.
-No protected 2015-07-04 through 2015-07-31 Sales, Open or Customers may be accessed, hashed or
-used. No Phase 7/8 artifact, calibration, feature contract, model or dependency changes belong here.
-The choices in this completed plan were accepted in the external methodology review recorded in
-Section 13. Section 14 preserves the historical implementation state and evidence; Section 16
-records the formal closeout.
+[Verified results](../../docs/PROGRESS.md) · [Decisions](../../docs/DECISIONS.md)
 
 ## 2. Value semantics and information layers
 
@@ -51,7 +16,7 @@ declared K-per-V conversion. They cannot establish realized margins or business 
 |---|---|---|
 | Historical observed `Sales` | Unchanged Rossmann observations at Date <= origin | Only input to the initializer; Open=1 turnover anchors an illustrative scenario scale. Missing dates stay missing. |
 | Historical replay outcomes | Observed development Sales after origin | Referenced as a future Phase 10 evaluation source; never loaded into Phase 9 parameter or demand generation. They are turnover proxies, not latent demand. |
-| Frozen point forecasts | ADR-020 selected `global_lightgbm_gbdt_regression_l1`, trial A / 180 rounds; saved Phase 7 paths | Read-only lineage and origin/date/availability binding. No refit, recursive refresh, substitution or adjustment to match a stress scenario. |
+| Frozen point forecasts | model-selection contract selected `global_lightgbm_gbdt_regression_l1`, trial A / 180 rounds; saved Phase 7 paths | Read-only lineage and origin/date/availability binding. No refit, recursive refresh, substitution or adjustment to match a stress scenario. |
 | Frozen Phase 8 uncertainty | Canonical empirical daily/cumulative tables and approved fit chronology | Read-only references; no estimation, resampling, scaling, interpolation or new suffix bounds. |
 | Synthetic operational context | Configured at scenario origin | Lead time, starting stock, conversion, costs, synthetic schedules and stress factors are assumptions. They remain outside all real Rossmann predictors. |
 | Synthetic turnover path | Deterministic artificial future conditional on origin anchor and configured factors | Separate from observed Sales and point-forecast accuracy. It is an artificial simulator input, not estimated lost or latent demand. |
@@ -71,20 +36,7 @@ development cohort, not a Sales-ranked or future-availability-selected cohort.
 
 ### Frozen uncertainty identity and limitations
 
-Reference canonical run `phase8-impl-20261006-provenance-review`:
-
-| Identity | SHA-256 |
-|---|---|
-| Manifest | `63a00fc8c50ccff99360cd8790498e977e08ec6a9846780a4e1a8ab3498d71c2` |
-| Daily quantiles | `5c985c912d14b502a5d370090353624907e7fddd6d0d8552c102ee3a1ad7eda8` |
-| Cumulative quantiles | `1a0bba7916b498f2048f080dcd3b24f6cd47472d2f71fca92b94f1b678cb70ff` |
-| Canonical policy/config | `49f4811bf7b01ffe6472ea76233eefa50e211207aa0b6246dada934cd4611d93` |
-| Serialized config file | `afe563632a2ebff937f1500f568d53cdb93be35d6dc299654464c2615ae64a08` |
-
-These identities were copied from the accepted closeout record and checked by the implementation
-before binding. Original publication flags remain unchanged; the later governance freeze is
-separate evidence. Fit A is the accepted historical June 5 assessment fit, not the Fit B freeze
-applied to an earlier issuance.
+Frozen artifact identities are enforced by `inventory/scenarios.py` and the immutable upstream bindings. Publication-time flags remain unchanged after later governance acceptance.
 
 Fit B raw-primary coverage is **12,263/13,437 = 91.26%, below nominal 95%**. Sunday h2/h9 have
 only 65/64 calibration rows from 33/32 stores across two origins. Stores and origins are
@@ -293,7 +245,7 @@ The config is the issue-time evidence; no saved actual Open is imported into the
 
 There are 41 scenarios per origin (1 replay + 8 synthetic families * 5 replicates), hence 82
 catalog rows, 2,230 anchors, 91,430 parameter rows and 1,280,020 daily-grid rows for the default
-1,115 stores. These are designed counts, **not generated results**. Unavailable anchors do not
+1,115 stores. These are the designed counts; actual verified counts are recorded in the results summary. Unavailable anchors do not
 change these counts. The five replicates illustrate assumptions; they supply no statistical
 power, probability-of-stockout estimate or tuned scenario weighting.
 Stress cases must be reported separately, never pooled into real Rossmann forecast scores.
@@ -374,271 +326,3 @@ last, then atomically publish the new directory and replace the pointer. Failed 
 be treated as a handoff; retain or remove only the new task-owned staging area, never earlier
 runs. A valid run may have unavailable stores; `complete_with_unavailable_inputs` is explicit
 and is not evidence that all inventory scenarios can be simulated.
-
-## 8. Implementation boundary after approval
-
-Implemented reusable module: `src/rossmann_forecasting/inventory/scenarios.py`, with interfaces
-for config validation, censored history loading, anchor computation, keyed draws, parameter/context
-generation, validation and immutable publication. Entry point:
-`scripts/generate_inventory_scenarios.py`; fixtures: `tests/test_inventory_scenarios.py`.
-Use existing pandas/NumPy/PyArrow/standard-library dependencies and the locked environment;
-no new package, feature column or forecasting adapter is needed.
-
-Generation consumes validated config + origin-safe history + verified upstream bindings and
-returns Section 3 evidence only. No forecast service receives synthetic columns, and the
-29-column [feature contract](../../docs/FEATURE_CONTRACT.md) remains byte/schema unchanged.
-Do not add state transition, order placement/receipt, queue, inventory target, equivalent-unit
-rounding, cycle, KPI, cost-aggregation or policy-comparison functions in Phase 9.
-The implementation ran the full fixture suite and canonical development scenario build; results
-and exclusions are recorded in PROGRESS. Independent implementation and numerical review were
-ACCEPTED; see Section 15.
-
-## 9. Exact Phase 10 handoff and remaining authority
-
-Phase 9 hands over verified catalog/anchor/parameter/daily-context artifacts, config/manifest,
-validation/exclusion evidence and read-only frozen forecast/uncertainty bindings. Phase 10
-must use identical exogenous paths/starting stocks/replicates for every compared policy and
-preserve missingness. Historical replay binds observed Sales only in its evaluation layer;
-synthetic replay uses `SyntheticDemandValue` and never rewrites observed Sales.
-No inventory outcome, achieved service, savings or recommended policy is delivered here.
-
-For historical replay, preserve the Phase 8 `saved_source_open_assumed_known_at_origin`
-conditional interpretation; source Open is never presented as proven origin-known information.
-For a synthetic schedule or synthetic promotion/demand regime, the saved real raw point
-forecast remains fixed and is a deliberately stressed input, not a forecast fitted to that
-artificial world's covariates. **Phase 8 calibration does not transport automatically to
-synthetic stress.** `calibration_transport_valid=false`; any Phase 10 use of frozen q as a
-heuristic sensitivity input needs approval and cannot claim calibrated coverage/service.
-Phase 9 does not create newly routed forecasts or bound tables for synthetic schedules.
-
-The supported calibrated lookup requires matching model/recipe, Fit A/June 5 or Fit B/June 19,
-schedule assumption, p, complete origin-anchored `h1..k` and upstream availability.
-Inventory consumers are limited to L=2..7 and P=L+1=3..8. Preserve signed q and ADR-016
-`D_k=sum operational point prefix; U_k=max(0,D_k+q_p); Safety=max(0,U_k-D_k);
-Target=max(D_k,U_k)`. Do not sum marginal daily bounds, scale q to a store or stress multiplier,
-clip negative q, or use a prefix q for `h(t+1)..h(t+P)` at a later daily review.
-This handoff specifies references and restrictions only; Phase 9 implements no policy target or
-inventory-state calculation.
-
-**Phase 10 design must separately resolve:** supported review dates/forecast refresh, prefix-only
-demonstration versus independently approved suffix calibration; event ordering and lead-time
-receipt convention; lost-sales/no-backlog semantics; outstanding-order queue; finite-horizon
-terminal receipts/censoring; cycles and KPI denominators; policy baselines/comparisons and cost
-aggregation. In particular c*v is procurement cost, c*a*v/365 is daily carrying cost at a yet
-unspecified stock measurement point, and s*unmet is a total penalty; Phase 10 must define its
-cost objective without double-counting margin/revenue/acquisition effects.
-R=1 metadata alone does not authorize rolling calibrated daily decisions.
-Until that gap is approved, only supported origin-anchored decisions can be claimed calibrated.
-No Phase 10 code or comparison begins under Phase 9 approval.
-
-## 10. Fixtures, numerical acceptance and reproducibility gates
-
-These are the implementation acceptance criteria. Results from the canonical run and local
-quality gates are recorded in Section 14 and PROGRESS:
-
-| Fixture / gate | Numerical or exact acceptance criterion |
-|---|---|
-| Storage-boundary censoring | Spy reader sees only Store/Date/Sales/Open with [o-55,o] and configured Store predicates; forbidden paths never opened. July-origin requests fail before any read. Appending/changing post-origin Sales/Open/Customers cannot change initializer outputs. |
-| Availability threshold | Exactly 28 valid open rows succeeds; 27 fails with null mean/stock/demand. Missing dates stay missing; unknown Open excluded explicitly. Zero anchor remains valid, never a divide-by-zero. |
-| Hand anchor/stock | 28 open rows with Sales=100 => m=100. L=3, B=1 => R=1, P=4, C=5, initial stock/position=500, initial on-order/backorders=0. |
-| Cost arithmetic | c=0.70, a=0.20, g=0.50 => procurement for 100 V is 70 K; holding rate=0.14/365; total shortage penalty=0.80. Display conversion never changes these monetary values. |
-| Hand synthetic turnover | m=100, weekday=1, trend=1, discount=0.20, e=1, noise=1, w=2 => known-open demand=240; known-closed=0; unknown=null. Unrouted factors retained. |
-| Bounds and relationships | 100% available monetary quantities finite/nonnegative; signed trend/noise components follow their declared ranges. Integer L in2..7, R=1, P=L+1 <=14; C in1..11; discount zero iff no promo and positive if promo; cost formulas/ranges and combined factor<=6. No silent cap. |
-| Grid and joins | Exact Section 6 counts at default config, including unavailable stores; no duplicate/foreign-key/date gaps. Smaller fixtures use exactly catalog_count*store_count*14 daily rows. |
-| Common random numbers | Base vs stresses have identical unaffected draws; common date shock equal across stores; overrides occur only on declared fields/dates. No policy-dependent input. |
-| Determinism | Same logical hashes on repeat, reordered history/config Store list after normalization, alternate chunk/worker order and Python 3.12/3.14. A subset's retained rows exactly match the full run's projection. Golden seed/key vectors and independently checked expected draw values are required before implementation acceptance. Changed replicate alters at least one nondegenerate draw, with no claim it must change every value. |
-| Frozen identity / chronology | Wrong hash/model/fit fails. Fit B at June5 forbidden; unavailable Fit A daily tails retained. Original Phase 7/8 bytes unchanged pre/post build. No residual-calculation/model-fit call allowed. |
-| Feature isolation | Original 29 ordered predictor names/dtypes unchanged; no scenario field passed to training/inference, no SyntheticPromo->promo or ScenarioOpen->Open feature substitution. |
-| Failure atomicity | Inject upstream mutation, invalid output, duplicate key and existing run ID: no final run/pointer replacement and earlier run bytes unchanged. |
-
-Arithmetic comparisons use `abs(actual-expected) <= 1e-9 * max(1,abs(expected))`;
-key/schema/zero/null/integer and logical-hash checks are exact. An arithmetic tolerance does
-not permit row loss, hash mismatch or nondeterministic generation. Nonfinite values fail.
-Verify logical determinism across supported environments in fixture CI; do not require Parquet
-byte identity across writer versions. Do not interpret approximate uniform draw histograms as
-empirical Rossmann distributions or fail a small deterministic fixture for sampling imbalance.
-
-Implementation review uses the workflow's full pytest, Ruff lint/format,
-documentation link checker and git diff check, plus lock/package consistency. A real
-development scenario build must meet **zero structural/integrity violations**, exact default
-row counts, 100% declared range/relationship validity and identical repeat logical hashes.
-Report every unavailable store and zero anchor; no invented availability/coverage/service-rate
-threshold or tuned scenario performance is an acceptance criterion.
-The historical design PR ran documentation/repository checks only, with no data/model build.
-
-## 11. Alternatives, risks and proposal-stage review questions
-
-This section records the alternatives and review questions considered before external approval.
-Their disposition is in Section 13; they are no longer open Phase 9 approval blockers.
-
-| Choice | Approved decision / alternative and consequence |
-|---|---|
-| Turnover scale | 56-day Open=1 mean with >=28 eligible rows. Calendar-day mean including observed closures is an alternative but answers a different scale question; physical/latent-demand correction is prohibited. |
-| Initialization | m*(L+1+buffer) and empty initial pipeline. Fixed stock independent of Sales or warm-start synthetic queues are alternatives; queues would need Phase 10 timing design. Cold starts can dominate short-window outcomes and must be disclosed. |
-| Costs and conversion | Explicit c/a/g synthetic proxies and display-only equivalent units. Direct retail-value costs would be simpler but obscure procurement conversion; empirical margins/unit prices are unavailable. |
-| Scenario truth | Origin-history anchor and configured factors. Using point forecasts as synthetic truth risks giving a forecast-driven policy a circular advantage; using interval upper bounds as truth confuses prediction with outcome. Neither is proposed. |
-| Distributions | Bounded uniform/discrete draws with specified dependencies. Lognormal/heavy-tailed or empirically fitted marginals are alternatives requiring a new design; the proposed tails are artificial, not estimated risks. |
-| Dependence | Shared date shock and coupled overrides. Independent stores alone would hide common shocks; learned covariance/regional cohorts would need additional origin-safe evidence and approval. |
-| Schedules | Synthetic planned weekly schedule and declared closure pulses; historical replay remains a separately labelled conditional reference. Actual future Open is not a prospectively verified schedule and protected actual Open is prohibited. |
-| Lead-time stress | Fixed Store-scenario L within2..7. Variable/order-specific delays or L>7 would change protection support/event semantics; exclude them here. |
-| Quantile use | Compatible historical origin prefixes only. Synthetic q use can be a later labelled heuristic sensitivity experiment; daily-review suffix calibration is a separate unapproved method. |
-
-The external reviewer was asked to explicitly accept/revise:
-
-1. The 56-day open-turnover anchor, 28-row threshold, open-day-equivalent coverage and empty
-   initial pipeline, including handling of sparse and zero-history stores.
-2. The proposed c/a/g cost basis, penalty composition (no added lost-margin term), equivalent-unit
-   display convention and parameter magnitudes; these are teaching assumptions, not market estimates.
-3. The seed/draw contract, five paired replicates, synthetic schedule/promotion/seasonality/trend
-   factors, bounded noise and adverse joint scenarios; no outcomes tune their parameters.
-4. The two development origins, Fit A/B compatibility, historical versus synthetic separation
-   and exact evidence/publication/failure contracts.
-
-These four were the **Phase 9 approval questions**; their accepted disposition and reviewer
-decision are recorded in ADR-022 and Section 13. The defaults below remain approved constraints
-for implementation unless a superseding decision is recorded.
-Phase 10's suffix/review/event/cost-objective choices remain deliberately unresolved and require
-its own design approval, without delaying a separately approved Phase 9 exogenous generator.
-
-Risks remain: Sales can be demand-censored or price/mix-driven; no correction is inferred.
-Origin anchors may not represent changing turnover, sparse Sunday evidence limits uncertainty,
-short windows/cold starts bias inventory comparisons, artificial cost ranges can determine
-policy ranking, deterministic stress cases are not probabilistic tail estimates, and frozen
-real forecasts/uncertainty may be poorly suited to synthetic schedules/regimes.
-Report conditional scenarios and sensitivity, with no physical-stock, actual-loss, optimization,
-coverage, service or savings claim. No final holdout, Phase 10, application or monitoring work
-is authorized by acceptance of this Phase 9 design.
-
-## 12. Design review checkpoint — 2026-10-07
-
-Only documentation is changed. The branch base and PR #17 integration are verified above;
-frozen identities are inherited review evidence. No scenario generation, implementation,
-holdout read or new artifact verification was performed. Actual local checks and the design
-PR/CI evidence are recorded in [PROGRESS](../../docs/PROGRESS.md) and the PR description.
-Status remains **PROPOSED / AWAITING APPROVAL**.
-
-This is the historical proposal checkpoint. The external acceptance and current status are
-recorded in the later Section 13.
-
-## 13. External methodology approval — 2026-10-07 (historical approval checkpoint)
-
-**Decision: ACCEPT.** The external methodology decision supplied for this synchronization accepts
-the design reviewed at PR #18 head `3820c2c34749b3baa4df954afc3daa0636cff271`. This approval
-record is dated 2026-10-07. The reviewer identity was not supplied with the decision.
-
-The reviewer accepted these four methodological choices:
-
-1. **Origin-safe initialization.** Use 56 calendar days through each scenario origin and require
-   at least 28 observed Open=1 records. Do not impute or use a fallback. Preserve valid zero
-   anchors. Start with no outstanding orders or backorders, and initialize retail-equivalent
-   monetary stock from the origin-safe turnover anchor and reference open-day coverage.
-2. **Illustrative costs.** Use c in [0.55,0.85), a in [0.10,0.30), and g in [0.10,0.75);
-   HoldingCostRate=c*a/365 and StockoutPenalty=(1-c)+g. Equivalent units are display-only.
-   These values are synthetic assumptions, not measured business costs or savings.
-3. **Deterministic scenarios.** Keep master seed 4209 and the exact SHA-256 keyed-draw grammar,
-   five paired replicates, eight synthetic families, and a separate historical reference.
-   Use the specified synthetic weekly schedules/promotions, shared shocks and declared coupled
-   stress. Replicates do not imply empirical likelihood or statistical power.
-4. **Chronology and artifacts.** Use origins 2015-06-05 and 2015-06-19 with H14 through
-   2015-07-03 and Fit A/B compatibility. Preserve the protected holdout. Use origin-safe projected
-   history and immutable, provenance-bound Phase 7/8 inputs; publication fails closed on
-   integrity errors without imputation or fallback.
-
-**Weekday-factor clarification required by the reviewer:** The factor values in Section 5 and the
-synthetic-demand formula are unchanged. The seven values average 1 over Monday–Sunday, but the
-six default open-day values sum to 6.20 and average 1.033333... . These are illustrative synthetic
-multipliers, not open-day-normalized factors preserving the historical anchor's mean. This
-clarification does not change any factor or the generation formula.
-
-At the approval checkpoint, Phase 9 state was **APPROVED / IMPLEMENTATION NOT STARTED**; this
-historical decision record does not describe the current implementation state. The approval does
-not start Phase 10.
-Its rolling suffix calibration, simulation event timing, order queue, replenishment policies and
-inventory KPI methodology remain separately unapproved. Phase 8 quantiles remain limited to
-approved origin-anchored prefixes and do not transport to synthetic stress. The protected
-2015-07-04 through 2015-07-31 holdout remains unreleased.
-
-## 14. Implementation checkpoint — 2026-10-07 (historical pre-closeout checkpoint)
-
-The fixed-seed origin-safe generator, validation and immutable publication are implemented on
-`feat/phase-9-synthetic-inventory` at source commit `8dae4e43e06d815746456a1786acfc264b77093b`.
-The active review state is **IMPLEMENTED / UNDER REVIEW**; this does not close Phase 9. Frozen
-Phase 7 and Phase 8 identities, date boundaries, availability and permitted projection passed
-before any upstream file hashing. The implementation does not refit the model, recompute Phase 8
-residuals, use forecasts or uncertainty as synthetic truth, or evaluate inventory policies.
-
-Canonical local development run `phase9-dev-20261007-canonical2` completed with manifest SHA-256
-`cc148d3670c0b20c769f245488ddd7f535f4333e6b0cf759c60e544e9c6c8a82`. It records source revision
-`8dae4e43e06d815746456a1786acfc264b77093b`, `worktree_modified=false`, and verifies the frozen
-Phase 7/8 manifest identities. Output counts are 82 catalog rows, 2,230 origin-anchor rows,
-91,430 store-parameter rows and 1,280,020 daily-context rows. Both origins include all 1,115
-configured stores with available anchors; unavailable anchors, zero anchors, missing dates and
-closed-positive-sales history are each zero. All output byte hashes matched after publication;
-four Parquet logical hashes matched a reversed-input reproducibility check.
-
-The validation report records zero structural failures, zero cost-arithmetic error and maximum
-combined factor 4.9650810021 (below the approved ceiling 6). Holdout values were neither read nor
-hashed. Historical-reference rows contain no loaded future outcomes; synthetic turnover and
-operational values remain artificial retail-equivalent monetary assumptions, not observed demand,
-physical inventory, realized loss, service performance or savings. Detailed ranges, checks and
-hashes are in [PROGRESS](../../docs/PROGRESS.md).
-
-Local validation passed: 218 pytest fixtures; Ruff lint and format across the repository; Markdown
-link checks; `uv lock --check` with uv 0.12.23 (84 packages, unchanged); Python 3.14.5
-`pip check`; and `git diff --check`. GitHub Actions run [#45](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37555928596)
-passed both Python 3.12 and 3.14 jobs on head `f9c41f0`, including fixture tests, lint, format and
-Markdown checks. The phase boundary remains the scenario generator only: do not begin Phase 10,
-merge this PR, or mark Phase 9 complete until review and integration closeout are explicitly
-handled.
-
-### External configuration-validation review fix — 2026-10-07 (historical review checkpoint)
-
-PR #19's finding that nested semantic settings were not frozen is addressed at source commit
-`2ec2488adf065e692141eceb8e3f979df4679f45`. Validation now compares the complete configuration
-against the accepted `default_config()` contract while retaining normalized fixture subsets and
-run-specific publication metadata. Regression tests cover nested settings and early failure before
-history processing. No methodology, ADR-022, RNG, equations, schemas or scenario outputs changed.
-
-A new canonical development run, `phase9-dev-20261007-config-validation-fix`, preserves all four
-Parquet logical hashes, row counts and byte hashes from the unchanged `canonical2` run. Its
-manifest and validation details are recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
-**IMPLEMENTED / UNDER REVIEW** on PR #19; no Phase 10 work or merge is authorized by this update.
-
-## 15. Independent implementation and numerical review acceptance — 2026-10-07 (historical pre-integration checkpoint)
-
-**Decision: ACCEPTED.** The independent external code and numerical review accepted the final
-implementation at source revision `2ec2488adf065e692141eceb8e3f979df4679f45` and canonical run
-`phase9-dev-20261007-config-validation-fix`, with manifest SHA-256
-`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`. The reviewer identity was
-not supplied. This accepts the implementation and numerical evidence; it does not close Phase 9.
-
-The review confirmed 82 scenario catalog rows, 2,230 origin anchors, 91,430 store-parameter rows,
-and 1,280,020 scenario-daily rows. All four Parquet output byte hashes exactly match the accepted
-`canonical2` outputs. It also confirmed monetary initialization and cost arithmetic, deterministic
-sampling and stress overrides, synthetic turnover calculations, and preserved historical-reference
-missingness. This evidence does not imply inventory policy performance or business savings.
-
-The accepted run and manifest remain unchanged; this integration performs no run regeneration.
-The final integration gate is recorded in [PROGRESS](../../docs/PROGRESS.md). Phase 9 remains
-**IMPLEMENTED / UNDER REVIEW** until PR #19 is merged and formally closed. The protected
-2015-07-04 through 2015-07-31 holdout was not accessed, and Phase 10 remains unstarted.
-
-## 16. Formal Phase 9 closeout — 2026-10-07
-
-**Decision: COMPLETE.** PR #19 was verified as merged into `main` by squash merge
-`7451c50ff685d92e8e74b5014d07b3bbfaca0a22`. The accepted methodology remains ADR-022. The external
-independent implementation and numerical review accepted source revision
-`2ec2488adf065e692141eceb8e3f979df4679f45` and canonical run
-`phase9-dev-20261007-config-validation-fix`, manifest SHA-256
-`573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761`. The reviewed integration
-head was `46788db3f5b81af37cda78bf44f054be2bc0098b`. The accepted run and manifest were not
-regenerated or rewritten for closeout; detailed results are maintained in [PROGRESS](../../docs/PROGRESS.md).
-
-PR #20's proposal rename remains integrated at `ff3c11554144e79ee84c627c2bcd3619d23072d0`, with
-`docs/PROPOSAL.md` as the canonical path. ADR-022 remains accepted. Historical proposal, approval,
-implementation and review checkpoints above retain their recorded decisions and evidence.
-
-Phase 9 is **COMPLETE**. The completed scope is the deterministic, origin-safe synthetic monetary
-scenario generator. This phase does not implement inventory policies or claim physical inventory,
-observed stockouts, or actual savings. The protected final holdout was not accessed during closeout.
-Phase 10 remains PLANNED and not started; no Phase 10 methodology is approved.

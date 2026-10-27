@@ -1,102 +1,10 @@
-# Phase 7 — Walk-Forward Validation and Model Selection
+# Development Model Selection
 
-**Status: COMPLETE.** PR #13 merged into `main` at
-`89bcb861642ee28259e4a402e8e8ee98a999a6e5`; formal closeout is recorded in section 12.
-Methodology was approved after external review on 2026-10-06 and implementation proceeded after
-design PR #12 integrated into `main`. The approval accepts this policy after observing the Phase
-4–6 results; it does not make the thresholds preregistered or select a model. This plan remains
-archived after verified PR #13 integration and explicit Phase 7 closeout. Historical checkpoints
-below preserve their status at the time.
+Selection is complete. The accepted simple-first rule selected Global LightGBM trial A at 180 rounds. Numerical evidence is in the results summary; this reference retains selection and refit contracts.
 
-## 1. Authority, verified base, and execution boundary
+[Verified results](../../docs/PROGRESS.md) · [Decisions](../../docs/DECISIONS.md)
 
-Branch: `docs/phase-7-model-selection-design`, created from fetched `origin/main` at
-`0b8d55144ace29cb8b5367d11aeedc59cfb33a65`. GitHub confirms
-[PR #11](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/11) merged there.
-Phases 0–6 are COMPLETE; Phase 6 implementation PR #10 is integrated and its plan archived.
-The starting worktree was clean. There is no Phase 7 implementation or official final selection.
-
-Read completely: AGENTS, [WORKFLOW](../../docs/WORKFLOW.md),
-[proposal](../../docs/PROPOSAL.md), [DECISIONS](../../docs/DECISIONS.md),
-[PROJECT_PLAN](../../docs/PROJECT_PLAN.md), [PROGRESS](../../docs/PROGRESS.md),
-[FEATURE_CONTRACT](../../docs/FEATURE_CONTRACT.md), README, and the completed
-[Phase 3](../completed/phase-3-feature-engineering.md),
-[Phase 4](../completed/phase-4-seasonal-naive.md),
-[Phase 5](../completed/phase-5-statistical-forecasting.md), and
-[Phase 6](../completed/phase-6-global-lightgbm.md) plans.
-Inspected validation, metrics, three forecasters, evaluation interfaces, and LightGBM runner.
-ADR-008/013/014/015/017/019 remain authoritative; accepted Phase 7 policy is recorded in ADR-020.
-No proposal is amended.
-
-The reviewed implementation scope remains limited to this design. Methodology is approved, but
-implementation starts only after PR #12 is integrated; the active phase plan stays active through
-review/integration/closeout.
-No selection runner, new tests, model changes, dependencies, tuning, additional windows, final
-evaluation, or Phase 8 interval work is part of this design task.
-
-## 2. Inherited contracts and observed evidence
-
-Exactly three fixed candidates: Seasonal Naive, additive weekly Holt-Winters, global recursive
-LightGBM. Proposed canonical selection IDs are `seasonal_naive`,
-`holt_winters_additive_weekly`, and `global_lightgbm_gbdt_regression_l1`, mapped explicitly to
-their reviewed interfaces below. Forecast monetary Sales at Store × Date, H=14 calendar days,
-without log transformation.
-The accepted outer windows are immutable:
-
-| Window | Forecast origin | Target dates, inclusive |
-|---|---|---|
-| validation_1 | 2015-05-22 | 2015-05-23–2015-06-05 |
-| validation_2 | 2015-06-05 | 2015-06-06–2015-06-19 |
-| validation_3 | 2015-06-19 | 2015-06-20–2015-07-03 |
-
-MAE is primary on observed source Open=1 labels with available **raw** predictions. RMSE,
-cautious positive-actual MAPE, and WAPE are supplementary. Keep reviewed zero-denominator/null
-reasons and coverage definitions. Pool eligible rows; never average the three window MAEs.
-ADR-014/019 already require at least 99% advanced-candidate open-label coverage in every window
-before comparative interpretation. Fit/history inputs stop at their origin; development reads
-filter Date <= 2015-07-03 before labels enter modeling/evaluation. Raw paths precede Open routing.
-
-Canonical numerical evidence is in [Phase 4–6 PROGRESS](../../docs/PROGRESS.md), with the
-[Phase 7 evidence audit](../../docs/PROGRESS.md#phase-7-design-and-development-evidence-audit--2026-10-06)
-recording newly verified horizon/compute/provenance details. Do not copy historical result tables
-into a second maintained source. Saved development forecast/metric/diagnostic hashes were checked
-against their original manifests; joining all three gives 46,830 matching targets and 38,553
-common eligible rows, exactly the historical paired population.
-
-Descriptive interpretation, **not an approved decision**:
-
-- Pooled MAEs reproduce 1,681.2703 / 1,281.7446 / 871.0612 for SN/HW/LightGBM. LightGBM's
-  improvement is 48.19% versus SN and 32.04% versus HW; HW improves 23.76% versus SN.
-- LightGBM has lower MAE than both in each window, but only a 4.55% advantage over SN in
-  validation_1. HW improves in two windows and worsens in the first. Relative errors are not
-  constant across periods; neither the best single window nor the average window decides.
-- All three have 100% all-target and open-label availability in these windows. All pairwise
-  and three-way comparisons use the same 38,553 rows here; this equality must be checked anew,
-  never inferred from 100% coverage claims or silently preserved by an inner join.
-- LightGBM also leads pooled RMSE/MAPE/WAPE. This supports the MAE description without creating
-  three additional votes. Large squared errors remain, and these metrics do not prove value for
-  a simulated inventory policy or physical demand.
-- Horizon behavior is uneven: LightGBM leads SN on 11/14 and HW on 11/14 horizons. It loses
-  to both on Sunday horizons 2/9, and to SN substantially on horizon 10; it loses slightly to
-  HW on horizon 8. Pooled week 2 is worse than week 1 for LightGBM and HW. The proposed block
-  rule below permits individual-horizon regressions; that tradeoff needs explicit approval.
-- Existing SN forecasts are available; HW has 3,345 successful fits, no recorded warnings,
-  nonconvergence or fit failures, and 1,085 clipped internal predictions. LightGBM's three
-  outer fits succeed with no unavailable or clipped predictions. These observations do not
-  replace the frozen missingness/failure policies or establish future failure probabilities.
-- SN has exact weekly lookups and minimal state; HW adds per-store optimizers and contiguous
-  histories; LightGBM adds features, categorical adaptation, native-library dependence and
-  recursive state. The maintenance order SN < HW < LightGBM is a proposed policy judgement,
-  not an observed runtime ranking. HW's many fits can cost more than one global booster.
-- Saved LightGBM outer training times are about 6.04–6.26 seconds **for fitting only** on the
-  recorded environment. Feature building, recursive inference, I/O, memory peaks, and SN/HW
-  comparative timings were not measured. No end-to-end speed or service SLA is claimed.
-- Replay assumes calendar/holiday/planned promotion and static snapshot values known at the
-  origin, without verified publication histories. Future Customers are forbidden; source Open
-  is routing/eligibility only. Historical closed-day zeros versus raw future recursive feedback
-  remain the disclosed Phase 6 mismatch. Selection does not repair these assumptions.
-
-## 3. Newly proposed deterministic selection policy, version phase-7-v1
+## 3. Accepted deterministic selection policy, version phase-7-v1
 
 This is a proposed model ladder with hard integrity/coverage gates, MAE promotion gates, and
 explicit operational acceptance. It is not a weighted composite score or statistical test.
@@ -221,9 +129,9 @@ if a known closure allows operational zero. Outcome-derived routing never change
 
 | Method | Frozen fit/history, prediction and failure specification |
 |---|---|
-| Seasonal Naive | ADR-013; `forecast_seasonal_naive` in [seasonal_naive.py](../../src/rossmann_forecasting/forecasting/seasonal_naive.py). Exact same-store date-minus-7 observed Sales for week 1; its own earlier raw predictions for week 2. No fit/optimizer/categories. Missing exact history or earlier prediction remains unavailable; no last-observation, mean or cross-store substitution. All observed history Sales, including closed zeros, supplies lookups. |
-| Holt-Winters | ADR-014; `holt_winters_additive_weekly` / `forecast_holt_winters` in [holt_winters.py](../../src/rossmann_forecasting/forecasting/holt_winters.py). Per store, latest contiguous daily segment ending at origin, at least 28 finite nonnegative observed Sales (closed zeros retained). No gap filling. statsmodels additive trend + additive weekly seasonality 7, undamped, estimated initialization, no Box-Cox; optimized fit, single multi-step H14 forecast. No external categories/features or teacher forcing. Clip finite negatives to zero and retain unclipped values; construction/fit/invalid-output failure makes the store-origin path unavailable. Warnings/convergence remain diagnostics under reviewed behavior, not a newly imposed fallback/failure criterion. |
-| Global LightGBM | ADR-019; `global_lightgbm_gbdt_regression_l1` in [lightgbm.py](../../src/rossmann_forecasting/forecasting/lightgbm.py), feature contract `phase-3-v1`. Expanding observed training dates <= origin, with historical features strictly prior to each training date, eligible labels source Open=1 and observed Sales. All observed Sales through origin, including closed zeros, supplies dynamic feature history. Freeze trial A: learning_rate=0.05, num_leaves=15, max_depth=4, min_data_in_leaf=200, exactly 180 rounds. Shared fixed parameters and dataset flags are copied exactly, including l1 objective, CPU/4 threads, deterministic/force_col_wise, seeds 42, max_bin=63, feature_pre_filter=false, zero_as_missing=false. No outer-window/holdout early stopping or tuning. |
+| Seasonal Naive | chronological evaluation contract; `forecast_seasonal_naive` in [seasonal_naive.py](../../src/rossmann_forecasting/forecasting/seasonal_naive.py). Exact same-store date-minus-7 observed Sales for week 1; its own earlier raw predictions for week 2. No fit/optimizer/categories. Missing exact history or earlier prediction remains unavailable; no last-observation, mean or cross-store substitution. All observed history Sales, including closed zeros, supplies lookups. |
+| Holt-Winters | Holt-Winters contract; `holt_winters_additive_weekly` / `forecast_holt_winters` in [holt_winters.py](../../src/rossmann_forecasting/forecasting/holt_winters.py). Per store, latest contiguous daily segment ending at origin, at least 28 finite nonnegative observed Sales (closed zeros retained). No gap filling. statsmodels additive trend + additive weekly seasonality 7, undamped, estimated initialization, no Box-Cox; optimized fit, single multi-step H14 forecast. No external categories/features or teacher forcing. Clip finite negatives to zero and retain unclipped values; construction/fit/invalid-output failure makes the store-origin path unavailable. Warnings/convergence remain diagnostics under reviewed behavior, not a newly imposed fallback/failure criterion. |
+| Global LightGBM | LightGBM development contract; `global_lightgbm_gbdt_regression_l1` in [lightgbm.py](../../src/rossmann_forecasting/forecasting/lightgbm.py), feature contract `phase-3-v1`. Expanding observed training dates <= origin, with historical features strictly prior to each training date, eligible labels source Open=1 and observed Sales. All observed Sales through origin, including closed zeros, supplies dynamic feature history. Freeze trial A: learning_rate=0.05, num_leaves=15, max_depth=4, min_data_in_leaf=200, exactly 180 rounds. Shared fixed parameters and dataset flags are copied exactly, including l1 objective, CPU/4 threads, deterministic/force_col_wise, seeds 42, max_bin=63, feature_pre_filter=false, zero_as_missing=false. No outer-window/holdout early stopping or tuning. |
 
 LightGBM detail: fit-only ordered vocabularies for Store/state_holiday/store_type/assortment from
 eligible fit rows; native numeric NaN handling, no imputation/scaling/new predictors. Unseen Store
@@ -238,16 +146,16 @@ mismatch disclosure. Models/vocabularies are fitted anew per authorized origin, 
 outer windows or warm-started as a new method.
 
 Future Phase 13, **not released now**: origin 2015-07-03 forecasts July 4–17 using actuals <= July 3.
-Only after sequential revelation authorized by ADR-015, origin 2015-07-17 forecasts July 18–31
+Only after sequential revelation authorized by final-release contract, origin 2015-07-17 forecasts July 18–31
 using actuals already revealed <= July 17 with the same frozen selected recipe. Newly observed
 rows can update fit/history/vocabularies under that recipe, not method selection, 180-round
 choice or policy/calibration thresholds. Keep the current development ceiling in force; this
 plan does not authorize bypassing existing development runners to read July 4–17 now.
-ADR-015 requires separately authorized frozen final protocol after model/preprocessing/refit,
+final-release contract requires separately authorized frozen final protocol after model/preprocessing/refit,
 intervals, inventory policies and monitoring are frozen. Neither final fit/evaluation is performed
 in Phase 7. Earlier full-source EDA exposure remains disclosed; do not call the holdout pristine.
 
-## 5. Phase 8 handoff and proposed ignored artifacts
+## 5. Uncertainty integration and artifacts
 
 Future approved runner: lightweight evaluation/selection orchestration in existing forecasting
 package with a thin script; reuse validation/metrics and cached reviewed development artifacts.
@@ -257,7 +165,7 @@ Reuse reviewed pairing contracts without depending on LightGBM's private `_paire
 new public API. No speculative service/model registry or dependency is needed.
 
 Planned output directory `data/processed/model_selection/` is already Git-ignored; no artifacts
-are generated in this task. Do not commit residuals, data or model binaries.
+are generated by the selection runner. Do not commit residuals, data or model binaries.
 
 | Artifact | Required content |
 |---|---|
@@ -288,193 +196,17 @@ definition, complete vectors where available, missingness/failure/clipping diagn
 and refit/provenance identities. It owns daily/cumulative interval calibration, chronological
 earlier-calibration/later-assessment assignment and all interval calculations. All outer windows
 have already informed selection: later development assessment is not an independent final test.
-Respect ADR-016: do not sum marginal upper bounds or assume independent errors. Phase 8 cannot
+Respect monetary inventory contract: do not sum marginal upper bounds or assume independent errors. Phase 8 cannot
 revise selection from interval outcomes without a separately authorized methodological review.
 
-## 6. Provenance compatibility and approval checkpoint
+## 6. Provenance compatibility
 
-Cached outputs are useful but not claimed to have been regenerated at this branch's base:
-legacy SN/HW manifests lack modern code/lock identity. LightGBM records code revision
-`79ddb510e94fe5695c4bc17814153fd47695e16f`, `code_worktree_modified=true` and a working-tree
-source hash. Review fixes subsequently preserved successful forecast semantics/results without
-rerunning tuning. Preserve these original records and output hashes; current source identity
-belongs to the selection aggregation, not retroactively to old fits. The reviewer must accept
-this documented evidence lineage or require a separately scoped reproducibility audit. Hash
-verification and exact label/key agreement alone do not reconstruct unrecorded historical code.
+Preserve original candidate manifests and output hashes rather than claiming regeneration from
+current code. Legacy Seasonal Naive/Holt-Winters manifests lack modern source/lock identities;
+the historical LightGBM manifest records a modified worktree. These limitations were accepted
+for the scoped cached development comparison. Validate original manifests, configuration/feature
+identities, target keys, labels and masks and stop on mismatch. Never rewrite old metadata.
 
-ADR-020 records the externally approved methodology and durable refit/Phase 8 boundary. The
-approval accepts the 5% promotion threshold, two-of-three window wins, 10% per-window and pooled
-horizon-block caps, simpler-model ladder, 99% standalone/common coverage gates, individual-horizon
-reporting, qualitative offline operational scope, and disclosed cached-provenance lineage. It
-does not declare any model selected. The thresholds were introduced after results were observed;
-that disclosure, individual-horizon losses, lack of statistical significance/generalization claims,
-and origin/holdout protections remain permanent parts of the decision.
-
-Implementation status remains not started. PR #12's merge into `main` is the required integration
-gate before implementation begins. No final model selection is approved by methodology acceptance.
-
-## 7. Future fixture test and execution plan
-
-After approval, implement one focused runner and fixture tests; do not add these tests now:
-
-| Test group | Required assertions |
-|---|---|
-| Population/windows | Exactly three distinct fixed candidate IDs; reject extras/duplicates; exact window tuples including Friday origins, H14, no extra dates/windows or future labels. |
-| Pairing/coverage | One-to-one keys and label equality; missing keys rejected; unequal raw availability yields explicit pairwise/common masks. Standalone all-target/open-label denominators remain unchanged; closed/unknown and unavailable rows cannot disappear; 99% boundaries and null strata stop states tested. |
-| Metrics | Pooled sum-absolute-error/count on unequal window sizes, not mean of MAEs; raw versus routed distinction; horizon/week-block counts; MAPE/WAPE zero/null reasons; identical-row relative changes and zero incumbent handling. |
-| Selection | Permuted input order yields same decision; canonical sorted full-precision metrics; fixed ladder path, >=5% boundary, strict wins, <=10% caps, exact ties and near ties retain simpler; rejected/unknown operational states; failed HW does not prevent LightGBM consideration. |
-| Failures/schema | Never synthesize unavailable predictions or residuals; all target rows retained; keys/sign/masks/schema and complete versus partial 14-step operational/raw paths; missing dates are not observed zeros; inner tuning rows excluded. |
-| Refit/firewall | Configuration equality with each reviewed algorithm; LightGBM A/180/shared/dataset flags and vocabulary/feedback identity; all fits/history stop at origin; reject unsafe precomputed lags. Selection reads only validated cached development outputs, never raw/interim/final-label files; mutated protected input cannot affect it. Future July 17 recipe invocation requires separate ADR-015 release authority. |
-| Non-mutation/provenance | Caller frames/configs unchanged; mismatched hashes/schema/config or absent provenance-review acceptance stops selection; original dirty/legacy manifest metadata preserved; output hash/count/policy/recipe consistency and no selected output in review states. |
-
-Execution order after authorization: validate cached lineage and identities; aggregate immutable
-records; apply approved policy and operational review inputs; export evidence/freeze/handoff;
-run fixture/full quality gates and inspect all generated bounds/masks; update canonical PROGRESS;
-external review, authorized integration and explicit Phase 7 closeout. No expensive tuning rerun
-or protected-target read is required for selection aggregation. A discovered evidence defect
-requires review of remediation scope before rerunning a model or changing methodology.
-
-## 8. Design delivery checkpoint
-
-For this initial design PR, only this plan and the current-state/evidence-audit addition in PROGRESS
-changed. Run full pytest,
-Ruff lint/format, Markdown links, `git diff --check` and `uv lock --check`; inspect the complete
-diff, then commit `docs: propose Phase 7 model selection design`, push and open the design PR.
-Record actual outcomes before publication. Do not merge the design PR.
-
-Design validation on 2026-10-06: full pytest **152 passed** on Python 3.14.5 and **152 passed**
-on Python 3.12.15; Ruff lint passed; Ruff format check passed (70 files); Markdown checker passed
-(107 local destinations/anchors across 22 Markdown files); `uv lock --check` and `git diff --check`
-passed. Complete documentation diff inspected for scope and holdout boundary. No new fixture
-tests or generated selection outputs were added; the table above is the future test plan.
-
-### Methodology approval synchronization — 2026-10-06
-
-External approval for PR #12 reviewed head `1c15ab0b6ee94f3ecccb8f04c84da97d58bbb225` was
-recorded in ADR-020. It accepts the policy exactly as written, including its post-observation
-threshold disclosure and individual-horizon reporting; it does not select a model. Qualitative
-operational assessment is accepted only for the existing offline CPU course demonstration, and
-historical artifact lineage is accepted only with the required integrity rechecks. Design PR #12
-remains the integration gate before implementation.
-
-The approval sync changes only this plan, DECISIONS, PROGRESS, PROJECT_PLAN and README. Full pytest
-passed (152 tests on Python 3.14.5 and 152 on Python 3.12.15); Ruff lint/format, Markdown links,
-`uv lock --check` and `git diff --check` passed. No forecasting code, tests, dependencies, model
-selection, generated artifacts, new validation windows, holdout access or Phase 8 work were added.
-
-## 9. Implementation checkpoint — 2026-10-06
-
-Phase 7 is **IMPLEMENTED / UNDER REVIEW** on `feat/phase-7-model-selection`, based on updated
-`main` after PR #12 integrated ADR-020. The package engine, thin CLI, synthetic fixture suite,
-README usage and this checkpoint are implemented. The saved-data run verified original manifest
-artifacts/configuration/source identities and recomputed the approved comparisons without fitting
-or tuning. All 34 manifest-listed candidate artifact hashes passed; candidate keys and labels
-matched across all 46,830 targets, and the common eligible population contains 38,553 rows.
-
-All candidates and the three-way population pass 100% open-label coverage in each window. The
-numeric ladder retains Seasonal Naive after Holt-Winters fails the pooled h8–14 regression cap;
-LightGBM passes the numerical gates against the retained Seasonal Naive. Candidate-level
-operational decisions remain unknown in the reviewed record, so the runner reports
-`operational_review_required` and emits no official selected identity, recipe, selected forecast or
-residual artifact. Detailed metrics, promotion results and the h2/h9/h10 disclosures are in
-[PROGRESS](../../docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06).
-
-Validation on 2026-10-06: full pytest passed (**179 tests**) on Python 3.14.5 and **179 tests** on
-Python 3.12.15; `ruff check .`, `ruff format --check .` (73 files), the documentation checker (111
-local destinations/anchors across 22 documents), `uv lock --check` (84 packages), Python 3.14
-`pip check`, Python 3.12 `uv pip check` (60 packages), and `git diff --check` passed. The diff check
-reported only expected Windows LF-to-CRLF notices for the three new Python files. The saved-data
-runner completed with both integrity statuses and coverage passing and returned
-`operational_review_required`; the Phase 7 evidence is in [PROGRESS](../../docs/PROGRESS.md#phase-7-implementation-checkpoint--2026-10-06).
-GitHub Actions [Quality run #19](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37429992491)
-passed on implementation commit `f95fa9d`, including both Python 3.12 and Python 3.14 jobs. The
-subsequent review-documentation-only PR head passed the documentation checker and diff check
-locally; no workflow run was created for those doc-only updates.
-
-No methodology/ADR or proposal edits, dependency additions, candidate fits, holdout reads or Phase
-8 work were made. Phase 7 remains under review and this plan stays active until review, authorized
-integration and explicit closeout. [Implementation PR #13](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/13)
-is open against `main`; it has not been merged.
-
-## 10. External review follow-up — 2026-10-06
-
-The PR #13 lifecycle follow-up preserves ADR-020 and adds a fail-closed output protocol. It writes
-an in-progress manifest before reading evidence, stages a coherent output set under a unique run
-ID, hashes all outputs, and publishes the complete manifest last. Only hash-verified files from
-the four known selected-output paths are retired; conflicts and unrelated files remain untouched.
-The detailed implementation and synthetic regression cases are recorded in the new
-[PROGRESS follow-up checkpoint](../../docs/PROGRESS.md#phase-7-external-review-follow-up--2026-10-06).
-
-Full validation passed **187 tests** on Python 3.14.5 and **187 tests** on Python 3.12.15. The
-cached no-approval run and its unchanged development metrics, source hashes, coverage, and other
-quality checks are recorded in the [PROGRESS follow-up checkpoint](../../docs/PROGRESS.md#phase-7-external-review-follow-up--2026-10-06).
-No selected model, candidate fit, holdout read or Phase 8 work resulted. Phase 7 remains
-**IMPLEMENTED / UNDER REVIEW**; PR #13 remains open and unmerged. Implementation commit
-`dbb1712bdc856a2c9b6787a34493cb429d5b8e3c` is pushed to PR #13, and GitHub Actions
-[Quality run #22](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37441277676)
-passed both Python 3.12 and Python 3.14 jobs.
-
-## 11. Offline operational acceptance and actual selection — 2026-10-06
-
-**Phase 7: IMPLEMENTED / UNDER REVIEW. Selection decision: RECORDED / AWAITING EXTERNAL
-INTEGRATION REVIEW.** The candidate-level operational review is versioned at
-[`configs/phase-7-operational-review-v1.json`](../../configs/phase-7-operational-review-v1.json)
-and recorded in [PROGRESS](../../docs/PROGRESS.md#phase-7-offline-operational-acceptance-and-selection-2026-10-06).
-It approves Seasonal Naive, leaves Holt-Winters `unknown`, and approves LightGBM, solely for the
-`offline_cpu_course_demonstration` scope. The references establish no named human signature or
-production certification.
-
-The official reviewed CLI completed with `status=selected`, selecting
-`global_lightgbm_gbdt_regression_l1`; run ID is
-`365f22d4c3f94722a594ab934a22c4f6`. Integrity passed for all 34 cached candidate artifacts and
-all record checks. All 12 coverage gates passed at 100% in the three approved windows (11,678,
-13,438 and 13,437 observed open-label denominators); the common population is 38,553 rows among
-46,830 saved target rows. Pooled MAE was 1,681.2703 for SN, 1,281.7446 for HW, and 871.0612 for
-LightGBM. HW improves pooled MAE 23.7633% and wins two windows but fails the pooled h8–14 cap
-(+13.7492%), so SN remains its incumbent. LightGBM improves 48.1903% against SN, wins all three
-windows, and passes the window and pooled horizon-block caps. Full numerical gates, h2/h9/h10
-diagnostics and all artifact hashes are in the linked PROGRESS record.
-
-Publication is complete. The seven files are the two comparison outputs, four selected outputs,
-and `manifest.json`; each output hash matches the manifest. The selected config and refit recipe,
-forecast rows and residual paths all bind to this run ID. The recipe freezes LightGBM global CPU
-GBDT `regression_l1`, trial A, exactly 180 rounds, and the ordered 29 Phase 3 predictors. It is
-recipe-only (`fit_performed=false`, no tuning or refit); no fitted model was generated. The
-selected and residual Parquet each contain 46,830 rows through 2015-07-03 across 3,345 paths of
-exactly 14 horizons. Residual signs, masks and complete/partial flags were checked. Original
-candidate manifest hashes and metadata remain unchanged; the source-code and legacy provenance
-limits remain disclosed in PROGRESS.
-
-No production latency/reliability or memory SLA, comparative end-to-end timing, real inventory
-outcome, business savings, or universal accuracy superiority is established. The h2, h9 and h10
-weaknesses remain visible. July 4–31 outcomes were not read or hashed, and no holdout forecast or
-evaluation was emitted. ADR-020 is unchanged; Phase 8 has not started. This plan remains active;
-Phase 7 is not COMPLETE and PR #13 must not be merged before its external integration review and
-authorized integration.
-
-Acceptance validation: full pytest passed **187 tests** on Python 3.14.5 and **187 tests** on
-Python 3.12.15; Ruff lint and formatting passed (73 files); the documentation checker passed (115
-local destinations/anchors across 22 Markdown files); `uv lock --check` resolved 84 packages;
-Python 3.14 `pip check` and locked Python 3.12 `uv pip check` (60 packages) passed; and
-`git diff --check` passed. The generated output hashes, selected recipe, masks and H14 date bounds
-were rechecked after publication. No implementation code, tests, dependencies or ADR-020
-methodology changed. No candidate fit/tuning or final-holdout access occurred. The final PR-head CI
-result is included in the PR description after the authorized push.
-
-## 12. Formal Phase 7 closeout — 2026-10-06
-
-Phase 7 is **COMPLETE**. GitHub reports PR #13 merged at
-`89bcb861642ee28259e4a402e8e8ee98a999a6e5`; fetched `origin/main` resolves to that integration
-commit and its tree matches the reviewed final head `688d673f3ebaf802cbe47f9fa3236fcb4aaa3dea`.
-The supplied external review accepted the offline selection, and final-head
-[Quality run #25](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37465059501)
-passed Python 3.12 and 3.14. The user's Phase 8 design task authorizes this explicit closeout and
-archive within the same design PR.
-
-The selected method remains `global_lightgbm_gbdt_regression_l1`, frozen trial A / 180 rounds
-and the 29 Phase 3 predictors. ADR-020, selection results and original ignored artifacts remain
-unchanged. The [closeout and residual audit in PROGRESS](../../docs/PROGRESS.md#phase-7-formal-closeout-and-phase-8-evidence-audit--2026-10-06)
-records independently checked hashes, schema and masks. No model, interval or inventory operation
-was run for closeout, and no final-holdout outcomes were accessed. Phase 8 proceeds only as a
-[proposed methodology design](phase-8-forecast-uncertainty.md); its implementation needs
-separate approval.
+The versioned operational review applies only to the offline CPU course demonstration. It is not
+a production latency, throughput, memory or reliability assessment. Independent implementation and
+selection review are complete; [results](../../docs/PROGRESS.md) owns the recorded outcome.

@@ -1,1024 +1,215 @@
-# PROJECT PROPOSAL
+# Project Proposal
 
 ## Retail Demand Forecasting for Inventory Optimization (FMCG)
 
-### A Store-Level Business Analytics and Inventory Decision Support System Using Rossmann Store Sales Data
-
-### Course Information
+### Store-Level Business Analytics and Inventory Decision Support with Rossmann Sales
 
 **Course:** IT4063E – Introduction to Business Analytics  
-**Semester:** 20261  
-**Class ID:** 175884  
-**Instructor:** Dr. Bui Quoc Trung
+**Semester:** 20261 · **Class:** 175884 · **Instructor:** Dr. Bui Quoc Trung
 
-**Team Members**
+**Team:** Pham Le Minh Quang (20235554), Tran Quoc Tuan (20235569), Vo Ta Quang Nhat (20225454),
+Nguyen Trung Hieu (202416689), Nguyen Gia Minh (202400111).
 
-- Pham Le Minh Quang – 20235554
-- Tran Quoc Tuan – 20235569
-- Vo Ta Quang Nhat – 20225454
-- Nguyen Trung Hieu – 202416689
-- Nguyen Gia Minh – 202400111
+## 1. Business problem and scope
 
----
+> How much store-level sales turnover is expected over the next 14 days, and how do forecast-based
+> inventory-value policies compare under explicit simulated operating assumptions?
 
-# 1. Project Background and Business Problem
+Forecast **Store × Date monetary Sales** for 1,115 Rossmann stores. Sales is turnover, without
+identifying physical quantities, latent unconstrained demand, actual inventory or stockouts.
+Prices, mix and unmet demand may affect it. The instructor accepts this granularity and primary
+H14 horizon; inventing SKU identifiers would add no observations. Synthetic operational variables
+supplement the real forecasting core and support conditional decisions, without proving savings.
 
-In the retail and FMCG sectors, inventory management is one of the most important operational decisions. If demand is underestimated, businesses may experience **stockouts**, resulting in lost sales and lower customer service levels. Conversely, if demand is overestimated, businesses may incur excessive inventory holding costs, tied-up capital, and risks of markdowns or product spoilage.
+At origin $t$, predict $\hat y_{t+1},\hat y_{t+2},...,\hat y_{t+14}$ for store $s$.
+A seven-day view is a subset of H14. A 28-step extension requires separate design/evaluation;
+the 28-day final period does not imply that forecasting capability.
 
-The project requires the team to act as the **demand-planning analytics function** of a retail/FMCG business and answer the following question:
+This proposal defines intended course delivery. [Progress](PROGRESS.md) owns demonstrated results
+and [the roadmap](PROJECT_PLAN.md) owns remaining dependencies. Local development analytics and
+applications are complete; real scenario analysis, supplementary STL findings, final replay/
+monitoring, public release, PDF and slides remain incomplete. This proposal grants no new source,
+method, execution or release approval.
 
-> How much store-level sales turnover is expected over the next 14 days, and how do forecast-based inventory-value policies compare under explicit simulated operating assumptions?
+## 2. Objectives and analytical questions
 
-The project must cover the complete analytics lifecycle, from data analysis and forecasting to deployment, monitoring, and business recommendations.
+Build a reproducible descriptive → predictive → prescriptive workflow that:
 
-The Rossmann dataset does not provide SKU-level sales or physical quantities sold for individual products. Instead, it provides **daily sales turnover at the store level**. Therefore, the project defines the demand signal as:
+- Explains trends, weekly/annual seasonality, promotions, holidays, Store characteristics,
+  competition, variability, anomalies and supported associations, without causal claims.
+- Compares Seasonal Naive, additive Holt-Winters and global recursive LightGBM fairly over the
+  same chronological origins, observed eligible targets and supported Store-level scenarios.
+- Forecasts monetary Sales over H14 and assesses daily and cumulative uncertainty separately.
+- Translates supported forecasts into simulated targets/replenishment and paired service/cost/
+  sensitivity comparisons, retaining deterioration or no benefit.
+- Provides shared services, read-only FastAPI and Streamlit, then two public demonstration URLs
+  only after exact-content/rights/security/resource and owner-release approvals.
+- Delivers monitoring and human retraining-review conditions, reproducible source/dictionary,
+  a PDF report, slides and demonstration with human ownership and required AI-assistance disclosure.
 
-$$
-\boxed{
-\text{Observed Daily Sales Turnover}
-\approx
-\text{Store-Level Demand Signal}
-}
-$$
+The accepted LightGBM selection remains fixed. Scenario analysis asks where and why it differs
+from simpler methods, without restarting selection or requiring every stratum to favor LightGBM.
+A matched cross-model inventory simulation is optional bonus work.
 
-The project will forecast demand at the **Store × Date** level and then combine the forecasts with a simulated supply-chain and inventory layer to support replenishment decisions.
+### 2.3. Assignment requirement traceability
 
-Here, “demand” is shorthand for an observed sales-turnover proxy. Sales can change because of
-prices, product mix, promotions, or unmet demand; the data do not identify latent physical demand,
-actual stockouts, or the inventory policy that generated the observations. Business results are
-therefore conditional simulation results, not measured Rossmann inventory savings.
-
-This approach ensures that the core forecasting component remains grounded in real data, while synthetic data are used only for operational information that is unavailable in the original dataset.
-
-**Instructor-aligned scope.** The instructor acceptance recorded in ADR-028 confirms
-**Store × Date monetary Sales forecasting with a primary H14 horizon**. This is consistent with
-accepted ADR-001–004 and answers the business question at the finest granularity supported by
-Rossmann. Inventing SKU identifiers or category-level demand would not add observed information.
-The required synthetic operational extension supports conditional inventory-value decisions;
-it does not turn turnover into observed physical or unconstrained demand.
-
-**Delivery and approval status (2026-10-24).** This canonical proposal specifies the full course
-delivery, rather than certifying completion. [PROGRESS](PROGRESS.md) records Phases 0–12 as
-COMPLETE; Phase 13 M1–M3 are integrated, but the phase remains PLANNED / NOT APPROVED and final
-evaluation has not run. WP1 scenario analysis is incomplete and no real-data scenario experiment
-has run. The controlled-synthetic public-demo implementation is integrated with Milestone B
-closeout pending; there are no authorized public deployment URLs. ADR-028 remains PROPOSED.
-ADR-030 accepts only the narrow future two-URL objective; ADR-024 still governs the existing
-localhost runtime. Further monitoring methods and release actions retain their separate gates.
-
----
-
-# 2. Project Objectives
-
-## 2.1. General Objective
-
-To develop an end-to-end Business Analytics system capable of:
-
-> **Forecasting each Rossmann store's daily monetary Sales for the next 14 days and demonstrating inventory-value decisions under documented synthetic scenarios.**
-
-## 2.2. Specific Objectives
-
-1. Explore trends, weekly seasonality, holiday effects, promotion effects, store characteristics, competition, and other patterns associated with sales.
-2. Develop and compare forecasting approaches ranging from baseline and statistical forecasting models to machine-learning models.
-3. Forecast `Sales` for each store over a primary **14-day forecast horizon**.
-4. Quantify forecast uncertainty through prediction intervals.
-5. Transform forecasts into inventory-related indicators such as lead-time demand, safety stock, reorder point, and replenishment recommendations.
-6. Compare simulated stockout, service, and holding-cost indicators under common operating scenarios.
-7. Deliver reusable application services and, after the required release approvals, one publicly
-   accessible read-only FastAPI demonstration URL and one publicly accessible Streamlit dashboard URL.
-8. Demonstrate data-quality, data-characteristic, delayed forecast-performance, and simulated
-   business monitoring, with documented alerts and human retraining-review conditions.
-9. Compare the three existing forecasting approaches across approved Store-level scenarios,
-   explaining coverage, failure cases, uncertainty, and supported business implications.
-10. Deliver reproducible GitHub source, a complete Data Dictionary, a monitoring report or
-    dashboard, a PDF report, presentation slides, and a demonstration.
-
-These objectives are aligned with the project requirements concerning forecast horizon, stockouts, holding costs, service-level targets, deployment, and monitoring.
-
-## 2.3. Assignment Requirement Traceability
-
-The assignment requires eight modules, Rossmann Store Sales as the base dataset, and a documented
-synthetic operational/supply-chain extension. Example synthetic fields are illustrative rather
-than individually mandatory. The matrix distinguishes implemented evidence from acceptance still
-needed; the final artifact checklist is in Section 30.
-
-| Assignment module | Project solution and existing evidence | Current status and remaining acceptance gate |
+| Course module | Implemented foundation | Remaining acceptance |
 |---|---|---|
-| 1. Business Understanding and Data Generation | Store-level monetary business question; separate deterministic operational scenarios; [Data Dictionary](DATA_DICTIONARY.md), ADR-001–005/022 | Core scope and Phase 9 generator complete; disclose synthetic assumptions and limits in final delivery |
-| 2. Exploratory Data Analysis | Trends, seasonality, promotion/Store associations and anomalies in [EDA findings](EDA_FINDINGS.md); bounded weekly STL implementation under ADR-027 | Phase 2 complete with historical full-source exposure disclosed; authorized real-data STL and published findings still pending |
-| 3. Data Cleaning | Source-faithful validation, sparse-date/null retention and checked joins; [validation evidence](DATA_VALIDATION.md) | Phases 1–2 complete; preserve unresolved source conditions rather than invent corrections |
-| 4. Feature Engineering | Frozen 29-predictor [Feature Contract](FEATURE_CONTRACT.md), exact-calendar lags and recursive origin-safe history | Phase 3 complete; no new predictors or learned full-source cohorts authorized |
-| 5. Model Development | Seasonal Naive, additive Holt-Winters, Global LightGBM; ADR-013/020/021 and [development evidence](PROGRESS.md) | Phases 4–8 complete, LightGBM recipe selected and Fit B frozen; real-data WP1 scenario analysis and gated Phase 13 final evaluation pending |
-| 6. Model Deployment | Shared services, local read-only FastAPI and five-screen Streamlit; [public-demo plan](../plans/active/public-course-demo.md) | Phases 11–12 complete locally; synthetic adapters integrated, B closeout pending; two public URLs require Milestone C/security/content/owner release approval |
-| 7. Model Monitoring | Existing validation/availability checks and inventory KPI definitions; ADR-026 descriptive replay design; Sections 23–24 | Final replay monitoring/report not delivered; broader alerts and retraining-review policy are proposed and need a separate accepted method |
-| 8. Final Report and Presentation | Phase 14 consolidates reviewed analytics, limitations, reproducibility, PDF, slides and demo | Incomplete; requires remaining analytical evidence and authorized demonstrations, with human ownership and AI-assistance disclosure |
+| Business understanding/data generation | Monetary Store-level problem, deterministic synthetic scenarios and dictionary | Disclose assumptions and conditional interpretation in final delivery |
+| EDA | Descriptive findings, notebooks and bounded weekly STL implementation | Authorized real STL input/execution and reviewed findings |
+| Data cleaning | Validation, checked joins, sparse dates/nulls/valid spikes preserved | Retain source limitations in final reporting |
+| Feature engineering | Fixed 29-predictor point-in-time contract | Preserve schema and origin-time information |
+| Model development | Three-model comparison, selection, frozen uncertainty and inventory development evidence | Real scenario comparison and authorized final evaluation |
+| Deployment | Shared services, local API/five-screen dashboard, separate synthetic adapters | Two reachable approved public URLs after release gates |
+| Monitoring | Validation/availability/KPI building blocks and selected descriptive replay design | Working report/dashboard, final results and approved human trigger policy |
+| Report/presentation | Reviewed development evidence | PDF, slides, demonstration, reproducibility and ownership/AI disclosure |
 
-No row substitutes implementation, fixture tests, or a proposed design for a delivered course
-artifact. Source access, analytical release, and public content release are distinct approvals.
+Fixtures and design/implementation approval cannot substitute for empirical results or delivered artifacts.
 
----
+## 5. Dataset and preparation
 
-# 3. Scope of the Project
+Use official Kaggle `train.csv` (Sales history), `test.csv` (future covariates without Sales or
+Customers), `store.csv` (static metadata), and `sample_submission.csv`. Join metadata many-to-one
+on Store, retaining sparse Store-Date keys, source values/nulls, valid spikes and open/zero Sales.
+An absent date is not zero; correct/remove anomalies only with evidence of source error.
+[Acquisition](DATA_ACQUISITION.md), [validation](DATA_VALIDATION.md) and the
+[Data Dictionary](DATA_DICTIONARY.md) define the source and observed limitations.
 
-## 3.1. Unit of Analysis
+Calendar/holidays derive from Date; promotion and opening schedules require supplied or explicitly
+assumed origin-known plans. A static Store snapshot is not a history of information availability.
+Competition opening uses month/year precision, without inventing a day. Future Customers and
+Customers-derived features are prohibited. Source Open defines eligibility/routing, never a raw
+predictor; uncertain Open-resolution candidates remain audit-only. Unknown Open stays unknown.
 
-The primary unit of analysis is:
+## 6. Synthetic operational extension
 
-$$
-\boxed{\text{Store} \times \text{Date}}
-$$
+The [scenario specification](../plans/completed/phase-9-synthetic-inventory.md) and
+[dictionary](DATA_DICTIONARY.md#d-synthetic-operational-variables) own exact schemas, ranges and draws.
 
-The project **does not perform SKU-level forecasting**, because the dataset does not contain product IDs or physical quantities sold.
-
----
-
-## 3.2. Target Variable
-
-The target variable is:
-
-$$
-\boxed{Sales_{s,t}}
-$$
-
-where:
-
-- $s$: store;
-- $t$: date;
-- `Sales`: the store's sales turnover on that date.
-
----
-
-## 3.3. Coverage
-
-The team plans to use all **1,115 stores** available in the Rossmann dataset rather than selecting only a small subset.
-
-The dataset contains more than one million observations, but its scale remains manageable on personal computers using tools such as pandas and LightGBM.
-
----
-
-## 3.4. Forecast Horizon
-
-The primary forecast horizon is:
-
-$$
-\boxed{H=14\text{ days}}
-$$
-
-At forecast origin $t$, the system will predict:
-
-$$
-\hat y_{t+1},\hat y_{t+2},...,\hat y_{t+14}
-$$
-
-The dashboard may show the first seven days of a supported 14-day forecast. A 28-day forecast is
-an optional extension requiring a reviewed design and validation; a 28-day holdout does not imply
-that a model supports 28 forecast steps. The **14-day horizon is the standard for comparison**.
-
----
-
-# 4. Main Analytics Questions
-
-**AQ1.** How do daily sales vary according to weekday, month, holidays, promotions, and store characteristics?
-
-**AQ2.** Which factors are most strongly associated with variations in daily sales?
-
-**AQ3.** How do Seasonal Naive, additive Holt-Winters, and Global LightGBM differ on the same chronological origins and eligible target rows, overall and within supported Store-level scenarios?
-
-**AQ4.** What development evidence supports the selected H14 LightGBM recipe, and where do simpler methods, sparse coverage, or horizon-specific failures limit its use? The accepted Phase 7 selection is retained.
-
-**AQ5.** How does forecast uncertainty change across forecast horizons and store types?
-
-**AQ6.** Under simulated inventory, lead-time, and service assumptions, what inventory-value recommendation does the chosen policy produce?
-
-**AQ7.** Under which simulated scenarios does a forecast-driven policy improve or worsen service and cost indicators relative to a baseline policy?
-
-**AQ8.** Which data-quality, availability, distribution, and delayed-error indicators warrant a
-human review, and what can a short historical replay demonstrate about those indicators?
-
-Therefore, the project covers all three levels of Business Analytics:
-
-$$
-\boxed{
-Descriptive
-\rightarrow
-Predictive
-\rightarrow
-Prescriptive\ Analytics
-}
-$$
-
----
-
-# 5. Data Sources
-
-## 5.1. Real Data
-
-The required real-world dataset is:
-
-**Rossmann Store Sales – Kaggle**
-
-The main data files are:
-
-| Dataset | Description |
+| Input | Implemented synthetic assumption |
 |---|---|
-| `train.csv` | Historical store-day observations including `Sales` |
-| `test.csv` | Future observations without `Sales` |
-| `store.csv` | Store-level attributes |
-| `sample_submission.csv` | Competition submission structure |
-
-Important variables include:
-
-`Store`, `Date`, `Sales`, `Customers`, `Open`, `Promo`, `StateHoliday`, `SchoolHoliday`, `StoreType`, `Assortment`, `CompetitionDistance`, `Promo2`, `Promo2SinceWeek`, `Promo2SinceYear`, and `PromoInterval`.
-
-The main tables will be joined using:
-
-$$
-train.Store=store.Store
-$$
-
-The project requires Rossmann Store Sales as the primary dataset and combines it with synthetic supply-chain context.
-
----
-
-# 6. Synthetic Data Design
-
-Synthetic data will not replace the real sales data. Instead, they will supplement the Rossmann dataset with supply-chain and inventory variables that are not available in the original data.
-
-All synthetic variables must have clearly documented **generation logic, business assumptions, and data dictionary definitions**.
-
-## 6.1. Implemented Synthetic Operational Variables
-
-Phase 9 is COMPLETE under ADR-022. The table summarizes its implemented inputs and the Phase 10
-state they initialize; [Data Dictionary Sections D–E](DATA_DICTIONARY.md#d-synthetic-operational-variables)
-and the [completed Phase 9 plan](../plans/completed/phase-9-synthetic-inventory.md) own the exact
-schema, ranges, dependencies, and deterministic generation algorithm.
-
-| Variable | Unit | Purpose | Generation Logic |
-|---|---|---|---|
-| `SupplierLeadTime` | calendar days | Replenishment lead time | Store-specific integer 2–7; daily review R=1 gives protection P=L+1=3–8 |
-| `StockOnHandValue` | retail-equivalent value | Simulated inventory | Mean observed Open=1 Sales in the 56 calendar days through origin, requiring at least 28 valid open rows, times initial coverage |
-| `ServiceLevelTarget` | probability label | Nominal cumulative buffer parameter, not achieved service or value fill | Base 0.95; sensitivity 0.90/0.98; no calibrated synthetic-service guarantee |
-| `HoldingCostRate` | cost per inventory-value unit per day | Simulated holding-cost proxy | Synthetic procurement ratio c in [0.55,0.85), annual rate a in [0.10,0.30); rate c*a/365 |
-| `StockoutPenalty` | cost per unmet sales-value unit | Simulated shortfall-cost proxy | (1-c)+g with synthetic goodwill rate g in [0.10,0.75); includes the hypothetical margin component once |
-| `AverageUnitValue` | retail-equivalent value/equivalent unit | Display-only conversion assumption | Store-level draw from {5,10,20,50}; no real SKU mapping |
-| `DiscountDepth` | proportion | Implemented synthetic stress promotion intensity | Zero without synthetic promotion; normal promotion [0.05,0.30), specified peak 0.40; never a Rossmann predictor |
-| `InventoryCoverageDays` | reference open-day equivalents | Initial inventory policy | Base L+1+B, B in {0,1,2,3}, giving 3–11; thin-stock stress uses 1 |
-
-The generator uses **master seed 4209**, SHA-256 keyed draws, five paired replicates, eight synthetic
-families and a separate historical reference at the two development origins June 5 and June 19.
-Replicates are designed cases, not estimates of scenario likelihood. The controlled-synthetic
-application demonstration in Section 21 uses its own fixture contract and seed; it is not this
-Rossmann-anchored generator or an inventory-simulation run.
-
----
-
-## 6.2. Synthetic Data Generation Principles
-
-Synthetic variables follow the accepted dependencies rather than independent arbitrary draws.
-
-For example:
-
-$$
-Promo_t=0
-\Rightarrow
-DiscountDepth_t=0
-$$
-
-and:
-
-$$
-StockOnHandValue
-\propto
-RollingAverageSales \times CoverageDays
-$$
-
-Stores with higher historical demand are therefore expected to carry higher inventory values.
-
-Initial stocks and any demand-dependent parameters use only history available at the simulation
-origin. Compare policies with the same demand path, scenario inputs, seeds, and starting stocks.
-Synthetic discount assumptions do not alter the historical Rossmann Sales replay or enter its
-forecast feature schema.
-
-An unavailable anchor remains unavailable without fallback or gap filling; observed zero turnover
-is valid. The outstanding-order queue starts empty only at initialization and evolves in Phase 10.
-Ranges and dependencies are illustrative business assumptions, not fitted Rossmann supply-chain
-distributions. Manifests pin code/configuration, seed, source/output hashes and environment/lock
-identity, keeping the accepted historical artifact provenance intact.
-
----
-
-## 6.3. Synthetic Scenario Generator
-
-The implemented Phase 9 generator supplies **trend, seasonality, promotion, and supply-chain
-context** under its accepted deterministic contract. It supplements the real forecasting benchmark
-with synthetic monetary consumption paths for conditional inventory-policy sensitivity analysis.
-
-The generator does not replace the Rossmann dataset. Its designed paths support:
-
-- pipeline testing;
-- stress testing;
-- possible separately approved development/synthetic monitoring demonstrations;
-- inventory stress under synthetic promotional spikes;
-- testing stockout scenarios.
-
-A synthetic demand series can be described schematically as:
-
-$$
-Demand_t
-=
-Base_t
-+
-Seasonality_t
-+
-PromoEffect_t
-+
-HolidayEffect_t
-+
-Noise_t
-$$
-
-and subsequently combined with:
-
-$$
-LeadTime,\ StockOnHand,\ DiscountDepth
-$$
-
-These are designed stress scenarios, not evidence that their distributions reproduce Rossmann
-operations. The real forecasting benchmark remains separate from the synthetic scenario branch.
-The additive expression above is conceptual; the implemented Phase 9 path uses the exact
-multiplicative anchor/trend/weekday/promotion/holiday/shock rules in its completed plan. Frozen
-forecasts and uncertainty are not retrained on synthetic paths. Perishability and weather sensitivity
-are optional, unimplemented scenario extensions requiring a separate design; illustrative assignment
-examples do not require inventing those observations.
-
----
-
-## 6.4. Synthetic Data Validation
-
-The Phase 9 contract validates synthetic data at three levels, with explicit unavailable states
-and integrity checks. The following conditions summarize the design; exact checks and accepted
-development-run evidence are linked from [PROGRESS](PROGRESS.md).
-
-### Range Validity
-
-$$
-SupplierLeadTime>0
-$$
-
-$$
-StockOnHandValue\ge0
-$$
-
-$$
-0\le DiscountDepth<1
-$$
-
-### Relationship Validity
-
-For example:
-
-$$
-Promo=0 \Rightarrow DiscountDepth=0
-$$
-
-Stores with higher historical demand should, on average, have higher expected inventory levels.
-
-### Distribution Validity
-
-The team will inspect:
-
-- mean;
-- median;
-- variance;
-- quantiles;
-- histograms;
-- extreme values.
-
-Each synthetic variable will be documented in the Data Dictionary using:
-
-**Name – Type – Unit – Valid Range – Generation Rule – Dependency – Business Assumption – Random Seed**
-
----
-
-# 7. Modelling Assumptions and Unit Consistency
-
-Rossmann `Sales` represents monetary turnover rather than physical units sold.
-
-Forecasts use observed sales-turnover units. The inventory simulation uses **retail-equivalent
-value on the same scale**, including stock on hand, outstanding orders, inventory position,
-reorder targets, and replenishment. This is a valuation assumption, not procurement-cost inventory;
-any acquisition-cost conversion would need a separate documented synthetic margin assumption.
-
-$$
-\hat y_{s,t}
-=
-\text{forecasted sales value}
-$$
-
-$$
-D_L
-=
-\text{expected sales value during lead time}
-$$
-
-$$
-StockOnHandValue
-=
-\text{simulated inventory in retail-equivalent value}
-$$
-
-$$
-ReplenishmentValue
-=
-\text{simulated retail-equivalent replenishment value}
-$$
-
-If a quantity-based illustration is required:
-
-$$
-EquivalentUnits=
-\left\lceil
-\frac{ReplenishmentValue}
-{AverageUnitValue}
-\right\rceil
-$$
-
-`EquivalentUnits` is only a **simulation output** and must not be interpreted as the actual number of SKUs to order.
-
-Therefore, the project is positioned as a:
-
-> **Store-level inventory-value decision-support system rather than a production SKU replenishment system.**
-
----
-
-# 8. Data Preparation
-
-The Data Preparation stage will include the following steps.
-
-### Data Validation
-
-The team will check for:
-
-- duplicated `(Store, Date)` records;
-- invalid dates;
-- missing dates;
-- incorrect data types;
-- inconsistent categorical variables;
-- impossible or invalid values.
-
-### Missing Values
-
-Particular attention will be paid to:
-
-`CompetitionDistance`  
-`CompetitionOpenSinceMonth`  
-`CompetitionOpenSinceYear`  
-`Promo2SinceWeek`  
-`Promo2SinceYear`
-
-The team will distinguish among:
-
-- structural missing values;
-- unavailable information;
-- true missing values or data errors.
-
-Source missingness remains visible. Any later model-specific encoding, indicators, or imputation
-must be documented and learned from eligible training data only; the frozen Phase 3 contract
-introduces no imputation or missingness predictors.
-
-### Closed Stores
-
-When:
-
-$$
-Open=0
-$$
-
-the operational forecast will be set to:
-
-$$
-\hat y=0
-$$
-
-according to the business rule.
-
-This operational zero requires an opening schedule supplied or assumed known at the forecast
-origin. Observed target Open establishes evaluation eligibility, not proof that the future schedule
-was historically available. Missing Open remains unknown; an uncertain historical-context candidate
-does not establish a closure or overwrite source truth. Raw model forecasts stay separate from
-post-forecast operational routing.
-
-### Outliers
-
-High-sales observations will not automatically be removed because they may reflect legitimate events such as:
-
-- promotions;
-- holidays;
-- genuine demand spikes.
-
-Outliers will only be removed or corrected when there is clear evidence that they represent data errors.
-
-### Chronological Integrity
-
-Random shuffling will not be used in the time-series forecasting workflow.
-
----
-
-# 9. Prevention of Data Leakage
-
-The key principle is:
-
-> Every feature must already exist or be knowable at the forecast origin.
-
-### Future-Known Information
-
-The following variables may be used:
-
-- calendar information;
-- weekday;
-- month;
-- holidays;
-- planned promotions;
-- store characteristics;
-- competition information;
-- historical sales.
-
-The supplied store metadata is a single static snapshot, not a history of information releases.
-Using it at earlier origins is an explicit backtest assumption; competition dates and promotion
-start schedules are applied at their documented precision, without claiming proven historic
-availability. Planned promotion, holiday, and opening schedules must be supplied for operational
-use. Unknown future values are not inferred from target Sales or Customers.
-
-### Future-Unknown Information
-
-Future actual values will not be used.
-
-In particular:
-
-`Customers_t`
-
-will not be used directly to predict `Sales_t` in production forecasting because the number of customers on a future date is unknown at the time the forecast is generated.
-
-### Lag and Rolling Features
-
-All lag and rolling features will be constructed only from:
-
-$$
-y_{\tau},\quad \tau\le t
-$$
-
-at forecast origin $t$.
-
-Later recursive steps may also use their own earlier predictions, never actual Sales after the
-origin. Full historical feature rows are suitable for historical training but must be rebuilt at
-each recursive forecast origin.
-
----
-
-# 10. Exploratory Data Analysis
-
-EDA will focus on both descriptive analytics and business insights.
-
-The main analyses will include:
-
-- overall sales trends;
-- daily and weekly seasonality;
-- monthly and yearly patterns;
-- autocorrelation;
-- sales decomposition;
-- promotion vs. non-promotion periods;
-- holiday effects;
-- StoreType comparisons;
-- Assortment comparisons;
-- CompetitionDistance;
-- Promo2 participation;
-- store-level variability;
-- high-volume vs. low-volume stores;
-- promotion × store-type interactions;
-- unusual spikes and drops.
-
-Seasonal decomposition may be represented as:
-
-$$
-Sales_t
-=
-Trend_t+Seasonal_t+Residual_t
-$$
-
-or in multiplicative form when appropriate.
-
-The earlier source-validation and Phase 2 EDA work inspected full historical data, including the
-dates later designated as final holdout. That descriptive exposure is retained and disclosed in
-[EDA findings](EDA_FINDINGS.md); it is not an independent forecast test. Subsequent modeling must
-use development-only, origin-safe analysis and must not reuse full-history EDA volume tiers or
-representative-store rankings as learned model-selection inputs.
-
----
-
-# 11. Feature Engineering
-
-## 11.1. Calendar Features
-
-`day_of_week`  
-`week_of_year`  
-`month`  
-`quarter`  
-`year`  
-`is_weekend`  
-`is_month_start`  
-`is_month_end`
-
-## 11.2. Holiday and Promotion Features
-
-`StateHoliday`  
-`SchoolHoliday`  
-`Promo`  
-`Promo2`  
-`IsPromo2Active`
-
-## 11.3. Store Features
-
-`StoreType`  
-`Assortment`  
-`CompetitionDistance`
-
-## 11.4. Competition Features
-
-$$
-CompetitionAgeMonths=
-\max(0,MonthIndex(Date)-MonthIndex(CompetitionOpeningYearMonth))
-$$
-
-Use supplied month/year precision, not an invented opening day; paired missing opening metadata
-remains null. The implemented semantics are specified in the Feature Contract.
-
-## 11.5. Lag Features
-
-$$
-Sales_{t-1},
-Sales_{t-7},
-Sales_{t-14},
-Sales_{t-28}
-$$
-
-## 11.6. Rolling Features
-
-$$
-MA_7,\ MA_{14},\ MA_{28}
-$$
-
-$$
-STD_7,\ STD_{14},\ STD_{28}
-$$
-
-Same-weekday rolling statistics are a deferred extension, not part of the frozen 29 predictors.
-
-Categorical features will be encoded appropriately. Numerical scaling will only be applied to models that require it and will not be considered mandatory for tree-based models.
-
----
-
-# 12. Forecasting Models
-
-The project will follow a **model ladder** rather than training many models solely to increase model count.
-
-## Model 0 – Seasonal Naive
-
-The primary baseline is:
-
-$$
-\hat y_t=y_{t-7}
-$$
-
-For a 14-day forecast from a fixed origin, horizons 1–7 use exact prior-calendar-date actuals
-available at the origin; horizons 8–14 use the previously generated raw weekly prediction.
-Missing exact history remains unavailable, with no prior-row substitution or gap filling. The
-reviewed implementation and metric/routing contract are recorded in ADR-013.
-
-An advanced candidate must justify its complexity under the accepted development-selection rule;
-it need not beat Seasonal Naive in every store, horizon, or scenario. ADR-020's paired MAE,
-coverage and stability gates selected Global LightGBM trial A at 180 rounds in completed Phase 7.
-That result remains fixed; the scenario analysis below characterizes its limits without restarting
-selection or requiring a favorable result.
-
----
-
-## Model 1 – Exponential Smoothing / Holt-Winters
-
-This classical forecasting model will be used to capture:
-
-- level;
-- trend;
-- weekly seasonality.
-
-The reviewed candidate is fixed univariate additive Holt-Winters with weekly seasonality and
-origin-censored contiguous daily history, including observed closed-day zeros. Its approved
-history, failure, clipping, and comparison rules are recorded in ADR-014; it does not use the
-LightGBM predictors or a fallback model.
-
-SARIMA is an optional extension requiring a separately authorized design and development-only
-comparison; it is outside the approved three-model ladder.
-
----
-
-## Model 2 – Global LightGBM Forecasting Model
-
-The primary machine-learning candidate is:
-
-$$
-Sales_{s,t}
-=
-f(
-Store,
-Calendar,
-Promotion,
-Competition,
-Lags,
-RollingFeatures
-)
-$$
-
-A single global model will be trained across stores using eligible development observations.
-
-For the initial LightGBM candidate, training-label eligibility uses source `Open == 1`; all
-observed historical Sales, including closed-day zeros, remain available as origin-safe history.
-Completed Phase 6 fixed these choices in ADR-019: regression_l1, fit-only category vocabularies,
-native numeric missing handling, non-negative raw clipping, four predeclared inner-origin trials,
-coverage gates and origin-safe recursive evaluation. Phase 7 selected trial A at exactly 180 rounds
-under ADR-020. No model-specific encoding or imputation changes the reviewed
-[Feature Contract](FEATURE_CONTRACT.md); the selected fit/refit recipe and numerical development
-results remain as recorded in [PROGRESS](PROGRESS.md).
-
-This approach allows the model to exploit information across stores and avoids the need to build 1,115 separate machine-learning models.
-
----
-
-# 13. Multi-Step Forecasting Strategy
-
-The forecast horizon is 14 days, making this a multi-step forecasting problem.
-
-The LightGBM model will initially use a **recursive forecasting strategy**.
-
-At forecast origin $t$:
-
-1. calculate all features using historical data;
-2. predict $\hat y_{t+1}$;
-3. insert the non-negative raw prediction into the temporary raw history;
-4. update lag and rolling features;
-5. predict $\hat y_{t+2}$;
-6. repeat until $\hat y_{t+14}$ is obtained.
-
-Mathematically:
-
-$$
-\hat y_{t+h}
-=
-f(
-X_{t+h},
-y_{\le t},
-\hat y_{t+1},
-...,
-\hat y_{t+h-1}
-)
-$$
-
-where:
-
-$$
-h=1,...,14
-$$
-
-Future-known calendar, holiday, and promotion schedules may be used directly.
-
-Actual future sales will never be used during forecasting.
-
-The initial recursive model feeds its own clipped raw predictions into subsequent lag and
-rolling features. Generate the complete raw 14-step path before applying supplied/planned Open
-to a separate operational output. Target Open never changes the raw recursion; unknown Open gives
-an unresolved operational value. This preserves the existing raw/operational boundary, while the
-training-history versus predicted-history mismatch remains a limitation to assess by horizon.
-A closure-aware feedback strategy would be a separately reviewed methodological extension, not
-an implicit change to the Seasonal Naive baseline or this initial LightGBM design.
-
-### Optional Extension
-
-If development-only horizon diagnostics show material recursive error accumulation, a reviewed
-extension may evaluate:
-
-- direct forecasting;
-- horizon-as-feature models;
-- hybrid direct-recursive strategies.
-
-Such alternatives require origin-safe training examples and a documented comparison budget;
-they are not part of the initial candidate and cannot be motivated by final-holdout outcomes.
-
----
-
-# 14. Validation Strategy
-
-The project will use **rolling-origin / walk-forward validation**.
-
-The validation structure is:
-
-$$
-Training
-\rightarrow
-Validation_1
-\rightarrow
-Validation_2
-\rightarrow
-Validation_3
-\rightarrow
-FinalHoldout
-$$
-
-Each validation window covers:
-
-$$
-14\text{ days}
-$$
-
-The procedure is:
-
-1. train the model using historical observations only;
-2. forecast the next 14 days;
-3. compare forecasts with actual values;
-4. move the forecast origin forward;
-5. repeat the process.
-
-The primary ladder comparison uses the **three approved 14-day development windows** in
-[ADR-013](DECISIONS.md#adr-013---phase-4-seasonal-naive-evaluation-contract). Preserve their origins,
-populations, metrics, and existing evidence. They cover a short period and share a weekday at the
-origin, so they do not establish year-round performance or isolate horizon effects from weekdays.
-Any supplementary earlier development windows must be specified before new comparisons and
-applied consistently across candidates. Phase 7 owns final development model selection.
-
----
-
-## 14.1. Final Holdout
-
-The latest **28 labeled days**, 2015-07-04 through 2015-07-31, are reserved for the final forecast
-evaluation. Earlier source-quality summaries and full-source EDA have already exposed descriptive
-information, so the project does not claim a pristine unseen-label experiment.
-
-During development, the final holdout will not be used to:
-
-- select features;
-- tune hyperparameters;
-- select the final model;
-- estimate preprocessing parameters;
-- choose interval calibration, inventory policies/scenarios, or monitoring thresholds.
-
-Phase 7 selected on development data only. After the model, preprocessing recipe, uncertainty,
-inventory policy/scenarios, monitoring definitions and deterministic integrity/data-quality rules
-are locked, Phase 13 may perform the sole final replay only under its separate execution, staging
-and analytical-release authorizations. None is granted by this proposal. Use origin 2015-07-03 for
-July 4–17 and origin 2015-07-17 for
-July 18–31, each issuing a complete 14-day forecast before revealing that block's observations
-day by day. The second origin may use actual history already revealed through July 17 under a
-precommitted refit recipe; it may not adapt choices to holdout performance. Phase 14 reports those
-results rather than reopening selection.
-
-The freeze fixes model/preprocessing specifications and hyperparameters, not necessarily fitted
-state. A scheduled refit may relearn model or preprocessing parameters only if its precommitted
-recipe requires it, using eligible training rows already revealed through that origin. Unrevealed
-rows and outcome-driven recipe changes remain prohibited. Interval calibration, inventory
-policies/scenarios, monitoring definitions and deterministic integrity/data-quality rules stay
-fixed throughout the final replay. Numeric performance/drift thresholds are not selected for it.
-
----
-
-# 15. Evaluation Metrics
-
-The following required metrics will be reported:
-
-$$
-MAE,\ RMSE,\ MAPE
-$$
-
-### Primary Metric
-
-$$
-\boxed{MAE}
-$$
-
-MAE is selected as the primary metric because it is relatively easy to interpret in the same scale as sales.
-
-### Secondary Metrics
-
-$$
-RMSE
-$$
-
-will be used to place greater penalties on large forecasting errors.
-
-$$
-MAPE
-$$
-
-will be used with caution because observations with actual values close to zero may make the metric unstable.
-
-The project will additionally report:
-
-$$
-WAPE=
-\frac{\sum|y-\hat y|}
-{\sum y}
-$$
-
-to evaluate aggregate forecasting quality.
-
----
-
-## 15.1. Evaluation Segmentation
-
-Overall, per-window and forecast-horizon $h$ diagnostics are part of the accepted development comparison.
-Additional scenario comparisons follow Section 15.3 and the
-[active WP1 plan](../plans/active/wp1-scenario-forecast-evaluation.md); the presence of a Store
-attribute does not authorize a real-data source operation or a new segmentation method.
-
----
-
-## 15.2. Open vs. Closed Store Evaluation
-
-Primary forecasting metrics will only be calculated for:
-
-$$
-Open=1
-$$
-
-store-days.
-
-Closed-store days will remain in the operational forecasting pipeline and will receive zero forecasts according to the business rule. However, these observations will not be allowed to artificially improve the forecasting metrics.
-
-The report will therefore distinguish between:
-
-**Model performance on open days** – primary evaluation.
-
-**Calendar-level operational performance** – secondary evaluation.
-
-Primary metrics use available raw forecasts on observed source `Open == 1` labels; report
-forecast-availability counts and denominators so missing forecasts cannot silently improve scores.
-MAPE alone excludes zero-actual eligible rows, adds no epsilon, and reports its excluded count and
-coverage. WAPE is unavailable with an explicit reason when the eligible actual-value sum is zero.
-Compare candidates on identical available-label rows and report each model's standalone coverage.
-
----
-
-## 15.3. Scenario-Based Forecast Evaluation
-
-The mandatory forecast scenario comparison asks **where and why the existing LightGBM recipe
-behaves differently from Seasonal Naive and additive Holt-Winters**. It preserves the completed
-Phase 7 selection and the three ADR-013 chronological H14 development windows. LightGBM need not
-lead in every stratum. A cross-model inventory simulation is optional bonus work with a separate
-design; synthetic inventory stresses are not observed forecasting scenario strata.
-
-| Scenario dimension | Supported interpretation and method boundary |
+| Lead/review/protection | Store-specific integer L=2–7 calendar days; R=1; P=L+1=3–8 within H14 |
+| Turnover anchor | Mean observed Open=1 Sales in the 56 calendar days through origin, ≥28 valid open rows; no gap fill/fallback, zero anchor valid |
+| Stock/coverage | Anchor × (L+1+B), B∈{0,1,2,3}; base 3–11 open-day equivalents, thin-stock stress 1 |
+| Pipeline/backorders | Zero only at cold start; order queue evolves during simulation |
+| Nominal buffer | p=.95 reference, .90/.98 sensitivities; not achieved cycle service or fill |
+| Costs | c∈[.55,.85), annual a∈[.10,.30), goodwill g∈[.10,.75); holding=c*a/365, shortfall=(1-c)+g once |
+| Equivalent units | Display-only AverageUnitValue∈{5,10,20,50}, without SKU mapping |
+| Discount/promotion | Zero without synthetic promotion; typical [.05,.30), specified stress .40; never a Rossmann predictor |
+
+Use seed 4209, exact keyed SHA-256 draws, five paired replicates, eight synthetic families and a
+historical reference at June 5/June 19 origins. The conceptual additive path combines base, trend,
+weekly seasonality, promotion/holiday and noise; the implementation uses the exact ordered
+multiplicative factors and coupled stresses in the specification. Weekly factors average one over
+seven calendar days but 1.033333… over default Monday–Saturday open days; do not renormalize them.
+
+Common draws, paths, starts and seeds pair policies. Validate ranges, dependencies, distributions,
+availability, counts and deterministic arithmetic. Unavailable anchors keep stock/demand null,
+including on closures. Designed replicates do not estimate scenario probabilities or statistical
+power. Synthetic paths never replace historical labels or retrain forecasts/uncertainty.
+Weather/perishability are optional unimplemented extensions. Public-demo fixtures have a separate
+seed/content contract and are not this generator's analytical output.
+
+## 9. Leakage prevention and EDA
+
+No shuffled forecasting split. Every fit/history input stops at origin; development labels stop
+at July 3 before reaching modeling/evaluation. Recursive lags use actuals through origin plus
+earlier predictions from that run, never precomputed future-target historical rows. A projection,
+receipt or hash grants no mixed-source access: preparation/custody approval precedes any read/hash.
+
+EDA describes trends, seasonality, autocorrelation/decomposition, promotions and promotion×Store-type
+associations, holidays, StoreType/Assortment, competition, Promo2, volume/variability and anomalies.
+Report sparse subgroup support and avoid causal effects. Earlier full-source validation/EDA included
+eventual holdout dates, as disclosed in [findings](EDA_FINDINGS.md). Recompute modeling/monitoring
+cohorts from eligible origin/development history; never reuse full-source EDA volume tiers.
+Supplementary robust weekly STL is retrospective, without smoothing/gap interpolation or use as
+predictors; real execution/publication needs the [custodian procedure](CC-02D_CUSTODIAN_RUNBOOK.md).
+
+## 11. Features
+
+The [Feature Contract](FEATURE_CONTRACT.md) fixes 29 ordered predictors: categorical Store identity;
+calendar fields; holidays/promotions/Promo2 schedule; StoreType/Assortment/competition; exact Sales
+lags 1/7/14/28; complete 7/14/28-day means and sample standard deviations (`ddof=1`). Date is key-only.
+Competition age is completed calendar-month offset bounded at zero; paired missing metadata stays
+null. Promo2 nonparticipants are inactive; invalid/incomplete schedules stay null.
+
+Fit-only category vocabularies belong in the model adapter, without changing artifact dtypes.
+Target-day Sales, future Customers, Open/audit predictors, imputation and same-weekday statistics
+are excluded. Scaling is used only where needed; extra features need separate approved scope.
+
+## 12. Models and multi-step strategy
+
+| Model | Accepted behavior |
 |---|---|
-| Store type and assortment | Source category strata with missing/unrecognized values explicit; WP1 L2 definitions exist, but real metadata preparation/provider approval is pending |
-| Promotion versus non-promotion | Retrospective keyed source Promo membership; does not prove origin-time plan availability; fixture handoff currently enables Promo only |
-| Weekday/weekend and holidays | Implemented ISO weekday strata; a combined weekday/weekend summary requires a predeclared approved aggregation. Source StateHoliday/SchoolHoliday codes only where interpretable and available; no invented holiday meanings or causal effects |
-| Competition characteristics | Candidate distance/opening-status strata using documented static-snapshot and month-precision assumptions; bin rules and source access require a separate approved extension |
-| High/low store volume | Proposed cohorts using eligible origin-training/development history only; never full-source EDA tiers or final outcomes; H segmentation remains BLOCKED pending its own approved definition and inputs |
-| Forecast origin and horizon | Retain all three windows, h1–14 and h1–7 versus h8–14, including unfavorable and sparse horizons; shared Friday origins confound weekday and horizon |
+| Seasonal Naive | Exact d−7 same-Store actuals at h1–7, earlier raw predictions at h8–14; missing exact history stays unavailable |
+| Additive Holt-Winters | Univariate additive trend/weekly seasonality, latest contiguous daily segment ending at origin, ≥28 days including observed closed zeros, no fallback |
+| Global LightGBM | CPU regression L1 on eligible Open=1 labels, fit-only categories/native numeric missingness, all observed pre-origin Sales in lag history, four finite original inner trials |
 
-Before any real-data analysis, freeze the permitted strata, membership sources, bin/cutoff rules,
-minimum-support and unavailable-result rules, comparison outputs and interpretation limits.
-Interactions, new origins, competition/volume cohorts, statistical inference and other extensions
-need separate approval; descriptive category differences are not causal effects.
+LightGBM predicts the next day, appends its finite nonnegative clipped raw value, rebuilds lags/
+windows and repeats through H14. Complete the raw path before separate planned-Open routing;
+unknown Open never changes raw feedback. Retain unclipped/clipping/failure/category diagnostics.
+The mismatch between observed closed-day history and raw recursive values remains a limitation.
+Closure-aware feedback, direct/horizon-feature/hybrid approaches, SARIMA and extra models require
+separate origin-safe development designs, without motivation from protected outcomes.
 
-Fair comparison requires:
+Simple-first development selection chose LightGBM trial A at exactly 180 rounds. Preserve its
+recipe, selection thresholds and unfavorable individual horizons in [decisions](DECISIONS.md)
+and [results](PROGRESS.md); universal Store/horizon superiority is not required.
 
-1. The same three forecast origins and source-observed Store × Date target roster for all three
-   frozen candidates, with Sales/Open attached only after raw issuance. Preserve the development
-   ceiling Date <= 2015-07-03 and exact candidate identities.
-2. The identical three-way common eligible/available observed Open=1 rows for primary scenario
-   comparisons. Also report standalone and pairwise availability, eligible-label counts,
-   missing-prediction reasons and common-row exclusions; a model cannot improve its score by
-   silently dropping difficult rows.
-3. MAE as primary, with RMSE/WAPE and the existing cautious MAPE contract as supporting evidence.
-   Preserve each metric's denominator, zero-actual MAPE exclusions and zero-total WAPE
-   unavailability. Existing WP1 L2 emits MAE/RMSE/WAPE and directional errors; it does not add
-   scenario MAPE. Scenario MAPE needs a separately approved extension or a clearly labeled link
-   to existing Phase 7 diagnostics, rather than a claim that L2 already produces it.
-4. For each stratum, disclose stores, dates, origins, eligible rows, common rows, forecast coverage,
-   metric denominators and unavailable results. Sparse groups remain descriptive or unavailable
-   under the approved support rule; no pooling, fallback, confidence or significance claim is
-   introduced to manufacture support.
-5. Interpret error direction, magnitude and horizon failures alongside opening/promotion assumptions
-   and availability. Discuss when a simpler method is adequate and when missing inputs prevent a
-   conclusion. Keep point-error comparisons distinct from uncertainty: any segment interval
-   assessment preserves frozen daily/cumulative definitions, reports support and empirical
-   coverage, and needs its own approved scope without recalibration or guaranteed store coverage.
+## 14. Validation strategy
 
-**Current evidence and gate:** WP1 L1/L2/L3-F and fixture Milestones 1–2 are REVIEWED / INTEGRATED.
-They provide common-population aggregation and controlled-synthetic handoff tests, not Rossmann
-scenario findings. ADR-029 restricts the fixture verifier/provider; hashes and bindings do not
-authorize real inputs, prove custody or enforce hard peak-memory containment. WP1-S7-01 remains
-unresolved under its original contract. Real-source M/C/H operations, real L3 preparation/
-verification/binding and L4 analysis remain separately gated. ADR-028 is still PROPOSED; this
-subsection specifies the delivery need and pending extensions without approving their execution.
+| Origin | H14 target dates |
+|---|---|
+| 2015-05-22 | May 23–June 5 |
+| 2015-06-05 | June 6–19 |
+| 2015-06-19 | June 20–July 3 |
 
----
+Use expanding origin-safe training and these three chronological windows. Their 42 late-season
+days and shared Friday origins confound weekday/horizon and cannot establish year-round accuracy.
+Supplementary origins need a precommitted common protocol, without opportunistic selection.
+
+### 14.1. Final holdout
+
+Protect July 4–31 from feature/preprocessing/model/calibration/policy/scenario/monitoring selection.
+Earlier descriptive exposure prevents a pristine unseen-label claim. The sole
+[final protocol](../plans/active/phase-13-sequential-final-evaluation.md) issues complete H14 blocks
+at July 3 and July 17 before revealing matching outcomes date by date. Persist issuance, release
+in order and checkpoint before advancing. The scheduled second fresh fit uses only already released
+history through July 17 under the frozen recipe. No outcome-driven recipe, quantile, target,
+policy or alarm adaptation is permitted. Source preparation, mechanical staging and analytical
+release require distinct approvals. Final LightGBM has Seasonal Naive as contextual comparator,
+without new selection or Holt-Winters final comparison. Exact June Fit B transport to July remains
+explicitly UNVALIDATED, without a July/synthetic guarantee.
+
+## 15. Metrics and Store-level scenarios
+
+MAE is primary in turnover units; RMSE emphasizes large errors. MAPE alone excludes zero actuals,
+without epsilon, reporting exclusions/coverage. WAPE is summed absolute error / summed actual Sales,
+unavailable with reason for zero denominator. Pool rows/sufficient statistics, not window ratios.
+Primary raw metrics use observed Open=1/Sales with available forecasts. Closed operational zeros
+cannot inflate primary scores. Report standalone and paired coverage alongside window/pooled/horizon metrics.
+
+Scenario comparisons use the same three frozen candidates, origins and sparse observed roster,
+primary three-way common eligible/available rows, standalone/pairwise/common counts, missing reasons,
+Store/date/origin support, exact denominators and unavailable results. Interpret errors and failures,
+without causal/significance claims, fallback pooling or invented support. Preserve frozen daily/
+cumulative meanings in separately approved segment interval assessment, without recalibration.
+
+| Dimension | Foundation and pending scope |
+|---|---|
+| StoreType/Assortment | Known/missing/unrecognized categories; real metadata preparation/provider approval pending |
+| Promotion | Retrospective keyed Promo; fixture bridge enables Promo only, without historic availability proof |
+| Weekday/holidays | ISO weekday strata; combined weekday/weekend requires approved aggregation; no invented code meanings |
+| Competition | Distance/opening bins require accepted definitions, source access and snapshot/month-precision assumptions |
+| High/low volume | BLOCKED pending eligible origin-training/development-only definitions and inputs; no full-source EDA tiers |
+| Origin/horizon | Three windows, individual h1–14 and h1–7/h8–14, including unfavorable/sparse horizons |
+
+Freeze membership/strata/support/unavailability/interpretation before real analysis. Existing L2
+emits MAE/RMSE/WAPE and directional errors; scenario MAPE needs separate approval or a clearly
+labeled link to existing development diagnostics. Interactions, new origins and inference need
+separate scope. Real preparation, verification/binding and analysis remain gated in the
+[scenario plan](../plans/active/wp1-scenario-forecast-evaluation.md). Fixture consistency cannot
+authenticate custody or contain peak decoder memory. Cross-model inventory simulation is optional.
 
 # 16. Forecast Uncertainty
 
@@ -1073,7 +264,7 @@ The accepted development assessment is below nominal coverage; its exact counts,
 support and unavailable Fit A horizons remain disclosed in [PROGRESS](PROGRESS.md). No fitted
 tables or historical numerical results are changed by this proposal revision.
 
-Completed Phase 8 assigned distinct chronological development residual roles in ADR-021:
+Completed Phase 8 assigned distinct chronological development residual roles in uncertainty contract:
 Fit A calibrates validation_1 and assesses validation_2; Fit B calibrates validation_1+validation_2
 and assesses validation_3. The reviewed canonical Fit B fitted values are frozen for their exact
 artifact identities in [PROGRESS](PROGRESS.md). Coverage on the quantile-calibration sample is a
@@ -1148,13 +339,13 @@ initial simulator's daily-review order-up-to policy. With lead time $L=2,\ldots,
 period $R=1$ day, use protection period $P=L+R\le14$, forecast value $D_P$, and cumulative bound
 $U_P$. Define $SafetyStock_P=\max(0,U_P-D_P)$ and order-up-to target
 $S_P=D_P+SafetyStock_P=\max(D_P,U_P)$. Completed Phase 10 fixed event timing and terminal
-accounting in ADR-023: an end-of-day order at t arrives before demand at t+L+1; receipts precede
+accounting in inventory simulation contract: an end-of-day order at t arrives before demand at t+L+1; receipts precede
 consumption, unmet value is lost, costs use ending stock, and the final day suppresses new ordering.
 Targets are frozen once at origin, the outstanding-order queue evolves, and due-after-window
 orders remain separate terminal exposures without cancellation or salvage.
 
 For Phase 13, the owner has approved the A-bounded inventory scope and its explicit
-acceptance limitation under ADR-025: inventory evaluation uses two independent origin-frozen H14
+acceptance limitation under bounded inventory scope: inventory evaluation uses two independent origin-frozen H14
 episodes at the same July 3 and July 17 origins as the primary forecast evaluation. Each episode
 executes the accepted Phase 10 standing-target policies from targets frozen at its origin.
 Subsequent daily reviews advance simulated inventory state against those same targets; they are not
@@ -1326,157 +517,43 @@ policy does not improve the trade-off.
 
 ---
 
-# 20. Technology Stack
+## 20. Technology and application architecture
 
-| Component | Technology |
-|---|---|
-| Language | Python |
-| Data processing | pandas, NumPy |
-| Data format | CSV → Parquet |
-| Visualization | matplotlib, Plotly |
-| Statistical forecasting | statsmodels |
-| Machine learning | LightGBM, scikit-learn |
-| Explainability | Feature importance; SHAP only if needed for a supported analysis |
-| Application core | Reusable Python services shared by API and dashboard |
-| API | Thin read-only FastAPI adapter; local implementation exists, one public demonstration URL required for final delivery after release approval |
-| Dashboard | Streamlit calling shared Python services directly; local implementation exists, one public dashboard URL required after release approval |
-| Monitoring | pandas summaries and plots; frozen descriptive Phase 13 method, broader alert/retraining-review extensions pending approval; Evidently optional |
-| Version control | Git, GitHub |
-| Deployment | Pending; Render preferred for assessment under ADR-030, with no host selected or provisioned |
-| Optional packaging | Docker |
-
-### Spark
-
-Spark will not be part of the project's critical path because the current dataset is not sufficiently large for distributed computing to provide a clear practical benefit.
-
-PySpark may be implemented as an optional ETL experiment if the team wishes to demonstrate knowledge from the course lectures.
-
----
-
-# 21. Proposed System Architecture
+Use Python, pandas/NumPy, CSV/Parquet/PyArrow, matplotlib, statsmodels, LightGBM, shared Python
+services, FastAPI and Streamlit, with `pyproject.toml` and generated `uv.lock`.
+Plotly/scikit-learn, SHAP, Evidently, Spark/PySpark and Docker remain optional only for a supported
+approved need. Distributed processing is unnecessary on the critical path.
 
 ```text
-Immutable Rossmann source -> validation -> source-faithful prepared tables
-  -> descriptive EDA + point-in-time real-data features
-  -> Seasonal Naive / Holt-Winters / Global LightGBM
-  -> development walk-forward comparison -> model selection -> uncertainty
-                                                        |
-Synthetic operational scenarios ------------------------+-> inventory-value engine
-                                                           -> shared Python services
-                                                              -> Streamlit dashboard
-                                                              -> thin FastAPI adapter
-Frozen recipes + sequential final replay -> monitoring summaries and final report
-
-Separate controlled-synthetic bundle -> explicit read-only demonstration provider
-  -> synthetic FastAPI adapter + direct-service Streamlit dashboard
-  -> two future public URLs only after content/security/hosting/owner release approval
+Immutable source → validation/preparation → EDA + point-in-time features
+ → Seasonal Naive / Holt-Winters / LightGBM → comparison/selection → uncertainty
+Synthetic operating scenarios + frozen forecasts → inventory-value engine
+Verified evidence → Python services → Streamlit + thin FastAPI
+Frozen final replay → monitoring → final report/presentation
+Separate controlled synthetic bundle → explicit provider → synthetic API + direct-service dashboard
 ```
 
-The synthetic operational/scenario branch is separate from the real-data modeling path and joins
-forecasts only for simulated decisions. FastAPI and Streamlit share the same reusable services;
-the dashboard need not make HTTP requests to a separately deployed API. Historical monitoring
-reports alerts and delayed errors, not an assumed live feed or an autonomous retraining system.
+The five completed screens are Overview & Evidence, Historical Sales, Forecast Explorer, Model
+Comparison and Inventory Comparison. They select bounded saved Store/origin/Fit/case evidence,
+without request-time training, inference, simulation or unrestricted scenario editing. Potential
+stock/lead-time/service/unit-value editing, feature explanations/SHAP and business-alert controls
+are design concepts, without an implementation claim. Daily intervals, cumulative bounds, ROP,
+position, replenishment and equivalent units must retain their distinct semantics/availability.
 
-The final course delivery commits to **one publicly accessible read-only FastAPI URL and one
-publicly accessible Streamlit URL**. Precomputed outputs suffice; on-demand inference is optional.
-ADR-017's earlier optional independent API hosting is historical delivery sufficiency. ADR-030
-accepts the narrow future two-URL objective, conditional on a separately authorized release; it
-does not supersede ADR-024's current localhost runtime or approve ADR-028's remaining proposals.
-
-Phases 11–12 implement the canonical local services/API/dashboard over pinned development
-artifacts. The separate controlled-synthetic bundle, provider, API adapter and dashboard are
-integrated; Milestone B closeout and corrective independent review remain pending in the
-[public-demo plan](../plans/active/public-course-demo.md). Their fixture arithmetic demonstrates
-interfaces and availability states only: it is not observed Rossmann history, historical model
-execution/accuracy, fitted uncertainty, inventory-simulator output or actual inventory quantities.
-Actual Rossmann-derived analytical evidence remains a separate, governed local evidence stream.
-Git already places the WP2-S22 minor corrections on `origin/main` at `a8edc487`; their independent
-acceptance and formal Milestone B closeout are not recorded. Pending-integration wording in the
-older progress/plan checkpoint does not override that observed Git state.
-
-No public runtime configuration, published bundle or live deployment URL exists. Milestone C
-requires exact-content/rights approval, a trusted manifest hash supplied independently,
-independent implementation/security review, a host resource and rollback plan, explicit owner
-authorization for the deployment/audience/window, staged external checks, and a release/shutdown
-record. Any later source-derived public content requires separate source-access, provenance,
-redistribution-rights and exact-content approval. Missing synthetic inputs must fail closed without
-fallback to canonical artifacts. The [release contract](PUBLIC_DEMO_RELEASE_CONTRACT.md) governs
-content; this documentation work grants no release permission.
-
-This architecture is also consistent with the Decision Support System structure introduced in the course, which includes data management, model management, and user-interface components.
-
----
-
-# 22. Dashboard Design
-
-The dashboard will be designed for a demand planner or store manager.
-
-The following is the intended decision-support design. The completed canonical five-screen
-application presents bounded history, saved forecasts/uncertainty, model comparisons and synthetic
-inventory comparisons through shared services. It does not perform on-demand fitting, forecasting,
-simulation, or unrestricted scenario editing. The separate synthetic demo presents labeled fixture
-views. Extra input controls, explanation panels and business alerts below are delivery concepts
-requiring verification/design before they can be claimed as implemented; SHAP is optional.
-
-## Inputs
-
-- Store ID
-- Forecast Origin
-- Supported Forecast Horizon (14 days, or its first seven days)
-- Current Inventory Value
-- Supplier Lead Time
-- Target Service Level
-- Average Unit Value
-
-## Historical Analytics
-
-- historical sales;
-- promotion periods;
-- weekly patterns;
-- holidays;
-- rolling demand.
-
-## Forecast Panel
-
-- point forecast;
-- 95% prediction interval;
-- daily forecasts;
-- forecast uncertainty.
-
-## Model Explanation
-
-- global feature importance;
-- SHAP explanations where appropriate.
-
-## Inventory Decision
-
-The dashboard will display:
-
-- Lead-Time Demand;
-- Safety Stock;
-- Reorder Point;
-- Current Inventory Position;
-- Recommended Replenishment Value;
-- Equivalent Units.
-
-## Business Alert
-
-For example:
-
-> **HIGH STOCKOUT RISK**
-
-or:
-
-> **CURRENT INVENTORY SUFFICIENT**
-
----
+Final delivery requires two public read-only URLs, using precomputed outputs if appropriate.
+Current runtime stays localhost; no public deployment or live URL exists. The separate synthetic
+profile labels authored fixture arithmetic on every view and never falls back to canonical inputs.
+Health, bundle readiness and analytical-view availability remain separate facts. The
+[release plan](../plans/active/public-course-demo.md) requires corrective review/closeout,
+exact-content/rights/provenance and independent security review, a trusted manifest pin, resource/
+rollback assessment, specific hosting/audience/window owner approval and external release/shutdown checks.
 
 # 23. Model Monitoring
 
 The final monitoring report or dashboard must distinguish four dimensions. Existing validation,
 forecast-availability and simulated-KPI components provide building blocks; they do not constitute
-a completed monitoring report. Phase 13's selected monitoring design in ADR-026 is narrower than
-the broader instructor-feedback proposals in ADR-028. Its monitoring implementation and final
+a completed monitoring report. Phase 13's selected monitoring design in selected final-evaluation method is narrower than
+the broader instructor-feedback proposals in broader instructor-feedback proposal. Its monitoring implementation and final
 replay evidence remain pending.
 
 ## 23.1. Data Quality Monitoring
@@ -1488,7 +565,7 @@ from a failed declared input contract. Report forecast availability and unresolv
 schedule provenance or protection-period inputs with counts, reasons and affected Store/origin/
 horizon. Unavailable operational values remain unavailable rather than zero.
 
-Existing validators and integrity/availability checks support these diagnostics. ADR-026 selects
+Existing validators and integrity/availability checks support these diagnostics. selected final-evaluation method selects
 precommitted deterministic integrity/data-quality alerts for the future replay; the exact rule
 catalog and output still require the relevant implementation/review gates.
 
@@ -1501,7 +578,7 @@ availability assumptions. Sales-history summaries use only observations already 
 the relevant origin; they do not create new target-derived cohorts or feed revealed within-block
 actuals back into a previously issued forecast.
 
-Descriptive frequency/quantile shifts fit ADR-026. Numeric distribution-shift alerts, new tests,
+Descriptive frequency/quantile shifts fit selected final-evaluation method. Numeric distribution-shift alerts, new tests,
 competition/volume cohorts or learned drift methods require a separate approved methodology.
 A changed mix can reflect eligibility or missing data rather than a changing business process.
 
@@ -1528,7 +605,7 @@ $$
 IntervalCoverage_t
 $$
 
-Descriptive delayed errors/coverage are selected under ADR-026. A future bias summary can use a
+Descriptive delayed errors/coverage are selected under the selected final-evaluation method. A future bias summary can use a
 predeclared signed-error definition (for example forecast minus actual, with positive values
 meaning overforecast), accompanied by under/overforecast counts and eligible denominators. Its
 monitoring definition, numerical performance alarms and retraining-review decisions remain
@@ -1546,7 +623,7 @@ censored cycle; do not pool episode boundaries into invented continuous operatio
 
 These indicators are conditional monetary simulations, not observed Rossmann stockouts, service
 or savings. Approved KPI definitions and development simulation exist; final replay summaries
-remain pending. Numeric business-service alerts are not selected by ADR-026 and need separate
+remain pending. Numeric business-service alerts are not selected by the selected final-evaluation method and need separate
 approval. Synthetic demonstration fixture ratios are interface evidence, not replay measurements.
 
 ---
@@ -1588,18 +665,18 @@ a separate synthetic or development replay and must not be reported as the same 
 
 The forecast and inventory scopes are distinct. Primary forecast evaluation retains exactly the
 two non-overlapping H14 issue-before-reveal blocks. The approved A-bounded inventory scope in
-ADR-025 runs two independent origin-frozen H14 episodes on those same origins; daily KPI updates
+bounded inventory scope runs two independent origin-frozen H14 episodes on those same origins; daily KPI updates
 follow the sequential reveal while each policy continues to use its original frozen target. Those
 daily state transitions are not new calibrated rolling forecast decisions, and unsupported
 later-review protection coverage is not scored. No new rolling operational forecast origin or
 daily suffix recalibration is introduced. The inventory scope does not imply continuous
-rolling 28-day validation. ADR-025 approves inventory scope only. ADR-026 records the selected
+rolling 28-day validation. bounded inventory scope approves inventory scope only. selected final-evaluation method records the selected
 forecast-input/availability assumptions, synthetic planned-Open schedule, Fit B transport, A2
 custody, runtime/reproducibility, monitoring, and score/comparator methods. Source identity,
 provenance, safe preparation, operator/partition provenance, resource approval, and separate
 implementation, rehearsal, staging, and analytical-release gates remain pending.
 
-The selected Phase 13 methods are recorded in ADR-026. Source identity, covariate provenance,
+The selected Phase 13 methods are recorded in selected final-evaluation method. Source identity, covariate provenance,
 historical availability assumptions, safe acquisition and authorized preparation remain preflight
 requirements. Scope and method selection do not authorize a source read, extraction, protected-data
 staging, or analytical release. If required covariates exist only in a combined source containing
@@ -1610,12 +687,12 @@ any access to that source; column projection alone does not establish physical i
 
 ## 24.1. Monitoring Alert Rules
 
-**Selected Phase 13 method (ADR-026):** report descriptive daily, trailing 7-calendar-day, and
+**Selected Phase 13 method (selected final-evaluation method):** report descriptive daily, trailing 7-calendar-day, and
 trailing 14-calendar-day summaries, stratified by forecast origin and horizon. Show descriptive
 feature-distribution shifts and post-release forecast errors and interval coverage with their
 populations and denominators. Precommit deterministic integrity and data-quality alerts only.
 Statistical drift, forecast-performance, interval-coverage, and service-level alarm thresholds are
-not selected. Alert definitions must be independent of final outcomes. ADR-021 calibration sample
+not selected. Alert definitions must be independent of final outcomes. uncertainty calibration sample
 floors do not establish monitoring reliability, and this short replay does not support claims of
 statistically reliable drift or service detection. Simple summaries remain sufficient; Evidently is
 optional only for a demonstrated unmet need.
@@ -1630,8 +707,8 @@ evidence of persistent production drift or a validated production alert policy.
 **PROPOSED / NOT APPROVED OR IMPLEMENTED.** The following concrete candidate policy addresses
 the final delivery requirement to define retraining conditions. It is a reviewable extension to
 be designed and approved under a new or superseding decision before implementation in a separate
-development-only or synthetic monitoring demonstration. It does not change ADR-026, operate during
-the frozen Phase 13 replay, authorize automatic retraining, or accept ADR-028 wholesale.
+development-only or synthetic monitoring demonstration. It does not change selected final-evaluation method, operate during
+the frozen Phase 13 replay, authorize automatic retraining, or accept broader instructor-feedback proposal wholesale.
 
 All numeric values below are **proposed operational policy parameters**, chosen to demonstrate
 minimum-support and persistence rules; none is empirically validated or calibrated here.
@@ -1641,7 +718,7 @@ parameters and metric/segment rules before use. The final holdout must never cal
 | Policy element | Proposed testable rule and evidence requirement |
 |---|---|
 | Reference and windows | Version a development-only reference from approved chronological forecasts earlier than the assessment windows, using identical eligibility, metric definitions and comparable origin/horizon/segment populations. Exclude assessed rows from the reference. Assess completed, consecutive **non-overlapping 14-calendar-day windows**; show daily and trailing 7/14-day descriptive views separately. Freeze reference values and boundaries before assessment. |
-| Minimum evidence | For a performance or feature-shift decision require at least **10 distinct observed target dates, 100 distinct stores and 1,000 eligible paired rows** in each assessed window and its reference. Use the fixed common-row comparison population; disclose total eligible rows and availability separately. For availability checks apply the same date/store/row floors to the eligible observed-label roster **before** filtering missing forecasts, so an outage cannot hide itself. WAPE comparisons additionally require a positive reference WAPE and actual-value denominator. Unsupported/sparse subgroups, zero denominators or partial windows are **UNAVAILABLE EVIDENCE**, never a passing result. These monitoring floors are distinct from ADR-021's calibration floors. |
+| Minimum evidence | For a performance or feature-shift decision require at least **10 distinct observed target dates, 100 distinct stores and 1,000 eligible paired rows** in each assessed window and its reference. Use the fixed common-row comparison population; disclose total eligible rows and availability separately. For availability checks apply the same date/store/row floors to the eligible observed-label roster **before** filtering missing forecasts, so an outage cannot hide itself. WAPE comparisons additionally require a positive reference WAPE and actual-value denominator. Unsupported/sparse subgroups, zero denominators or partial windows are **UNAVAILABLE EVIDENCE**, never a passing result. These monitoring floors are distinct from uncertainty contract's calibration floors. |
 | Performance warning | If supported window WAPE exceeds **1.20 times** its comparable development reference, issue **WARNING** with MAE/MAPE, error direction and segment/coverage context. One window does not trigger retraining. Reference mismatches or missing labels are unavailable evidence. |
 | Availability warning | Warn if raw forecast availability falls below **99%** of eligible observed open-label targets in a complete window. This is a proposed monitoring parameter, not a measured service guarantee; it does not change model-selection coverage rules. Count missing predictions instead of excluding them from availability. |
 | Characteristic warning | For a preapproved feature, warn on an absolute category-frequency change of at least **10 percentage points**, or a numeric median shift greater than **0.5 reference interquartile ranges**, with comparable populations and explicit missingness. Zero reference spread, changed category semantics or insufficient support give unavailable evidence for that check. These are descriptive effect-size rules, not significance tests or a new learned drift model. |
@@ -1659,199 +736,24 @@ must not be repurposed to validate persistence thresholds or establish long-run 
 
 ---
 
-# 25. Expected Results
+## 25. Success criteria, limitations and sequencing
 
-The project is expected to:
+Success means supported comparison, honest uncertainty assessment, conditional inventory trade-offs
+and working reviewed course artifacts. LightGBM need not win every scenario; unfavorable or
+inconclusive business results are valid. Preserve the selected recipe and all adverse findings.
 
-1. Identify important factors and patterns associated with daily store sales.
-2. Compare the required model ladder fairly, selecting an advanced model only when its development evidence justifies the complexity; retaining Seasonal Naive is a valid result.
-3. Quantify forecast uncertainty.
-4. Develop an interpretable inventory decision framework.
-5. Measure simulated inventory-policy trade-offs and report improvements, deterioration, or no benefit without presupposing a favorable outcome.
-6. Deliver both public demonstration URLs after authorized content/security/hosting release.
-7. Demonstrate the approved historical monitoring workflow and separately document proposed human
-   retraining-review triggers, with their evidence and approval limits.
-8. Explain model differences across supported Store-level scenarios without inventing physical
-   demand, business savings or universal model superiority.
+Shared stores/date shocks, sparse Sunday evidence, late-season windows and weekday/horizon
+confounding limit generalization. Historical turnover cannot recover SKU demand, actual stockouts
+or procurement stock. Artificial costs, cold starts, stale targets, finite-window censoring and
+unvalidated uncertainty transport limit business claims. No optimality, production readiness,
+real savings or guaranteed service is established. Local applications/fixtures do not complete
+real scenario, final-replay, monitoring or public delivery requirements.
 
-The completed development selection chose LightGBM under ADR-020. This does not establish that it
-is best in every scenario, future period or business simulation, or permit reopening selection on
-final outcomes.
-
----
-
-# 26. Success Criteria
-
-## Analytics
-
-The completed ADR-020 selection justifies the selected recipe through paired development MAE,
-coverage and stability under its fixed simplicity ladder. Retain its selected LightGBM identity,
-frozen refit recipe and historical evidence. Success also requires the separately approved WP1
-scenario comparison with shared rows/denominators, missing-prediction accounting, segment support,
-business interpretation and unfavorable cases. No model must win every scenario and no new model
-selection is performed. Final evaluation uses the frozen LightGBM system and Seasonal Naive
-contextual comparator under ADR-026, rather than another three-candidate selection.
-
-## Forecast Uncertainty
-
-Report interval coverage and width on chronologically distinct evaluation residuals and then the
-frozen final replay. Explain deviations, small samples, and heterogeneous-store limitations rather
-than promising nominal coverage in advance.
-
-## Business
-
-Compare service and cost proxies under common scenarios, with explicit denominators and
-sensitivity analysis. Report whether a policy improves any KPI without unacceptable deterioration
-elsewhere; unfavorable or inconclusive results remain valid project findings.
-
-Phase 13's owner-approved A-bounded scope evaluates paired simulated inventory policies in two
-independent H14 episodes using the accepted Phase 10 standing-target mechanics and full
-precommitted scenario/sensitivity panel, subject to the resource-feasibility gate. The episodes
-have no fresh calibrated protection-period forecast at each later daily review and make no claim
-of continuous rolling 28-day inventory operation. They remain monetary simulations, not actual
-Rossmann stock or demand, causal improvement, guaranteed service, or business savings.
-
-## Engineering
-
-The application should support the complete workflow:
-
-$$
-Store
-\rightarrow
-Forecast
-\rightarrow
-Uncertainty
-\rightarrow
-InventoryRecommendation
-$$
-
-without requiring manual notebook execution.
-
-Final deployment acceptance additionally requires two actually reachable, authorized, read-only
-public URLs, a pinned approved immutable demonstration bundle, clear synthetic evidence labels,
-bounded queries, per-view unavailable states and recorded external checks under Milestone C.
-Existing localhost acceptance and synthetic fixture tests alone do not satisfy that criterion.
-
-## Monitoring
-
-The Phase 13 monitoring method is selected in ADR-026: descriptive daily/trailing 7/14-day windows
-stratified by origin/horizon; descriptive feature shifts and post-release errors/coverage; and
-deterministic integrity/data-quality alerts only. No arbitrary numeric drift, performance,
-coverage, or service threshold is selected. Report denominators and partial windows; do not claim
-statistically reliable drift or service detection from this replay.
-
-The final monitoring report or dashboard must distinguish all four dimensions in Section 23 and
-document human retraining-review conditions. The broader operational policy in Section 24.2 needs
-separate methodology approval, development-only justification and implementation/verification;
-its warning, unavailable-evidence and review-required examples are additional acceptance work,
-not authority to introduce new alarms or adaptive retraining into Phase 13.
-
-## Delivery
-
-Provide the GitHub source and reproducibility instructions, complete real/engineered/synthetic
-Data Dictionary, authorized API/dashboard URLs, monitoring report or dashboard, PDF report,
-presentation slides and demonstration. Each artifact must cite reviewed evidence and distinguish
-real analytical results from synthetic interface illustrations. Human team ownership, review and
-appropriate AI-assistance disclosure remain part of delivery acceptance.
-
----
-
-# 27. Key Limitations
-
-### No Product/SKU Data
-
-SKU-level forecasting cannot be directly performed using the original dataset.
-
-### Sales is Monetary Turnover
-
-The primary forecasting and inventory-planning calculations are therefore conducted in monetary-value units.
-
-Observed turnover is not uncensored demand or procurement-cost stock. Inventory comparisons use
-a simulated retail-equivalent-value basis and cannot recover actual Rossmann product availability.
-
-### Synthetic Supply-Chain Data
-
-Lead time, inventory, unit value, and cost parameters are not real Rossmann operational data.
-
-### Historical Dataset
-
-The project is not intended to serve as a forecasting system for Rossmann's current operations.
-
-### Synthetic Business Evaluation
-
-The inventory simulation is intended to demonstrate the methodology rather than provide actual inventory-policy recommendations for Rossmann.
-
-### Evaluation Scope
-
-The three development windows cover only 42 days and confound weekday with horizon. Earlier
-full-source descriptive EDA included holdout dates; final evaluation remains protected from model
-selection, but is not described as a pristine unseen-label experiment. Empirical pooled intervals
-and simulated cost/service metrics have the assumptions and limits described above.
-
-### Delivery and Approval Gaps
-
-Integrated local applications and synthetic adapters are not public deployment. Real-data scenario
-findings, authorized STL evidence, final replay monitoring/results, PDF and slides remain pending.
-ADR-028's additional methods are proposed, ADR-030 grants only a narrow future objective, and
-ADR-024 remains the current runtime boundary. This proposal describes a route to course compliance;
-documentation changes alone do not complete those deliverables or authorize their execution.
-
----
-
-# 28. Project Risks and Mitigation
-
-| Risk | Consequence | Mitigation |
-|---|---|---|
-| Future leakage | Artificially high forecasting accuracy | Strict time-aware pipeline |
-| Recursive error accumulation | Performance degradation at longer horizons | Evaluate by horizon; consider a direct forecasting strategy if necessary |
-| Synthetic assumptions dominate results | Weak business validity | Keep the forecasting core based on real data and conduct sensitivity analysis |
-| Store heterogeneity | Aggregate metrics may hide poorly performing stores | Conduct segment-level evaluation |
-| Promotion spikes | Large forecasting errors | Use promotion-aware features and separate evaluations |
-| MAPE instability | Misleading conclusions | Use MAE as the primary metric and WAPE as a supplementary metric |
-| Closed days inflate metrics | Artificially improved performance | Primary evaluation only on `Open=1` observations |
-| Cloud resource limitations | Deployment or demo failure | Use compact models and prediction caching |
-| No live Rossmann data feed | Monitoring has limited external validity | Use only the separately authorized frozen sequential replay; disclose its short span and keep operational trigger validation separate |
-| Release or rights gate unresolved | Required public URLs remain undelivered | Complete exact-content/security/resource review and explicit owner release authorization; retain localhost operation until then |
-
----
-
-# 29. Proposed 8-Week Plan
-
-| Week | Main Work |
-|---|---|
-| **1** | Finalize scope, assumptions, Data Dictionary, and data acquisition |
-| **2** | Data cleaning, validation, integration, and EDA |
-| **3** | Feature engineering + Seasonal Naive baseline |
-| **4** | Exponential Smoothing + initial backtesting |
-| **5** | Approved LightGBM design + bounded tuning + development model selection (Phases 6–7) |
-| **6** | Separate uncertainty calibration/evaluation + synthetic scenarios + inventory simulation (Phases 8–10) |
-| **7** | Shared services + thin API + Streamlit + locked monitoring design (Phases 11–13 preparation) |
-| **8** | Authorized sequential final replay + final checks, report, slides, and demo (Phases 13–14) |
-
-This is a planning estimate, not a claim of completed work. Retain Phase 0–14 identifiers for
-historical traceability, but adjacent future phases may share one coherent execution plan and
-branch. Separate design or closeout branches are not required for every phase.
-
-## 29.1. Remaining Delivery Roadmap
-
-The eight-week table preserves the original sequencing estimate. Actual work follows
-[PROGRESS](PROGRESS.md), the [project roadmap](PROJECT_PLAN.md) and the three relevant active plans;
-it is not a new schedule or blanket implementation authorization.
-
-| Remaining work | Dependency and reviewable exit evidence |
-|---|---|
-| Complete mandatory scenario evidence | [WP1](../plans/active/wp1-scenario-forecast-evaluation.md): retain integrated L1/L2 and fixture handoffs; approve real input preparation/verification/provider binding and L4, resolve blocked volume/other extension methods before use, then review paired development-only results and failure cases |
-| Publish supplementary EDA findings | [CC-02D runbook](CC-02D_CUSTODIAN_RUNBOOK.md): separately authorize source access, preparation, independent verification/binding, provider loading, STL execution and findings publication; readiness code is not a completed operation |
-| Finish the two-URL demonstration | [Public-demo plan](../plans/active/public-course-demo.md): finish B corrective review/explicit closeout; obtain Milestone C exact-content/rights/security/resource/hosting/audience authorization and verified public access; synthetic examples remain separate from Rossmann evidence |
-| Define broader monitoring delivery | Approve and justify a development-only operational alert/retraining-review design such as Section 24.2, with testable state examples and a report/dashboard; keep it outside ADR-026's frozen replay and disclose unvalidated parameters |
-| Complete the single final evaluation | [Phase 13 plan](../plans/active/phase-13-sequential-final-evaluation.md): independent M3 review, safe source/preparation/custody provenance, remaining implementation/review, resource gate, separately authorized rehearsal/staging and chronological analytical release; frozen recipes and two A-bounded episodes unchanged |
-| Complete final report, slides and demonstration | Phase 14 after reviewed evidence: consolidate model/scenario/uncertainty/inventory/monitoring findings, adverse results, rights and scientific limitations, reproducibility and human ownership/AI disclosure; link actual authorized URLs only |
-
-Any new method that could affect the final protocol must be resolved and frozen before release.
-If the intended monitoring or deployment delivery requires superseding an accepted constraint,
-record the scoped approval explicitly; this proposal does not amend existing ADRs by implication.
-
----
+The original eight-week estimate sequenced scope/data (1), preparation/EDA (2), features/baseline
+(3), statistical backtests (4), LightGBM/selection (5), uncertainty/scenarios/inventory (6),
+applications/monitoring design (7), and authorized final replay/report/slides/demo (8). It is not a
+current schedule or completion claim. The [roadmap](PROJECT_PLAN.md) owns remaining dependencies,
+including reviews, safe inputs, resources and distinct rehearsal/staging/release approvals.
 
 # 30. Final Deliverables
 
