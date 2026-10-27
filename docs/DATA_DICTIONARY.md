@@ -82,16 +82,15 @@ They are not forecast features, and a candidate status is not guaranteed ground 
 ## D. Synthetic Operational Variables
 
 These are **synthetic or simulated fields, never Rossmann observations**. Phase 9's origin-safe
-scenario inputs are implemented and formally complete. Phase 10's stateful simulation and corrective
-review are accepted; formal completion takes effect when this closeout PR is integrated, as recorded in
-the completed plan. Phase 9 generation uses its documented fixed seed; Phase 10 makes no random draws.
+scenario inputs are implemented and formally complete. Phase 10's stateful simulation, corrective review and formal closeout are complete. Phase 9 generation uses its documented fixed seed; Phase 10 makes no random draws.
 Monetary demand, stock, orders, and recommendations share a retail-equivalent turnover-value basis;
 they are not procurement-cost inventory. Costs below are scenario proxies. Initial demand-dependent
 inputs use only history available at the
 simulation origin, and compared policies share inputs, demand paths, seeds, and starting stocks.
 The [completed Phase 9 plan](../plans/completed/phase-9-synthetic-inventory.md) records the accepted
 design and completed scenario generator. Section D.1 summarizes the accepted illustrative
-assumptions. ADR-016's monetary basis remains in force; these assumptions are not observed Rossmann
+assumptions. The [valuation rules](DECISIONS.md#adr-016--inventory-proxy-values-and-cumulative-uncertainty)
+still apply; these assumptions are not observed Rossmann
 operating data or measured business costs. Phase 9 does not implement the inventory simulator.
 
 | Name | Category | Source | Meaning | Unit | Known Range | Generation / Derivation Rule | Availability at Forecast Time | Notes |
@@ -113,7 +112,7 @@ operating data or measured business costs. Phase 9 does not implement the invent
 ### D.1 Approved Phase 9 design contract
 
 The [completed plan](../plans/completed/phase-9-synthetic-inventory.md) records the complete schema,
-seed/draw grammar, scenarios, artifact hashes, failure rules and planned tests. These accepted
+seed/draw grammar, scenarios and failure rules. These accepted
 values are illustrative assumptions, not Rossmann facts:
 
 - Origins are 2015-06-05 and 2015-06-19 only, with H14 ending by 2015-07-03.
@@ -153,7 +152,8 @@ grains are listed in the completed plan and canonical run manifest. `ReorderPoin
 source/planned Open; an unresolved required forecast makes the target unavailable rather than
 silently supplying zero.
 
-The [approved Phase 10 plan](../plans/completed/phase-10-inventory-simulation.md) and accepted ADR-023
+The [inventory specification](../plans/completed/phase-10-inventory-simulation.md) and
+[accepted policy decision](DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
 define the refinements below. The implementation and corrected canonical development run are accepted;
 the formal closeout is recorded in the completed plan.
 They retain Phase 9's accepted monetary inputs and Phase 8's origin-prefix definitions. V denotes

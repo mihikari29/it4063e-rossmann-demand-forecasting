@@ -22,7 +22,10 @@ from rossmann_forecasting.forecasting.lightgbm import (
     recursive_lightgbm_forecasts,
     select_requested_raw_forecasts,
 )
-from rossmann_forecasting.forecasting.metrics import summarize_forecast_metrics
+from rossmann_forecasting.forecasting.metrics import (
+    _summarize_development_metric_tables,
+    summarize_forecast_metrics,
+)
 from rossmann_forecasting.forecasting.validation import (
     APPROVED_DEVELOPMENT_WINDOWS,
     ValidationWindow,
@@ -145,36 +148,14 @@ def attach_lightgbm_labels(
 def summarize_lightgbm_development(records: pd.DataFrame) -> dict[str, Any]:
     """Use the shared approved metric function for windows, pooled rows and horizons."""
 
-    by_window = [
-        summarize_forecast_metrics(
-            records.loc[records["validation_window"].eq(window.name)],
-            scope="validation_window",
-            validation_window=window.name,
-            forecast_column=FORECAST_COLUMN,
-        )
-        for window in APPROVED_DEVELOPMENT_WINDOWS
-    ]
-    pooled = summarize_forecast_metrics(
-        records,
-        scope="pooled_development",
-        forecast_column=FORECAST_COLUMN,
-    )
-    by_horizon = [
-        summarize_forecast_metrics(
-            records.loc[pd.to_numeric(records["horizon"], errors="coerce").eq(step)],
-            scope="development_horizon",
-            horizon=step,
-            forecast_column=FORECAST_COLUMN,
-        )
-        for step in range(1, 15)
-    ]
-    window_frame = pd.DataFrame(by_window)
+    summary = _summarize_development_metric_tables(records, forecast_column=FORECAST_COLUMN)
+    window_frame = summary["by_window"]
     rates = pd.to_numeric(window_frame["open_label_forecast_coverage_rate"], errors="coerce")
     passed = bool(rates.notna().all() and rates.ge(COVERAGE_GUARDRAIL).all())
     return {
         "by_window": window_frame,
-        "pooled": pooled,
-        "by_horizon": pd.DataFrame(by_horizon),
+        "pooled": summary["pooled"],
+        "by_horizon": summary["by_horizon"],
         "coverage_guardrail_threshold": COVERAGE_GUARDRAIL,
         "coverage_guardrail_passed": passed,
         "requires_coverage_review": not passed,

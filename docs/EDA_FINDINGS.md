@@ -80,7 +80,7 @@ rows under the deterministic rule “at least 30 earlier exact-context rows, una
 `resolution_uncertain = true` and match counts/rates. This is a historical-context candidate, not
 observed future status or guaranteed ground truth. The source `Open` column remains null, and the
 candidate rule uses no future Sales or Customers. Phase 3 subsequently resolved the downstream
-policy in accepted ADR-012 and the [Feature Contract](FEATURE_CONTRACT.md): these candidates remain
+policy in the [Feature Contract](FEATURE_CONTRACT.md): these candidates remain
 audit-only, never establish evaluation eligibility, and never force an operational zero. Missing
 source Open remains unknown rather than a known closure.
 
@@ -144,7 +144,7 @@ policy calibration under the disclosed firewall.
 ## CC-02 weekly STL diagnostic
 
 The instructor-required decomposition is implemented as a supplementary, retrospective descriptive
-diagnostic under [ADR-027](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
+diagnostic under the [weekly STL method](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
 It uses `statsmodels.tsa.seasonal.STL` with period 7 and robust fitting, requires at least 56
 finite observations on uninterrupted calendar days, and analyzes at most the most recent 112 days
 of the most recent eligible segment. The fixed store roster is the first three eligible Store IDs
@@ -158,13 +158,10 @@ Sales, estimated trend, weekly seasonal, and residual values and is checked to r
 Sales within numerical tolerance. Four-panel figures label the monetary turnover unit and state
 that the result is retrospective, descriptive, and not a forecast or causal explanation.
 
-PR #41's decomposition and PR #42's loader are reviewed and integrated; Quality #135 passed on
-Python 3.12 and 3.14. The CC-02C preparation helper is fixture-only and its production command
-describes the contract or fails closed:
-`python scripts/prepare_cc02_development.py --describe-input-contract`. Its input is synthetic CSV
-bytes in tests. No Rossmann source, prepared train, real partition, or protected outcome was read,
-hashed or used for this closeout. No Rossmann decomposition has run, so synthetic tests are not a
-Rossmann finding.
+The decomposition, development-only provider and preparation are reviewed/integrated. Custodian
+readiness corrections are integrated; their focused independent Sol 6.1 re-review is unrecorded. The command describes requirements without source access:
+`python scripts/prepare_cc02_development.py --describe-input-contract`.
+No real bundle or Rossmann decomposition exists; synthetic tests are not Rossmann findings.
 
 A future custodian read of the mixed source mechanically accesses bytes including protected rows;
 it must receive separate explicit authorization. That does not authorize protected-value analysis,
@@ -175,6 +172,6 @@ bind exact output hashes after preparation. Provider loading, STL execution and 
 are separate approval gates. The code validates application-level path, hash and date rules but does
 not authenticate the approver or prove physical isolation. The accepted local claim trusts the
 custodian/operator and machine owner/administrator; separate Windows identities and ACLs are
-optional hardening. See the scoped [ADR-027 custody clarification](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
+optional hardening. See the [STL custody rules](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
 The diagnostic does not alter the 29-feature contract and its components are not forecast features,
 model-selection evidence, or an alternative forecasting method.

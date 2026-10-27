@@ -73,11 +73,14 @@ def test_git_enumeration_includes_tracked_and_new_docs_but_excludes_ignored(tmp_
     subprocess.run([git, "init", "--quiet", str(tmp_path)], check=True, capture_output=True)
     (tmp_path / ".gitignore").write_text("generated/\n", encoding="utf-8")
     (tmp_path / "README.md").write_text("# Tracked\n", encoding="utf-8")
+    removed = tmp_path / "removed.md"
+    removed.write_text("# Removed\n", encoding="utf-8")
     subprocess.run(
-        [git, "-C", str(tmp_path), "add", ".gitignore", "README.md"],
+        [git, "-C", str(tmp_path), "add", ".gitignore", "README.md", "removed.md"],
         check=True,
         capture_output=True,
     )
+    removed.unlink()
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "new.md").write_text("# New\n", encoding="utf-8")
     (tmp_path / "generated").mkdir()
@@ -86,3 +89,4 @@ def test_git_enumeration_includes_tracked_and_new_docs_but_excludes_ignored(tmp_
     names = {path.relative_to(tmp_path).as_posix() for path in checker.markdown_files(tmp_path)}
 
     assert names == {"README.md", "docs/new.md"}
+    assert checker.check_markdown(tmp_path) == (2, 0, [])

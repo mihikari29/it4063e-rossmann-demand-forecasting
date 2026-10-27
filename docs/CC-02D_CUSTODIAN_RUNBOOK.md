@@ -1,6 +1,7 @@
 # CC-02D — Custodian Readiness Runbook
 
-**Status:** Readiness implementation only. This document and its command do not authorize a
+**Status:** Readiness corrections are integrated; focused independent Sol 6.1 re-review remains
+unrecorded. This document and its command do not authorize a
 Rossmann source read, hash, partition, provider binding, STL run, or findings release.
 
 ## Fixed preparation procedure
@@ -8,11 +9,11 @@ Rossmann source read, hash, partition, provider binding, STL run, or findings re
 The only accepted source is the documented snapshot at `data/raw/rossmann/train.csv`, with the
 recorded identity **38,057,952 bytes**, SHA-256
 `f6e4597c142d7d909a13d53b68a8e85c00b9a4c7b5ff40adbb37d6829cc1f4cc`. These are the accepted
-reference identity values; this task has not checked them against local source bytes. Opening or
+reference identity values; they have not been rechecked against local source bytes for documentation cleanup. Opening or
 hashing this mixed CSV mechanically accesses protected-period bytes, including when the parser
 later discards dates after 2015-07-03.
 
-After the implementation PR is reviewed and integrated, the owner must approve the exact clean
+After the required focused independent review, the owner must approve the exact clean
 execution commit and `uv.lock` SHA-256. The named custodian uses that commit, the locked environment,
 the approved host and Windows account, and the fixed procedure below. The custodian does not change
 the source path, source identity, projection, output root, preparation contract, or STL method.
@@ -64,7 +65,8 @@ The application checks record bytes and identity; it does **not** authenticate s
 custody. Before preparing the packet, the trusted operator must verify the owner/custodian
 signatures and confirm that each approval is current and covers this exact operation. Record IDs
 or arbitrary approval strings by themselves never satisfy the evidence-file, runtime, identity,
-expiry, and one-use checks. The owner and machine administrator remain trusted under ADR-027; this
+expiry, and one-use checks. The [STL custody rules](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic)
+assume a trusted owner and machine administrator; this
 is not an OS-enforced security boundary. The account comparison uses `getpass.getuser()`, which is
 an environment-derived username hint, not authenticated Windows process-principal identity. The
 trusted operator must independently verify the actual Windows principal and approved host before

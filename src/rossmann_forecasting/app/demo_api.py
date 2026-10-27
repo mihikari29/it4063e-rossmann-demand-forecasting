@@ -18,6 +18,8 @@ from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from rossmann_forecasting.app._http import error_response as _error_response
+from rossmann_forecasting.app._http import http_error_handler
 from rossmann_forecasting.app.contracts import (
     ForecastQuery,
     HistoryQuery,
@@ -182,20 +184,6 @@ def _json_value(value: Any, budget: _SerializationBudget, depth: int = 0) -> Any
     raise TypeError("The synthetic result contains an unsupported value.")
 
 
-def _error_response(
-    status_code: int,
-    code: str,
-    message: str,
-    *,
-    headers: dict[str, str] | None = None,
-) -> JSONResponse:
-    return JSONResponse(
-        status_code=status_code,
-        content={"error": {"code": code, "message": message}},
-        headers=headers,
-    )
-
-
 def _success_response(result: Any) -> Response:
     """Place the exact B1 provenance beside its complete serialized result data."""
     if not is_dataclass(result) or isinstance(result, type):
@@ -337,20 +325,7 @@ def create_demo_app(
     async def validation_error_handler(_: Request, __: RequestValidationError) -> JSONResponse:
         return _error_response(422, DemoErrorCode.REQUEST.value, _INVALID_MESSAGE)
 
-    @application.exception_handler(StarletteHTTPException)
-    async def http_error_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-        if exc.status_code == 404:
-            code, message = "not_found", "The requested endpoint does not exist."
-        elif exc.status_code == 405:
-            code, message = "method_not_allowed", "The requested HTTP method is not allowed."
-        else:
-            code, message = "http_error", "The HTTP request could not be completed."
-        headers = None
-        if exc.status_code == 405 and exc.headers is not None:
-            allow = exc.headers.get("Allow")
-            if allow is not None:
-                headers = {"Allow": allow}
-        return _error_response(exc.status_code, code, message, headers=headers)
+    application.add_exception_handler(StarletteHTTPException, http_error_handler)
 
     @application.exception_handler(Exception)
     async def unexpected_error_handler(_: Request, __: Exception) -> JSONResponse:

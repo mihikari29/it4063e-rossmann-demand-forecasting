@@ -11,6 +11,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from rossmann_forecasting.app._http import error_response as _error_response
+from rossmann_forecasting.app._http import http_error_handler
 from rossmann_forecasting.app.contracts import (
     ArtifactErrorCode,
     ArtifactReadError,
@@ -62,20 +64,7 @@ def create_app(services: ApplicationServices | None = None) -> FastAPI:
             422, ArtifactErrorCode.INVALID_REQUEST.value, _INVALID_REQUEST_MESSAGE
         )
 
-    @application.exception_handler(StarletteHTTPException)
-    async def http_error_handler(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-        if exc.status_code == 404:
-            code, message = "not_found", "The requested endpoint does not exist."
-        elif exc.status_code == 405:
-            code, message = "method_not_allowed", "The requested HTTP method is not allowed."
-        else:
-            code, message = "http_error", "The HTTP request could not be completed."
-        headers = None
-        if exc.status_code == 405 and exc.headers is not None:
-            allow = exc.headers.get("Allow")
-            if allow is not None:
-                headers = {"Allow": allow}
-        return _error_response(exc.status_code, code, message, headers=headers)
+    application.add_exception_handler(StarletteHTTPException, http_error_handler)
 
     @application.exception_handler(Exception)
     async def unexpected_error_handler(_: Request, __: Exception) -> JSONResponse:
@@ -219,20 +208,6 @@ def _iso_date(value: str, selector: ArtifactSelector) -> date:
 
 def _dto_response(value: Any) -> JSONResponse:
     return JSONResponse(content=json_safe(value))
-
-
-def _error_response(
-    status_code: int,
-    code: str,
-    message: str,
-    *,
-    headers: dict[str, str] | None = None,
-) -> JSONResponse:
-    return JSONResponse(
-        status_code=status_code,
-        content={"error": {"code": code, "message": message}},
-        headers=headers,
-    )
 
 
 app = create_app()

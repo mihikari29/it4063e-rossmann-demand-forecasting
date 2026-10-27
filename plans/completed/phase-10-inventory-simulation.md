@@ -1,40 +1,8 @@
-# Phase 10 — Inventory Simulation & Sensitivity Analysis
+# Inventory-Value Policy Simulation
 
-**Status: COMPLETE (effective when this formal closeout PR is integrated).** ADR-023 is ACCEPTED;
-methodology was approved before implementation. PR #23 integrated the implementation at
-`15bce83cd63a4edfeed6defb95788da90d0f36d9`, and PR #24 integrated corrective B1/B2/B3 changes at
-`fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`. The final independent external/model-assisted technical
-review accepted the corrected implementation and numerical evidence. The accepted canonical run is
-`phase10-dev-20261008-validator-fix` (manifest SHA-256
-`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`). Formal closeout is recorded
-below and becomes effective when this closeout PR is integrated into `main`. Phase 11 remains
-NOT STARTED / NOT AUTHORIZED. No final holdout evaluation or release occurred.
+The implementation and numerical review are accepted and complete. This reference defines standing-target mechanics, costs, service denominators, sensitivity and terminal accounting.
 
-## 1. Authority, base and execution boundary
-
-Design history: `docs/phase-10-inventory-simulation-design` was created directly from fetched
-`origin/main` at `8234ab2170b7c76b00623c0f4e11a82dd8f2d4b2` on 2026-10-07. This is the PR #21
-Phase 9 closeout commit, not the stale local `main` checkpoint. The starting worktree was clean.
-[PROGRESS](../../docs/PROGRESS.md) confirms completed Phases 0–9, selected LightGBM, reviewed
-Phase 8 uncertainty and completed Phase 9 scenario inputs. At that design-proposal checkpoint,
-Phase 10 methodology approval was still pending; the later approval is recorded in Section 18.
-
-Read with the [proposal](../../docs/PROPOSAL.md), [decisions](../../docs/DECISIONS.md),
-[roadmap](../../docs/PROJECT_PLAN.md), [dictionary](../../docs/DATA_DICTIONARY.md),
-[README](../../README.md), [AGENTS](../../AGENTS.md), [workflow](../../docs/WORKFLOW.md),
-[artifact conventions](../../data/README.md), completed
-[Phase 7](../completed/phase-7-model-selection.md),
-[Phase 8](../completed/phase-8-forecast-uncertainty.md) and
-[Phase 9](../completed/phase-9-synthetic-inventory.md) plans. The reviewed interfaces are
-`forecasting/model_selection.py`, `forecasting/uncertainty.py`, `inventory/scenarios.py` and their
-existing fixture tests. ADR-015/016/020/021/022 and the selected model remain unchanged.
-
-The original design-proposal task was limited to documentation, existing checks and its review PR.
-The subsequent approval and implementation task authorized source, fixtures, a thin CLI, result
-documentation, one corrected canonical development run, commit, push and an implementation PR, but
-not merge. Phase 11 remains outside that authorization. No protected 2015-07-04 through 2015-07-31
-Sales, Open or Customers may be read, inspected, hashed, summarized or evaluated. This methodology
-refinement needs no change to `docs/PROPOSAL.md`.
+[Verified results](../../docs/PROGRESS.md) · [Decisions](../../docs/DECISIONS.md)
 
 ## 2. Objective, units and episode
 
@@ -142,8 +110,9 @@ At every permitted later review use `Q=max(0,S-IP)` with the SAME S.
 
 This is an **origin-frozen standing/base-stock target policy**, not rolling calibrated inventory
 control. Targets may become stale during H14. There is no forecast refresh, suffix generation,
-rolling uncertainty, quantile scaling, recalibration or refitting. ADR-023 accepts the Phase 10
-standing-rule execution on frozen targets; Phase 8 approval alone did not authorize these inventory
+rolling uncertainty, quantile scaling, recalibration or refitting. The
+[inventory policy decision](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
+accepts this use of frozen targets; Phase 8 approval alone did not authorize these inventory
 decisions.
 Policy differences combine point forecasting and buffering; they do not isolate LightGBM's effect.
 
@@ -169,23 +138,13 @@ prefix. Historical D/U/Safety/Target must agree with saved issuance-only Phase 8
 Historical replay uses `saved_source_open_assumed_known_at_origin` only as the accepted conditional
 development assumption, not proven schedule availability. Synthetic scenarios route the unchanged
 frozen raw point prefix with Phase 9 ScenarioOpen; no synthetic feature enters LightGBM recursion.
-ADR-023 accepts frozen historical q only as an illustrative stress-test buffer. Every synthetic
+Under the [approved inventory method](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting),
+frozen historical q serves only as an illustrative stress-test buffer. Every synthetic
 case retains `calibration_transport_valid=false` and `buffer_interpretation=uncalibrated_synthetic_heuristic`.
 No nominal p coverage or achieved synthetic service probability is claimed. Do not rescale q for
 Store size, stress, discount or starting stock.
 
-Pin the accepted run identities inherited from PROGRESS, not mutable current pointers:
-
-| Stage | Canonical run / expected manifest SHA-256 |
-|---|---|
-| Phase 7 | `365f22d4c3f94722a594ab934a22c4f6` / `03a1f26ba5855fd0576667bf280df938664c196a802de0a71e696a600b281cdc` |
-| Phase 8 | `phase8-impl-20261006-provenance-review` / `63a00fc8c50ccff99360cd8790498e977e08ec6a9846780a4e1a8ab3498d71c2` |
-| Phase 9 | `phase9-dev-20261007-config-validation-fix` / `573e36efddef452df781994c43f76006e208ec8c588b4c47e46735530da34761` |
-
-These are inherited governance references, not newly verified data hashes in this documentation PR.
-Future implementation checks every bound file/config/recipe identity. Fit B's later governance
-freeze does not rewrite original publication-time pending-review flags; Fit A retains its accepted
-historical June 5 role and is not the Fit B freeze applied to an earlier origin.
+Pin exact accepted upstream identities from `inventory/simulation.py` and its bindings, never a mutable latest pointer. The later Fit B freeze does not rewrite its original publication flags; Fit A retains its June 5 role.
 
 ## 7. Demand layers, closure and missingness
 
@@ -326,9 +285,7 @@ Phase 9's `scenarios.py` and dependencies/lock are unchanged.
 
 ## 13. Implemented artifacts and publication
 
-Ignored immutable root: `data/processed/inventory_simulation/<run_id>/`. The pre-review canonical
-run `phase10-dev-20261007-implementation-v2` remains immutable historical evidence; the current
-canonical review-fix run and its manifest are recorded in [PROGRESS](../../docs/PROGRESS.md).
+Ignored immutable root: `data/processed/inventory_simulation/<run_id>/`.
 `case_id=<scenario_id>--<variant_id>`; the reference variant is `reference`. Retain explicit origin,
 mode, family, replicate and variant columns. The seven required files below were published and
 validated. All 383,560 requested tracks are complete; no track is unavailable or excluded.
@@ -427,15 +384,6 @@ Arithmetic tolerance is `abs(actual-expected)<=1e-9*max(1,abs(expected))`. Schem
 nulls and hashes are exact; tolerance permits no repair or row loss. Detailed canonical counts,
 results, hashes, and validation evidence are maintained in [PROGRESS](../../docs/PROGRESS.md).
 
-**IMPLEMENTED / UNDER REVIEW:** methodology was approved before code. Review findings, fixes,
-regression tests, canonical evidence, and remaining review state are recorded in PROGRESS; that file
-is the authoritative numerical-results record. Improvement over baseline is not a passage criterion.
-
-**COMPLETE:** independent implementation and numerical review accepted; findings resolved;
-authorized merge verified; explicit closeout and frozen configuration/result identities recorded;
-plan archived. Tests or a successful run alone do not close the phase. Phase 11 requires separate
-authorization; Phase 13 release remains governed by ADR-015.
-
 ## 16. Critical limitations
 
 The static target can become stale; origin cumulative turnover coverage does not imply later
@@ -456,101 +404,3 @@ receipt-cycle proxy or value fill rate. Report adverse comparisons and terminal 
 Human approval accepts the standing-target daily execution, uncalibrated synthetic buffer use,
 explicit receipt/cost/KPI/terminal definitions and nine sensitivity overlays recorded here. It
 does not change accepted Phase 0–9 methods or authorize holdout access.
-
-## 17. Documentation proposal execution and historical handoff
-
-The original documentation task recorded the active plan and proposed ADR, aligned current-state
-documentation and artifact conventions, ran existing workflow checks, inspected the diff and
-opened a review PR. Its no-merge and awaiting-approval statements describe that historical
-pre-approval checkpoint; human approval and later integration are recorded below and in PROGRESS.
-No simulation results are claimed.
-
-## 18. Methodology approval checkpoint — 2026-10-07
-
-**Decision at this checkpoint: APPROVED; IMPLEMENTATION NOT STARTED.** Human approval accepted
-this Phase 10 methodology and ADR-023 on 2026-10-07. The initial technical methodology review and fresh
-independent methodology review returned ACCEPT. The independent review recorded
-`INDEPENDENT_PHASE10_DESIGN_REVIEW=ACCEPT`, no blocking findings and no required methodology
-changes. This is model-assisted methodology review evidence plus explicit human approval; it does
-not claim a GitHub-native reviewer approval.
-
-At that approval checkpoint, Phase 10 implementation was authorized as the next separate task and
-required to follow Sections 2–15 without changing accepted upstream recipes or scenario artifacts.
-The approval commit and PR integration did not implement Phase 10. Phase 9 remains COMPLETE;
-Phase 11 remains NOT STARTED and unauthorized. The protected final holdout remains protected under
-ADR-015.
-
-## 19. Initial implementation checkpoint — 2026-10-07
-
-Phase 10 was implemented on `feat/phase-10-inventory-simulation`; PR #23 was merged into `main`
-before the external implementation review was resolved. The first canonical attempt was superseded
-after a Pandas `Series.mode` metadata collision; the corrected v2 run is retained as immutable
-pre-review evidence. Detailed original and current canonical results are maintained in
-[PROGRESS](../../docs/PROGRESS.md), which is the authoritative numerical-results source.
-
-## 20. External implementation review fixes — 2026-10-08 (initial corrective checkpoint)
-
-The external implementation review returned **REQUEST CHANGES** after PR #23 merged, with blockers
-B1–B3: Phase 9 schema and date rejection ordering before byte hashing, missing-demand dependent-state
-and incomplete-prefix validation, and terminal receipt-cycle right censoring. The fixes preserve
-ADR-023 and add regression coverage. The source/test commit passed 48 focused tests and the full
-suite passed 278 tests. Ruff lint/format, documentation validation, `uv lock --check`, `uv pip check`,
-and `git diff --check` passed.
-
-The corrected canonical run `phase10-dev-20261008-review-fixes` completed from pinned Phase 7/8/9
-inputs without holdout access, refit, recalibration, or Phase 9 regeneration. Its results are retained
-as the prior review-fix checkpoint; the subsequent focused re-review and validator correction are in
-Section 21. Detailed numerical results remain in [PROGRESS](../../docs/PROGRESS.md).
-
-## 21. Focused re-review validator correction — 2026-10-08
-
-Focused re-review #1 returned REQUEST CHANGES: B1 pre-hash firewall, B3 terminal censoring, and B2
-simulation semantics passed; the only remaining blocker was incomplete-track validator coverage. The
-validator correction preserves simulation outputs and ADR-023 while checking origin invariants,
-static metadata/rate consistency throughout incomplete tracks, and empty receipt IDs after the first
-missing-demand boundary. New regression fixtures cover each reported mutation and a valid L=2 prefix
-that receives an order before demand becomes missing. Source commit
-`5504d855fd60b8a038a4d6574e35b579ed0f439d` passed 50 focused Phase 10 tests and 280 full-suite tests;
-the required quality checks passed. A new canonical run,
-`phase10-dev-20261008-validator-fix`, is current and logically matches the previous review-fix run in
-targets, ledger, policy summary, and comparison. Its manifest, validation fields, hash comparisons,
-censor reconstruction, and preserved numerical results are recorded in [PROGRESS](../../docs/PROGRESS.md).
-At this validator-correction checkpoint, the final focused external re-review was still pending.
-Its accepted outcome and formal closeout are recorded in Sections 22-23. Phase 11 remains
-**NOT STARTED / NOT AUTHORIZED**.
-
-## 22. Final focused external review acceptance - 2026-10-08
-
-The independent external/model-assisted implementation review chronology was:
-
-- Initial review: `PHASE10_IMPLEMENTATION_REVIEW=REQUEST_CHANGES`, with B1, B2 and B3 findings.
-- Focused re-review #1: `PHASE10_FOCUSED_REREVIEW=REQUEST_CHANGES`. B1 and B3 passed, B2 simulation
-  semantics passed, and incomplete-track validator coverage remained a blocker.
-- Final focused review: `PHASE10_FINAL_FOCUSED_REREVIEW=ACCEPT_WITH_MINOR_CHANGES`. B1, B2 and B3
-  passed; no blocking findings remained. Holdout firewall, canonical provenance, numerical regression,
-  sensitivity, terminal accounting, reproducibility evidence and repository quality gates passed.
-
-The sole minor issue was stale PR #24 metadata, corrected before/around integration. These were
-independent external/model-assisted technical reviews, not GitHub-native APPROVE reviews. ADR-023
-methodology and the accepted numerical results did not change.
-
-The accepted canonical run is `phase10-dev-20261008-validator-fix`, manifest SHA-256
-`1c914b8a0fc7582c192f24fb8286e8521669cc079162cf832a58f2d8a1569f16`; source revision
-`5504d855fd60b8a038a4d6574e35b579ed0f439d`; source digest
-`a4c1ec83d4211c45d75afe4db9845b359ddb41f88f04f3611a0c3cda872096db`; and `uv.lock` SHA-256
-`584337e365e653d97731b73c6d9e2292c4224bee524f0225ddf3221b0aa0f5d0`. Counts are 383,560 targets,
-383,560 policy summaries, 5,753,400 ledger rows, 172 cases, 1,720 comparison rows and 383,560 complete
-tracks; incomplete, unavailable, historical Open-assumption violating and post-cutoff outcome rows are
-zero. Canonical numerical and censoring details remain in [PROGRESS](../../docs/PROGRESS.md).
-
-## 23. Formal closeout - 2026-10-08
-
-PR #23 implementation merge SHA: `15bce83cd63a4edfeed6defb95788da90d0f36d9`.
-PR #24 corrective merge SHA: `fcbf6b7de79d57bb7db8a965d5a2b78e9376a3a9`.
-The implementation and corrective review findings are integrated; final focused external review is
-accepted; the accepted canonical run and immutable prior run history are preserved above and in
-PROGRESS. This formal closeout PR changes lifecycle/governance documentation only.
-
-**Phase 10 is COMPLETE once this closeout PR is integrated into `main`.** No Phase 11 work is part of
-this PR. Phase 11 remains NOT STARTED / NOT AUTHORIZED. No final holdout evaluation occurred, and the
-protected holdout remains unreleased.

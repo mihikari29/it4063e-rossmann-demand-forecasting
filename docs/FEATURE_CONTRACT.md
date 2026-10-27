@@ -90,9 +90,9 @@ row's features. A missing exact date or incomplete window remains null.
 The implementation separates future-known/static derivation from dynamic target-history
 derivation, then assembles a shared ordered predictor matrix for train and inference.
 
-## Handoff to Phase 6 modeling
+## Model integration
 
-Phase 6 starts with a reviewed design. For each approved forecast origin, fitting may select
+For each approved forecast origin, fitting may select
 precomputed historical rows only where `Date <= origin` and
 `training_label_eligible` is true. Keep all observed pre-origin Sales, including closed-day zeros,
 in the separate history used for lag/window construction. Select predictors only through
@@ -111,17 +111,17 @@ input; changing `--forecast-origin` also does not create the development target 
 
 A model adapter must treat Store identity categorically and map string categories consistently
 between fit and prediction. Fit learned category vocabularies and preprocessing on origin training
-rows only; specify unseen-category handling in the Phase 6 design. Preserve source-contract nulls
+rows only; use the reviewed LightGBM unseen-category policy. Preserve source-contract nulls
 in feature artifacts. Any model-specific null conversion belongs in the adapter and must not turn
 absent history into zero or silently change the frozen predictor contract.
 
-The initial recursive state under ADR-017 is the finite, non-negative clipped **raw** prediction.
+Under the [approved recursion rules](DECISIONS.md#adr-017--proportionate-application-and-forecast-extension-scope),
+the initial recursive state is the finite, non-negative clipped **raw** prediction.
 Generate the full raw path before applying Open routing to operational outputs; future Open is
 neither a predictor nor recursive feedback. A closure-aware feedback strategy would require a
-separately reviewed methodology change. The Phase 6 plan must specify clipping, missing future
-covariates/internal calendar states, training and tuning policies, and regression tests before
-implementation. Reuse the windows and metric contract linked from the
-[project roadmap](PROJECT_PLAN.md); Phase 7 owns final model selection.
+separately reviewed methodology change. The implemented LightGBM specification fixes clipping, missing future
+covariates/internal calendar states, training/tuning policies and regression coverage. Reuse the windows and metric contract linked from the
+[project roadmap](PROJECT_PLAN.md). The accepted development selection remains fixed.
 
 ## Final Holdout Firewall
 
@@ -138,4 +138,6 @@ that feature workflow. During development, do not use holdout outcomes to revise
 preprocessing, define modeling cohorts, tune models, or select methodology. Release for final evaluation follows
 the explicit [roadmap and approval boundary](PROJECT_PLAN.md).
 Only an authorized frozen replay may refit model/preprocessing state on eligible already revealed
-history under its precommitted recipe (ADR-015), never by changing recipes from holdout performance.
+history under its precommitted recipe, as required by the
+[final-evaluation release rules](DECISIONS.md#adr-015--final-evaluation-release-and-historical-exposure),
+never by changing recipes from holdout performance.

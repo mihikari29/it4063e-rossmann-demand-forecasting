@@ -1,27 +1,8 @@
-# Phase 6 — Global LightGBM (Design and Execution Plan)
+# Global LightGBM Development
 
-**Status: COMPLETE.** Phase 6 follows the methodology externally reviewed and approved in ADR-019,
-integrated into `main` by PR #9 at `79ddb510e94fe5695c4bc17814153fd47695e16f`. The implementation
-was reviewed and merged by [PR #10](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/10)
-at `dac71d26bd8a9e43eff7d33592460906ae6fee6f`; formal closeout is recorded in section 14.
+The global candidate is complete. Development selection subsequently froze trial A at 180 rounds; the finite original tuning design below is retained for reproducibility.
 
-## 1. Objective, scope, and boundaries
-
-Phase 6 will implement and evaluate exactly one global CPU LightGBM forecasting candidate for the
-existing Store × Date monetary Sales target. It will forecast a recursive 14-calendar-day path
-using the frozen Phase 3 phase-3-v1 predictor contract. It is a development candidate, not a final
-model selection exercise.
-
-The scope is limited to one pooled/global model, the finite recipe below, the three existing
-development windows, comparison with recomputed Seasonal Naive and Holt-Winters forecasts, and
-reproducible ignored outputs. It adds no predictor, shared feature schema, target transformation,
-inventory or synthetic predictor, model family, or business claim. It does not select a winning
-project model; Phase 7 owns selection. The protected final holdout (2015-07-04 through 2015-07-31)
-is excluded from fitting, tuning, evaluation, diagnostics, and model decisions.
-
-This proposal starts from Phase 5 COMPLETE (PR #7 integration and PR #8 closeout). It does not
-change either baseline or its historical results. The governing existing decision for raw recursive
-feedback and the known closed-day mismatch is ADR-017.
+[Verified results](../../docs/PROGRESS.md) · [Decisions](../../docs/DECISIONS.md)
 
 ## 2. Training population and point-in-time boundary
 
@@ -154,8 +135,7 @@ labels/covariates or global full-history category scan may expand a vocabulary.
 Official LightGBM documentation describes pandas categorical support and native missing-value
 handling in [Advanced Topics](https://lightgbm.readthedocs.io/en/latest/Advanced-Topics.html) and
 CPU reproducibility controls in [Parameters](https://lightgbm.readthedocs.io/en/latest/Parameters.html).
-Implementation must validate those behaviors against the specific locked package version; no
-dependency/version is installed or selected by this design task.
+Fixture validation checks those behaviors against the specific locked package version.
 
 ## 5. Model, objective, prediction, and recursion
 
@@ -184,7 +164,8 @@ For each inner or outer origin, forecast calendar steps h=1 through h=14 recursi
    the clipped raw forecast, and unknown Open routes operational output to null. This routing never
    changes raw forecasts, model inputs, or recursive history.
 
-This intentionally preserves ADR-017's known limitation: historical training lag/rolling state
+This preserves the [documented limitation of raw recursion](../../docs/DECISIONS.md#adr-017--proportionate-application-and-forecast-extension-scope):
+historical training lag/rolling state
 includes actual closed-day zero Sales, while raw future recursive history does not automatically
 replace predictions with closure zeros. This train/inference mismatch must be reported, not fixed
 implicitly. Closure-aware feedback or direct multi-horizon modeling requires a separate reviewed
@@ -339,82 +320,3 @@ LightGBM text under artifacts/lightgbm/, one per validation origin; record each 
 link it to its fit metadata. The locked LightGBM dependency/version is selected only in an approved
 implementation task. No GPU, per-Store model, Spark, distributed infrastructure, SHAP pipeline, or
 broad experiment platform is required.
-
-## 10. Required fixture tests before real-data execution
-
-Add focused synthetic tests before any expensive real-data development run:
-
-1. Exact PREDICTOR_COLUMNS names/order/dtypes; no Date, Sales, Customers, Open, eligibility, or
-   Open-resolution field in the model matrix.
-2. Fitting labels equal only training_label_eligible / observed source Open == 1, including
-   valid zero-Sales labels; closed rows remain present in history.
-3. Origin censoring for labels, fitting rows, dynamic features, category vocabularies, and raw
-   recursive history; reject future actual history.
-4. Mutation invariance: changing future Sales, Customers, or Open cannot change raw predictions or
-   recursive feature matrices.
-5. h>1 uses earlier clipped prediction state, not actual intermediate validation Sales (include a
-   case with an altered future label that must leave the second-step raw forecast unchanged).
-6. Store is categorical, vocabulary is fit-only and shared consistently with prediction; unseen
-   Store is unavailable, unseen non-Store categories become categorical missing and are counted.
-7. Required source-null categorical fields are unavailable without sentinel encoding; numeric NaNs
-   and structural nulls remain NaN; real zero remains zero.
-8. Missing target key, intermediate covariate row, required covariate, and invalid schema each
-   produce their specified reason without synthetic rows or fallback.
-9. Negative finite model output is retained unclipped and clipped to zero for raw output/feedback;
-   NaN/±infinity is unavailable and never enters recursive state.
-10. Raw prediction is invariant to future Open; operational Open routing is applied afterward for
-    open, closed, and unknown statuses.
-11. Missing/unavailable reason accounting, all-target/open-label coverage denominators, the 99%
-    guardrail and interpretation suppression at threshold failure.
-12. Paired comparison against each recomputed baseline uses identical eligible Store × Date keys
-    and consistent labels/status; no pasted metrics.
-13. Fixed seeds/configuration and same-environment fixture repeatability; avoid claiming
-    cross-platform bitwise determinism.
-14. Input DataFrames are not mutated; output/provenance hashes and ignored output-path checks work.
-15. Holdout firewall rejects or filters any target/training/history label date after
-    2015-07-03 before downstream feature/model/metric work; changing synthetic post-boundary values
-    cannot affect development outputs.
-
-After this methodology was approved and PR #9 was integrated into `main`, implementation may run
-the predeclared inner tuning and three outer development origins only after the required fixture
-tests pass. The final holdout remains untouched.
-
-## 11. Accepted durable decision
-
-ADR-019 — Global Recursive LightGBM Phase 6 Contract is accepted and recorded in
-docs/DECISIONS.md. This plan remains the detailed implementation reference for that decision.
-
-## 12. Approval gate and completion boundary
-
-The methodology is approved and PR #9 integrated this design into `main`. The implementation task
-authorizes the scoped Phase 6 dependency, code, fixtures, tuning, development forecasts, artifacts,
-quality checks, commit, push, and pull request. It does not authorize final-holdout access, Phase 7
-model selection, or Phase 7 implementation.
-
-## 13. Implementation checkpoint — 2026-10-06
-
-The authorized code, fixture suite, and real-data development run are implemented on
-`feat/phase-6-global-lightgbm`. The final inner tuning selected trial A at 180 rounds; the three
-outer origins passed the 99% coverage guardrail. The [Phase 6 section in PROGRESS](../../docs/PROGRESS.md#phase-6-global-lightgbm-implementation--2026-10-06)
-records metrics, paired baseline comparisons, provenance and checks. A semantics-preserving
-origin-history cache and `feature_pre_filter=false` on the shared Dataset address run-time costs and
-the frozen trials' differing `min_data_in_leaf` values; no feature, trial recipe, objective,
-selection rule, or evaluation boundary changed.
-
-At this implementation checkpoint, external review, integration, and explicit Phase 6 closeout
-were still pending. Their completion is recorded in section 14. Phase 7 remains outside this plan's
-scope.
-
-## 14. Formal Phase 6 Closeout — 2026-10-06
-
-Phase 6 is **COMPLETE**. PR #10 was merged into `main` at
-`dac71d26bd8a9e43eff7d33592460906ae6fee6f`. The external-review findings were addressed in final
-fix commit `9a33e8f673ec438fe4a5546011d06219d66e6a92`; the PR's final-head
-[Quality workflow run #12](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/37419362812)
-passed on Python 3.12 and 3.14. The final full fixture suite contained 152 passing tests.
-
-The approved development run used LightGBM 4.7.0, selected trial A at 180 rounds, achieved 100%
-development open-label coverage, and recorded pooled MAE 871.0612 with the 99% coverage guardrail
-passed. The [Phase 6 results in PROGRESS](../../docs/PROGRESS.md#phase-6-global-lightgbm-implementation--2026-10-06)
-remain authoritative; these results were not changed by review fixes. No final-holdout forecast or
-evaluation occurred. Phase 7 has not started and awaits its own approved design and authorization.

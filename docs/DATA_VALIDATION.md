@@ -21,15 +21,14 @@ full-source summaries as training references or claim the final-period labels we
 
 ## Source Snapshot
 
-| File | Rows | Columns | Bytes | SHA-256 |
-|---|---:|---:|---:|---|
-| `train.csv` | 1,017,209 | 9 | 38,057,952 | `f6e4597c142d7d909a13d53b68a8e85c00b9a4c7b5ff40adbb37d6829cc1f4cc` |
-| `test.csv` | 41,088 | 8 | 1,427,425 | `e75f79972de046d88c2fd55da19df627f5ca654aaf418090d4d30c60ea7dbe26` |
-| `store.csv` | 1,115 | 10 | 45,010 | `f56bd124a2849489e6bbb5c000f5fc9640204355e316475c918ae4d089afb344` |
-| `sample_submission.csv` | 41,088 | 2 | 317,611 | `592d892eb07072ddfa3773f13c4822ce5d01981243134c8d512ae30f016805db` |
+| File | Rows | Columns | Bytes |
+|---|---:|---:|---:|
+| `train.csv` | 1,017,209 | 9 | 38,057,952 |
+| `test.csv` | 41,088 | 8 | 1,427,425 |
+| `store.csv` | 1,115 | 10 | 45,010 |
+| `sample_submission.csv` | 41,088 | 2 | 317,611 |
 
-The user confirmed that these files were downloaded manually from the official Kaggle competition.
-The earlier Kaggle API HTTP 403 response is not a validation finding and is no longer a blocker.
+The official source and exact snapshot identities are recorded in [acquisition](DATA_ACQUISITION.md).
 
 ## Schema, Keys, and Coverage
 
