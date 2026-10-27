@@ -579,7 +579,7 @@ source staging, rehearsal, or analytical release.
 | Monitoring | Daily and descriptive 7/14-day windows; partial counts and origin/horizon/reset labels; exact populations; deterministic integrity/data-quality alerts only | Yes |
 | Inventory method | Two independent H14 episodes; both standing-target policies; fixed targets; R=1/L=2..7/P=L+1; common inputs; no queue carry; common terminal accounting; limitation explicit | Yes |
 | Inventory volume | Full 172-case panel requested: 383,560 policy tracks and 5,753,400 origin-plus-daily records; requested/available/complete/incomplete/unavailable/matched counts reconcile; no silent sample | Yes |
-| Inventory outcomes | inventory simulation contract event order, lost sales, queue, costs, KPI denominators, day-14 suppression, terminal exposure and right-censored cycles match fixtures | Yes |
+| Inventory outcomes | [Inventory methodology](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting): event order, lost sales, queue, costs, KPI denominators, day-14 suppression, terminal exposure and right-censored cycles match fixtures | Yes |
 | Schedules/contexts | New origin-safe 56-day contexts; 28-open-row threshold; deterministic/synthetic/conditional/planned/observed schedules distinct; no future actual Open routing; positive Sales preserved | Yes |
 | Performance | Stable bounded-memory partitions; measured peak memory/runtime/output fit declared host budget; otherwise stop for explicit scope/resource review | Yes before full-panel rehearsal |
 | Recovery/provenance | Synthetic failure injection; unresolved-intent recovery; atomic paired checkpoint; idempotent resume; manifests/output identities | Yes |

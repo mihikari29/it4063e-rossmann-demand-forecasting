@@ -138,4 +138,6 @@ that feature workflow. During development, do not use holdout outcomes to revise
 preprocessing, define modeling cohorts, tune models, or select methodology. Release for final evaluation follows
 the explicit [roadmap and approval boundary](PROJECT_PLAN.md).
 Only an authorized frozen replay may refit model/preprocessing state on eligible already revealed
-history under its precommitted recipe (final-release contract), never by changing recipes from holdout performance.
+history under its precommitted recipe, as required by the
+[final-evaluation release rules](DECISIONS.md#adr-015--final-evaluation-release-and-historical-exposure),
+never by changing recipes from holdout performance.

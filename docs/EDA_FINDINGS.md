@@ -144,7 +144,7 @@ policy calibration under the disclosed firewall.
 ## CC-02 weekly STL diagnostic
 
 The instructor-required decomposition is implemented as a supplementary, retrospective descriptive
-diagnostic under [weekly STL method](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
+diagnostic under the [weekly STL method](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
 It uses `statsmodels.tsa.seasonal.STL` with period 7 and robust fitting, requires at least 56
 finite observations on uninterrupted calendar days, and analyzes at most the most recent 112 days
 of the most recent eligible segment. The fixed store roster is the first three eligible Store IDs
@@ -172,6 +172,6 @@ bind exact output hashes after preparation. Provider loading, STL execution and 
 are separate approval gates. The code validates application-level path, hash and date rules but does
 not authenticate the approver or prove physical isolation. The accepted local claim trusts the
 custodian/operator and machine owner/administrator; separate Windows identities and ACLs are
-optional hardening. See the scoped [weekly STL method custody clarification](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
+optional hardening. See the [STL custody rules](DECISIONS.md#adr-027--cc-02-development-only-weekly-stl-diagnostic).
 The diagnostic does not alter the 29-feature contract and its components are not forecast features,
 model-selection evidence, or an alternative forecasting method.

@@ -264,7 +264,8 @@ The accepted development assessment is below nominal coverage; its exact counts,
 support and unavailable Fit A horizons remain disclosed in [PROGRESS](PROGRESS.md). No fitted
 tables or historical numerical results are changed by this proposal revision.
 
-Completed Phase 8 assigned distinct chronological development residual roles in uncertainty contract:
+The [uncertainty methodology](DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay)
+assigns distinct chronological roles to development residuals for calibration and assessment:
 Fit A calibrates validation_1 and assesses validation_2; Fit B calibrates validation_1+validation_2
 and assesses validation_3. The reviewed canonical Fit B fitted values are frozen for their exact
 artifact identities in [PROGRESS](PROGRESS.md). Coverage on the quantile-calibration sample is a
@@ -338,8 +339,9 @@ This reorder-point illustration describes a continuous-review threshold. It is d
 initial simulator's daily-review order-up-to policy. With lead time $L=2,\ldots,7$ days and review
 period $R=1$ day, use protection period $P=L+R\le14$, forecast value $D_P$, and cumulative bound
 $U_P$. Define $SafetyStock_P=\max(0,U_P-D_P)$ and order-up-to target
-$S_P=D_P+SafetyStock_P=\max(D_P,U_P)$. Completed Phase 10 fixed event timing and terminal
-accounting in inventory simulation contract: an end-of-day order at t arrives before demand at t+L+1; receipts precede
+$S_P=D_P+SafetyStock_P=\max(D_P,U_P)$. The
+[inventory methodology](DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
+fixes event timing and terminal accounting: an end-of-day order at t arrives before demand at t+L+1; receipts precede
 consumption, unmet value is lost, costs use ending stock, and the final day suppresses new ordering.
 Targets are frozen once at origin, the outstanding-order queue evolves, and due-after-window
 orders remain separate terminal exposures without cancellation or salvage.
@@ -606,7 +608,8 @@ $$
 IntervalCoverage_t
 $$
 
-Descriptive delayed errors/coverage are selected under the selected final-evaluation method. A future bias summary can use a
+The [final-evaluation methodology](DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology)
+includes descriptive summaries of delayed forecast errors and interval coverage. A future bias summary can use a
 predeclared signed-error definition (for example forecast minus actual, with positive values
 meaning overforecast), accompanied by under/overforecast counts and eligible denominators. Its
 monitoring definition, numerical performance alarms and retraining-review decisions remain
@@ -624,8 +627,9 @@ censored cycle; do not pool episode boundaries into invented continuous operatio
 
 These indicators are conditional monetary simulations, not observed Rossmann stockouts, service
 or savings. Approved KPI definitions and development simulation exist; final replay summaries
-remain pending. Numeric business-service alerts are not selected by the selected final-evaluation method and need separate
-approval. Synthetic demonstration fixture ratios are interface evidence, not replay measurements.
+remain pending. Numeric business-service alerts fall outside the
+[selected final-evaluation method](DECISIONS.md#adr-026--phase-13-selected-sequential-evaluation-methodology)
+and require separate approval. Synthetic demonstration fixture ratios are interface evidence, not replay measurements.
 
 ---
 

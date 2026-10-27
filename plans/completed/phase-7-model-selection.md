@@ -129,9 +129,9 @@ if a known closure allows operational zero. Outcome-derived routing never change
 
 | Method | Frozen fit/history, prediction and failure specification |
 |---|---|
-| Seasonal Naive | chronological evaluation contract; `forecast_seasonal_naive` in [seasonal_naive.py](../../src/rossmann_forecasting/forecasting/seasonal_naive.py). Exact same-store date-minus-7 observed Sales for week 1; its own earlier raw predictions for week 2. No fit/optimizer/categories. Missing exact history or earlier prediction remains unavailable; no last-observation, mean or cross-store substitution. All observed history Sales, including closed zeros, supplies lookups. |
-| Holt-Winters | Holt-Winters contract; `holt_winters_additive_weekly` / `forecast_holt_winters` in [holt_winters.py](../../src/rossmann_forecasting/forecasting/holt_winters.py). Per store, latest contiguous daily segment ending at origin, at least 28 finite nonnegative observed Sales (closed zeros retained). No gap filling. statsmodels additive trend + additive weekly seasonality 7, undamped, estimated initialization, no Box-Cox; optimized fit, single multi-step H14 forecast. No external categories/features or teacher forcing. Clip finite negatives to zero and retain unclipped values; construction/fit/invalid-output failure makes the store-origin path unavailable. Warnings/convergence remain diagnostics under reviewed behavior, not a newly imposed fallback/failure criterion. |
-| Global LightGBM | LightGBM development contract; `global_lightgbm_gbdt_regression_l1` in [lightgbm.py](../../src/rossmann_forecasting/forecasting/lightgbm.py), feature contract `phase-3-v1`. Expanding observed training dates <= origin, with historical features strictly prior to each training date, eligible labels source Open=1 and observed Sales. All observed Sales through origin, including closed zeros, supplies dynamic feature history. Freeze trial A: learning_rate=0.05, num_leaves=15, max_depth=4, min_data_in_leaf=200, exactly 180 rounds. Shared fixed parameters and dataset flags are copied exactly, including l1 objective, CPU/4 threads, deterministic/force_col_wise, seeds 42, max_bin=63, feature_pre_filter=false, zero_as_missing=false. No outer-window/holdout early stopping or tuning. |
+| Seasonal Naive | [Seasonal Naive evaluation method](../../docs/DECISIONS.md#adr-013---phase-4-seasonal-naive-evaluation-contract); `forecast_seasonal_naive` in [seasonal_naive.py](../../src/rossmann_forecasting/forecasting/seasonal_naive.py). Exact same-store date-minus-7 observed Sales for week 1; its own earlier raw predictions for week 2. No fit/optimizer/categories. Missing exact history or earlier prediction remains unavailable; no last-observation, mean or cross-store substitution. All observed history Sales, including closed zeros, supplies lookups. |
+| Holt-Winters | [Holt-Winters method](../../docs/DECISIONS.md#adr-014---phase-5-holt-winters-statistical-forecasting-contract); `holt_winters_additive_weekly` / `forecast_holt_winters` in [holt_winters.py](../../src/rossmann_forecasting/forecasting/holt_winters.py). Per store, latest contiguous daily segment ending at origin, at least 28 finite nonnegative observed Sales (closed zeros retained). No gap filling. statsmodels additive trend + additive weekly seasonality 7, undamped, estimated initialization, no Box-Cox; optimized fit, single multi-step H14 forecast. No external categories/features or teacher forcing. Clip finite negatives to zero and retain unclipped values; construction/fit/invalid-output failure makes the store-origin path unavailable. Warnings/convergence remain diagnostics under reviewed behavior, not a newly imposed fallback/failure criterion. |
+| Global LightGBM | [LightGBM development method](../../docs/DECISIONS.md#adr-019--global-recursive-lightgbm-phase-6-contract); `global_lightgbm_gbdt_regression_l1` in [lightgbm.py](../../src/rossmann_forecasting/forecasting/lightgbm.py), feature contract `phase-3-v1`. Expanding observed training dates <= origin, with historical features strictly prior to each training date, eligible labels source Open=1 and observed Sales. All observed Sales through origin, including closed zeros, supplies dynamic feature history. Freeze trial A: learning_rate=0.05, num_leaves=15, max_depth=4, min_data_in_leaf=200, exactly 180 rounds. Shared fixed parameters and dataset flags are copied exactly, including l1 objective, CPU/4 threads, deterministic/force_col_wise, seeds 42, max_bin=63, feature_pre_filter=false, zero_as_missing=false. No outer-window/holdout early stopping or tuning. |
 
 LightGBM detail: fit-only ordered vocabularies for Store/state_holiday/store_type/assortment from
 eligible fit rows; native numeric NaN handling, no imputation/scaling/new predictors. Unseen Store
@@ -146,12 +146,15 @@ mismatch disclosure. Models/vocabularies are fitted anew per authorized origin, 
 outer windows or warm-started as a new method.
 
 Future Phase 13, **not released now**: origin 2015-07-03 forecasts July 4–17 using actuals <= July 3.
-Only after sequential revelation authorized by final-release contract, origin 2015-07-17 forecasts July 18–31
-using actuals already revealed <= July 17 with the same frozen selected recipe. Newly observed
+Only after sequential revelation authorized under the
+[final-evaluation release rules](../../docs/DECISIONS.md#adr-015--final-evaluation-release-and-historical-exposure)
+may a forecast at origin 2015-07-17 cover July 18–31 using actuals already revealed <= July 17
+with the same frozen selected recipe. Newly observed
 rows can update fit/history/vocabularies under that recipe, not method selection, 180-round
 choice or policy/calibration thresholds. Keep the current development ceiling in force; this
 plan does not authorize bypassing existing development runners to read July 4–17 now.
-final-release contract requires separately authorized frozen final protocol after model/preprocessing/refit,
+The [final-evaluation release rules](../../docs/DECISIONS.md#adr-015--final-evaluation-release-and-historical-exposure)
+require a separately authorized frozen final protocol after model/preprocessing/refit,
 intervals, inventory policies and monitoring are frozen. Neither final fit/evaluation is performed
 in Phase 7. Earlier full-source EDA exposure remains disclosed; do not call the holdout pristine.
 

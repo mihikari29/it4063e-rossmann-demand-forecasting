@@ -110,8 +110,9 @@ At every permitted later review use `Q=max(0,S-IP)` with the SAME S.
 
 This is an **origin-frozen standing/base-stock target policy**, not rolling calibrated inventory
 control. Targets may become stale during H14. There is no forecast refresh, suffix generation,
-rolling uncertainty, quantile scaling, recalibration or refitting. inventory simulation contract accepts the Phase 10
-standing-rule execution on frozen targets; Phase 8 approval alone did not authorize these inventory
+rolling uncertainty, quantile scaling, recalibration or refitting. The
+[inventory policy decision](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting)
+accepts this use of frozen targets; Phase 8 approval alone did not authorize these inventory
 decisions.
 Policy differences combine point forecasting and buffering; they do not isolate LightGBM's effect.
 
@@ -137,7 +138,8 @@ prefix. Historical D/U/Safety/Target must agree with saved issuance-only Phase 8
 Historical replay uses `saved_source_open_assumed_known_at_origin` only as the accepted conditional
 development assumption, not proven schedule availability. Synthetic scenarios route the unchanged
 frozen raw point prefix with Phase 9 ScenarioOpen; no synthetic feature enters LightGBM recursion.
-inventory simulation contract accepts frozen historical q only as an illustrative stress-test buffer. Every synthetic
+Under the [approved inventory method](../../docs/DECISIONS.md#adr-023--origin-frozen-daily-inventory-policy-simulation-and-finite-window-accounting),
+frozen historical q serves only as an illustrative stress-test buffer. Every synthetic
 case retains `calibration_transport_valid=false` and `buffer_interpretation=uncalibrated_synthetic_heuristic`.
 No nominal p coverage or achieved synthetic service probability is claimed. Do not rescale q for
 Store size, stress, discount or starting stock.

@@ -44,7 +44,8 @@ that demand would have been zero had the store been open. Sales is monetary turn
 
 ### Approved development opening-schedule interpretation and holdout firewall
 
-uncertainty contract approves `saved_source_open_assumed_known_at_origin` solely to reproduce existing
+The [uncertainty methodology](../../docs/DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay)
+permits `saved_source_open_assumed_known_at_origin` solely to reproduce existing
 DEVELOPMENT operational forecasts as a **conditional historical course replay**. It assumes the
 recorded opening/closure schedule was known at each historical origin and that a planned closure
 implies zero operational Sales. The dataset does not establish that availability. Label all
@@ -78,7 +79,8 @@ including deterministic-closure inflation.
 
 ## 3. Approved method and alternatives
 
-uncertainty contract accepts empirical signed residual order statistics pooled across stores within each exact
+The [approved interval method](../../docs/DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay)
+uses empirical signed residual order statistics pooled across stores within each exact
 horizon, with the exact outward finite-sample ranks below. This preserves asymmetry and observed
 horizon effects, is easy to audit and requires no new model or resampling. Use separately fitted
 cumulative operational-prefix errors for one-sided upper monetary bounds.
@@ -105,7 +107,7 @@ representativeness and effective sample size; rounding cannot repair that limita
 
 ## 4. Chronological calibration, assessment and freeze
 
-Only the chronological evaluation contract approved windows are used:
+Use only the [approved chronological development windows](../../docs/DECISIONS.md#adr-013---phase-4-seasonal-naive-evaluation-contract):
 
 | Window | Forecast origin | Target dates |
 |---|---|---|
@@ -113,8 +115,8 @@ Only the chronological evaluation contract approved windows are used:
 | validation_2 | 2015-06-05 | 2015-06-06 through 2015-06-19 |
 | validation_3 | 2015-06-19 | 2015-06-20 through 2015-07-03 |
 
-uncertainty contract approves two predetermined expanding calibration fits, shared by daily and cumulative
-estimators:
+The [approved calibration design](../../docs/DECISIONS.md#adr-021--chronological-empirical-forecast-uncertainty-and-conditional-operational-replay)
+uses two predetermined expanding fits, shared by daily and cumulative estimators:
 
 | Fit | Calibration windows / last calibration label | Assessment issuance and targets |
 |---|---|---|
@@ -151,7 +153,7 @@ holdout-derived interval correction or automatic post-origin update.
 
 ## 5. Daily two-sided marginal 95% intervals
 
-Under the approved uncertainty contract policy, for each fit and exact h in 1..14:
+Apply the approved daily-interval procedure for each fit and exact h in 1..14:
 
 1. Select calibration rows with `raw_primary_error_available=true`, consistent observed Open=1
    labels and finite clipped raw forecasts. Partial H14 paths may contribute eligible h rows.
