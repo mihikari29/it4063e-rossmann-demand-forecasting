@@ -60,7 +60,12 @@ def markdown_files(root: Path) -> list[Path]:
     if result is not None and result.returncode == 0:
         names = result.stdout.decode("utf-8").split("\0")
         return sorted(
-            {root / name for name in names if Path(name).suffix.lower() == ".md"}, key=str
+            {
+                root / name
+                for name in names
+                if Path(name).suffix.lower() == ".md" and (root / name).is_file()
+            },
+            key=str,
         )
 
     files: list[Path] = []

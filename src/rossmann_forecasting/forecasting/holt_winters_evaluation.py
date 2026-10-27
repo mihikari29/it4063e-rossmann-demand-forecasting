@@ -11,7 +11,10 @@ from rossmann_forecasting.forecasting.holt_winters import (
     FORECAST_COLUMN,
     forecast_holt_winters,
 )
-from rossmann_forecasting.forecasting.metrics import summarize_forecast_metrics
+from rossmann_forecasting.forecasting.metrics import (
+    summarize_development_evaluation,
+    summarize_forecast_metrics,
+)
 from rossmann_forecasting.forecasting.validation import (
     APPROVED_DEVELOPMENT_WINDOWS,
     LAST_DEVELOPMENT_DATE,
@@ -128,35 +131,15 @@ def build_development_holt_winters_evaluation(
 def summarize_holt_winters_development(records: pd.DataFrame) -> dict[str, Any]:
     """Summarize standalone Phase 4-compatible metrics and forecast coverage."""
 
-    by_window = [
-        summarize_forecast_metrics(
-            records.loc[records["validation_window"].eq(window.name)],
-            scope="validation_window",
-            validation_window=window.name,
-            forecast_column=FORECAST_COLUMN,
-        )
-        for window in APPROVED_DEVELOPMENT_WINDOWS
-    ]
-    pooled = summarize_forecast_metrics(
-        records, scope="pooled_development", forecast_column=FORECAST_COLUMN
-    )
-    by_horizon = [
-        summarize_forecast_metrics(
-            records.loc[pd.to_numeric(records["horizon"], errors="coerce").eq(step)],
-            scope="development_horizon",
-            horizon=step,
-            forecast_column=FORECAST_COLUMN,
-        )
-        for step in range(1, 15)
-    ]
-    window_frame = pd.DataFrame(by_window)
+    summary = summarize_development_evaluation(records, forecast_column=FORECAST_COLUMN)
+    window_frame = summary["by_window"]
     rates = pd.to_numeric(window_frame["open_label_forecast_coverage_rate"], errors="coerce")
     guardrail_passed = bool(rates.notna().all() and rates.ge(COVERAGE_GUARDRAIL).all())
     clipping = _clipping_summary(records)
     return {
         "by_window": window_frame,
-        "pooled": pooled,
-        "by_horizon": pd.DataFrame(by_horizon),
+        "pooled": summary["pooled"],
+        "by_horizon": summary["by_horizon"],
         "clipping": clipping,
         "coverage_guardrail_threshold": COVERAGE_GUARDRAIL,
         "coverage_guardrail_passed": guardrail_passed,

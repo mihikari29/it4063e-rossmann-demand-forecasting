@@ -181,7 +181,11 @@ def summarize_forecast_metrics(
     }
 
 
-def summarize_development_evaluation(records: pd.DataFrame) -> dict[str, Any]:
+def summarize_development_evaluation(
+    records: pd.DataFrame,
+    *,
+    forecast_column: str = "raw_baseline_forecast",
+) -> dict[str, Any]:
     """Summarize each approved window, pooled development rows, and horizons 1..14."""
 
     if "validation_window" not in records or "horizon" not in records:
@@ -192,15 +196,19 @@ def summarize_development_evaluation(records: pd.DataFrame) -> dict[str, Any]:
             records.loc[records["validation_window"].eq(window.name)],
             scope="validation_window",
             validation_window=window.name,
+            forecast_column=forecast_column,
         )
         for window in APPROVED_DEVELOPMENT_WINDOWS
     ]
-    pooled = summarize_forecast_metrics(records, scope="pooled_development")
+    pooled = summarize_forecast_metrics(
+        records, scope="pooled_development", forecast_column=forecast_column
+    )
     by_horizon = [
         summarize_forecast_metrics(
             records.loc[pd.to_numeric(records["horizon"], errors="coerce").eq(step)],
             scope="development_horizon",
             horizon=step,
+            forecast_column=forecast_column,
         )
         for step in range(1, 15)
     ]
