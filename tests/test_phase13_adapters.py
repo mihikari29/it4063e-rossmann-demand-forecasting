@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import fields, replace
 from datetime import date, timedelta
+from decimal import Decimal
 from fractions import Fraction
 from hashlib import sha256
 
+import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -31,6 +33,7 @@ from rossmann_forecasting.phase13.adapters import (
     OriginFrozenStandingTargets,
     Phase13AdapterError,
     Phase13M3Adapter,
+    Phase13M3Issuance,
     SyntheticFitBQuantileFixture,
     SyntheticHistoricalMeanAnchor,
     SyntheticHistoricalMeanAnchorCollection,
@@ -1259,3 +1262,383 @@ def test_each_origin_freezes_a_distinct_paired_target_set_without_daily_refresh(
     assert results[0].origin != results[1].origin
     assert results[0].fresh_model_fit_identity != results[1].fresh_model_fit_identity
     assert targets_by_origin[0].issuance_identity != targets_by_origin[1].issuance_identity
+
+
+def _public_snapshot_metadata(snapshot: object) -> dict[str, object]:
+    return {
+        field.name: getattr(snapshot, field.name)
+        for field in fields(snapshot)
+        if not field.name.startswith("_")
+    }
+
+
+@pytest.mark.parametrize("with_sources", (False, True))
+@pytest.mark.parametrize(
+    ("column", "value"),
+    (
+        ("cumulative_signed_quantile", 9999.0),
+        ("operational_cumulative_forecast", 9999.0),
+        ("upper_turnover", 9999.0),
+        ("safety_stock", 9999.0),
+        ("target", 9999.0),
+        ("available", False),
+        ("unavailable_reason", "tampered_reason"),
+        ("quantile_available", False),
+        ("schedule_identity", "0" * 64),
+        ("model_fit_identity", "0" * 64),
+        ("calibration_run_id", "wrong_calibration_run"),
+    ),
+)
+def test_repair_m3_rejects_modified_prefix_under_original_identity(
+    column, value, with_sources
+) -> None:
+    raw, schedule, quantiles, issuance = _issue()
+    prefixes = issuance.prefixes_to_frame()
+    mask = prefixes["Store"].eq(1) & prefixes["k"].eq(3) & prefixes["p"].eq(0.95)
+    assert prefixes.loc[mask, "cumulative_signed_quantile"].item() == 6.0
+    prefixes.loc[mask, column] = value
+    with pytest.raises(Phase13AdapterError):
+        Phase13M3Issuance(
+            **_public_snapshot_metadata(issuance),
+            records=issuance.to_frame(),
+            prefixes=prefixes,
+            **(
+                {"raw_issuance": raw, "planned_open": schedule, "quantiles": quantiles}
+                if with_sources
+                else {}
+            ),
+        )
+
+
+@pytest.mark.parametrize("with_sources", (False, True))
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "baseline_equation",
+        "missing_anchor_available",
+        "unavailable_quantile_available",
+        "calibration_fit",
+        "calibration_manifest",
+        "paired_demand",
+        "schedule_provenance",
+    ),
+)
+def test_repair_targets_reject_inconsistent_snapshot(mutation: str, with_sources: bool) -> None:
+    _raw, _schedule, _quantiles, issuance = _issue()
+    anchors = _anchor_collection(missing={1} if mutation == "missing_anchor_available" else set())
+    targets = issuance.build_standing_targets(anchors)
+    records = targets.to_frame()
+    policy = (
+        POLICY_IDS[1]
+        if mutation in {"unavailable_quantile_available", "paired_demand"}
+        else POLICY_IDS[0]
+    )
+    index = records.index[
+        records["Store"].eq(1)
+        & records["lead_time"].eq(2)
+        & records["buffer_probability"].eq(0.95)
+        & records["policy_id"].eq(policy)
+    ][0]
+    if mutation == "baseline_equation":
+        assert records.loc[index, "target_value"] == 200.0
+        records.loc[index, "target_value"] = 12545.0
+    elif mutation == "missing_anchor_available":
+        records.loc[index, ["target_available", "target_value", "availability_reason"]] = [
+            True,
+            0.0,
+            None,
+        ]
+    elif mutation == "unavailable_quantile_available":
+        records.loc[
+            index,
+            ["quantile_available", "cumulative_signed_quantile", "quantile_unavailable_reason"],
+        ] = [False, None, "insufficient_calibration"]
+    elif mutation == "calibration_fit":
+        records["calibration_fit_identity"] = "fit_a"
+    elif mutation == "calibration_manifest":
+        records["calibration_manifest_sha256"] = "0" * 64
+    elif mutation == "paired_demand":
+        records.loc[index, "forecast_protection_demand_value"] = 9999.0
+    elif mutation == "schedule_provenance":
+        records["schedule_provenance"] = "different synthetic source"
+    with pytest.raises(Phase13AdapterError):
+        OriginFrozenStandingTargets(
+            **_public_snapshot_metadata(targets),
+            records=records,
+            **({"issuance": issuance, "anchors": anchors} if with_sources else {}),
+        )
+
+
+@pytest.mark.parametrize(
+    ("table_kind", "key_column", "duplicate_key"),
+    (("cumulative", "k", "3"), ("cumulative", "p", "0.95"), ("daily", "horizon", "3")),
+)
+def test_repair_quantile_keys_reject_normalized_duplicates(
+    table_kind, key_column, duplicate_key
+) -> None:
+    raw = _raw_issuance()
+    frame = _cumulative_table() if table_kind == "cumulative" else _daily_table()
+    mask = (
+        frame["k"].eq(3) & frame["p"].eq(0.95)
+        if table_kind == "cumulative"
+        else frame["horizon"].eq(3) & frame["tail"].eq("lower")
+    )
+    frame[key_column] = frame[key_column].astype(object)
+    duplicate = frame.loc[mask].copy()
+    duplicate[key_column] = duplicate_key
+    duplicate["signed_quantile"] = 9999.0
+    corrupted = pd.concat([frame, duplicate], ignore_index=True)
+    with pytest.raises(Phase13AdapterError):
+        _fixture(raw, **{table_kind: corrupted})
+
+
+def test_repair_prefix_overflow_fails_closed() -> None:
+    raw = _raw_issuance()
+    records = raw.to_frame()
+    records[["raw_forecast", "unclipped_forecast", "recursive_state_value"]] = 1e308
+    raw = _raw_issuance(records_override=records)
+    with pytest.raises(Phase13AdapterError):
+        Phase13M3Adapter().issue(raw, _planned_open(), _fixture(raw))
+
+
+@pytest.mark.parametrize(
+    "rank",
+    (
+        "91.0000000000000000000001",
+        Decimal("91.0000000000000000000001"),
+        Fraction(910000000000000000000001, 10000000000000000000000),
+    ),
+)
+def test_repair_fractional_rank_is_not_rounded_to_integer(rank) -> None:
+    raw = _raw_issuance()
+    cumulative = _cumulative_table().astype({"rank_1_indexed": object})
+    mask = cumulative["k"].eq(3) & cumulative["p"].eq(0.90)
+    cumulative.loc[mask, "rank_1_indexed"] = rank
+    with pytest.raises(Phase13AdapterError):
+        _fixture(raw, cumulative=cumulative)
+
+
+@pytest.mark.parametrize("column", ("raw_forecast", "unclipped_forecast", "recursive_state_value"))
+def test_repair_unavailable_diagnostics_require_genuine_nulls(column: str) -> None:
+    raw = _raw_issuance(unavailable={(1, 1)})
+    records = raw.to_frame().astype({column: object})
+    records.loc[0, column] = "corrupt"
+    raw = _raw_issuance(records_override=records)
+    with pytest.raises(Phase13AdapterError):
+        Phase13M3Adapter().issue(raw, _planned_open(), _fixture(raw))
+
+
+@pytest.mark.parametrize("origin", SUPPORTED_ORIGINS)
+@pytest.mark.parametrize(
+    "scenario",
+    (
+        "normal",
+        "missing_schedule",
+        "unknown_schedule",
+        "raw_unavailable",
+        "closed_raw_unavailable",
+        "insufficient_calibration",
+        "missing_anchor",
+        "unavailable_anchor",
+        "zero_anchor",
+    ),
+)
+def test_reconstruction_from_typed_sources_preserves_valid_outputs(origin, scenario) -> None:
+    raw = _raw_issuance(
+        origin,
+        unavailable={(1, 1)}
+        if scenario == "raw_unavailable"
+        else {(1, 2)}
+        if scenario == "closed_raw_unavailable"
+        else set(),
+    )
+    schedule = _planned_open(
+        origin,
+        omit={(1, 3)} if scenario == "missing_schedule" else set(),
+        unknown={(1, 3)} if scenario == "unknown_schedule" else set(),
+    )
+    quantiles = _fixture(
+        raw, cumulative_unsupported={(3, 0.95)} if scenario == "insufficient_calibration" else set()
+    )
+    issued = Phase13M3Adapter().issue(raw, schedule, quantiles)
+    restored = Phase13M3Issuance(
+        **_public_snapshot_metadata(issued),
+        records=issued.to_frame(),
+        prefixes=issued.prefixes_to_frame(),
+        raw_issuance=raw,
+        planned_open=schedule,
+        quantiles=quantiles,
+    )
+    assert restored.issuance_identity == issued.issuance_identity
+    assert_frame_equal(restored.to_frame(), issued.to_frame(), check_exact=True)
+    assert_frame_equal(restored.prefixes_to_frame(), issued.prefixes_to_frame(), check_exact=True)
+    anchors = _anchor_collection(
+        origin,
+        missing={1} if scenario == "missing_anchor" else set(),
+        unavailable={1: "synthetic_anchor_unavailable"} if scenario == "unavailable_anchor" else {},
+        means={1: 0.0, 2: 0.0} if scenario == "zero_anchor" else None,
+    )
+    targets = issued.build_standing_targets(anchors)
+    restored_targets = OriginFrozenStandingTargets(
+        **_public_snapshot_metadata(targets),
+        records=targets.to_frame(),
+        issuance=restored,
+        anchors=anchors,
+    )
+    assert_frame_equal(restored_targets.to_frame(), targets.to_frame(), check_exact=True)
+    if scenario == "normal":
+        frame = restored_targets.to_frame()
+        subset = frame.loc[
+            frame["Store"].eq(1) & frame["lead_time"].eq(2) & frame["buffer_probability"].eq(0.95)
+        ]
+        assert sorted(subset["target_value"].tolist()) == [146.0, 200.0]
+
+
+def test_valid_snapshots_require_source_objects_not_only_matching_hashes() -> None:
+    raw, schedule, quantiles, issued = _issue()
+    with pytest.raises(Phase13AdapterError, match="requires typed source inputs"):
+        Phase13M3Issuance(
+            **_public_snapshot_metadata(issued),
+            records=issued.to_frame(),
+            prefixes=issued.prefixes_to_frame(),
+        )
+    targets = issued.build_standing_targets(_anchor_collection())
+    with pytest.raises(Phase13AdapterError, match="requires typed source inputs"):
+        OriginFrozenStandingTargets(
+            **_public_snapshot_metadata(targets), records=targets.to_frame()
+        )
+    cumulative = quantiles.cumulative_to_frame()
+    cumulative.loc[cumulative["k"].eq(3) & cumulative["p"].eq(0.95), "signed_quantile"] = 9999.0
+    other_quantiles = _fixture(raw, cumulative=cumulative)
+    assert other_quantiles.fixture_identity != quantiles.fixture_identity
+    with pytest.raises(Phase13AdapterError, match="typed source inputs"):
+        Phase13M3Issuance(
+            **_public_snapshot_metadata(issued),
+            records=issued.to_frame(),
+            prefixes=issued.prefixes_to_frame(),
+            raw_issuance=raw,
+            planned_open=schedule,
+            quantiles=other_quantiles,
+        )
+    other_anchors = _anchor_collection(means={1: 101.0, 2: 100.0})
+    with pytest.raises(Phase13AdapterError, match="typed source inputs"):
+        OriginFrozenStandingTargets(
+            **_public_snapshot_metadata(targets),
+            records=targets.to_frame(),
+            issuance=issued,
+            anchors=other_anchors,
+        )
+
+
+@pytest.mark.parametrize(
+    ("table_kind", "column", "value"),
+    (
+        ("cumulative", "k", "3.00000000000000000001"),
+        ("cumulative", "k", 3.5),
+        ("cumulative", "p", float("inf")),
+        ("cumulative", "p", 0.91),
+        ("daily", "horizon", "3.00000000000000000001"),
+        ("daily", "horizon", True),
+    ),
+)
+def test_quantile_keys_reject_fractional_nonfinite_or_unsupported_originals(
+    table_kind, column, value
+) -> None:
+    raw = _raw_issuance()
+    frame = _cumulative_table() if table_kind == "cumulative" else _daily_table()
+    frame[column] = frame[column].astype(object)
+    frame.loc[0, column] = value
+    with pytest.raises(Phase13AdapterError):
+        _fixture(raw, **{table_kind: frame})
+
+
+@pytest.mark.parametrize("count", (2**53 + 1, 2**63 - 1))
+@pytest.mark.parametrize("form", (int, str, np.int64, Decimal, Fraction))
+def test_large_exact_sample_counts_and_ranks_are_preserved(count, form) -> None:
+    raw = _raw_issuance()
+    daily = _daily_table().astype({"n": object, "rank_1_indexed": object})
+    cumulative = _cumulative_table().astype({"n": object, "rank_1_indexed": object})
+    for index, row in daily.iterrows():
+        daily.at[index, "n"] = form(count)
+        daily.at[index, "rank_1_indexed"] = form(_daily_rank(count, row["tail"]))
+    for index, row in cumulative.iterrows():
+        cumulative.at[index, "n"] = form(count)
+        cumulative.at[index, "rank_1_indexed"] = form(_upper_rank(count, row["p"]))
+    quantiles = _fixture(raw, daily=daily, cumulative=cumulative)
+    assert quantiles.daily_to_frame()["n"].eq(count).all()
+    assert quantiles.cumulative_to_frame()["n"].eq(count).all()
+
+
+def test_cumulative_upper_and_baseline_overflow_raise_typed_errors() -> None:
+    raw = _raw_issuance()
+    records = raw.to_frame()
+    records[["raw_forecast", "unclipped_forecast", "recursive_state_value"]] = 1e307
+    raw = _raw_issuance(records_override=records)
+    cumulative = _cumulative_table()
+    cumulative["signed_quantile"] = 1e308
+    with pytest.raises(Phase13AdapterError, match="finite number"):
+        Phase13M3Adapter().issue(raw, _planned_open(), _fixture(raw, cumulative=cumulative))
+    _raw, _schedule, _quantiles, issuance = _issue()
+    with pytest.raises(Phase13AdapterError, match="finite number"):
+        issuance.build_standing_targets(_anchor_collection(means={1: 1e308, 2: 1e308}))
+
+
+@pytest.mark.parametrize("missing", (None, np.nan, pd.NA, pd.NaT))
+def test_unavailable_diagnostics_preserve_genuine_missing_scalars(missing) -> None:
+    raw = _raw_issuance(unavailable={(1, 1)})
+    columns = ["raw_forecast", "unclipped_forecast", "recursive_state_value"]
+    records = raw.to_frame().astype(dict.fromkeys(columns, object))
+    for column in columns:
+        records.loc[0, column] = missing
+    raw = _raw_issuance(records_override=records)
+    output = Phase13M3Adapter().issue(raw, _planned_open(), _fixture(raw)).to_frame()
+    assert output.loc[0, columns].isna().all()
+    assert not output.loc[0, "forecast_available"]
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "cumulative_probability",
+        "daily_tail_level",
+        "raw_horizon",
+        "target_probability",
+        "anchor_store",
+    ),
+)
+def test_exact_original_keys_are_not_rounded_into_supported_values(field: str) -> None:
+    raw, schedule, quantiles, issued = _issue()
+    with pytest.raises(Phase13AdapterError):
+        if field == "cumulative_probability":
+            cumulative = quantiles.cumulative_to_frame().astype({"p": object})
+            mask = cumulative["k"].eq(3) & cumulative["p"].eq(0.95)
+            cumulative.loc[mask, "p"] = "0.950000000000000000001"
+            _fixture(raw, cumulative=cumulative)
+        elif field == "daily_tail_level":
+            daily = quantiles.daily_to_frame().astype({"tail_level": object})
+            daily.loc[0, "tail_level"] = "0.025000000000000000001"
+            _fixture(raw, daily=daily)
+        elif field == "raw_horizon":
+            records = raw.to_frame().astype({"horizon": object})
+            records.loc[2, "horizon"] = "3.000000000000000000001"
+            forged = _raw_issuance(records_override=records)
+            Phase13M3Adapter().issue(forged, schedule, quantiles)
+        else:
+            anchors = _anchor_collection()
+            targets = issued.build_standing_targets(anchors)
+            column = "buffer_probability" if field == "target_probability" else "anchor_store_id"
+            records = targets.to_frame().astype({column: object})
+            index = records.index[records["Store"].eq(1) & records["buffer_probability"].eq(0.95)][
+                0
+            ]
+            records.loc[index, column] = (
+                "0.950000000000000000001"
+                if field == "target_probability"
+                else "1.000000000000000000001"
+            )
+            OriginFrozenStandingTargets(
+                **_public_snapshot_metadata(targets),
+                records=records,
+                issuance=issued,
+                anchors=anchors,
+            )

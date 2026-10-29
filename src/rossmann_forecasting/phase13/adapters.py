@@ -13,7 +13,9 @@ import math
 import re
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal, InvalidOperation
 from fractions import Fraction
+from numbers import Integral, Rational, Real
 from typing import Any
 
 import numpy as np
@@ -428,7 +430,13 @@ class SyntheticHistoricalMeanAnchorCollection:
 
 @dataclass(frozen=True, slots=True, init=False)
 class Phase13M3Issuance:
-    """Immutable in-memory M3 result for one exact July-origin H14 block."""
+    """In-memory M3 result verified against its typed synthetic source inputs.
+
+    Metadata and hashes alone cannot authorize snapshot reconstruction. Callers must
+    supply the original raw issuance, schedule and quantile fixture; the adapter's
+    normal issue() interface supplies them automatically. This is a logical fixture
+    boundary, not authentication against hostile Python code or machine owners.
+    """
 
     origin: date
     raw_issuance_identity: str
@@ -470,6 +478,9 @@ class Phase13M3Issuance:
         transport_status: str,
         records: pd.DataFrame,
         prefixes: pd.DataFrame,
+        raw_issuance: RawForecastIssuance | None = None,
+        planned_open: SyntheticPlannedOpen | None = None,
+        quantiles: SyntheticFitBQuantileFixture | None = None,
     ) -> None:
         if not isinstance(records, pd.DataFrame) or not isinstance(prefixes, pd.DataFrame):
             raise Phase13AdapterError("M3 results require table outputs.")
@@ -494,6 +505,9 @@ class Phase13M3Issuance:
             transport_status=transport_status,
             records=records,
             prefixes=prefixes,
+            raw_issuance=raw_issuance,
+            planned_open=planned_open,
+            quantiles=quantiles,
         )
         object.__setattr__(self, "origin", origin)
         object.__setattr__(self, "raw_issuance_identity", raw_issuance_identity)
@@ -628,7 +642,11 @@ class Phase13M3Issuance:
 
 @dataclass(frozen=True, slots=True, init=False)
 class OriginFrozenStandingTargets:
-    """Defensive snapshot of paired origin-frozen synthetic inventory targets."""
+    """Paired targets verified against a validated issuance and typed anchors.
+
+    Direct snapshot reconstruction requires these source objects, not just their
+    caller-supplied identities. build_standing_targets() supplies them automatically.
+    """
 
     origin: date
     store_ids: tuple[int, ...]
@@ -644,6 +662,8 @@ class OriginFrozenStandingTargets:
         issuance_identity: str,
         anchor_collection_identity: str,
         records: pd.DataFrame,
+        issuance: Phase13M3Issuance | None = None,
+        anchors: SyntheticHistoricalMeanAnchorCollection | None = None,
     ) -> None:
         if not isinstance(records, pd.DataFrame):
             raise Phase13AdapterError("Standing targets require a table output.")
@@ -662,6 +682,8 @@ class OriginFrozenStandingTargets:
             store_ids=grid.store_ids,
             issuance_identity=issuance_identity,
             anchor_collection_identity=anchor_collection_identity,
+            issuance=issuance,
+            anchors=anchors,
         )
         object.__setattr__(self, "origin", grid.origin.value)
         object.__setattr__(self, "store_ids", grid.store_ids)
@@ -684,213 +706,228 @@ class Phase13M3Adapter:
         planned_open: SyntheticPlannedOpen,
         quantiles: SyntheticFitBQuantileFixture,
     ) -> Phase13M3Issuance:
-        raw_frame, grid = _validate_raw_issuance(raw_issuance)
-        schedule = _validate_schedule(planned_open, grid)
-        _validate_transport(raw_issuance, planned_open, quantiles)
-        daily_lookup = _daily_lookup(quantiles)
-        cumulative_lookup = _cumulative_lookup(quantiles)
-
-        records = raw_frame.copy(deep=True).merge(
-            schedule.loc[:, ["Store", "Date", "planned_open"]],
-            on=["Store", "Date"],
-            how="left",
-            validate="one_to_one",
-            sort=False,
-        )
-        records["planned_open"] = pd.array(records["planned_open"], dtype="boolean")
-        records["planned_open_known"] = records["planned_open"].notna()
-        records["planned_open_rule_id"] = planned_open.rule_id
-        records["schedule_identity"] = planned_open.identity
-        records["schedule_source_id"] = planned_open.provenance.source_id
-        records["schedule_version"] = planned_open.provenance.version
-        records["schedule_provenance"] = planned_open.provenance.provenance
-        records["schedule_availability_assumption"] = (
-            planned_open.provenance.availability_assumption.value
-        )
-
-        operational_values: list[float | None] = []
-        operational_available: list[bool] = []
-        operational_reasons: list[str | None] = []
-        closure_routed: list[bool] = []
-        raw_lower: list[float | None] = []
-        raw_upper: list[float | None] = []
-        raw_pre_lower: list[float | None] = []
-        raw_pre_upper: list[float | None] = []
-        raw_lower_clipped: list[bool | None] = []
-        raw_upper_clipped: list[bool | None] = []
-        raw_width: list[float | None] = []
-        raw_interval_available: list[bool] = []
-        raw_interval_reasons: list[str | None] = []
-        op_lower: list[float | None] = []
-        op_upper: list[float | None] = []
-        op_width: list[float | None] = []
-        op_interval_available: list[bool] = []
-        op_interval_reasons: list[str | None] = []
-        op_interval_closure_routed: list[bool] = []
-        q_low_values: list[float | None] = []
-        q_high_values: list[float | None] = []
-        daily_lower_n: list[int] = []
-        daily_upper_n: list[int] = []
-        daily_lower_rank: list[int] = []
-        daily_upper_rank: list[int] = []
-        daily_lower_available: list[bool] = []
-        daily_upper_available: list[bool] = []
-        daily_lower_reason: list[str | None] = []
-        daily_upper_reason: list[str | None] = []
-
-        for row in records.itertuples(index=False):
-            horizon = int(row.horizon)
-            opening = row.planned_open
-            raw_ok = bool(row.forecast_available)
-            if pd.isna(opening):
-                operational_values.append(None)
-                operational_available.append(False)
-                operational_reasons.append("planned_open_unknown")
-                closure_routed.append(False)
-            elif not bool(opening):
-                operational_values.append(0.0)
-                operational_available.append(True)
-                operational_reasons.append(None)
-                closure_routed.append(True)
-            elif raw_ok:
-                operational_values.append(float(row.raw_forecast))
-                operational_available.append(True)
-                operational_reasons.append(None)
-                closure_routed.append(False)
-            else:
-                operational_values.append(None)
-                operational_available.append(False)
-                operational_reasons.append(f"raw_forecast_unavailable:{row.unavailable_reason}")
-                closure_routed.append(False)
-
-            low = daily_lookup[(horizon, "lower")]
-            high = daily_lookup[(horizon, "upper")]
-            q_low_values.append(low["signed_quantile"])
-            q_high_values.append(high["signed_quantile"])
-            daily_lower_n.append(low["n"])
-            daily_upper_n.append(high["n"])
-            daily_lower_rank.append(low["rank_1_indexed"])
-            daily_upper_rank.append(high["rank_1_indexed"])
-            daily_lower_available.append(low["available"])
-            daily_upper_available.append(high["available"])
-            daily_lower_reason.append(low["unavailable_reason"])
-            daily_upper_reason.append(high["unavailable_reason"])
-            interval = _raw_interval(
-                row.raw_forecast if raw_ok else None,
-                raw_reason=row.unavailable_reason if not raw_ok else None,
-                lower=low,
-                upper=high,
-            )
-            raw_pre_lower.append(interval["pre_lower"])
-            raw_pre_upper.append(interval["pre_upper"])
-            raw_lower_clipped.append(interval["lower_clipped"])
-            raw_upper_clipped.append(interval["upper_clipped"])
-            raw_lower.append(interval["lower"])
-            raw_upper.append(interval["upper"])
-            raw_width.append(interval["width"])
-            raw_interval_available.append(interval["available"])
-            raw_interval_reasons.append(interval["reason"])
-
-            if pd.isna(opening):
-                op_lower.append(None)
-                op_upper.append(None)
-                op_width.append(None)
-                op_interval_available.append(False)
-                op_interval_reasons.append("planned_open_unknown")
-                op_interval_closure_routed.append(False)
-            elif not bool(opening):
-                op_lower.append(0.0)
-                op_upper.append(0.0)
-                op_width.append(0.0)
-                op_interval_available.append(True)
-                op_interval_reasons.append(None)
-                op_interval_closure_routed.append(True)
-            elif interval["available"]:
-                op_lower.append(interval["lower"])
-                op_upper.append(interval["upper"])
-                op_width.append(interval["width"])
-                op_interval_available.append(True)
-                op_interval_reasons.append(None)
-                op_interval_closure_routed.append(False)
-            else:
-                op_lower.append(None)
-                op_upper.append(None)
-                op_width.append(None)
-                op_interval_available.append(False)
-                op_interval_reasons.append(f"raw_interval_unavailable:{interval['reason']}")
-                op_interval_closure_routed.append(False)
-
-        records["operational_forecast"] = operational_values
-        records["operational_forecast_available"] = pd.array(operational_available, dtype="boolean")
-        records["operational_unavailable_reason"] = operational_reasons
-        records["closure_routing_applied"] = pd.array(closure_routed, dtype="boolean")
-        records["q_low_signed"] = q_low_values
-        records["q_high_signed"] = q_high_values
-        records["raw_interval_pre_lower"] = raw_pre_lower
-        records["raw_interval_pre_upper"] = raw_pre_upper
-        records["raw_interval_lower_clipped"] = pd.array(raw_lower_clipped, dtype="boolean")
-        records["raw_interval_upper_clipped"] = pd.array(raw_upper_clipped, dtype="boolean")
-        records["raw_interval_lower"] = raw_lower
-        records["raw_interval_upper"] = raw_upper
-        records["raw_interval_width"] = raw_width
-        records["raw_interval_available"] = pd.array(raw_interval_available, dtype="boolean")
-        records["raw_interval_unavailable_reason"] = raw_interval_reasons
-        records["operational_interval_lower"] = op_lower
-        records["operational_interval_upper"] = op_upper
-        records["operational_interval_width"] = op_width
-        records["operational_interval_available"] = pd.array(op_interval_available, dtype="boolean")
-        records["operational_interval_unavailable_reason"] = op_interval_reasons
-        records["operational_interval_closure_routed"] = pd.array(
-            op_interval_closure_routed, dtype="boolean"
-        )
-        records["daily_lower_n"] = daily_lower_n
-        records["daily_lower_rank_1_indexed"] = daily_lower_rank
-        records["daily_lower_available"] = pd.array(daily_lower_available, dtype="boolean")
-        records["daily_lower_unavailable_reason"] = daily_lower_reason
-        records["daily_upper_n"] = daily_upper_n
-        records["daily_upper_rank_1_indexed"] = daily_upper_rank
-        records["daily_upper_available"] = pd.array(daily_upper_available, dtype="boolean")
-        records["daily_upper_unavailable_reason"] = daily_upper_reason
-        _add_calibration_metadata(records, quantiles)
-        prefixes = _build_prefixes(records, cumulative_lookup, quantiles)
-
-        raw_identity = _raw_issuance_identity(raw_issuance, raw_frame)
-        issuance_identity = _digest(
-            {
-                "raw_issuance_identity": raw_identity,
-                "schedule_identity": planned_open.identity,
-                "quantile_fixture_identity": quantiles.fixture_identity,
-                "origin": raw_issuance.origin.isoformat(),
-                "contract": "phase13-m3-synthetic-adapter-v1",
-            }
-        )
-        records["raw_issuance_identity"] = raw_identity
-        records["m3_issuance_identity"] = issuance_identity
-        records["quantile_fixture_identity"] = quantiles.fixture_identity
-        records["daily_fixture_sha256"] = quantiles.daily_fixture_sha256
-        records["cumulative_fixture_sha256"] = quantiles.cumulative_fixture_sha256
-        records["fresh_model_fit_identity"] = raw_issuance.fit_identity
-        records["transport_status"] = quantiles.transport.transport_status
         return Phase13M3Issuance(
-            origin=raw_issuance.origin,
-            raw_issuance_identity=raw_identity,
-            issuance_identity=issuance_identity,
-            grid_identity=raw_issuance.grid_identity,
-            model_identity=raw_issuance.model_identity,
-            fresh_model_fit_identity=raw_issuance.fit_identity,
-            recipe_identity=raw_issuance.recipe_identity,
-            feature_schema_identity=raw_issuance.feature_schema_identity,
-            input_identities=raw_issuance.input_identities,
-            schedule_identity=planned_open.identity,
-            schedule_rule_id=planned_open.rule_id,
-            quantile_fixture_identity=quantiles.fixture_identity,
-            daily_fixture_sha256=quantiles.daily_fixture_sha256,
-            cumulative_fixture_sha256=quantiles.cumulative_fixture_sha256,
-            calibration_metadata=quantiles.calibration_metadata,
-            transport_status=quantiles.transport.transport_status,
-            records=records,
-            prefixes=prefixes,
+            **_build_m3_snapshot(raw_issuance, planned_open, quantiles),
+            raw_issuance=raw_issuance,
+            planned_open=planned_open,
+            quantiles=quantiles,
         )
+
+
+def _build_m3_snapshot(
+    raw_issuance: RawForecastIssuance,
+    planned_open: SyntheticPlannedOpen,
+    quantiles: SyntheticFitBQuantileFixture,
+) -> dict[str, Any]:
+    """Derive the complete snapshot from typed synthetic inputs without file I/O."""
+
+    raw_frame, grid = _validate_raw_issuance(raw_issuance)
+    schedule = _validate_schedule(planned_open, grid)
+    _validate_transport(raw_issuance, planned_open, quantiles)
+    daily_lookup = _daily_lookup(quantiles)
+    cumulative_lookup = _cumulative_lookup(quantiles)
+
+    records = raw_frame.copy(deep=True).merge(
+        schedule.loc[:, ["Store", "Date", "planned_open"]],
+        on=["Store", "Date"],
+        how="left",
+        validate="one_to_one",
+        sort=False,
+    )
+    records["planned_open"] = pd.array(records["planned_open"], dtype="boolean")
+    records["planned_open_known"] = records["planned_open"].notna()
+    records["planned_open_rule_id"] = planned_open.rule_id
+    records["schedule_identity"] = planned_open.identity
+    records["schedule_source_id"] = planned_open.provenance.source_id
+    records["schedule_version"] = planned_open.provenance.version
+    records["schedule_provenance"] = planned_open.provenance.provenance
+    records["schedule_availability_assumption"] = (
+        planned_open.provenance.availability_assumption.value
+    )
+
+    operational_values: list[float | None] = []
+    operational_available: list[bool] = []
+    operational_reasons: list[str | None] = []
+    closure_routed: list[bool] = []
+    raw_lower: list[float | None] = []
+    raw_upper: list[float | None] = []
+    raw_pre_lower: list[float | None] = []
+    raw_pre_upper: list[float | None] = []
+    raw_lower_clipped: list[bool | None] = []
+    raw_upper_clipped: list[bool | None] = []
+    raw_width: list[float | None] = []
+    raw_interval_available: list[bool] = []
+    raw_interval_reasons: list[str | None] = []
+    op_lower: list[float | None] = []
+    op_upper: list[float | None] = []
+    op_width: list[float | None] = []
+    op_interval_available: list[bool] = []
+    op_interval_reasons: list[str | None] = []
+    op_interval_closure_routed: list[bool] = []
+    q_low_values: list[float | None] = []
+    q_high_values: list[float | None] = []
+    daily_lower_n: list[int] = []
+    daily_upper_n: list[int] = []
+    daily_lower_rank: list[int] = []
+    daily_upper_rank: list[int] = []
+    daily_lower_available: list[bool] = []
+    daily_upper_available: list[bool] = []
+    daily_lower_reason: list[str | None] = []
+    daily_upper_reason: list[str | None] = []
+
+    for row in records.itertuples(index=False):
+        horizon = int(row.horizon)
+        opening = row.planned_open
+        raw_ok = bool(row.forecast_available)
+        if pd.isna(opening):
+            operational_values.append(None)
+            operational_available.append(False)
+            operational_reasons.append("planned_open_unknown")
+            closure_routed.append(False)
+        elif not bool(opening):
+            operational_values.append(0.0)
+            operational_available.append(True)
+            operational_reasons.append(None)
+            closure_routed.append(True)
+        elif raw_ok:
+            operational_values.append(float(row.raw_forecast))
+            operational_available.append(True)
+            operational_reasons.append(None)
+            closure_routed.append(False)
+        else:
+            operational_values.append(None)
+            operational_available.append(False)
+            operational_reasons.append(f"raw_forecast_unavailable:{row.unavailable_reason}")
+            closure_routed.append(False)
+
+        low = daily_lookup[(horizon, "lower")]
+        high = daily_lookup[(horizon, "upper")]
+        q_low_values.append(low["signed_quantile"])
+        q_high_values.append(high["signed_quantile"])
+        daily_lower_n.append(low["n"])
+        daily_upper_n.append(high["n"])
+        daily_lower_rank.append(low["rank_1_indexed"])
+        daily_upper_rank.append(high["rank_1_indexed"])
+        daily_lower_available.append(low["available"])
+        daily_upper_available.append(high["available"])
+        daily_lower_reason.append(low["unavailable_reason"])
+        daily_upper_reason.append(high["unavailable_reason"])
+        interval = _raw_interval(
+            row.raw_forecast if raw_ok else None,
+            raw_reason=row.unavailable_reason if not raw_ok else None,
+            lower=low,
+            upper=high,
+        )
+        raw_pre_lower.append(interval["pre_lower"])
+        raw_pre_upper.append(interval["pre_upper"])
+        raw_lower_clipped.append(interval["lower_clipped"])
+        raw_upper_clipped.append(interval["upper_clipped"])
+        raw_lower.append(interval["lower"])
+        raw_upper.append(interval["upper"])
+        raw_width.append(interval["width"])
+        raw_interval_available.append(interval["available"])
+        raw_interval_reasons.append(interval["reason"])
+
+        if pd.isna(opening):
+            op_lower.append(None)
+            op_upper.append(None)
+            op_width.append(None)
+            op_interval_available.append(False)
+            op_interval_reasons.append("planned_open_unknown")
+            op_interval_closure_routed.append(False)
+        elif not bool(opening):
+            op_lower.append(0.0)
+            op_upper.append(0.0)
+            op_width.append(0.0)
+            op_interval_available.append(True)
+            op_interval_reasons.append(None)
+            op_interval_closure_routed.append(True)
+        elif interval["available"]:
+            op_lower.append(interval["lower"])
+            op_upper.append(interval["upper"])
+            op_width.append(interval["width"])
+            op_interval_available.append(True)
+            op_interval_reasons.append(None)
+            op_interval_closure_routed.append(False)
+        else:
+            op_lower.append(None)
+            op_upper.append(None)
+            op_width.append(None)
+            op_interval_available.append(False)
+            op_interval_reasons.append(f"raw_interval_unavailable:{interval['reason']}")
+            op_interval_closure_routed.append(False)
+
+    records["operational_forecast"] = operational_values
+    records["operational_forecast_available"] = pd.array(operational_available, dtype="boolean")
+    records["operational_unavailable_reason"] = operational_reasons
+    records["closure_routing_applied"] = pd.array(closure_routed, dtype="boolean")
+    records["q_low_signed"] = q_low_values
+    records["q_high_signed"] = q_high_values
+    records["raw_interval_pre_lower"] = raw_pre_lower
+    records["raw_interval_pre_upper"] = raw_pre_upper
+    records["raw_interval_lower_clipped"] = pd.array(raw_lower_clipped, dtype="boolean")
+    records["raw_interval_upper_clipped"] = pd.array(raw_upper_clipped, dtype="boolean")
+    records["raw_interval_lower"] = raw_lower
+    records["raw_interval_upper"] = raw_upper
+    records["raw_interval_width"] = raw_width
+    records["raw_interval_available"] = pd.array(raw_interval_available, dtype="boolean")
+    records["raw_interval_unavailable_reason"] = raw_interval_reasons
+    records["operational_interval_lower"] = op_lower
+    records["operational_interval_upper"] = op_upper
+    records["operational_interval_width"] = op_width
+    records["operational_interval_available"] = pd.array(op_interval_available, dtype="boolean")
+    records["operational_interval_unavailable_reason"] = op_interval_reasons
+    records["operational_interval_closure_routed"] = pd.array(
+        op_interval_closure_routed, dtype="boolean"
+    )
+    records["daily_lower_n"] = daily_lower_n
+    records["daily_lower_rank_1_indexed"] = daily_lower_rank
+    records["daily_lower_available"] = pd.array(daily_lower_available, dtype="boolean")
+    records["daily_lower_unavailable_reason"] = daily_lower_reason
+    records["daily_upper_n"] = daily_upper_n
+    records["daily_upper_rank_1_indexed"] = daily_upper_rank
+    records["daily_upper_available"] = pd.array(daily_upper_available, dtype="boolean")
+    records["daily_upper_unavailable_reason"] = daily_upper_reason
+    _add_calibration_metadata(records, quantiles)
+    prefixes = _build_prefixes(records, cumulative_lookup, quantiles)
+
+    raw_identity = _raw_issuance_identity(raw_issuance, raw_frame)
+    issuance_identity = _digest(
+        {
+            "raw_issuance_identity": raw_identity,
+            "schedule_identity": planned_open.identity,
+            "quantile_fixture_identity": quantiles.fixture_identity,
+            "origin": raw_issuance.origin.isoformat(),
+            "contract": "phase13-m3-synthetic-adapter-v1",
+        }
+    )
+    records["raw_issuance_identity"] = raw_identity
+    records["m3_issuance_identity"] = issuance_identity
+    records["quantile_fixture_identity"] = quantiles.fixture_identity
+    records["daily_fixture_sha256"] = quantiles.daily_fixture_sha256
+    records["cumulative_fixture_sha256"] = quantiles.cumulative_fixture_sha256
+    records["fresh_model_fit_identity"] = raw_issuance.fit_identity
+    records["transport_status"] = quantiles.transport.transport_status
+    return dict(
+        origin=raw_issuance.origin,
+        raw_issuance_identity=raw_identity,
+        issuance_identity=issuance_identity,
+        grid_identity=raw_issuance.grid_identity,
+        model_identity=raw_issuance.model_identity,
+        fresh_model_fit_identity=raw_issuance.fit_identity,
+        recipe_identity=raw_issuance.recipe_identity,
+        feature_schema_identity=raw_issuance.feature_schema_identity,
+        input_identities=raw_issuance.input_identities,
+        schedule_identity=planned_open.identity,
+        schedule_rule_id=planned_open.rule_id,
+        quantile_fixture_identity=quantiles.fixture_identity,
+        daily_fixture_sha256=quantiles.daily_fixture_sha256,
+        cumulative_fixture_sha256=quantiles.cumulative_fixture_sha256,
+        calibration_metadata=quantiles.calibration_metadata,
+        transport_status=quantiles.transport.transport_status,
+        records=records,
+        prefixes=prefixes,
+    )
 
 
 def load_canonical_fit_b_quantiles(*_args: object, **_kwargs: object) -> None:
@@ -905,6 +942,24 @@ def build_origin_frozen_targets(
     issuance: Phase13M3Issuance,
     anchors: SyntheticHistoricalMeanAnchorCollection,
 ) -> OriginFrozenStandingTargets:
+    """Build paired targets, retaining authoritative inputs for snapshot verification."""
+
+    records = _build_standing_target_records(issuance, anchors)
+    return OriginFrozenStandingTargets(
+        origin=issuance.origin,
+        store_ids=anchors.store_ids,
+        issuance_identity=issuance.issuance_identity,
+        anchor_collection_identity=anchors.identity,
+        records=records,
+        issuance=issuance,
+        anchors=anchors,
+    )
+
+
+def _build_standing_target_records(
+    issuance: Phase13M3Issuance,
+    anchors: SyntheticHistoricalMeanAnchorCollection,
+) -> pd.DataFrame:
     """Build the paired Phase 10 standing targets from origin-only synthetic inputs."""
 
     if not isinstance(issuance, Phase13M3Issuance):
@@ -936,7 +991,10 @@ def build_origin_frozen_targets(
             )
             baseline_available = schedule_known and anchor_available
             baseline_value = (
-                float(anchor.mean_open_sales_value) * int(open_days)
+                _finite_number(
+                    float(anchor.mean_open_sales_value) * int(open_days),
+                    "historical-mean standing target",
+                )
                 if baseline_available and anchor is not None
                 else None
             )
@@ -951,11 +1009,7 @@ def build_origin_frozen_targets(
             operational_available = (
                 bool(prefix["operational_forecast_available"].astype(bool).all()) and schedule_known
             )
-            demand = (
-                float(sum(float(value) for value in prefix["operational_forecast"]))
-                if operational_available
-                else None
-            )
+            demand = _sum_operational_prefix(prefix) if operational_available else None
             if not schedule_known:
                 point_reason = "unknown_schedule_in_protection_prefix"
             elif operational_available:
@@ -988,9 +1042,9 @@ def build_origin_frozen_targets(
                     if not q_available
                     else None
                 )
-                upper = max(0.0, float(demand) + float(q)) if forecast_available else None
-                safety = max(0.0, float(upper) - float(demand)) if forecast_available else None
-                forecast_target = max(float(demand), float(upper)) if forecast_available else None
+                upper, safety, forecast_target = (
+                    _cumulative_values(demand, q) if forecast_available else (None, None, None)
+                )
                 common = {
                     "Store": int(store),
                     "forecast_origin": issuance.origin,
@@ -1078,14 +1132,7 @@ def build_origin_frozen_targets(
                         "buffer_interpretation": "uncalibrated_synthetic_fit_b_transport",
                     }
                 )
-    records = pd.DataFrame.from_records(rows, columns=TARGET_COLUMNS)
-    return OriginFrozenStandingTargets(
-        origin=issuance.origin,
-        store_ids=anchors.store_ids,
-        issuance_identity=issuance.issuance_identity,
-        anchor_collection_identity=anchors.identity,
-        records=records,
-    )
+    return pd.DataFrame.from_records(rows, columns=TARGET_COLUMNS)
 
 
 def _validate_standing_target_snapshot(
@@ -1095,15 +1142,20 @@ def _validate_standing_target_snapshot(
     store_ids: tuple[int, ...],
     issuance_identity: str,
     anchor_collection_identity: str,
+    issuance: Phase13M3Issuance | None,
+    anchors: SyntheticHistoricalMeanAnchorCollection | None,
 ) -> pd.DataFrame:
     data = _exact_table(records, TARGET_COLUMNS, "origin-frozen standing targets")
     _reject_forbidden_columns(data, "standing targets")
     if data.empty:
         raise Phase13AdapterError("Standing target snapshot must not be empty.")
     try:
-        stores = pd.to_numeric(data["Store"], errors="raise").to_numpy(dtype=np.float64)
-        anchor_stores = pd.to_numeric(data["anchor_store_id"], errors="raise").to_numpy(
-            dtype=np.float64
+        stores = np.asarray(
+            [_integer(value, "target Store", minimum=1) for value in data["Store"]], dtype=np.int64
+        )
+        anchor_stores = np.asarray(
+            [_integer(value, "anchor Store", minimum=1) for value in data["anchor_store_id"]],
+            dtype=np.int64,
         )
         origins = pd.to_datetime(data["forecast_origin"], errors="raise")
         anchor_origins = pd.to_datetime(data["anchor_origin"], errors="raise")
@@ -1135,7 +1187,9 @@ def _validate_standing_target_snapshot(
         lead_time = _integer(row.lead_time, "target lead time", minimum=2)
         review_period = _integer(row.review_period, "target review period", minimum=0)
         protection = _integer(row.protection_period, "target protection period", minimum=1)
-        probability = _finite_number(row.buffer_probability, "target buffer probability")
+        probability = _exact_level(
+            row.buffer_probability, CUMULATIVE_LEVELS, "target buffer probability"
+        )
         if lead_time not in LEAD_TIMES or review_period != REVIEW_PERIOD:
             raise Phase13AdapterError("Standing target lead/review contract is incompatible.")
         if protection != lead_time + REVIEW_PERIOD:
@@ -1300,6 +1354,21 @@ def _validate_standing_target_snapshot(
     data["review_period"] = pd.to_numeric(data["review_period"]).astype("int64")
     data["protection_period"] = pd.to_numeric(data["protection_period"]).astype("int64")
     data["buffer_probability"] = pd.to_numeric(data["buffer_probability"]).astype("float64")
+    if not isinstance(issuance, Phase13M3Issuance) or not isinstance(
+        anchors, SyntheticHistoricalMeanAnchorCollection
+    ):
+        raise Phase13AdapterError("Standing target reconstruction requires typed source inputs.")
+    if (
+        origin != issuance.origin
+        or origin != anchors.origin
+        or store_ids != anchors.store_ids
+        or issuance_identity != issuance.issuance_identity
+        or anchor_collection_identity != anchors.identity
+    ):
+        raise Phase13AdapterError("Standing target metadata differs from its typed source inputs.")
+    _require_matching_frame(
+        data, _build_standing_target_records(issuance, anchors), "Standing targets"
+    )
     return data.reset_index(drop=True).copy(deep=True)
 
 
@@ -1323,6 +1392,9 @@ def _validate_m3_result_snapshot(
     transport_status: str,
     records: pd.DataFrame,
     prefixes: pd.DataFrame,
+    raw_issuance: RawForecastIssuance | None,
+    planned_open: SyntheticPlannedOpen | None,
+    quantiles: SyntheticFitBQuantileFixture | None,
 ) -> None:
     if origin not in SUPPORTED_ORIGINS:
         raise Phase13AdapterError("M3 result has an unsupported July origin.")
@@ -1468,6 +1540,43 @@ def _validate_m3_result_snapshot(
     if actual_prefix_keys != expected_prefix_keys:
         raise Phase13AdapterError("M3 prefix table omitted or added a frozen k/p stratum.")
 
+    if (
+        not isinstance(raw_issuance, RawForecastIssuance)
+        or not isinstance(planned_open, SyntheticPlannedOpen)
+        or not isinstance(quantiles, SyntheticFitBQuantileFixture)
+    ):
+        raise Phase13AdapterError("M3 reconstruction requires typed source inputs.")
+    expected = _build_m3_snapshot(raw_issuance, planned_open, quantiles)
+    metadata = {
+        "origin": origin,
+        "raw_issuance_identity": raw_issuance_identity,
+        "issuance_identity": issuance_identity,
+        "grid_identity": grid_identity,
+        "model_identity": model_identity,
+        "fresh_model_fit_identity": fresh_model_fit_identity,
+        "recipe_identity": recipe_identity,
+        "feature_schema_identity": feature_schema_identity,
+        "input_identities": input_identities,
+        "schedule_identity": schedule_identity,
+        "schedule_rule_id": schedule_rule_id,
+        "quantile_fixture_identity": quantile_fixture_identity,
+        "daily_fixture_sha256": daily_fixture_sha256,
+        "cumulative_fixture_sha256": cumulative_fixture_sha256,
+        "calibration_metadata": calibration_metadata,
+        "transport_status": transport_status,
+    }
+    if any(value != expected[name] for name, value in metadata.items()):
+        raise Phase13AdapterError("M3 metadata differs from its typed source inputs.")
+    _require_matching_frame(records, expected["records"], "M3 records")
+    _require_matching_frame(prefixes, expected["prefixes"], "M3 prefixes")
+
+
+def _require_matching_frame(actual: pd.DataFrame, expected: pd.DataFrame, name: str) -> None:
+    """Compare deterministic derivations exactly, including schema, order and nulls."""
+
+    if not actual.equals(expected):
+        raise Phase13AdapterError(f"{name} differ from the authoritative typed source inputs.")
+
 
 def _validate_raw_issuance(
     issuance: RawForecastIssuance,
@@ -1523,11 +1632,14 @@ def _validate_raw_issuance(
     if records.duplicated(["Store", "Date"]).any():
         raise Phase13AdapterError("M2 raw issuance contains duplicate Store/Date keys.")
     try:
-        store_values = pd.to_numeric(records["Store"], errors="raise").to_numpy(dtype=np.float64)
+        store_values = np.asarray(
+            [_integer(value, "M2 Store", minimum=1) for value in records["Store"]], dtype=np.int64
+        )
         dates = pd.to_datetime(records["Date"], errors="raise")
         origins = pd.to_datetime(records["forecast_origin"], errors="raise")
-        horizon_values = pd.to_numeric(records["horizon"], errors="raise").to_numpy(
-            dtype=np.float64
+        horizon_values = np.asarray(
+            [_integer(value, "M2 horizon", minimum=1) for value in records["horizon"]],
+            dtype=np.int64,
         )
     except (TypeError, ValueError, OverflowError) as exc:
         raise Phase13AdapterError("M2 raw issuance keys or horizons are malformed.") from exc
@@ -1592,14 +1704,16 @@ def _validate_raw_issuance(
     available = records["forecast_available"].astype(bool)
     numeric = ("raw_forecast", "unclipped_forecast", "recursive_state_value")
     for column in numeric:
+        if not records.loc[~available, column].map(_is_missing_scalar).all():
+            raise Phase13AdapterError(
+                "Unavailable M2 raw forecasts require genuine null diagnostics."
+            )
         values = pd.to_numeric(records[column], errors="coerce")
         if (
             values.loc[available].isna().any()
             or not np.isfinite(values.loc[available].to_numpy(dtype=np.float64)).all()
         ):
             raise Phase13AdapterError("Available M2 raw forecasts must have finite diagnostics.")
-        if values.loc[~available].notna().any():
-            raise Phase13AdapterError("Unavailable M2 raw forecasts cannot carry numeric values.")
     raw_values = pd.to_numeric(records.loc[available, "raw_forecast"], errors="raise")
     if raw_values.lt(0).any():
         raise Phase13AdapterError("M2 raw point forecasts cannot be negative.")
@@ -1704,7 +1818,6 @@ def _validate_transport(
 
 def _validated_daily_table(frame: pd.DataFrame) -> pd.DataFrame:
     data = _exact_table(frame, _DAILY_COLUMNS, "daily Fit B fixture")
-    _require_unique(data, ("fit_id", "horizon", "tail"), "daily Fit B fixture")
     expected_keys = {(horizon, tail) for horizon in range(1, HORIZON + 1) for tail in DAILY_TAILS}
     actual_keys: set[tuple[int, str]] = set()
     for index, row in data.iterrows():
@@ -1715,8 +1828,7 @@ def _validated_daily_table(frame: pd.DataFrame) -> pd.DataFrame:
         if horizon > HORIZON or tail not in DAILY_TAILS:
             raise Phase13AdapterError("Daily fixture has an unsupported exact key.")
         actual_keys.add((horizon, tail))
-        if _finite_number(row["tail_level"], "daily tail level") != DAILY_TAILS[tail]:
-            raise Phase13AdapterError("Daily fixture tail probability is incompatible.")
+        _exact_level(row["tail_level"], (DAILY_TAILS[tail],), "daily tail probability")
         if row["error_population"] != DAILY_ERROR_POPULATION:
             raise Phase13AdapterError("Daily fixture error population is incompatible.")
         if (
@@ -1735,7 +1847,8 @@ def _validated_daily_table(frame: pd.DataFrame) -> pd.DataFrame:
         data.at[index, "tail_level"] = DAILY_TAILS[tail]
         data.at[index, "n"] = n
         data.at[index, "rank_1_indexed"] = rank
-    if actual_keys != expected_keys:
+    _require_unique(data, ("fit_id", "horizon", "tail"), "daily Fit B fixture")
+    if actual_keys != expected_keys or len(data) != len(expected_keys):
         raise Phase13AdapterError("Daily fixture must contain exact horizons 1..14 and two tails.")
     by_horizon = data.set_index(["horizon", "tail"])
     for horizon in range(1, HORIZON + 1):
@@ -1759,14 +1872,13 @@ def _validated_daily_table(frame: pd.DataFrame) -> pd.DataFrame:
 
 def _validated_cumulative_table(frame: pd.DataFrame) -> pd.DataFrame:
     data = _exact_table(frame, _CUMULATIVE_COLUMNS, "cumulative Fit B fixture")
-    _require_unique(data, ("fit_id", "k", "p"), "cumulative Fit B fixture")
     expected_keys = {(k, p) for k in range(1, HORIZON + 1) for p in CUMULATIVE_LEVELS}
     actual_keys: set[tuple[int, float]] = set()
     for index, row in data.iterrows():
         if row["fit_id"] != FIT_B_ID:
             raise Phase13AdapterError("Cumulative fixture contains a non-Fit-B identity.")
         k = _integer(row["k"], "cumulative prefix", minimum=1)
-        p = _finite_number(row["p"], "cumulative probability")
+        p = _exact_level(row["p"], CUMULATIVE_LEVELS, "cumulative probability")
         if k > HORIZON or p not in CUMULATIVE_LEVELS:
             raise Phase13AdapterError("Cumulative fixture has an unsupported exact key.")
         actual_keys.add((k, p))
@@ -1794,7 +1906,8 @@ def _validated_cumulative_table(frame: pd.DataFrame) -> pd.DataFrame:
         data.at[index, "p"] = p
         data.at[index, "n"] = n
         data.at[index, "rank_1_indexed"] = rank
-    if actual_keys != expected_keys:
+    _require_unique(data, ("fit_id", "k", "p"), "cumulative Fit B fixture")
+    if actual_keys != expected_keys or len(data) != len(expected_keys):
         raise Phase13AdapterError(
             "Cumulative fixture must contain exact prefixes 1..14 and p in {0.90, 0.95, 0.98}."
         )
@@ -1857,6 +1970,8 @@ def _require_unique(frame: pd.DataFrame, columns: tuple[str, ...], name: str) ->
 def _daily_lookup(
     fixture: SyntheticFitBQuantileFixture,
 ) -> dict[tuple[int, str], dict[str, Any]]:
+    daily = fixture.daily_to_frame()
+    _require_unique(daily, ("fit_id", "horizon", "tail"), "daily Fit B lookup")
     return {
         (int(row.horizon), str(row.tail)): {
             "n": int(row.n),
@@ -1865,13 +1980,15 @@ def _daily_lookup(
             "available": bool(row.available),
             "unavailable_reason": row.unavailable_reason,
         }
-        for row in fixture.daily_to_frame().itertuples(index=False)
+        for row in daily.itertuples(index=False)
     }
 
 
 def _cumulative_lookup(
     fixture: SyntheticFitBQuantileFixture,
 ) -> dict[tuple[int, float], dict[str, Any]]:
+    cumulative = fixture.cumulative_to_frame()
+    _require_unique(cumulative, ("fit_id", "k", "p"), "cumulative Fit B lookup")
     return {
         (int(row.k), float(row.p)): {
             "n": int(row.n),
@@ -1880,7 +1997,7 @@ def _cumulative_lookup(
             "available": bool(row.available),
             "unavailable_reason": row.unavailable_reason,
         }
-        for row in fixture.cumulative_to_frame().itertuples(index=False)
+        for row in cumulative.itertuples(index=False)
     }
 
 
@@ -1964,11 +2081,7 @@ def _build_prefixes(
             schedule_known = bool(prefix["planned_open_known"].astype(bool).all())
             points_known = bool(prefix["operational_forecast_available"].astype(bool).all())
             components_available = schedule_known and points_known
-            demand = (
-                float(sum(float(value) for value in prefix["operational_forecast"]))
-                if components_available
-                else None
-            )
+            demand = _sum_operational_prefix(prefix) if components_available else None
             if not schedule_known:
                 component_reason = "planned_open_unknown"
             elif not points_known:
@@ -1990,9 +2103,9 @@ def _build_prefixes(
                     if not quantile["available"]
                     else None
                 )
-                upper = max(0.0, float(demand) + float(q)) if available else None
-                safety = max(0.0, float(upper) - float(demand)) if available else None
-                target = max(float(demand), float(upper)) if available else None
+                upper, safety, target = (
+                    _cumulative_values(demand, q) if available else (None, None, None)
+                )
                 output.append(
                     {
                         "Store": int(store),
@@ -2057,6 +2170,23 @@ def _table_sha256(
 ) -> str:
     data = frame.loc[:, columns].sort_values(list(sort_columns), kind="mergesort")
     return hashlib.sha256(_canonical_json_bytes(data.to_dict(orient="records"))).hexdigest()
+
+
+def _sum_operational_prefix(prefix: pd.DataFrame) -> float:
+    # Keep the accepted ascending-horizon Python sum; only reject arithmetic overflow.
+    total = sum(
+        _finite_number(value, "operational forecast") for value in prefix["operational_forecast"]
+    )
+    return _finite_number(total, "cumulative operational forecast")
+
+
+def _cumulative_values(demand: Any, quantile: Any) -> tuple[float, float, float]:
+    demand = _finite_number(demand, "cumulative operational forecast")
+    quantile = _finite_number(quantile, "cumulative signed quantile")
+    upper = max(0.0, _finite_number(demand + quantile, "cumulative upper turnover"))
+    safety = _finite_number(max(0.0, upper - demand), "cumulative safety stock")
+    target = _finite_number(max(demand, upper), "cumulative standing target")
+    return upper, safety, target
 
 
 def _raw_issuance_identity(issuance: RawForecastIssuance, records: pd.DataFrame) -> str:
@@ -2147,16 +2277,58 @@ def _optional_float(value: Any) -> float | None:
     return None if pd.isna(value) else _finite_number(value, "signed quantile")
 
 
-def _integer(value: Any, name: str, *, minimum: int) -> int:
-    if isinstance(value, (bool, np.bool_)):
-        raise Phase13AdapterError(f"{name} must be an integer.")
+def _exact_level(value: Any, allowed: tuple[float, ...], name: str) -> float:
+    """Accept fixed probability keys without rounding unsupported original values."""
+
+    number = _finite_number(value, name)
+    if number not in allowed:
+        raise Phase13AdapterError(f"{name} is incompatible with the frozen probability levels.")
     try:
-        numeric = float(value)
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise Phase13AdapterError(f"{name} must be an integer.") from exc
-    if not math.isfinite(numeric) or not numeric.is_integer() or numeric < minimum:
-        raise Phase13AdapterError(f"{name} must be an integer >= {minimum}.")
-    return int(numeric)
+        if isinstance(value, (str, Decimal)):
+            exact = Decimal(value.strip()) if isinstance(value, str) else value
+            matches = Fraction(exact) == Fraction(str(number))
+        elif isinstance(value, Rational):
+            matches = Fraction(value) == Fraction(str(number))
+        elif isinstance(value, (Real, np.floating)):
+            matches = value == number
+        else:
+            matches = False
+    except (TypeError, ValueError, OverflowError, InvalidOperation) as exc:
+        raise Phase13AdapterError(f"{name} must be an exact supported probability.") from exc
+    if not matches:
+        raise Phase13AdapterError(f"{name} must be an exact supported probability.")
+    return number
+
+
+def _integer(value: Any, name: str, *, minimum: int) -> int:
+    message = f"{name} must be an exact integer >= {minimum} within int64."
+    try:
+        if isinstance(value, (bool, np.bool_)):
+            raise ValueError
+        if isinstance(value, Integral):
+            integer = int(value)
+        elif isinstance(value, (str, Decimal)):
+            exact = Decimal(value.strip()) if isinstance(value, str) else value
+            if not exact.is_finite() or exact != exact.to_integral_value():
+                raise ValueError
+            if exact < minimum or exact > np.iinfo(np.int64).max:
+                raise ValueError
+            integer = int(exact)
+        elif isinstance(value, Rational):
+            if value.denominator != 1:
+                raise ValueError
+            integer = int(value)
+        elif isinstance(value, (Real, np.floating)):
+            if not math.isfinite(value) or value % 1 != 0:
+                raise ValueError
+            integer = int(value)
+        else:
+            raise ValueError
+        if not minimum <= integer <= np.iinfo(np.int64).max:
+            raise ValueError
+    except (TypeError, ValueError, OverflowError, InvalidOperation) as exc:
+        raise Phase13AdapterError(message) from exc
+    return integer
 
 
 def _is_finite_scalar(value: Any) -> bool:
