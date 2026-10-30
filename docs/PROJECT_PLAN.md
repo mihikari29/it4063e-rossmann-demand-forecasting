@@ -10,7 +10,7 @@ remaining deliverables and dependencies without authorizing their execution.
 |---|---|---|---|
 | Required | Safe analytical inputs | Approved source, named operator/custody procedure, preparation, independent verification and exact external bindings for each purpose | Specify and approve the real-input operation before any mixed-source read/hash. Fixture decoders cannot be used for real sources. |
 | Required | Store-level scenario comparison | [Scenario plan](../plans/active/wp1-scenario-forecast-evaluation.md); three frozen candidates, same development origins/common rows, coverage, support and failure accounting; reviewed interpretation | Authorize real inputs and analysis separately. Volume cohorts, competition bins and other new strata need their own accepted definitions. |
-| Required | Frozen final evaluation | [Final-evaluation plan](../plans/active/phase-13-sequential-final-evaluation.md); immutable issue-before-reveal records, two H14 blocks, LightGBM and contextual Seasonal Naive, scores/uncertainty/availability/monitoring | Independent Sol 6.1 review of uncertainty/target adapters, remaining implementation, provenance/custody preflight, measured/approved resources, separately authorized rehearsal, staging and chronological release |
+| Required | Frozen final evaluation | [Final-evaluation plan](../plans/active/phase-13-sequential-final-evaluation.md); immutable issue-before-reveal records, two H14 blocks, LightGBM and contextual Seasonal Naive, scores/uncertainty/availability/monitoring | Separately authorized M4 implementation, remaining M5–M8 milestones, real-input approval/provenance/custody and bindings, measured/approved resources, separately authorized development rehearsal, mechanical staging and chronological analytical release |
 | Required | Public API and dashboard | [Demo plan](../plans/active/public-course-demo.md); shared immutable approved bundle, two reachable read-only URLs, truthful synthetic labels, bounded queries and external release/shutdown checks | Independent Sol 6.1 corrective review and Milestone B closeout, then Milestone C exact-content/rights/security/resource/rollback/hosting/audience/window and owner release approval |
 | Required | Monitoring and human retraining review | Report/dashboard covering data quality, characteristics, delayed forecast performance and simulated business metrics; explicit populations, denominators and unavailable states | Implement the selected descriptive final-replay method only within its milestone. Broader numeric triggers need a separate approved development-only design and validation. |
 | Required | Inventory interpretation | Matched monetary service/cost/sensitivity results with missingness and terminal exposure; retain adverse development findings | Final evidence requires two independent origin-frozen H14 episodes and their resource/release gates. No rolling suffix calibration or new policy is implied. |
@@ -57,7 +57,8 @@ Phases 0–12 cover repository/data foundations, preparation/EDA, fixed features
 ladder, development selection, uncertainty, synthetic scenarios, inventory simulation and local
 services/API/dashboard. Their reusable methods remain in the [decisions](DECISIONS.md),
 [field contracts](DATA_DICTIONARY.md) and retained [method specifications](../plans/completed/).
-Phase 13 remains planned despite integrated fixture milestones; Phase 14 delivery is incomplete.
+Phase 13 remains PLANNED / NOT APPROVED after M3's scoped fixture technical closeout; M4–M8
+remain outstanding. Phase 14 delivery is incomplete.
 
 Follow the [workflow](WORKFLOW.md) for proportionate checks and review. Keep active plans until
 required review, integration and explicit closure; the roadmap grants no source, execution,

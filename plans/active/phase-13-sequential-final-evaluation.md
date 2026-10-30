@@ -1,8 +1,11 @@
 # Sequential Final Evaluation Protocol
 
-**Method selected; fixture milestones M1–M3 integrated; Phase 13 PLANNED / NOT APPROVED.**
-Independent Sol 6.1 review of M3 uncertainty/schedule/target adapters and all later milestones
-remain open. No final replay, real-source access, protected staging or analytical release is authorized.
+**Method selected; M1–M3 synthetic fixtures integrated; M3 fixture technical closeout complete;
+Phase 13 PLANNED / NOT APPROVED.**
+M3's corrective independent AI technical review is accepted. M4–M8 remain outstanding; M4 is
+the next dependent implementation and requires separate explicit authorization. Real-input
+preparation/custody and bindings remain unauthorized; no rehearsal, final evaluation, monitoring
+replay, protected staging/release or real final-evaluation results are established.
 
 ## Objective and dependencies
 
@@ -551,16 +554,32 @@ Before release, fixtures must demonstrate:
 
 ## 16. Proposed M1–M8 implementation milestones
 
-These milestones remain separately gated. M1–M3 are integrated; independent M3
-review and all later milestones remain open. This plan does not authorize real-data operations,
-source staging, rehearsal, or analytical release.
+M1–M3 synthetic fixture milestones are implemented/integrated. This records the scoped technical
+closeout of the M3 fixture milestone: [PR #59](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/59)
+integrated the corrective repair after separate GPT-6.1 Sol xhigh ACCEPT for M3-R01–R06, and
+[Quality CI](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/40896230926)
+passed on Python 3.12 and 3.14. Sol acceptance is AI technical review, separate from human GitHub
+approval. Fixture results establish no real final-evaluation evidence. M4–M8 retain their separate
+implementation/review gates; this closeout authorizes no real-data operation, staging, rehearsal,
+analytical release or M4 work.
+
+Retained nonblocking follow-up considerations:
+
+- **M3-R07:** object Boolean `False` may compare equal to integer `0` in a reconstructed
+  `forecast_was_clipped` diagnostic; the review found no monetary, availability or decision change.
+- **M3-R08:** a zero-dimensional ndarray null fails closed with generic `TypeError` rather than
+  `Phase13AdapterError`.
+- Snapshot reconstruction requires validated typed parents; future persisted reconstruction
+  cannot rely on serialized metadata and tables alone.
+- Small/medium synthetic measurements showed approximately 2× reconstruction runtime. Full-roster
+  resource feasibility remains unestablished. These observations add no new M4 approval gate.
 
 | Milestone | Inputs → output | Tests and dependency gate |
 |---|---|---|
 | **M1 — Synthetic contract/providers** | Integrated: typed contracts and default-deny providers against synthetic fixtures only. Fixed role-to-field schemas are checked before reads; Block 2 requires an in-memory Block 1 handoff registered by the synthetic outcome provider and bound to the exact covariate identity/provenance; non-null planned Open is checked against the weekly rule. | Synthetic-only spies reject unexpected fields without reads; forged Block 1 collections fail; exact chronological 14-day handoff, provider/store/grid identity, provenance and copy safety are checked; contradictory schedule values fail while unknowns and missing keys remain allowed. No real source, local data provider, protected path, staging, ACL, or real outcome access. |
 | **M2 — Fresh-fit issuer** | Integrated: frozen refit recipe and fixtures → serialized model/adapter plus label-free H14 ledgers for the two existing origins. | Exact params, fit origin/cutoff, categories, future-mutation invariance, repeat/save-load, and overlapping training/history Sales consistency. No extra origin. Requires M1. |
-| **M3 — Fit B/schedule/target adapter** | Integrated: synthetic Fit B-shaped fixtures and typed planned-Open schedule → distinct raw/operational uncertainty views and frozen paired H14 targets. | Exact signed quantile ranks/sample floors; calibration/model fit identity separation; no fitting, interpolation, borrowing or fallback; closure/unknown schedule routing; exact Phase 10 targets; both origins. Requires M2. |
-| **M4 — Immutable publication/replay state** | Issued blocks and safe inventory inputs → manifest-last publication, receipt, release journal and paired daily checkpoints. | Two-block chronology, A2 boundary (A1 optional), paired atomicity, crash/restart/tamper/idempotency. Requires M3. |
+| **M3 — Fit B/schedule/target adapter** | Technically reviewed/integrated; scoped fixture milestone closed: synthetic Fit B-shaped fixtures and typed planned-Open schedule → distinct raw/operational uncertainty views and frozen paired H14 targets. | Accepted corrective review includes typed-parent snapshot integrity. Exact signed quantile ranks/sample floors; calibration/model fit identity separation; no fitting, interpolation, borrowing or fallback; closure/unknown schedule routing; exact Phase 10 targets; both origins. Requires M2. |
+| **M4 — Immutable publication/replay state** | Issued blocks and safe inventory inputs → manifest-last publication, receipt, release journal and paired daily checkpoints. | Two-block chronology, A2 boundary (A1 optional), paired atomicity, crash/restart/tamper/idempotency. Requires M3 and separate explicit M4 authorization. |
 | **M5 — Metrics/forecast monitoring** | Approved populations/windows → post-release forecast/uncertainty summaries and deterministic integrity/data-quality alerts. | Missing/zero denominators; daily/partial 7/14-day windows; origin/horizon labels; no numeric statistical alert or adaptation. Requires M4. |
 | **M6 — Bounded inventory evaluation** | Accepted June fixtures and synthetic Phase 9 contracts → July-origin context schema, paired targets, incremental state, full panel, inventory KPIs and terminal accounting. | Section 15 oracles; counts by status; deterministic bounded partitions; resource gate passed or stop for scope review. No July context generation, real-data simulation or protected provider during fixture implementation. Requires M0 and separate M6 authorization. |
 | **M7 — Integration and independent review** | M1–M6 → fixture-only integrated package, provenance, resource report and review evidence. | Locked Windows/Python 3.14 reference and supported Python 3.12/3.14 checks as approved; docs checks; Phase 7–10 unchanged; full panel volume and declared resource gate. Requires applicable approvals. |
@@ -589,8 +608,9 @@ Remaining implementation begins with synthetic fixtures only under its separate 
 
 ## Implementation and release gates
 
-1. **Pending independent review:** Sol 6.1 must assess the integrated M3 uncertainty/schedule
-   routing, paired targets, fixture evidence and boundaries before dependent milestones.
+1. **M3 technical gate satisfied:** Corrective independent AI acceptance, integration and scoped
+   fixture closeout are recorded above. M4 is the next dependent implementation and requires its
+   own explicit authorization.
 2. **Source/preparation preflight:** Establish approved identities, availability assumptions,
    safe preparation and custody before any real-source read/hash. Verify existing partition
    provenance from records without opening its contents. A projection or binding grants no access.
