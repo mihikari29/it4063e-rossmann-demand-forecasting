@@ -1,9 +1,11 @@
 # Sequential Final Evaluation Protocol
 
 **Method selected; M1–M3 synthetic fixtures integrated; M3 fixture technical closeout complete;
+M4-A synthetic publication technically reviewed/integrated, scoped slice closed;
 Phase 13 PLANNED / NOT APPROVED.**
-M3's corrective independent AI technical review is accepted. M4–M8 remain outstanding; M4 is
-the next dependent implementation and requires separate explicit authorization. Real-input
+M3 and M4-A corrective independent AI technical reviews are accepted. Overall M4 is incomplete;
+M4-B/C are the next dependent implementation slices, both unimplemented and unauthorized.
+M5–M8 remain outstanding and separately gated. Real-input
 preparation/custody and bindings remain unauthorized; no rehearsal, final evaluation, monitoring
 replay, protected staging/release or real final-evaluation results are established.
 
@@ -18,9 +20,10 @@ episodes. [Decisions](../../docs/DECISIONS.md) owns the accepted method; the
 
 Reuse the origin-parameterized training/recursive APIs in `forecasting/lightgbm.py`, the frozen
 refit recipe in `forecasting/model_selection.py`, shared metrics, and the implemented `phase13/`
-contracts/providers/issuer/adapters. Development runners still stop at July 3; the uncertainty
+contracts/providers/issuer/adapters/publication. Development runners still stop at July 3; the uncertainty
 estimator recalibrates and the batch simulator restricts June origins, so none is an unchanged
-final-replay entrypoint. Missing publication/journal/monitoring/incremental inventory work remains gated.
+final-replay entrypoint. M4-A covers synthetic selected-model publication only; complete real block
+publication, release journaling, monitoring and incremental inventory/recovery remain gated.
 
 Fit B daily development coverage was 91.26%, below nominal 95%; recorded inventory cost differences
 were unfavorable. Earlier full-source descriptive exposure is disclosed in
@@ -245,10 +248,19 @@ grid, apply approved schedule routing separately, and validate keys/schema/avail
 raw and operational records as distinct fields and outputs.
 
 Publication is a commit point. Write to a unique staging location; reread and validate every
-output, recompute allowed output hashes, write the manifest last, then atomically publish an
-immutable issuance directory and receipt. Only a verified receipt unlocks the first day-release
-request. If a complete block cannot be issued, stop before release. A published block is never
-rewritten after outcomes become available.
+output, recompute allowed output hashes, write the manifest last, then atomically rename each
+immutable issuance/receipt directory without replacement. M4-A's two directory renames are not
+one transaction.
+A verified complete-block receipt is required before the first day-release request; every other
+prerequisite and separate staging/analytical-release authorization still applies in the order
+specified in Section 9. If a complete block cannot be issued, stop before release. A published
+block is never rewritten after outcomes become available.
+
+M4-A's `release_eligible=false` receipt is necessary publication-integrity evidence for its
+validated synthetic selected-model H14 package, not sufficient authorization for any outcome
+release. It does not establish publication or readiness of Seasonal Naive contextual issuance,
+complete real inventory inputs or initial states, a durable chronological release journal,
+atomic paired daily checkpoints, protected-source custody or analytical-release authorization.
 
 ## 8. Frozen Fit B uncertainty application
 
@@ -516,7 +528,9 @@ presupposing favorable July performance.
 
 Fail closed before publication on wrong base/recipe/hash, unsafe path, unexpected key/schema, future-row cutoff, covariate provenance error, unsupported required input, fit exception, or incomplete forecast grid. No baseline fallback, partial block issue, or silent null-to-zero conversion. Preserve native row-level unavailability only where the accepted forecaster permits it and record reasons.
 
-Before publication, discard staging output and permit a clean retry only after validation against the same frozen configuration and input identities. After publication, never refit or rewrite that issue; resume from verified issue receipt and last complete daily checkpoint. If a crash occurs after a durable release_intent but before evaluation/checkpoint completes, treat the date as potentially accessed; the intent cannot be silently rolled back and does not prove whether content was mechanically read or analytically revealed. Block later dates. On restart, reconcile the same block/date/sequence, issue, provider, separate staging authorization, and projection identity/provenance with the trusted operator. For an existing partition, verify documented staging authorization and provenance from records without opening its contents. Resume only from that authorized projection and intent after per-day intent and separate analytical-release authorization; if identity or exposure state is uncertain, mark the run incomplete and require an explicit recovery decision. Never infer that access did not occur merely because no checkpoint exists.
+Before publication, retain failed M4-A staging inert for controlled/manual reconciliation; permit
+a fresh staging attempt only after validation against the same frozen configuration and input
+identities. After publication, never refit or rewrite that issue; resume from verified issue receipt and last complete daily checkpoint. If a crash occurs after a durable release_intent but before evaluation/checkpoint completes, treat the date as potentially accessed; the intent cannot be silently rolled back and does not prove whether content was mechanically read or analytically revealed. Block later dates. On restart, reconcile the same block/date/sequence, issue, provider, separate staging authorization, and projection identity/provenance with the trusted operator. For an existing partition, verify documented staging authorization and provenance from records without opening its contents. Resume only from that authorized projection and intent after per-day intent and separate analytical-release authorization; if identity or exposure state is uncertain, mark the run incomplete and require an explicit recovery decision. Never infer that access did not occur merely because no checkpoint exists.
 
 Release/evaluation failure stops the next release until reconciled. Idempotent replay of the same authorized date identity returns its existing checkpoint; changed duplicate or out-of-order data aborts. Mark incomplete runs explicitly and do not calculate complete-block metrics from them.
 
@@ -559,9 +573,20 @@ closeout of the M3 fixture milestone: [PR #59](https://github.com/mihikari29/it4
 integrated the corrective repair after separate GPT-6.1 Sol xhigh ACCEPT for M3-R01–R06, and
 [Quality CI](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/40896230926)
 passed on Python 3.12 and 3.14. Sol acceptance is AI technical review, separate from human GitHub
-approval. Fixture results establish no real final-evaluation evidence. M4–M8 retain their separate
-implementation/review gates; this closeout authorizes no real-data operation, staging, rehearsal,
-analytical release or M4 work.
+approval. Fixture results establish no real final-evaluation evidence. This M3 closeout authorizes
+no real-data operation, staging, rehearsal or analytical release.
+
+**M4-A scoped technical closeout:** [PR #61](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/pull/61)
+integrated synthetic immutable issuance publication after separate GPT-6.1 Sol xhigh ACCEPT for
+M4A-R01–R03. Its [Quality CI](https://github.com/mihikari29/it4063e-rossmann-demand-forecasting/actions/runs/41028935726)
+passed on Python 3.12 and 3.14. The implemented slice publishes a validated synthetic selected-model
+H14 issuance, its uncertainty views and both origin-frozen standing-target policies using
+authoritative typed-parent reconstruction, immutable manifest-last publication and an independently
+bound verifiable receipt. It preserves deterministic serialization,
+conflict/idempotency behavior and fail-closed restart verification, with `release_eligible=false`.
+This records technical closeout of that synthetic slice only. Independent AI acceptance is
+separate from human GitHub approval. Overall M4 remains incomplete; M4-B/C are not implemented or
+authorized, and M5–M8 remain outstanding. No real block publication or outcome release is established.
 
 Retained nonblocking follow-up considerations:
 
@@ -574,12 +599,26 @@ Retained nonblocking follow-up considerations:
 - Small/medium synthetic measurements showed approximately 2× reconstruction runtime. Full-roster
   resource feasibility remains unestablished. These observations add no new M4 approval gate.
 
+Retained M4-A limitations:
+
+- Failed staging directories remain inert for controlled/manual reconciliation; a successful
+  publication also retains its empty staging directory.
+- Two Windows symlink-privilege skips leave some portable filesystem behavior unverified. Local
+  identity checks do not establish protection from a hostile administrator.
+- Windows power-loss durability and cross-directory transactionality are not established.
+- Full-roster runtime, peak memory and output feasibility remain unmeasured; the existing M3
+  reconstruction overhead remains relevant.
+- The synthetic model-state handoff does not establish real trained-model custody provenance.
+
 | Milestone | Inputs → output | Tests and dependency gate |
 |---|---|---|
 | **M1 — Synthetic contract/providers** | Integrated: typed contracts and default-deny providers against synthetic fixtures only. Fixed role-to-field schemas are checked before reads; Block 2 requires an in-memory Block 1 handoff registered by the synthetic outcome provider and bound to the exact covariate identity/provenance; non-null planned Open is checked against the weekly rule. | Synthetic-only spies reject unexpected fields without reads; forged Block 1 collections fail; exact chronological 14-day handoff, provider/store/grid identity, provenance and copy safety are checked; contradictory schedule values fail while unknowns and missing keys remain allowed. No real source, local data provider, protected path, staging, ACL, or real outcome access. |
 | **M2 — Fresh-fit issuer** | Integrated: frozen refit recipe and fixtures → serialized model/adapter plus label-free H14 ledgers for the two existing origins. | Exact params, fit origin/cutoff, categories, future-mutation invariance, repeat/save-load, and overlapping training/history Sales consistency. No extra origin. Requires M1. |
 | **M3 — Fit B/schedule/target adapter** | Technically reviewed/integrated; scoped fixture milestone closed: synthetic Fit B-shaped fixtures and typed planned-Open schedule → distinct raw/operational uncertainty views and frozen paired H14 targets. | Accepted corrective review includes typed-parent snapshot integrity. Exact signed quantile ranks/sample floors; calibration/model fit identity separation; no fitting, interpolation, borrowing or fallback; closure/unknown schedule routing; exact Phase 10 targets; both origins. Requires M2. |
-| **M4 — Immutable publication/replay state** | Issued blocks and safe inventory inputs → manifest-last publication, receipt, release journal and paired daily checkpoints. | Two-block chronology, A2 boundary (A1 optional), paired atomicity, crash/restart/tamper/idempotency. Requires M3 and separate explicit M4 authorization. |
+| **M4 — Immutable publication/replay state** | **Incomplete:** issued blocks and safe inventory inputs → manifest-last publication, receipt, release journal and paired daily checkpoints. Only the M4-A synthetic slice is closed. | Two-block chronology, A2 boundary (A1 optional), paired atomicity, crash/restart/tamper/idempotency. Requires M3; M4-B/C retain separate explicit authorization gates. |
+| **M4-A — Synthetic immutable publication** | Technically reviewed/integrated; scoped synthetic slice closed: validated selected-model H14 issuance → immutable publication and independently bound receipt. | Authoritative typed parents, deterministic serialization, conflicts/idempotency and fail-closed restart verification; `release_eligible=false`. Requires M3; no outcome-release authority. |
+| **M4-B — Chronological release journal** | Not implemented or authorized: chronological daily release-intent/release journal. | Separate explicit implementation authorization required; retain Section 9 ordering and access gates. |
+| **M4-C — Checkpoint/recovery integration** | Not implemented or authorized: checkpoint and recovery integration. | Separate explicit implementation authorization required; retain paired-checkpoint and recovery contracts. |
 | **M5 — Metrics/forecast monitoring** | Approved populations/windows → post-release forecast/uncertainty summaries and deterministic integrity/data-quality alerts. | Missing/zero denominators; daily/partial 7/14-day windows; origin/horizon labels; no numeric statistical alert or adaptation. Requires M4. |
 | **M6 — Bounded inventory evaluation** | Accepted June fixtures and synthetic Phase 9 contracts → July-origin context schema, paired targets, incremental state, full panel, inventory KPIs and terminal accounting. | Section 15 oracles; counts by status; deterministic bounded partitions; resource gate passed or stop for scope review. No July context generation, real-data simulation or protected provider during fixture implementation. Requires M0 and separate M6 authorization. |
 | **M7 — Integration and independent review** | M1–M6 → fixture-only integrated package, provenance, resource report and review evidence. | Locked Windows/Python 3.14 reference and supported Python 3.12/3.14 checks as approved; docs checks; Phase 7–10 unchanged; full panel volume and declared resource gate. Requires applicable approvals. |
@@ -608,15 +647,16 @@ Remaining implementation begins with synthetic fixtures only under its separate 
 
 ## Implementation and release gates
 
-1. **M3 technical gate satisfied:** Corrective independent AI acceptance, integration and scoped
-   fixture closeout are recorded above. M4 is the next dependent implementation and requires its
-   own explicit authorization.
+1. **M3/M4-A technical gates satisfied:** Corrective independent AI acceptance, integration and
+   scoped synthetic closeouts are recorded above. Overall M4 is incomplete; M4-B/C are the next
+   dependent implementation slices and each requires separate explicit authorization.
 2. **Source/preparation preflight:** Establish approved identities, availability assumptions,
    safe preparation and custody before any real-source read/hash. Verify existing partition
    provenance from records without opening its contents. A projection or binding grants no access.
-3. **Remaining fixture milestones:** Separately authorize immutable publication/replay state,
-   metrics/monitoring, incremental paired inventory and integration/recovery review. M1–M3 grant
-   no canonical artifact loading, real provider, durable publication or M4 authority.
+3. **Remaining fixture milestones:** Separately authorize M4-B chronological release journaling,
+   M4-C checkpoint/recovery integration, metrics/monitoring, incremental paired inventory and
+   integration/recovery review. M1–M3 and M4-A grant no canonical artifact loading, real provider,
+   real issuance or outcome-release authority.
 4. **Resource and development rehearsal:** Measure and approve full-panel memory/runtime/output
    budgets and separately authorize origin-safe development rehearsal. Preserve canonical artifacts.
 5. **Mechanical staging:** For each new date projection, persist complete block issuance and its
