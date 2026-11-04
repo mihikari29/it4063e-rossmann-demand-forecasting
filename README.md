@@ -7,7 +7,8 @@ compare inventory-value policies under explicit synthetic operating assumptions.
 project combines descriptive, predictive and prescriptive analytics in a reproducible Python workflow.
 
 [Proposal](docs/PROPOSAL.md) · [Results and status](docs/PROGRESS.md) ·
-[Remaining deliverables](docs/PROJECT_PLAN.md) — [Data Dictionary](docs/DATA_DICTIONARY.md)
+[Remaining deliverables](docs/PROJECT_PLAN.md) — [Data Dictionary](docs/DATA_DICTIONARY.md) ·
+[Live Demo](https://huggingface.co/spaces/hieu-nguyen2208/rossmann-sales-forecasting)
 
 ## Business problem and objectives
 
@@ -124,6 +125,14 @@ The separate `demo_streamlit_app.py` requires both `ROSSMANN_DEMO_PROFILE=contro
 and an independently supplied `ROSSMANN_DEMO_MANIFEST_SHA256` pin. Its controlled synthetic
 examples demonstrate interface behavior only. See the [demo plan](plans/active/public-course-demo.md)
 and [release contract](docs/PUBLIC_DEMO_RELEASE_CONTRACT.md).
+
+### Public Cloud Demonstration (Hugging Face Spaces)
+
+A live cloud demonstration portal is accessible on Hugging Face Spaces:
+- **Public Space:** [https://huggingface.co/spaces/hieu-nguyen2208/rossmann-sales-forecasting](https://huggingface.co/spaces/hieu-nguyen2208/rossmann-sales-forecasting)
+- **Direct WebApp:** [https://hieu-nguyen2208-rossmann-sales-forecasting.static.hf.space](https://hieu-nguyen2208-rossmann-sales-forecasting.static.hf.space)
+- **Evidently AI Monitoring Report:** [https://hieu-nguyen2208-rossmann-sales-forecasting.static.hf.space/model_monitoring_report.html](https://hieu-nguyen2208-rossmann-sales-forecasting.static.hf.space/model_monitoring_report.html)
+- **Executed Monitoring Notebook:** [notebooks/03_model_monitoring_evidently.ipynb](notebooks/03_model_monitoring_evidently.ipynb)
 
 ## Repository structure
 
