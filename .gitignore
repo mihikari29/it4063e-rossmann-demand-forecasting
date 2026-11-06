@@ -57,6 +57,8 @@ mlruns/
 
 # Generated reports and local application output
 outputs/
+reports/*.html
+reports/*.json
 reports/generated/
 reports/validation/**
 reports/eda/**

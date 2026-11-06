@@ -35,6 +35,11 @@ api = [
 dashboard = [
     "streamlit>=1.50,<2",
 ]
+reporting = [
+    "reportlab>=4.4,<5",
+    "pypdfium2>=5,<6",
+    "python-pptx>=1.0,<2",
+]
 
 [project.scripts]
 rossmann-acquire = "rossmann_forecasting.data.acquisition:cli_main"
