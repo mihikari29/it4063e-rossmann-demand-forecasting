@@ -398,3 +398,15 @@ specific owner approval for hosting, audience and window. No public listener, bu
 source-derived release, deployment or URL is authorized by this objective. Current localhost rules
 remain effective. Synthetic content proves interfaces/arithmetic, not Rossmann history, accuracy,
 calibrated uncertainty, physical quantities, stockouts, savings, service or production readiness.
+
+## ADR-031 — Local submission corrections and descriptive monitoring adapter
+
+**Accepted for the owner's master-task implementation scope.** The
+[integration plan](../plans/active/course-submission-integration.md) records the bounded design:
+replace target-derived pseudo-predictions and fabricated HTTP/UI results; reuse typed synthetic
+services; add an in-memory development-only delayed-label monitoring adapter and reproducible
+synthetic reports. Descriptive calendar-window metrics and feature quartiles/frequencies have no
+numeric alarm, KS significance, persistence or automatic retraining claim. This does not activate
+the broader proposed trigger policy, Phase 13 M5, source access or external deployment.
+Local launch/probes and academic draft artifacts are authorized; scientific recipes, independent
+reviews, human ownership and separate data/release gates remain effective.

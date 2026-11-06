@@ -12,14 +12,26 @@ and the runtime's pinned identities retain machine-readable provenance.
 | Analytics and local applications | Phases 0–12 complete: acquisition/validation, preparation/EDA, features, three-model comparison/selection, uncertainty, scenarios, inventory and local services/API/dashboard | Final course delivery is not complete. |
 | Scenario comparison | Common population, metrics, restricted fixture verifier, fixture preparation/independent reference verification and copy-safe provider bridge reviewed/integrated | No real-data scenario experiment; real preparation/verification/binding and analysis remain unauthorized. Volume segmentation remains blocked. |
 | Weekly STL | Diagnostic/provider/preparation reviewed and integrated; one-use custodian readiness corrections integrated, focused Sol 6.1 re-review unrecorded | No real development bundle, provider binding, Rossmann STL run or published STL findings |
-| Controlled synthetic demo | Bundle, provider/services, FastAPI and separate Streamlit dashboard reviewed/integrated; public demonstration portal deployed and verified live on Hugging Face Spaces (`https://huggingface.co/spaces/hieu-nguyen2208/rossmann-sales-forecasting`) | Render hosting release gate; local canonical runtime boundary unchanged |
+| Controlled synthetic demo | Bundle, provider/services, FastAPI and separate Streamlit dashboard reviewed/integrated; minor unit-label/test corrections integrated. Local two-service launcher and real HTTP probe implemented in the submission candidate | Corrective acceptance and Milestone B closeout remain separate; staging/release Milestone C unauthorized. Historical external HF Space is static, not evidence of public API delivery |
 | Final evaluation | M1–M3 synthetic fixture milestones integrated; M3 technical closeout complete. M4-A synthetic immutable issuance publication implemented, accepted by independent AI technical review and integrated; scoped M3/M4-A technical closeouts recorded in [the active protocol](../plans/active/phase-13-sequential-final-evaluation.md) | Overall M4 incomplete: M4-B/C unimplemented and unauthorized; M5–M8 outstanding and separately gated. Phase 13 PLANNED / NOT APPROVED. Real-input preparation/custody and bindings remain unauthorized; no rehearsal, real issuance, protected release, release journal, recovery checkpoints, monitoring replay or final-evaluation results established |
-| Reporting/public delivery | Development evidence, local demonstration, live Hugging Face Space portal, Evidently monitoring report and executed notebook (`notebooks/03_model_monitoring_evidently.ipynb`) available | Final PDF report and presentation slides |
+| Reporting/public delivery | Reviewed development evidence; corrected descriptive synthetic monitoring adapter/report/notebook; academic PDF, editable 15-slide PPTX, source and local packaging implementation | Real monitoring/final replay, approved public API/dashboard URLs and final academic acceptance remain incomplete |
 
 The protected period is **2015-07-04–2015-07-31**. Earlier descriptive exposure is disclosed in
 [EDA findings](EDA_FINDINGS.md); it authorizes no new reads or model selection. Current runtime
-exposure remains localhost. [Remaining deliverables](PROJECT_PLAN.md) and the three
+exposure remains localhost. [Remaining deliverables](PROJECT_PLAN.md) and the
 [active plans](../plans/active/) own the next approvals.
+
+The [local submission candidate](SUBMISSION_READINESS.md) replaces the later static mock/API and
+target-derived pseudo-LightGBM monitoring with typed local services and a descriptive development/
+synthetic adapter. Independent Sol 6.1 review accepted that corrected scope. Isolated locked
+Python 3.12/3.14 suites each passed 2,576 tests with 10 documented skips and one existing warning;
+current-source focused checks each passed 42 tests. Local HTTP smoke, notebook execution and
+seven-page draft PDF export/render/visual QA succeeded. Complete presentation source is available;
+The continuation adds a python-pptx exporter, actual editable deck and PowerPoint rendering,
+separate synthetic monitoring workspace, allowlisted deployment candidate and submission staging.
+Prior test counts above remain historical; current commit/run identities belong to the new
+structured handoff. These are local candidate results, not main integration,
+whole Milestone B closure, final analytical evidence, academic acceptance or public release.
 
 Integrated robustness corrections reject invalid LightGBM history/model origins before recursive
 prediction, validate original inventory periods/horizons before narrowing, and enforce source Store,

@@ -207,9 +207,25 @@ comparisons, and KPI denominators. Both must be locked before the authorized
 final replay. Historical Sales is held unchanged across policies; synthetic stress paths remain
 separate, and results cannot establish actual Rossmann savings or stockout rates.
 
+## F. Descriptive monitoring records
+
+[The monitoring contract](MONITORING.md) defines exact field names, date/type/identity validation,
+availability and populations. Forecast records retain Store/origin/target/horizon, raw prediction
+or null, issue/training/feature-availability dates, model/evidence identity and upstream issuance
+ID/hash. Labels retain Store/target, availability date, actual monetary Sales or null and source
+Open. A hash is a reference, not authenticated custody or source-access authority.
+
+Requested, observed, missing, open-label, forecast-available and eligible counts have separate
+denominators. MAE/RMSE remain monetary turnover units, MAPE percent and WAPE a ratio. Closed
+positive Sales conflicts are reported without altering observations. Calendar windows retain
+nominal/effective days, partial flags and origin/horizon/Store strata. Feature quantiles/frequencies
+are descriptive, with missingness and distinct-value counts; no p-value or numeric alarm exists.
+Evidence availability states are not system health. Controlled synthetic fixtures cannot be
+interpreted as actual Rossmann forecasts or production drift. Phase 13 monitoring remains separate.
+
 ## Validation Notes
 
 The real-variable observations are tied to the validated 2026-10-05 source hashes recorded in
 [Data Acquisition](DATA_ACQUISITION.md) and [Data Validation](DATA_VALIDATION.md). Derived features
-in Section B are Phase 3 outputs, not source variables. Synthetic variables remain proposed
-simulation inputs and must never be presented as observed Rossmann data.
+in Section B are Phase 3 outputs, not source variables. Synthetic variables remain declared
+simulation assumptions and must never be presented as observed Rossmann data.
