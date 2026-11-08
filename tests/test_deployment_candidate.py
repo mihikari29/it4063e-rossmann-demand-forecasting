@@ -25,6 +25,10 @@ def test_candidate_is_allowlisted_synthetic_pinned_and_never_overwritten(tmp_pat
     assert config.count("plan: free") == 2
     assert config.count("autoDeploy: false") == 2
     assert manifest["configuration"]["manifest_pin"] in config
+    # Candidate packaging must retain the reviewed error-disclosure and watcher controls.
+    assert (output / ".streamlit/config.toml").read_bytes() == (
+        Path.cwd() / ".streamlit/config.toml"
+    ).read_bytes()
     for name, pin in manifest["output_sha256"].items():
         assert hashlib.sha256((output / name).read_bytes()).hexdigest() == pin
     monitoring = json.loads((output / "monitoring/monitoring_summary.json").read_text())

@@ -52,6 +52,7 @@ _PACKAGE_FILES = (
 SOURCE_FILES = (
     "pyproject.toml",
     "uv.lock",
+    ".streamlit/config.toml",
     "demo_streamlit_app.py",
     "course_demo_app.py",
     "scripts/run_demo.py",
@@ -125,14 +126,6 @@ def prepare_deployment_candidate(output: Path, root: Path) -> dict:
         "# Non-secret fixture smoke configuration; not release approval.\n"
         "ROSSMANN_DEMO_PROFILE=controlled_synthetic_demo\n"
         f"ROSSMANN_DEMO_MANIFEST_SHA256={pin}\n",
-        encoding="utf-8",
-    )
-    settings = output / ".streamlit/config.toml"
-    settings.parent.mkdir()
-    settings.write_text(
-        "[server]\nheadless = true\nenableStaticServing = false\n"
-        "enableCORS = true\nenableXsrfProtection = true\n"
-        "[browser]\ngatherUsageStats = false\n",
         encoding="utf-8",
     )
     result = {

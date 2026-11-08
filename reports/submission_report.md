@@ -7,8 +7,9 @@ Instructor: Dr. Bui Quoc Trung
 Team: Pham Le Minh Quang (20235554); Tran Quoc Tuan (20235569); Vo Ta Quang Nhat (20225454);
 Nguyen Trung Hieu (202416689); Nguyen Gia Minh (202400111)
 
-Submission draft - November 6, 2026. Development evidence is retained from reviewed repository
-records. Final holdout, public release and human academic acceptance remain pending.
+Submission draft - November 8, 2026. Development results are retained from reviewed repository
+records; WP-03/WP-04 supply synthetic software evidence. This development-only draft is for
+team review, not final acceptance. Public release and final holdout evaluation remain pending.
 
 ## Abstract
 
@@ -21,12 +22,13 @@ the fixed LightGBM recipe; these are development scores, not final holdout or pr
 Daily and cumulative empirical uncertainty are distinct outputs. The forecast-driven inventory
 policy has higher simulated holding-plus-shortfall cost than the baseline in the accepted base
 and conditional historical examples. This adverse finding limits the business recommendation.
-Read-only local API/dashboard services expose saved artifacts, while a separate controlled
-synthetic profile demonstrates interfaces. Corrected monitoring pairs independently issued
-predictions with subsequently available labels and reports descriptive calendar-window metrics.
-The July 4-31 final evaluation and public two-service deployment remain gated. [1-4]
+WP-04 ran the controlled synthetic FastAPI/Streamlit candidate in an isolated Linux environment,
+including HTTP, live WebSocket, restart and failure checks. Its saved paths are authored examples,
+not predictions from an executed LightGBM model. WP-03 verifies forecast-label pairing and
+descriptive calendar-window monitoring on a separate synthetic fixture. Numerical triggers remain
+PROPOSED. No Rossmann STL findings, final-test score or accepted public deployment is presented. [1-4,12-14]
 
-## 1. Introduction and business problem
+## 1. Business understanding and data generation (Module 1)
 
 The decision question is how much monetary store turnover to expect over the next 14 days and
 how forecast-based inventory-value policies compare under declared operating assumptions. The
@@ -35,14 +37,12 @@ prices. Turnover therefore cannot identify physical demand or unmet demand. The 
 is Store x Date; the target is Sales. The project combines descriptive analysis, chronological
 prediction and conditional prescriptive simulation without claiming real inventory optimization.
 
-The eight course modules cover business understanding/data generation, EDA, cleaning, features,
-models, deployment, monitoring and reporting. Their evidence is uneven: the development/local
-foundation is complete, while real Store-level scenario analysis, supplementary STL findings,
-the protected final evaluation and external delivery are incomplete. This report preserves those
-boundaries instead of treating a working fixture or a branch integration as course completion.
-The proposal, accepted decisions and current evidence remain authoritative. [1-3]
+The eight modules distinguish reviewed development results from synthetic demonstrations.
+Rossmann STL, real Store-level scenarios, frozen final evaluation and public acceptance remain
+pending. A development-only submission needs instructor confirmation; all existing safeguards
+remain effective. [1-3,15]
 
-## 2. Dataset and synthetic supply-chain assumptions
+**Dataset and synthetic supply-chain assumptions**
 
 The validated official snapshot has 1,017,209 training records, 41,088 separate competition-test
 covariate records and 1,115 Store metadata rows. Historical training dates extend from January 1,
@@ -61,7 +61,7 @@ not measured Rossmann operations. For example, cost ratio c lies in [0.55,0.85),
 in [0.10,0.30), and goodwill penalty g in [0.10,0.75). Daily holding rate is c*a/365 and the
 shortfall penalty is (1-c)+g. These define a cost proxy, not real margin, profit or savings. [4,9]
 
-## 3. Exploratory data analysis
+## 2. Exploratory data analysis (Module 2)
 
 Historical EDA disclosed a shared July-December 2014 gap for 180 Stores, representing 33,120
 absent Store-days. Sparse dates are not observed zero turnover. Store 988 also lacks the first
@@ -75,6 +75,11 @@ associations; promotional assignment and Store composition prevent a causal inte
 Sunday/open-label support is sparse and differs from the usual weekday population. Counts and
 denominators therefore accompany comparative interpretation. [5]
 
+Historical serial diagnostics use uninterrupted observed daily segments rather than filling gaps.
+The reviewed representative-store ACF diagnostics report lag-7 correlations of approximately
+0.27-0.75, consistent with heterogeneous weekly serial structure. This descriptive association is
+neither a new decomposition nor a forecasting result. [5]
+
 Earlier full-source validation/EDA included dates later protected for final evaluation. This
 historical exposure is explicitly disclosed; the report makes no claim that the holdout was
 never seen descriptively. Those full-period summaries cannot define modeling cohorts, monitoring
@@ -85,7 +90,11 @@ retaining at most 112 days and selecting the first three eligible Store IDs. Mis
 nonfinite observations split segments. The real-input preparation and execution gates are
 unmet, so no new Rossmann STL components or findings are presented. [2,10]
 
-## 4. Data cleaning and validation
+**STL evidence slot - BLOCKED (WP-02):** add the approved Store roster, input provenance,
+decomposition components/PNGs and reviewed trend/seasonal/residual interpretation only after
+authorized execution. No decomposition figure or seasonal finding is substituted here.
+
+## 3. Data cleaning and validation (Module 3)
 
 Preparation preserves original source values, keys and sparse dates. Historical and test tables
 join Store metadata many-to-one; unique Store/Date keys and domains are validated. No target
@@ -98,19 +107,35 @@ documented historical-context candidate is uncertain and audit-only; it does not
 Open, determine evaluation eligibility or force a forecast to zero. This distinction prevents
 an inferred operational assumption from becoming an observed outcome. [5,6]
 
+Table 1. Documented before/after preparation evidence. Counts are historical records, not new
+measurements; metadata counts refer to distinct Stores, not joined training rows. Sources: [4,5].
+
+| Item | Before | After | Disposition | Evidence |
+|---|---:|---:|---|---|
+| Historical rows | 1,017,209 | 1,017,209 | Preserved | [4,5] |
+| Shared absent Store-days | 33,120 | 33,120 | No gap fill | [5] |
+| Open=1 / Sales=0 rows | 54 | 54 | Retained | [4,5] |
+| Test Open nulls | 11 | 11 | Audit separate | [4,5] |
+| Promo2-detail null Stores / field | 544 | 544 | Structural | [4,5] |
+
 Restricted fixture verifiers test schemas, identities and authorized representations, but hashes
 alone cannot authenticate custody or grant data access. The existing Parquet fixture contract
 also lacks a hard peak-memory bound before materialization. It remains approved only for trusted
 synthetic fixtures. A real mixed-source operation requires its own authorized preparation,
 independent verification, bindings and purpose-specific execution decision. [2,10]
 
-## 5. Feature engineering
+## 4. Feature engineering (Module 4)
 
 The frozen feature contract contains 29 ordered predictors. It combines Store identity; calendar
 features; holiday/promotion inputs; static Store/competition metadata; exact-date Sales lags at
 1, 7, 14 and 28 days; and complete 7/14/28-day rolling means and sample standard deviations.
 Store is categorical identity, not a continuous magnitude. Customers and Customers-derived
 variables are excluded. Date is a key; source Open is eligibility/routing information. [6]
+
+The 29 predictors comprise one Store identity, eight calendar fields, two holiday fields,
+three promotion fields (promo, promo2, is_promo2_active), five Store/competition descriptors,
+four exact-date lags and six rolling statistics. Learned categorical mappings are fit on each
+origin's training population; unknown categories follow the frozen adapter policy. [6,7]
 
 An absent exact lag date produces null, not the preceding observed row. Rolling statistics
 require all calendar dates and exclude the target. During recursive inference, actual Sales
@@ -119,7 +144,9 @@ Precomputed historical feature rows cannot be reused as recursive validation inp
 can contain actual values unavailable at issuance. Future calendar/planned fields require an
 explicit availability assumption even when a later snapshot contains them. [6,7]
 
-## 6. Forecasting methodology
+## 5. Model development and decision support (Module 5)
+
+**Forecasting methodology**
 
 Seasonal Naive supplies a reviewed weekly baseline. Additive Holt-Winters supplies the statistical
 candidate, with retained fit/failure/clipping diagnostics. Global LightGBM pools Stores and
@@ -133,12 +160,15 @@ establish a fitted future July model. The prior fixed tuning and selection artif
 without regeneration. An offline course demonstration is the accepted operating context; no
 production latency, throughput or memory guarantee is claimed. [2,3]
 
-## 7. Chronological validation and model comparison
+**Chronological validation and model comparison**
 
 Development origins are May 22, June 5 and June 19, 2015. Their nonoverlapping H14 target windows
 end by July 3. Primary errors use observed source Open=1 and available raw forecasts. Candidate
 availability and a fixed common population are reported separately. No shuffled split or future
 actual Sales/Customers input is used in the accepted recursive protocol. [2,7]
+
+Table 2. Reviewed chronological development comparison. MAE/RMSE use source monetary turnover
+units; MAPE is percent and WAPE is a ratio. Source: reviewed results [3].
 
 | Candidate | Pooled MAE | Pooled RMSE | MAPE (%) | WAPE (ratio) |
 |---|---:|---:|---:|---:|
@@ -164,7 +194,7 @@ and July 17 before matching labels are released, with only already released hist
 for the scheduled second fit. Implementation, resources, rehearsal, source custody and each
 chronological release remain gated. This report contains no final-period score. [2,8]
 
-## 8. Forecast uncertainty
+**Forecast uncertainty**
 
 Daily uncertainty consists of marginal empirical horizon-specific intervals. Cumulative
 uncertainty uses complete prefix residual paths for upper bounds; daily interval endpoints
@@ -184,7 +214,7 @@ guarantees. Synthetic-stress transport is uncalibrated. Applying frozen June Fit
 fresh fits is explicitly unvalidated transport, with no July recalibration or empirical July
 coverage established. These limitations affect any stock-policy recommendation. [2,8,9]
 
-## 9. Inventory policy and business trade-offs
+**Inventory policy and business trade-offs**
 
 The accepted simulator compares a historical-mean baseline with a forecast-driven standing
 order-up-to target. Inventory position includes on-hand and pipeline values. The forecast target
@@ -212,7 +242,7 @@ operating assumptions before recommending a policy. No new policy tuning is perf
 The final protocol uses two independent origin-frozen episodes, not continuous rolling 28-day
 inventory. Its remaining gates prevent treating development evidence as final business validation.
 
-## 10. System architecture and deployment
+## 6. System architecture and deployment (Module 6)
 
 Reusable Python analytics live in src/, scripts expose commands and notebooks present results.
 Shared read-only services support FastAPI and a five-screen Streamlit dashboard. The explicit
@@ -221,14 +251,34 @@ canonical Rossmann artifacts. API responses carry synthetic provenance; health m
 liveness and catalog readiness is a separate fact. Missing values retain unavailable reasons.
 The dashboard reads Python services directly. [11]
 
-The integration correction removes a static JavaScript mock tester, fixed inventory outcomes,
-invented p-values and a hardcoded Healthy badge. The historical Hugging Face Space is static;
-its presence does not establish a FastAPI deployment. The replacement builder writes an offline
-notice and has no upload operation. Two real local loopback services and a bounded HTTP probe
-form the deployment candidate. Public endpoints require independent review, exact content/rights,
-security/resource/rollback and explicit owner release approval. No public API URL is asserted. [11]
+WP-04 created a new source-allowlisted 47-file synthetic candidate and installed locked API/dashboard
+dependencies into a fresh Linux Python 3.12.15 environment with uv 0.12.23; download caches were
+reused. Actual loopback HTTP checks produced 19 expected 200, two expected 422 and seven expected
+503 responses. Fifteen live Streamlit WebSocket renders covered the five saved-service screens,
+separate monitoring, restart and failure states. Missing bundle and wrong pin fail closed;
+malformed UI errors were redacted. Store/H14 and unavailable-value behavior also passed targeted
+AppTests. The scoped fixture suite passed 362 tests, with one Windows-symlink skip and one existing
+Starlette/httpx warning. These counts establish software behavior, not model accuracy. [14]
 
-## 11. Model monitoring
+Each Linux service was capped at 512 MiB, zero swap and 0.1 CPU. API catalog readiness took
+22.49 seconds; dashboard health took 8.82 seconds. Peak RSS was 136.08 and 233.23 MiB, respectively,
+with no OOM events in the measured sequential one-session workload. Monitoring's initial render
+took 31.50 seconds. Actual host latency, concurrency, quotas, browser visual acceptance and
+independent security acceptance remain unverified. All owned processes were stopped. [14]
+
+The release profile is controlled_synthetic_demo; forecast rows retain model_execution=none.
+History, uncertainty and inventory views use authored fixture arithmetic. The monitoring fixture
+is separate from this saved-service bundle. Genuine trained-model deployment would require approved
+development outputs and a suitable public artifact/provider contract; changing a label is not
+sufficient. Both services must receive the same exact release bytes and trusted manifest pin. [11,14]
+
+**Public URL evidence slot - PENDING:** no approved API/dashboard URL pair exists. WP-04's read-only
+check found the old HF Space still static, with HTML 200 but health/catalog 404. Its page is not
+backend evidence. Human review, successful CI, exact-content/rights/provenance, security/resource
+acceptance, hosting scope and explicit Owner release authorization remain required. The local
+verdict is READY FOR LOCAL STAGING ONLY, not DEPLOYED. [14]
+
+## 7. Model monitoring (Module 7)
 
 The monitoring chain is immutable forecast issuance, subsequent label availability, validated
 pairing, descriptive performance/characteristic summaries and human review. The adapter accepts
@@ -243,14 +293,51 @@ zero or shorten the calendar window. Feature quartiles/frequencies compare decla
 calendar/planned features in disjoint earlier reference and current windows. Small samples,
 missingness and constant references are explicit. There is no KS significance claim. [12]
 
-The controlled fixture authors predictions from Store/calendar independently of labels and uses
-a synthetic model identity. JSON, HTML, chart and notebook share one calculation API. Evidence
-states describe availability, not system health. No automatic retraining, numeric warning or
-unimplemented persistence rule is retained. The broader operational trigger proposal requires
-separate approval/rehearsal and cannot adapt the frozen final replay. Genuine post-deployment
-performance monitoring cannot yet be demonstrated without new real observations. [12]
+The controlled fixture authors predictions from Store/calendar independently of labels. Reference
+dates are June 6-19 and current dates June 20-July 3, 2015. Each contains 42 requested pairs across
+three synthetic Stores, including 36 eligible Open=1 pairs and six closed labels. Baseline MAE is
+250 source-equivalent turnover units, RMSE 252.3225, MAPE 3.7935% and WAPE 0.0380113. These are
+fixture metrics, separate from Table 2. The final trailing seven-day window has 21 requested/18
+eligible pairs; the fourteen-day window has 42/36. [12,13]
 
-## 12. Limitations, ethics and academic ownership
+Missing labels/predictions yield PARTIAL_EVIDENCE; no labels yield UNAVAILABLE and null metrics.
+Zero actuals are excluded from MAPE with explicit counts; all-zero eligible actuals make MAPE/WAPE
+unavailable. DESCRIPTIVE_ONLY describes evidence availability, even when error is large; it is not
+a Healthy assessment. Coverage is conditional on supplied keys: loss of an entire Store's forecast
+and label records needs an independently verified expected roster to be detected. [12,13]
+
+**Proposed trigger specification - NOT APPROVED OR IMPLEMENTED.** Reference versions must precede
+assessment, with identical eligibility and comparable origin/horizon populations. Support S
+requires at least ten observed target dates, 100 Stores and 1,000 eligible pairs in each complete
+non-overlapping 14-calendar-day assessment window and its reference. Availability support is
+assessed before filtering missing predictions. The three-Store fixture is insufficient for these
+proposed pooled decisions. These policy parameters have not been calibrated or validated here. [1,12,13]
+
+## Table 3. Proposed human-review rules
+
+| Check | Metric | Proposed rule | Evidence | Human action |
+|---|---|---|---|---|
+| Performance | WAPE vs ref | >1.20 x ref | 14 days; S | Inspect cause |
+| Availability | Raw coverage | <99% | Roster; S | Repair delivery |
+| Feature characteristics | Category share | Shift >=10 pp | Comparable; S | Inspect inputs |
+| Late labels | Due missing labels | Count >0 | Approved deadline | Check ingestion |
+| Integrity / quality | Invalid keys/fields | Confirmed failure | One incident | Stop view |
+| Retraining review | Repeated warning | Two valid windows | Consecutive | Human decision |
+
+Source: proposal section 24.2 and WP-03 specification [1,12,13]. Each proposed check yields
+TRIGGERED, NOT TRIGGERED or INSUFFICIENT EVIDENCE; unsupported evidence never becomes a pass.
+
+Reference WAPE and actual-value denominators must be positive. Missing labels or incompatible
+references prevent a performance decision. Label deadlines are not yet approved; without a roster
+and maturity rule, late-label status is insufficient evidence. Integrity/access failures stop the
+affected path immediately; repeated blocking quality failures on two daily checks require escalation.
+Unavailable windows break a persistence sequence. Retraining and promotion require separate human
+approval and chronological development comparison. The adapter implements neither this numerical
+engine nor persistence; no automatic retraining or production monitoring is claimed. [1,12,13]
+
+## 8. Conclusions and recommendations (Module 8)
+
+**Limitations, ethics and academic ownership**
 
 The study is limited by monetary targets, missing operational observations, dependent Stores/date
 shocks, sparse Sunday labels, only three late-season development origins, historical descriptive
@@ -260,14 +347,15 @@ inference. Legacy manifests have recorded provenance limitations; none is rewrit
 cleaner history. No final-test result, production readiness, physical-demand accuracy, optimal
 policy, service guarantee or real savings is claimed. [2,3,5]
 
-AI assistance proposed code corrections, tests, monitoring/report source and this academic draft.
-The team must inspect, understand, test and accept those contributions, verify citations and
-conclusions, rehearse explanations and follow the instructor's AI policy. The named authorship
-list identifies project membership, not a claim that each member manually wrote all generated
-code or this prose. Independent AI review is separate from human GitHub approval and academic
-ownership. Human reviewers must resolve pending analytical/release decisions before submission.
+AI assisted prior code corrections, tests, monitoring/report sources and this draft. Members must
+verify contributions, citations and conclusions, rehearse explanations and follow course policy.
+The inherited roster/course details need team confirmation and do not establish exclusive human
+authorship. Independent AI review is separate from human GitHub approval and academic ownership.
+No instructor permission for AI-authored application code has been verified. Members must disclose
+actual assistance/contributions, obtain the instructor's ruling where needed and approve the final
+academic claims. [15]
 
-## 13. Conclusions and recommendations
+**Conclusions and business recommendations**
 
 The retained development evidence favors the frozen global recursive LightGBM recipe for the
 accepted raw Sales metric contract. It also shows weaker individual horizons and adverse
@@ -275,10 +363,22 @@ simulated inventory costs. The defensible conclusion is that improved monetary f
 alone does not establish an effective real procurement policy. Uncertainty and synthetic
 operating assumptions must remain visible in the decision-support demonstration.
 
-The local candidate improves engineering truthfulness and reproducibility without changing the
-scientific recipe. Course submission still requires authorized real scenario/final evidence,
-selected monitoring integration, approved public API/dashboard release and team acceptance of
-report/slides. Pending work is an explicit limitation of this draft, not a positive result.
+For Business Analytics, the result illustrates why predictive error, uncertainty and business-policy
+performance need separate evidence. The current recommendation is to retain the reviewed forecast
+recipe for its stated development comparison, investigate the adverse simulation assumptions before
+operational adoption, and use the synthetic application only to demonstrate interfaces.
+
+Before submission, the team must resolve the STL and public-delivery gaps or obtain an explicit
+instructor-approved scope adjustment, confirm the acceptability of synthetic/development replay,
+and accept the report, slides and AI disclosure. Real Store-level scenarios and frozen final
+evaluation remain unperformed. This draft does not classify every internal roadmap gate as an
+instructor requirement, approve deferral, or waive safeguards. Final evaluation must not be called
+complete or independent merely because development results are available.
+
+Future improvements may include authorized development-only STL findings, genuine saved-model
+serving and a reviewed human trigger policy. Longer evaluation, uncertainty-transport assessment
+and revised inventory assumptions could strengthen inference after separate approval; none is
+presented as completed work. This is a submission draft for team review, not final acceptance.
 
 ## References and reproducibility appendix
 
@@ -311,6 +411,19 @@ local services, read-only external inspection and pending release checklist.
 
 [12] Repository docs/MONITORING.md and notebooks/03_model_monitoring.ipynb: adapter, populations,
 synthetic reproduction and limitations.
+
+[13] WP-03: reports/generated/monitoring/wp03-fixture-20261108-v1/monitoring_summary.json and
+manifest.json; tests/test_monitoring.py; session-verified fixture cases and seven-cell notebook
+execution. The saved summary contains the baseline only; stress cases were checked in memory.
+
+[14] WP-04: outputs/validation/wp04-staging-20261108-v1/evidence_manifest.json,
+linux/linux-report.json, targeted-tests.xml, github-readonly.json and hf-readonly.json.
+These are local technical evidence, not public release or human approval.
+
+[15] IT4063E course announcement: Retail_FMCG_Demand_Forecasting_Project_Announcement.pdf,
+sections 3, 4 and 6. The course requires monitoring/retraining-trigger definitions and accessible
+deployment; exact workflow/support parameters are internal proposals. Code authorship requires
+team-member authorship under the instructor's policy.
 
 Reproduce fixture software checks with the locked environment in docs/WORKFLOW.md. Run full
 fixtures in a tracked-files-only checkout to avoid optional canonical-artifact discovery.

@@ -55,7 +55,9 @@ and generated `render.yaml`, and records all copied/generated hashes. It never s
 copies `.git`/credentials, uploads, builds containers or starts a listener. Build only from a
 reviewed trusted checkout; hashes establish consistency, not authorization or hostile-host safety.
 
-The generated blueprint contains two Free services with auto-deploy disabled, Python 3.12.15,
+The source allowlist also copies the reviewed Streamlit configuration unchanged, including
+redacted errors, disabled file watching and loopback defaults. The generated blueprint contains
+two Free services with auto-deploy disabled, Python 3.12.15,
 uv 0.12.23, locked api/dashboard extras and single-worker/concurrency-bounded API startup.
 The cloud start commands use host binding and `$PORT` only as reviewed configuration; never run
 them locally before release approval. Use the [loopback launcher](LOCAL_DEMO_DEPLOYMENT.md) locally:
@@ -92,6 +94,8 @@ host-account tokens in the owner's account/secret store; never in code, logs or 
   checks for both host-issued URLs and all failure/provenance states, and record the real URLs.
   At the approved window's end, suspend/remove the services and verify shutdown externally.
 
-Docker's CLI is installed locally, but its Linux daemon was unavailable during preparation.
-No container build or Linux host-resource acceptance is claimed. Native loopback verification
-and source/configuration inspection can proceed independently. No public URL is invented here.
+The [Linux preflight](LINUX_DEPLOYMENT_PREFLIGHT.md) records actual isolated WSL2 builds,
+loopback HTTP/WebSocket/restart checks and constrained resource observations. Docker's Linux
+daemon remained unavailable; no container build occurred. Two-Render hosting remains conditional
+on host-specific resource/latency and release acceptance; unchanged hybrid packaging is blocked
+pending a verified locked-extras setup. No public URL or host acceptance is established.

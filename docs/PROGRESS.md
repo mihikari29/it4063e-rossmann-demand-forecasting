@@ -33,6 +33,12 @@ Prior test counts above remain historical; current commit/run identities belong 
 structured handoff. These are local candidate results, not main integration,
 whole Milestone B closure, final analytical evidence, academic acceptance or public release.
 
+The subsequent [Linux preflight](LINUX_DEPLOYMENT_PREFLIGHT.md) verifies isolated locked WSL2
+builds, both synthetic services, substantive WebSocket UI content, failure states and fresh-process
+restarts under per-service memory/CPU limits. Candidate packaging now retains the reviewed
+Streamlit error-disclosure and file-watcher controls. Local observations support only conditional
+two-Render consideration; hybrid locked-extras setup and all host/release/human gates remain open.
+
 Integrated robustness corrections reject invalid LightGBM history/model origins before recursive
 prediction, validate original inventory periods/horizons before narrowing, and enforce source Store,
 Id and weekday domains. The last implementation record still requests independent Sol 6.1
