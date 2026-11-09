@@ -58,11 +58,11 @@ source/output hashes, code/seed and environment/lock identity.
 Use Python 3.12–3.14 (3.14 reference), uv 0.12.23 and the committed lock:
 
 ```powershell
-uv sync --locked --extra dev --extra api --extra dashboard --python 3.14
-uv run --locked --extra dev --extra api --extra dashboard python -m pytest
-uv run --locked --extra dev --extra api --extra dashboard python -m ruff check .
-uv run --locked --extra dev --extra api --extra dashboard python -m ruff format --check .
-uv run --locked --extra dev --extra api --extra dashboard python scripts/check_docs.py
+uv sync --locked --extra dev --extra api --extra dashboard --extra reporting --python 3.14
+uv run --locked --extra dev --extra api --extra dashboard --extra reporting python -m pytest
+uv run --locked --extra dev --extra api --extra dashboard --extra reporting python -m ruff check .
+uv run --locked --extra dev --extra api --extra dashboard --extra reporting python -m ruff format --check .
+uv run --locked --extra dev --extra api --extra dashboard --extra reporting python scripts/check_docs.py
 uv pip check
 uv lock --check
 git diff --check

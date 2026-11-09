@@ -7,7 +7,8 @@ compare inventory-value policies under explicit synthetic operating assumptions.
 project combines descriptive, predictive and prescriptive analytics in a reproducible Python workflow.
 
 [Proposal](docs/PROPOSAL.md) · [Results and status](docs/PROGRESS.md) ·
-[Remaining deliverables](docs/PROJECT_PLAN.md) — [Data Dictionary](docs/DATA_DICTIONARY.md)
+[Remaining deliverables](docs/PROJECT_PLAN.md) — [Data Dictionary](docs/DATA_DICTIONARY.md) ·
+[Submission readiness](docs/SUBMISSION_READINESS.md)
 
 ## Business problem and objectives
 
@@ -78,8 +79,8 @@ Python **3.12–3.14** is supported, with **3.14** as reference. From the reposi
 [uv](https://docs.astral.sh/uv/getting-started/installation/) **0.12.23**:
 
 ```powershell
-uv sync --locked --extra dev --extra api --extra dashboard --python 3.14
-uv run --locked --extra dev --extra api --extra dashboard python -m pytest
+uv sync --locked --extra dev --extra api --extra dashboard --extra reporting --python 3.14
+uv run --locked --extra dev --extra api --extra dashboard --extra reporting python -m pytest
 ```
 
 Fixtures run without Rossmann files or credentials. An optional integration test uses existing
@@ -125,6 +126,26 @@ and an independently supplied `ROSSMANN_DEMO_MANIFEST_SHA256` pin. Its controlle
 examples demonstrate interface behavior only. See the [demo plan](plans/active/public-course-demo.md)
 and [release contract](docs/PUBLIC_DEMO_RELEASE_CONTRACT.md).
 
+### Local deployment and submission candidate
+
+The [two-service runbook](docs/LOCAL_DEMO_DEPLOYMENT.md) launches the actual synthetic FastAPI
+and separate Streamlit services on loopback using the same verified immutable bundle. Its HTTP
+probe distinguishes liveness, readiness, connection errors and timeouts. The historical Hugging
+Face Space is static; it does not establish a public FastAPI deployment. The retired builder
+writes an offline notice and cannot upload. Public API/dashboard release remains gated.
+
+[Descriptive monitoring](docs/MONITORING.md) pairs issued development forecasts with available
+labels and includes [a synthetic notebook](notebooks/03_model_monitoring.ipynb). There is no
+target-derived pseudo-LightGBM inference, statistical alarm or automatic retraining. Real
+post-deployment performance and Phase 13 monitoring remain pending.
+
+[Academic sources and export instructions](reports/README.md) provide an evidence-based report
+and an actual editable 15-slide PPTX exporter. A separate course dashboard adds explicitly synthetic
+descriptive monitoring. [Release preparation](docs/PUBLIC_RELEASE_CANDIDATE.md),
+[analytical gates](docs/ANALYTICAL_READINESS.md) and [PR preparation](docs/PR_READINESS.md) define
+the remaining operations. Final evidence and human academic acceptance remain
+incomplete; generated exports belong under ignored `reports/generated/`.
+
 ## Repository structure
 
 | Path | Contents |
@@ -149,6 +170,6 @@ fixtures are integrated, but final evaluation remains **PLANNED / NOT APPROVED**
 Remaining course work includes authorized real-data scenario analysis, supplementary STL
 findings, the frozen final replay and monitoring, public API/dashboard release, and the final
 PDF report, slides and demonstration. Public URLs are a gated future delivery objective;
-**no public deployment exists**. Current applications stay on localhost. The
+**no approved public API/dashboard deployment exists**. Current applications stay on localhost. The
 [roadmap](docs/PROJECT_PLAN.md) lists dependencies and approvals. Team ownership review and
 course-required AI-assistance disclosure remain part of delivery.

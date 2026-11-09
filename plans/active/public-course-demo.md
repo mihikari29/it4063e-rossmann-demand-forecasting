@@ -112,5 +112,7 @@ AI review and local visual acceptance do not establish human GitHub approval or 
 
 For release, specify the exact content and trusted pin, applicable rights, audience/window,
 host/resources, secret exclusions, recovery/rollback/shutdown and recorded external access checks.
-No live public URL exists. Broader monitoring, real scenario analysis and frozen final evaluation
+No approved public API/dashboard pair exists. The historical external static Space is not evidence
+of this two-service release; [local verification](../../docs/LOCAL_DEMO_DEPLOYMENT.md) records the
+distinction. Broader monitoring, real scenario analysis and frozen final evaluation
 retain their separate [roadmap](../../docs/PROJECT_PLAN.md) dependencies and approvals.

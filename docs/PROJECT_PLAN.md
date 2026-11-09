@@ -39,6 +39,12 @@ Synthetic-demo review/release planning and report outlines can progress independ
 operations. The API and Streamlit share a release bundle; Streamlit uses direct Python calls.
 Render remains a hosting candidate, without a selected service or authorized purchase.
 
+The [submission integration candidate](../plans/active/course-submission-integration.md) corrects
+the later static demonstration/monitoring branch without changing these gates. Its separate
+development-only descriptive monitoring, local two-service launcher and academic draft sources
+do not implement Phase 13 M5 or complete course delivery. [Readiness](SUBMISSION_READINESS.md)
+records actual validation, artifacts and remaining acceptance.
+
 ## Final evaluation boundary
 
 Issue at July 3 for July 4–17 and at July 17 for July 18–31, persisting each full H14 block before
